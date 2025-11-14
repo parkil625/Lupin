@@ -64,6 +64,7 @@ import {
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { toast } from "sonner@2.0.3";
 import logoImage from "figma:asset/35ea831620257399a6a4dc008549dcececac4b93.png";
+import Reels from "./dashboard/Reels";
 
 interface DashboardProps {
   onLogout: () => void;

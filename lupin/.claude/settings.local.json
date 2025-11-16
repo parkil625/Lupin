@@ -4,7 +4,10 @@
       "Bash(python replace_reels.py:*)",
       "Bash(npm run dev:*)",
       "Bash(node:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(git branch:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

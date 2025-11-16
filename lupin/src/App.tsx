@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent } from "./components/ui/card";
 import { Badge } from "./components/ui/badge";
-import { 
-  Heart, 
-  Sparkles, 
-  Trophy, 
-  Users, 
+import {
+  Heart,
+  Sparkles,
+  Trophy,
+  Users,
   Dumbbell,
   Video,
   Award,
@@ -21,18 +21,17 @@ import {
   Clock,
   MessageCircle,
   FileText,
-  UserCircle
+  UserCircle,
+  Activity
 } from "lucide-react";
-import { ImageWithFallback } from "./components/figma/ImageWithFallback";
 import { Toaster } from "./components/ui/sonner";
-import Login from "./components/Login";
+import Login from "./components/auth/Login";
 import Dashboard from "./components/Dashboard";
-import logoImage from "figma:asset/35ea831620257399a6a4dc008549dcececac4b93.png";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userType, setUserType] = useState<"patient" | "doctor">("patient");
+  const [userType, setUserType] = useState<"member" | "doctor">("member");
 
   // Intersection Observer for diverse scroll animations
   useEffect(() => {
@@ -98,9 +97,9 @@ export default function App() {
       <header className="fixed top-0 w-full backdrop-blur-2xl bg-white/80 border-b border-gray-200 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={logoImage} alt="Lupin Logo" className="h-10" />
+            <img src="/Lupin.png" alt="Lupin Logo" className="h-10 w-auto object-contain" />
           </div>
-          <Button 
+          <Button
             onClick={() => setShowLogin(true)}
             className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold border-0 shadow-xl rounded-2xl px-6"
           >
@@ -153,7 +152,7 @@ export default function App() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
-              <ImageWithFallback 
+              <img
                 src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1080"
                 alt="운동 활동"
                 className="relative rounded-3xl shadow-2xl border-8 border-white/50 backdrop-blur-sm"
@@ -223,7 +222,7 @@ export default function App() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <ImageWithFallback 
+            <img
               src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1080"
               alt="운동 기록"
               className="rounded-3xl shadow-2xl border-8 border-white/50 backdrop-blur-sm"
@@ -367,9 +366,7 @@ export default function App() {
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <img src={logoImage} alt="Lupin Logo" className="h-8 brightness-0 invert" />
-              </div>
+              <img src="/Lupin.png" alt="Lupin Logo" className="h-10 w-auto object-contain" />
               <p className="text-sm font-medium">
                 건강한 습관, 함께 만들어가요
               </p>
@@ -388,7 +385,7 @@ export default function App() {
               <ul className="space-y-2 text-sm font-medium">
                 <li>비대면 진료</li>
                 <li>예약 관리</li>
-                <li>환자 관리</li>
+                <li>회원 관리</li>
                 <li>처방전 발급</li>
               </ul>
             </div>

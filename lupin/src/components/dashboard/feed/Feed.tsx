@@ -1,9 +1,18 @@
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Input } from "../ui/input";
-import { ScrollArea } from "../ui/scroll-area";
+/**
+ * Feed.tsx
+ *
+ * 피드 페이지 컴포넌트
+ * - 모든 사용자의 운동 인증 피드 표시
+ * - 좋아요, 댓글 기능
+ * - 검색 및 필터링 기능
+ */
+
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Heart,
   MessageCircle,
@@ -36,7 +45,7 @@ interface FeedViewProps {
   newComment: string;
   setNewComment: (comment: string) => void;
   handleAddComment: (feedId: number) => void;
-  feedContainerRef: React.RefObject<HTMLDivElement>;
+  feedContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function FeedView({
@@ -257,3 +266,6 @@ export default function FeedView({
             })}
         </div>
       </div>
+    </div>
+  );
+}

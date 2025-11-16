@@ -1,6 +1,14 @@
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Avatar, AvatarFallback } from "../ui/avatar";
+/**
+ * Ranking.tsx
+ *
+ * 랭킹 페이지 컴포넌트
+ * - 사용자 점수 기반 순위 표시
+ * - 상위 랭커 하이라이트
+ */
+
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { TrendingUp, Users } from "lucide-react";
 
 export default function Ranking() {

@@ -1,6 +1,14 @@
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+/**
+ * Medical.tsx
+ *
+ * 진료 관리 페이지 컴포넌트
+ * - 예약 내역 및 처방전 조회
+ * - 의사와의 채팅 기능
+ */
+
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Calendar as CalendarIcon,
   Clock,

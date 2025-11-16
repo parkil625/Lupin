@@ -1,10 +1,18 @@
+/**
+ * Login.tsx
+ *
+ * 로그인 페이지 컴포넌트
+ * - 사용자 인증을 위한 로그인 폼 제공
+ * - 사내 아이디와 비밀번호 입력
+ * - Glassmorphism 디자인으로 구현
+ */
+
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Card } from "./ui/card";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Card } from "../ui/card";
 import { ArrowLeft, Sparkles, Lock, User } from "lucide-react";
-import logoImage from "figma:asset/35ea831620257399a6a4dc008549dcececac4b93.png";
 
 interface LoginProps {
   onBack: () => void;
@@ -45,9 +53,9 @@ export default function Login({ onBack, onLogin }: LoginProps) {
           {/* Logo & Title */}
           <div className="text-center space-y-4">
             <div className="flex justify-center mb-6">
-              <img src={logoImage} alt="Lupin Logo" className="h-20 w-20 object-contain" />
+              <img src="/Lupin.png" alt="Lupin Logo" className="h-20 w-auto object-contain" />
             </div>
-            
+
             <p className="text-gray-600 font-medium">건강한 습관, 함께 만들어가요</p>
             
             <div className="flex items-center gap-2 justify-center">

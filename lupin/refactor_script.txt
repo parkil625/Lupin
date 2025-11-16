@@ -1,0 +1,14 @@
+# Medical section: replace inline code with component
+# Line ~1331-1445: Medical section
+# Replace with: MedicalView component with props: setShowAppointment, setShowChat, setSelectedPrescription
+
+# Create section: replace inline code with component
+# Line ~1448-1547: Create section
+# Replace with: CreateView component with props: postImages, setPostImages, postContent, setPostContent, isWorkoutVerified, isDragging, setIsDragging, fileInputRef, handleCreatePost
+
+# Profile section (in doctor sidebar): replace inline code with component
+# Line ~1008+: Profile section in sidebar
+# Replace with: ProfileView component
+
+# Doctor sections:
+# Patients, Appointments, Chat - replace with components

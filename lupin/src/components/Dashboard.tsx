@@ -64,7 +64,6 @@ import {
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { toast } from "sonner@2.0.3";
 import logoImage from "figma:asset/35ea831620257399a6a4dc008549dcececac4b93.png";
-import Reels from "./dashboard/Reels";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -155,7 +154,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
-  const [showCommentsInReels, setShowCommentsInReels] = useState(false);
+  const [showCommentsInFeed, setShowCommentsInFeed] = useState(false);
   const [showFeedDetailInHome, setShowFeedDetailInHome] = useState(false);
   const feedContainerRef = useRef<HTMLDivElement>(null);
   const [challengeJoined, setChallengeJoined] = useState(false);
@@ -457,7 +456,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
   const navItems = userType === "patient" ? [
     { id: "home", icon: Home, label: "홈" },
-    { id: "reels", icon: Video, label: "피드" },
+    { id: "feed", icon: Video, label: "피드" },
     { id: "ranking", icon: Trophy, label: "랭킹" },
     { id: "medical", icon: CalendarIcon, label: "진료" },
     { id: "create", icon: PlusSquare, label: "만들기" }
@@ -696,7 +695,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
   // Snap scroll effect
   useEffect(() => {
-    if (selectedNav === "reels" && feedContainerRef.current) {
+    if (selectedNav === "feed" && feedContainerRef.current) {
       const container = feedContainerRef.current;
       let scrollTimeout: NodeJS.Timeout;
 
@@ -1494,8 +1493,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           </div>
         )}
 
-        {/* Feed - Reels Style with Snap Scroll - Full Height */}
-        {selectedNav === "reels" && (
+        {/* Feed - Instagram Style with Snap Scroll - Full Height */}
+        {selectedNav === "feed" && (
           <div className="h-full relative flex items-center justify-center">
             {/* Feed Container with Snap Scroll */}
             <div 
@@ -1618,7 +1617,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedFeed(feed);
-                                    setShowCommentsInReels(true);
+                                    setShowCommentsInFeed(true);
                                   }}
                                 >
                                   <div className="w-12 h-12 rounded-full backdrop-blur-xl bg-white/20 border border-white/30 flex items-center justify-center hover:scale-110 transition-transform">
@@ -1660,15 +1659,15 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             </div>
 
             {/* Comments - Match Feed Height */}
-            {showCommentsInReels && selectedFeed && (
+            {showCommentsInFeed && selectedFeed && (
               <div className="absolute top-1/2 -translate-y-1/2 left-1/2 ml-[200px] w-96 h-[95vh] max-h-[95vh] backdrop-blur-2xl bg-white/90 border-l border-gray-200 shadow-2xl z-50 flex flex-col rounded-r-3xl">
                 <div className="p-6 flex-1 flex flex-col max-h-[95vh] my-auto">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-black text-gray-900">댓글</h3>
-                    <button 
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShowCommentsInReels(false);
+                        setShowCommentsInFeed(false);
                         setReplyingTo(null);
                       }}
                       className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"

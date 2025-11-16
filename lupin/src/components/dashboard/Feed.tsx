@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
 
-interface ReelsProps {
+interface FeedViewProps {
   allFeeds: Feed[];
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -27,8 +27,8 @@ interface ReelsProps {
   hasLiked: (feedId: number) => boolean;
   handleLike: (feedId: number) => void;
   feedComments: { [key: number]: Comment[] };
-  showCommentsInReels: boolean;
-  setShowCommentsInReels: (show: boolean) => void;
+  showCommentsInFeed: boolean;
+  setShowCommentsInFeed: (show: boolean) => void;
   selectedFeed: Feed | null;
   setSelectedFeed: (feed: Feed | null) => void;
   replyingTo: number | null;
@@ -39,7 +39,7 @@ interface ReelsProps {
   feedContainerRef: React.RefObject<HTMLDivElement>;
 }
 
-export default function Reels({
+export default function FeedView({
   allFeeds,
   searchQuery,
   setSearchQuery,
@@ -50,8 +50,8 @@ export default function Reels({
   hasLiked,
   handleLike,
   feedComments,
-  showCommentsInReels,
-  setShowCommentsInReels,
+  showCommentsInFeed,
+  setShowCommentsInFeed,
   selectedFeed,
   setSelectedFeed,
   replyingTo,
@@ -60,7 +60,7 @@ export default function Reels({
   setNewComment,
   handleAddComment,
   feedContainerRef,
-}: ReelsProps) {
+}: FeedViewProps) {
   return (
     <div className="h-full relative flex items-center justify-center">
       <div
@@ -212,7 +212,7 @@ export default function Reels({
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedFeed(feed);
-                              setShowCommentsInReels(true);
+                              setShowCommentsInFeed(true);
                             }}
                           >
                             <div className="w-12 h-12 rounded-full backdrop-blur-xl bg-white/20 border border-white/30 flex items-center justify-center hover:scale-110 transition-transform">

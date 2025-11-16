@@ -1,6 +1,6 @@
 export interface DashboardProps {
   onLogout: () => void;
-  userType: "patient" | "doctor";
+  userType: "member" | "doctor";
 }
 
 export interface Feed {
@@ -50,7 +50,7 @@ export interface Notification {
   read: boolean;
 }
 
-export interface Patient {
+export interface Member {
   id: number;
   name: string;
   avatar: string;
@@ -63,8 +63,8 @@ export interface Patient {
 
 export interface Appointment {
   id: number;
-  patientName: string;
-  patientAvatar: string;
+  memberName: string;
+  memberAvatar: string;
   department: string;
   date: string;
   time: string;

@@ -1,42 +1,50 @@
-import { Card } from "../ui/card";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Avatar, AvatarFallback } from "../ui/avatar";
+/**
+ * MemberProfilePage.tsx
+ *
+ * 회원 프로필 페이지 컴포넌트
+ * - 개인 정보 수정
+ * - 프로필 사진 변경
+ * - 신체 정보 관리
+ */
+
+import { useState, useRef } from "react";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Edit, Camera } from "lucide-react";
 
-interface ProfileProps {
-  profileImage: string | null;
-  isEditingProfile: boolean;
-  setIsEditingProfile: (editing: boolean) => void;
-  profileImageInputRef: React.RefObject<HTMLInputElement>;
-  handleProfileImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  height: string;
-  setHeight: (height: string) => void;
-  weight: string;
-  setWeight: (weight: string) => void;
+interface MemberProfilePageProps {
   onLogout: () => void;
+  profileImage: string | null;
+  setProfileImage: (image: string | null) => void;
 }
 
-export default function Profile({
-  profileImage,
-  isEditingProfile,
-  setIsEditingProfile,
-  profileImageInputRef,
-  handleProfileImageChange,
-  height,
-  setHeight,
-  weight,
-  setWeight,
-  onLogout,
-}: ProfileProps) {
+export default function MemberProfilePage({ onLogout, profileImage, setProfileImage }: MemberProfilePageProps) {
+  const [height, setHeight] = useState("175");
+  const [weight, setWeight] = useState("70");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setProfileImage(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="h-full overflow-auto p-8 bg-gray-50/50">
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
           <h1 className="text-5xl font-black text-gray-900 mb-2">마이페이지</h1>
-          <p className="text-gray-700 font-medium text-lg">
-            내 정보를 관리하세요
-          </p>
+          <p className="text-gray-700 font-medium text-lg">내 정보를 관리하세요</p>
         </div>
 
         <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl">
@@ -45,11 +53,7 @@ export default function Profile({
               <div className="relative">
                 <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
                   {profileImage ? (
-                    <img
-                      src={profileImage}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
                     <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white text-3xl font-black">
                       김
@@ -73,9 +77,7 @@ export default function Profile({
                 />
               </div>
               <div>
-                <h2 className="text-3xl font-black text-gray-900 mb-2">
-                  김루핀
-                </h2>
+                <h2 className="text-3xl font-black text-gray-900 mb-2">김루핀</h2>
                 <p className="text-gray-600 font-medium">EMP001</p>
               </div>
               <Button
@@ -90,23 +92,17 @@ export default function Profile({
 
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-white/80 border border-gray-200">
-                <div className="text-sm text-gray-600 font-medium mb-1">
-                  이메일
-                </div>
+                <div className="text-sm text-gray-600 font-medium mb-1">이메일</div>
                 <div className="font-bold text-gray-900">lupin@company.com</div>
               </div>
 
               <div className="p-4 rounded-xl bg-white/80 border border-gray-200">
-                <div className="text-sm text-gray-600 font-medium mb-1">
-                  부서
-                </div>
+                <div className="text-sm text-gray-600 font-medium mb-1">부서</div>
                 <div className="font-bold text-gray-900">개발팀</div>
               </div>
 
               <div className="p-4 rounded-xl bg-white/80 border border-gray-200">
-                <div className="text-sm text-gray-600 font-medium mb-2">
-                  키 (cm)
-                </div>
+                <div className="text-sm text-gray-600 font-medium mb-2">키 (cm)</div>
                 {isEditingProfile ? (
                   <Input
                     type="number"
@@ -120,9 +116,7 @@ export default function Profile({
               </div>
 
               <div className="p-4 rounded-xl bg-white/80 border border-gray-200">
-                <div className="text-sm text-gray-600 font-medium mb-2">
-                  몸무게 (kg)
-                </div>
+                <div className="text-sm text-gray-600 font-medium mb-2">몸무게 (kg)</div>
                 {isEditingProfile ? (
                   <Input
                     type="number"

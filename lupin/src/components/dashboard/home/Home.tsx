@@ -1,7 +1,15 @@
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Button } from "../ui/button";
+/**
+ * Home.tsx
+ *
+ * 회원 대시보드 홈 페이지 컴포넌트
+ * - 오늘의 활동, 챌린지, 최근 피드 표시
+ * - 점수 현황 및 프로필 정보 표시
+ */
+
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Heart,
   MessageCircle,

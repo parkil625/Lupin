@@ -11,15 +11,21 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, FileText, MessageCircle, XCircle } from "lucide-react";
-import { Appointment } from "@/types/dashboard.types";
+import {
+  Calendar as CalendarIcon,
+  FileText,
+  MessageCircle,
+  XCircle,
+} from "lucide-react";
 import { appointments } from "@/mockdata/members";
 
 interface AppointmentsPageProps {
   onChatClick: () => void;
 }
 
-export default function AppointmentsPage({ onChatClick }: AppointmentsPageProps) {
+export default function AppointmentsPage({
+  onChatClick,
+}: AppointmentsPageProps) {
   return (
     <div className="h-full overflow-auto p-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -43,18 +49,28 @@ export default function AppointmentsPage({ onChatClick }: AppointmentsPageProps)
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-xl font-black text-gray-900">{apt.memberName}</h3>
-                      <div className="text-sm text-gray-600 font-medium">{apt.department}</div>
+                      <h3 className="text-xl font-black text-gray-900">
+                        {apt.memberName}
+                      </h3>
+                      <div className="text-sm text-gray-600 font-medium">
+                        {apt.department}
+                      </div>
                     </div>
                   </div>
-                  <Badge className={`${
-                    apt.status === "scheduled" ? "bg-blue-500" :
-                    apt.status === "completed" ? "bg-green-500" :
-                    "bg-gray-500"
-                  } text-white font-bold border-0`}>
-                    {apt.status === "scheduled" ? "예정" :
-                     apt.status === "completed" ? "완료" :
-                     "취소"}
+                  <Badge
+                    className={`${
+                      apt.status === "scheduled"
+                        ? "bg-blue-500"
+                        : apt.status === "completed"
+                        ? "bg-green-500"
+                        : "bg-gray-500"
+                    } text-white font-bold border-0`}
+                  >
+                    {apt.status === "scheduled"
+                      ? "예정"
+                      : apt.status === "completed"
+                      ? "완료"
+                      : "취소"}
                   </Badge>
                 </div>
 

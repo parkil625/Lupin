@@ -7,23 +7,21 @@
  * - 검색 및 필터링 기능
  */
 
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Heart,
   MessageCircle,
   Search,
   X,
   Sparkles,
-  Send,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Feed, Comment } from "@/types/dashboard.types";
+import { Feed } from "@/types/dashboard.types";
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -35,16 +33,6 @@ interface FeedViewProps {
   setFeedImageIndex: (feedId: number, index: number) => void;
   hasLiked: (feedId: number) => boolean;
   handleLike: (feedId: number) => void;
-  feedComments: { [key: number]: Comment[] };
-  showCommentsInFeed: boolean;
-  setShowCommentsInFeed: (show: boolean) => void;
-  selectedFeed: Feed | null;
-  setSelectedFeed: (feed: Feed | null) => void;
-  replyingTo: number | null;
-  setReplyingTo: (id: number | null) => void;
-  newComment: string;
-  setNewComment: (comment: string) => void;
-  handleAddComment: (feedId: number) => void;
   feedContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -58,16 +46,6 @@ export default function FeedView({
   setFeedImageIndex,
   hasLiked,
   handleLike,
-  feedComments,
-  showCommentsInFeed,
-  setShowCommentsInFeed,
-  selectedFeed,
-  setSelectedFeed,
-  replyingTo,
-  setReplyingTo,
-  newComment,
-  setNewComment,
-  handleAddComment,
   feedContainerRef,
 }: FeedViewProps) {
   return (

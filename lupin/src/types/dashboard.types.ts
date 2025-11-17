@@ -19,6 +19,8 @@ export interface Feed {
   isMine?: boolean;
   currentImageIndex?: number;
   likedBy?: string[];
+  edited?: boolean;
+  streak?: number;
 }
 
 export interface Comment {

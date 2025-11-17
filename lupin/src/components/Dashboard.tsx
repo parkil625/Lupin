@@ -25,6 +25,7 @@ import AppointmentDialog from "./dashboard/dialogs/AppointmentDialog";
 import ChatDialog from "./dashboard/dialogs/ChatDialog";
 import PrescriptionFormDialog from "./dashboard/dialogs/PrescriptionFormDialog";
 import MemberDetailDialog from "./dashboard/dialogs/MemberDetailDialog";
+import EditFeedDialog from "./dashboard/dialogs/EditFeedDialog";
 import MembersPage from "./dashboard/members/MembersPage";
 import AppointmentsPage from "./dashboard/appointments/AppointmentsPage";
 import DoctorChatPage from "./dashboard/chat/DoctorChatPage";
@@ -85,6 +86,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [myFeeds, setMyFeeds] = useState<Feed[]>(initialMyFeeds);
   const [allFeeds, setAllFeeds] = useState<Feed[]>(initialAllFeeds);
   const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>([]);
+  const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const navItems = userType === "member" ? memberNavItems : doctorNavItems;
   const getFeedImageIndex = (feedId: number) => feedImageIndexes[feedId] || 0;
@@ -96,6 +99,39 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     setAllFeeds(allFeeds.map(feed => feed.id === feedId ? { ...feed, likes: hasLiked ? feed.likes - 1 : feed.likes + 1 } : feed));
   };
   const hasLiked = (feedId: number) => (feedLikes[feedId] || []).includes("김루핀");
+
+  const handleEditFeed = (feed: Feed) => {
+    setEditingFeed(feed);
+    setShowEditDialog(true);
+    setShowFeedDetailInHome(false);
+  };
+
+  const handleUpdateFeed = (
+    feedId: number,
+    images: string[],
+    content: string,
+    workoutType: string,
+    _startImage: string | null,
+    _endImage: string | null
+  ) => {
+    setMyFeeds(myFeeds.map(feed =>
+      feed.id === feedId
+        ? { ...feed, images, content, activity: workoutType, time: "방금 전", edited: true }
+        : feed
+    ));
+    setAllFeeds(allFeeds.map(feed =>
+      feed.id === feedId
+        ? { ...feed, images, content, activity: workoutType, time: "방금 전", edited: true }
+        : feed
+    ));
+    toast.success("피드가 수정되었습니다!");
+  };
+
+  const handleDeleteFeed = (feedId: number) => {
+    setMyFeeds(myFeeds.filter(feed => feed.id !== feedId));
+    setAllFeeds(allFeeds.filter(feed => feed.id !== feedId));
+    toast.success("피드가 삭제되었습니다!");
+  };
 
   if (userType === "doctor") {
     return (
@@ -146,7 +182,16 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         onOpenChange={() => { setShowFeedDetailInHome(false); setSelectedFeed(null); }}
         currentImageIndex={selectedFeed ? getFeedImageIndex(selectedFeed.id) : 0}
         onPrevImage={() => selectedFeed && setFeedImageIndex(selectedFeed.id, Math.max(0, getFeedImageIndex(selectedFeed.id) - 1))}
-        onNextImage={() => selectedFeed && setFeedImageIndex(selectedFeed.id, Math.min(selectedFeed.images.length - 1, getFeedImageIndex(selectedFeed.id) + 1))} />
+        onNextImage={() => selectedFeed && setFeedImageIndex(selectedFeed.id, Math.min(selectedFeed.images.length - 1, getFeedImageIndex(selectedFeed.id) + 1))}
+        onEdit={handleEditFeed}
+        onDelete={handleDeleteFeed} />
+
+      <EditFeedDialog
+        feed={editingFeed}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onSave={handleUpdateFeed}
+      />
 
       <PrescriptionModal prescription={selectedPrescription} open={!!selectedPrescription} onOpenChange={() => setSelectedPrescription(null)} onDownload={() => toast.success("처방전 PDF 다운로드를 시작합니다.")} />
 

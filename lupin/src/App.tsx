@@ -58,7 +58,7 @@ export default function App() {
     if (username.toLowerCase() === "doctor") {
       setUserType("doctor");
     } else {
-      setUserType("patient");
+      setUserType("member");
     }
     setIsLoggedIn(true);
   };

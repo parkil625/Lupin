@@ -118,20 +118,20 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   return (
     <div className="h-screen w-screen overflow-hidden relative">
       <AnimatedBackground variant="member" />
-      <Sidebar expanded={sidebarExpanded} onExpandChange={setSidebarExpanded} navItems={navItems} selectedNav={selectedNav} onNavSelect={setSelectedNav} userType="member" profileImage={profileImage}>
+      <Sidebar expanded={sidebarExpanded || showNotifications} onExpandChange={(expanded) => !showNotifications && setSidebarExpanded(expanded)} navItems={navItems} selectedNav={selectedNav} onNavSelect={setSelectedNav} userType="member" profileImage={profileImage}>
         <div className="relative mb-2" onMouseEnter={(e) => e.stopPropagation()} onMouseLeave={(e) => e.stopPropagation()}>
           <button onClick={() => setShowNotifications(!showNotifications)} className="relative w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/30 transition-all">
             <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
               <Bell className="w-7 h-7 text-gray-700" />
               {notifications.filter(n => !n.read).length > 0 && <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>}
             </div>
-            <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ${sidebarExpanded ? 'opacity-100' : 'opacity-0 w-0'}`}>알림</span>
+            <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ${(sidebarExpanded || showNotifications) ? 'opacity-100' : 'opacity-0 w-0'}`}>알림</span>
           </button>
-          {showNotifications && <NotificationPopup notifications={notifications} onClose={() => setShowNotifications(false)} />}
+          {showNotifications && <NotificationPopup notifications={notifications} onClose={(closeSidebar = true) => { setShowNotifications(false); if (closeSidebar) setSidebarExpanded(false); }} />}
         </div>
       </Sidebar>
 
-      <div className={`h-full transition-all duration-300 ${sidebarExpanded ? 'ml-64' : 'ml-20'}`}>
+      <div className={`h-full transition-all duration-300 ${(sidebarExpanded || showNotifications) ? 'ml-64' : 'ml-20'}`}>
         {selectedNav === "home" && <HomeView challengeJoined={challengeJoined} handleJoinChallenge={() => { toast.success("응모가 완료되었습니다!"); setChallengeJoined(true); }}
           profileImage={profileImage} myFeeds={myFeeds} setSelectedFeed={setSelectedFeed} setFeedImageIndex={setFeedImageIndex} setShowFeedDetailInHome={setShowFeedDetailInHome} />}
         {selectedNav === "feed" && <FeedView allFeeds={allFeeds} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearch={showSearch} setShowSearch={setShowSearch}

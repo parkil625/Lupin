@@ -31,7 +31,7 @@ interface SidebarProps {
 
 export default function Sidebar({ expanded, onExpandChange, navItems, selectedNav, onNavSelect, userType, profileImage, children }: SidebarProps) {
   return (
-    <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ${expanded ? 'w-64' : 'w-20'}`}
+    <div data-sidebar="true" className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ${expanded ? 'w-64' : 'w-20'}`}
       onMouseEnter={() => onExpandChange(true)} onMouseLeave={() => onExpandChange(false)}>
       <div className="absolute inset-0 backdrop-blur-3xl bg-white/40 border-r border-white/60 shadow-2xl"></div>
       <div className="relative h-full flex flex-col p-4">

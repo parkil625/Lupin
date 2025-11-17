@@ -198,8 +198,6 @@ export default function FeedView({
                             className="flex flex-col items-center gap-1 group"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedFeed(feed);
-                              setShowCommentsInFeed(true);
                             }}
                           >
                             <div className="w-12 h-12 rounded-full backdrop-blur-xl bg-white/20 border border-white/30 flex items-center justify-center hover:scale-110 transition-transform">

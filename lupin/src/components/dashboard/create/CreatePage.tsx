@@ -3,227 +3,367 @@
  *
  * 피드 작성 페이지 컴포넌트
  * - 운동 인증 사진 업로드
- * - 드래그 앤 드롭 이미지 업로드
- * - 운동 정보 입력 폼
+ * - BlockNote 에디터 사용
+ * - 운동 시작/끝 사진 업로드
  */
 
-import React, { useState, useEffect, useRef } from "react";
-import { Card } from "@/components/ui/card";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CheckCircle, X, Zap } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { X, Zap, CheckCircle, Camera, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Feed } from "@/types/dashboard.types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCreateBlockNote } from "@blocknote/react";
+import { BlockNoteView } from "@blocknote/mantine";
+import "@blocknote/mantine/style.css";
 
 interface CreatePageProps {
   onCreatePost: (newFeed: Feed) => void;
 }
 
+const WORKOUT_TYPES = [
+  "런닝",
+  "걷기",
+  "사이클",
+  "수영",
+  "웨이트",
+  "요가",
+  "필라테스",
+  "크로스핏",
+  "등산",
+  "기타"
+];
+
 export default function CreatePage({ onCreatePost }: CreatePageProps) {
-  const [postImages, setPostImages] = useState<string[]>([]);
-  const [postContent, setPostContent] = useState("");
-  const [isWorkoutVerified, setIsWorkoutVerified] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [startImage, setStartImage] = useState<string | null>(null);
+  const [endImage, setEndImage] = useState<string | null>(null);
+  const [otherImages, setOtherImages] = useState<string[]>([]);
+  const [workoutType, setWorkoutType] = useState<string>("");
 
-  const handleCreatePost = () => {
-    if (postImages.length === 0 || !postContent) {
-      toast.error("이미지와 내용을 모두 입력해주세요!");
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  const editor = useCreateBlockNote();
+
+  const handleCreatePost = async () => {
+    const images = [
+      startImage,
+      endImage,
+      ...otherImages
+    ].filter(Boolean) as string[];
+
+    if (images.length === 0) {
+      toast.error("최소 1개의 이미지를 업로드해주세요!");
       return;
     }
 
-    if (!isWorkoutVerified) {
-      toast.error("운동 인증이 필요합니다!");
+    if (!workoutType) {
+      toast.error("운동 종류를 선택해주세요!");
       return;
     }
+
+    if (!isVerified) {
+      toast.error("운동 시작과 끝 사진이 필요합니다!");
+      return;
+    }
+
+    const blocks = editor.document;
+    const contentJson = JSON.stringify(blocks);
+
+    // 임시 점수 계산 (추후 백엔드에서 사진 메타데이터 기반으로 계산)
+    const workoutMinutes = 30; // 임시값
+    const points = Math.floor(workoutMinutes / 5) * 5; // 5분당 5점
 
     const newFeed: Feed = {
       id: Date.now(),
       author: "김루핀",
       avatar: "김",
-      activity: "운동",
-      duration: "30분",
-      points: 20,
-      content: postContent,
-      images: postImages,
+      activity: workoutType,
+      duration: `${workoutMinutes}분`,
+      points: points,
+      content: contentJson,
+      images: images,
       likes: 0,
       comments: 0,
       time: "방금 전",
-      stats: { workout: "+20" },
+      stats: { workout: `+${points}` },
       isMine: true,
       likedBy: []
     };
 
     onCreatePost(newFeed);
     toast.success("피드가 작성되었습니다!");
-    setPostImages([]);
-    setPostContent("");
-    setIsWorkoutVerified(false);
+
+    // 초기화
+    setStartImage(null);
+    setEndImage(null);
+    setOtherImages([]);
+    setWorkoutType("");
   };
 
-  useEffect(() => {
-    if (postImages.length > 0) {
-      const timer = setTimeout(() => {
-        setIsWorkoutVerified(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      const timer = setTimeout(() => {
-        setIsWorkoutVerified(false);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [postImages]);
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: 'start' | 'end' | 'upload'
+  ) => {
+    const files = type === 'upload' ? Array.from(e.target.files || []) : [e.target.files?.[0]].filter(Boolean) as File[];
 
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
+    files.forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const imageData = event.target.result as string;
+          if (type === 'start') setStartImage(imageData);
+          else if (type === 'end') setEndImage(imageData);
+          else setOtherImages(prev => [...prev, imageData]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent, type: 'start' | 'end' | 'upload') => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
 
     const files = Array.from(e.dataTransfer.files);
     files.forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            setPostImages(prev => [...prev, event.target!.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
+      if (!file.type.startsWith('image/')) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const imageData = event.target.result as string;
+          if (type === 'start') setStartImage(imageData);
+          else if (type === 'end') setEndImage(imageData);
+          else setOtherImages(prev => [...prev, imageData]);
+        }
+      };
+      reader.readAsDataURL(file);
     });
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    files.forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            setPostImages(prev => [...prev, event.target!.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-  };
+  const isVerified = startImage && endImage;
 
   return (
-    <div className="h-full overflow-auto p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-5xl font-black text-gray-900 mb-2">새 피드 작성</h1>
-          <p className="text-gray-700 font-medium text-lg">운동 기록을 공유하세요</p>
+    <div className="h-full overflow-hidden flex">
+      {/* Left Sidebar */}
+      <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto flex-shrink-0">
+        <h2 className="text-xl font-black text-gray-900 mb-4">새 피드 작성</h2>
+
+        {/* Workout Type */}
+        <div className="mb-4">
+          <Label className="text-xs font-bold text-gray-900 mb-2 block">운동 종류</Label>
+          <Select value={workoutType} onValueChange={setWorkoutType}>
+            <SelectTrigger className="w-full bg-white border-gray-300 text-sm">
+              <SelectValue placeholder="운동 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              {WORKOUT_TYPES.map(type => (
+                <SelectItem key={type} value={type}>{type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl">
-          <div className="p-8 space-y-6">
-            {/* Image Upload Area - Wide with Drag & Drop */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-4 mb-2">
-                <Label className="text-base font-black text-gray-900">이미지</Label>
-                {isWorkoutVerified && (
-                  <Badge className="bg-green-500 text-white px-4 py-2 font-bold border-0">
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    운동 인증 완료
-                  </Badge>
-                )}
-              </div>
+        {/* Verification Badge */}
+        {isVerified && (
+          <Badge className="bg-green-500 text-white px-3 py-1.5 font-bold border-0 mb-4 w-full justify-center text-xs">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            운동 인증 완료
+          </Badge>
+        )}
 
-              <div
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`w-full h-32 rounded-2xl border-2 border-dashed transition-all cursor-pointer ${
-                  isDragging
-                    ? 'border-[#C93831] bg-red-50'
-                    : 'border-gray-300 hover:border-[#C93831] bg-white/50'
-                }`}
-              >
-                <div className="h-full flex flex-col items-center justify-center gap-2">
-                  <Upload className="w-8 h-8 text-gray-400" />
-                  <span className="font-bold text-gray-600 text-sm">
-                    클릭하거나 드래그하여 이미지 첨부
-                  </span>
+        {/* 2x2 Photo Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* Start Image */}
+          <div>
+            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">시작 사진</Label>
+            <div
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => handleFileSelect(e as any, 'start');
+                input.click();
+              }}
+              onDrop={(e) => handleDrop(e, 'start')}
+              onDragOver={(e) => e.preventDefault()}
+              className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-[#C93831] bg-gray-50 cursor-pointer overflow-visible"
+            >
+              {startImage ? (
+                <>
+                  <img src={startImage} alt="Start" className="w-full h-full object-cover rounded-lg" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStartImage(null);
+                    }}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                  <Camera className="w-6 h-6 text-gray-400" />
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
 
+          {/* End Image */}
+          <div>
+            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">끝 사진</Label>
+            <div
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => handleFileSelect(e as any, 'end');
+                input.click();
+              }}
+              onDrop={(e) => handleDrop(e, 'end')}
+              onDragOver={(e) => e.preventDefault()}
+              className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-[#C93831] bg-gray-50 cursor-pointer overflow-visible"
+            >
+              {endImage ? (
+                <>
+                  <img src={endImage} alt="End" className="w-full h-full object-cover rounded-lg" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEndImage(null);
+                    }}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                  <Camera className="w-6 h-6 text-gray-400" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Other Images */}
+          <div>
+            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">기타 사진</Label>
+            <div className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 overflow-visible">
+              {otherImages.length > 0 ? (
+                <div className="absolute inset-0 flex items-center justify-center p-2">
+                  <div className="relative w-full h-full">
+                    {otherImages.slice(0, 3).map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="absolute w-16 h-16 rounded-md border-2 border-white shadow-md overflow-visible"
+                        style={{
+                          left: `${idx * 12}px`,
+                          top: `${idx * 8}px`,
+                          zIndex: 3 - idx
+                        }}
+                      >
+                        <img src={img} alt={`Other ${idx}`} className="w-full h-full object-cover rounded-md" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOtherImages(otherImages.filter((_, i) => i !== idx));
+                          }}
+                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {otherImages.length > 1 && (
+                      <div className="absolute right-2 bottom-2 bg-[#C93831] text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-10">
+                        {otherImages.length}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs text-gray-400">없음</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Upload Cell */}
+          <div>
+            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">업로드</Label>
+            <div
+              onClick={() => uploadInputRef.current?.click()}
+              onDrop={(e) => handleDrop(e, 'upload')}
+              onDragOver={(e) => e.preventDefault()}
+              className="relative aspect-square rounded-lg border-2 border-dashed border-[#C93831] bg-red-50 hover:bg-red-100 cursor-pointer flex items-center justify-center"
+            >
+              <Upload className="w-8 h-8 text-[#C93831]" />
               <input
-                ref={fileInputRef}
+                ref={uploadInputRef}
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={handleFileSelect}
+                onChange={(e) => handleFileSelect(e, 'upload')}
                 className="hidden"
               />
             </div>
-
-            {/* Image Preview List - Fixed X button with higher z-index */}
-            {postImages.length > 0 && (
-              <ScrollArea className="max-h-40">
-                <div className="flex gap-3 pb-2">
-                  {postImages.map((img, idx) => (
-                    <div key={idx} className="relative flex-shrink-0" style={{ width: '136px', height: '136px' }}>
-                      <div className="w-32 h-32 rounded-xl overflow-hidden bg-gray-100">
-                        <img src={img} alt={`Upload ${idx + 1}`} className="w-full h-full object-contain" />
-                      </div>
-                      <button
-                        onClick={() => setPostImages(postImages.filter((_, i) => i !== idx))}
-                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-[100] pointer-events-auto"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-
-            {/* Content - Taller */}
-            <div className="space-y-3">
-              <Label className="text-base font-black text-gray-900">내용</Label>
-              <Textarea
-                placeholder="오늘의 운동은 어땠나요? 자세히 공유해주세요..."
-                value={postContent}
-                onChange={(e) => setPostContent(e.target.value)}
-                className="min-h-[400px] rounded-2xl bg-white border-2 border-gray-200 focus:border-[#C93831] font-medium text-base resize-none transition-all"
-              />
-            </div>
-
-            {/* Submit */}
-            <Button
-              onClick={handleCreatePost}
-              disabled={!isWorkoutVerified}
-              className="w-full h-16 rounded-2xl bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-black text-xl border-0 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Zap className="w-6 h-6 mr-2" />
-              게시하기
-            </Button>
           </div>
-        </Card>
+        </div>
+
+        {/* Submit Button */}
+        <Button
+          onClick={handleCreatePost}
+          disabled={!isVerified}
+          className="w-full h-10 rounded-lg bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold text-sm border-0 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Zap className="w-4 h-4 mr-1" />
+          게시하기
+        </Button>
+      </div>
+
+      {/* Right Editor */}
+      <div className="w-[475px] bg-white flex-shrink-0 flex flex-col">
+        <ScrollArea className="flex-1 w-[475px]" style={{ width: '475px', maxWidth: '475px' }}>
+          <style>{`
+            .bn-editor {
+              max-width: 443px !important;
+              width: 443px !important;
+            }
+            .bn-container {
+              max-width: 475px !important;
+              width: 475px !important;
+            }
+            .bn-block-content {
+              max-width: 443px !important;
+            }
+            .bn-inline-content {
+              word-wrap: break-word !important;
+              overflow-wrap: break-word !important;
+            }
+            [data-radix-scroll-area-viewport] {
+              width: 475px !important;
+              max-width: 475px !important;
+            }
+          `}</style>
+          <div style={{ minWidth: '475px', width: '475px' }}>
+            <div style={{ padding: '1rem' }}>
+              <BlockNoteView editor={editor} theme="light" />
+            </div>
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );

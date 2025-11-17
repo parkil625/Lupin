@@ -9,16 +9,14 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar";
 import {
   Heart,
   MessageCircle,
   Sparkles,
   Flame,
   Award,
-  Target,
-  Zap,
+  User,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import AdPopupDialog from "../dialogs/AdPopupDialog";
@@ -36,7 +34,6 @@ interface HomeProps {
 const AD_POPUP_KEY = "adPopupHiddenUntil";
 
 export default function Home({
-  challengeJoined,
   handleJoinChallenge,
   profileImage,
   myFeeds,
@@ -104,7 +101,7 @@ export default function Home({
         {/* Profile Header */}
         <div className="p-8">
           <div className="flex items-start gap-8 mb-8">
-            <Avatar className="w-40 h-40 border-4 border-white shadow-xl">
+            <Avatar className="w-40 h-40 border-4 border-white shadow-xl bg-gray-100">
               {profileImage ? (
                 <img
                   src={profileImage}
@@ -112,9 +109,9 @@ export default function Home({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white text-5xl font-black">
-                  김
-                </AvatarFallback>
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                  <User className="w-20 h-20 text-gray-400" />
+                </div>
               )}
             </Avatar>
 
@@ -123,30 +120,22 @@ export default function Home({
 
               <div className="flex gap-8 mb-4">
                 <div>
-                  <div className="text-2xl font-black text-[#C93831]">
-                    {myFeeds.length}
-                  </div>
-                  <div className="text-xs text-gray-600 font-bold">게시물</div>
+                  <span className="text-sm text-gray-600 font-bold">게시물 </span>
+                  <span className="text-sm font-black text-[#C93831]">{myFeeds.length}</span>
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-[#C93831]">240</div>
-                  <div className="text-xs text-gray-600 font-bold">총 점수</div>
+                  <span className="text-sm text-gray-600 font-bold">이번 달 점수 </span>
+                  <span className="text-sm font-black text-[#C93831]">30</span>
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-[#C93831]">8</div>
-                  <div className="text-xs text-gray-600 font-bold">추첨권</div>
+                  <span className="text-sm text-gray-600 font-bold">추첨권 </span>
+                  <span className="text-sm font-black text-[#C93831]">1</span>
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-[#C93831]">#12</div>
-                  <div className="text-xs text-gray-600 font-bold">순위</div>
+                  <span className="text-sm text-gray-600 font-bold">순위 </span>
+                  <span className="text-sm font-black text-[#C93831]">#12</span>
                 </div>
               </div>
-
-              <p className="text-gray-700 font-medium text-sm mb-3">
-                🏃‍♂️ 건강한 습관 만들기
-                <br />
-                💪 매일 운동 챌린지 진행중
-              </p>
 
               <div className="flex gap-2 flex-wrap">
                 <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
@@ -156,10 +145,6 @@ export default function Home({
                 <Badge className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
                   <Award className="w-3 h-3 mr-1" />
                   TOP 20
-                </Badge>
-                <Badge className="bg-gradient-to-r from-blue-400 to-cyan-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                  <Target className="w-3 h-3 mr-1" />
-                  목표 달성
                 </Badge>
               </div>
             </div>

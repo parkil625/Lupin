@@ -16,9 +16,10 @@ export const myFeeds: Feed[] = [
     likes: 45,
     comments: 8,
     time: "3시간 전",
-    stats: { strength: "+15", endurance: "+10" },
+    stats: { strength: "+15", endurance: "+10", calories: "450kcal" },
     isMine: true,
-    likedBy: []
+    likedBy: [],
+    streak: 7
   },
   {
     id: 2,
@@ -37,7 +38,8 @@ export const myFeeds: Feed[] = [
     time: "1일 전",
     stats: { cardio: "+20", calories: "320kcal" },
     isMine: true,
-    likedBy: []
+    likedBy: [],
+    streak: 6
   },
   {
     id: 3,
@@ -51,9 +53,10 @@ export const myFeeds: Feed[] = [
     likes: 28,
     comments: 4,
     time: "2일 전",
-    stats: { flexibility: "+25", mindfulness: "+30" },
+    stats: { flexibility: "+25", mindfulness: "+30", calories: "180kcal" },
     isMine: true,
-    likedBy: []
+    likedBy: [],
+    streak: 5
   },
   {
     id: 4,
@@ -67,9 +70,10 @@ export const myFeeds: Feed[] = [
     likes: 20,
     comments: 3,
     time: "3일 전",
-    stats: { cardio: "+20" },
+    stats: { cardio: "+20", calories: "380kcal" },
     isMine: true,
-    likedBy: []
+    likedBy: [],
+    streak: 4
   },
   {
     id: 5,
@@ -83,9 +87,10 @@ export const myFeeds: Feed[] = [
     likes: 18,
     comments: 2,
     time: "4일 전",
-    stats: { core: "+30" },
+    stats: { core: "+30", calories: "250kcal" },
     isMine: true,
-    likedBy: []
+    likedBy: [],
+    streak: 3
   }
 ];
 
@@ -106,8 +111,9 @@ export const allFeeds: Feed[] = [
     likes: 124,
     comments: 23,
     time: "2시간 전",
-    stats: { strength: "+15", endurance: "+10" },
-    likedBy: []
+    stats: { strength: "+15", endurance: "+10", calories: "480kcal" },
+    likedBy: [],
+    streak: 10
   },
   {
     id: 6,
@@ -125,7 +131,8 @@ export const allFeeds: Feed[] = [
     comments: 15,
     time: "5시간 전",
     stats: { cardio: "+20", calories: "520kcal" },
-    likedBy: []
+    likedBy: [],
+    streak: 14
   },
   {
     id: 7,
@@ -139,7 +146,8 @@ export const allFeeds: Feed[] = [
     likes: 67,
     comments: 12,
     time: "1일 전",
-    stats: { flexibility: "+25", mindfulness: "+30" },
-    likedBy: []
+    stats: { flexibility: "+25", mindfulness: "+30", calories: "200kcal" },
+    likedBy: [],
+    streak: 5
   }
 ];

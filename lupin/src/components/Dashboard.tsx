@@ -8,7 +8,7 @@
  * - 각 페이지 컴포넌트의 Props 전달 및 이벤트 핸들링
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
 import { Home, Video, Trophy, Calendar as CalendarIcon, PlusSquare, Users, MessageCircle } from "lucide-react";
@@ -31,9 +31,8 @@ import DoctorChatPage from "./dashboard/chat/DoctorChatPage";
 import DoctorProfilePage from "./dashboard/profile/DoctorProfilePage";
 import CreatePage from "./dashboard/create/CreatePage";
 import MemberProfilePage from "./dashboard/profile/MemberProfilePage";
-import { Feed, Comment, Prescription, Notification, Member } from "@/types/dashboard.types";
+import { Feed, Prescription, Notification, Member, ChatMessage } from "@/types/dashboard.types";
 import { myFeeds as initialMyFeeds, allFeeds as initialAllFeeds } from "@/mockdata/feeds";
-import { initialComments } from "@/mockdata/comments";
 import { initialNotifications } from "@/mockdata/notifications";
 
 interface DashboardProps {
@@ -65,7 +64,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
-  const [showCommentsInFeed, setShowCommentsInFeed] = useState(false);
   const [showFeedDetailInHome, setShowFeedDetailInHome] = useState(false);
   const feedContainerRef = useRef<HTMLDivElement>(null);
   const [challengeJoined, setChallengeJoined] = useState(false);
@@ -82,16 +80,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(null);
-  const [feedComments, setFeedComments] = useState<{[key: number]: Comment[]}>({});
   const [feedLikes, setFeedLikes] = useState<{[key: number]: string[]}>({});
-  const [newComment, setNewComment] = useState("");
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const [notifications] = useState<Notification[]>(initialNotifications);
   const [myFeeds, setMyFeeds] = useState<Feed[]>(initialMyFeeds);
   const [allFeeds, setAllFeeds] = useState<Feed[]>(initialAllFeeds);
-  const [medicalChatMessages, setMedicalChatMessages] = useState<any[]>([]);
-
-  useEffect(() => { setFeedComments(initialComments); }, []);
+  const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>([]);
 
   const navItems = userType === "member" ? memberNavItems : doctorNavItems;
   const getFeedImageIndex = (feedId: number) => feedImageIndexes[feedId] || 0;
@@ -103,20 +96,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     setAllFeeds(allFeeds.map(feed => feed.id === feedId ? { ...feed, likes: hasLiked ? feed.likes - 1 : feed.likes + 1 } : feed));
   };
   const hasLiked = (feedId: number) => (feedLikes[feedId] || []).includes("김루핀");
-  const handleAddComment = (feedId: number) => {
-    if (!newComment.trim()) return;
-    const comment: Comment = { id: Date.now(), author: "김루핀", avatar: "김", content: newComment, time: "방금 전", parentId: replyingTo || undefined, replies: [] };
-    const currentComments = feedComments[feedId] || [];
-    if (replyingTo) {
-      const updatedComments = currentComments.map(c => c.id === replyingTo ? { ...c, replies: [...(c.replies || []), comment] } : c);
-      setFeedComments({ ...feedComments, [feedId]: updatedComments });
-    } else {
-      setFeedComments({ ...feedComments, [feedId]: [...currentComments, comment] });
-    }
-    setAllFeeds(allFeeds.map(feed => feed.id === feedId ? { ...feed, comments: feed.comments + 1 } : feed));
-    setNewComment("");
-    setReplyingTo(null);
-  };
 
   if (userType === "doctor") {
     return (
@@ -140,7 +119,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     <div className="h-screen w-screen overflow-hidden relative">
       <AnimatedBackground variant="member" />
       <Sidebar expanded={sidebarExpanded} onExpandChange={setSidebarExpanded} navItems={navItems} selectedNav={selectedNav} onNavSelect={setSelectedNav} userType="member" profileImage={profileImage}>
-        <div className="relative mb-2">
+        <div className="relative mb-2" onMouseEnter={(e) => e.stopPropagation()} onMouseLeave={(e) => e.stopPropagation()}>
           <button onClick={() => setShowNotifications(!showNotifications)} className="relative w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/30 transition-all">
             <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
               <Bell className="w-7 h-7 text-gray-700" />
@@ -156,9 +135,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         {selectedNav === "home" && <HomeView challengeJoined={challengeJoined} handleJoinChallenge={() => { toast.success("응모가 완료되었습니다!"); setChallengeJoined(true); }}
           profileImage={profileImage} myFeeds={myFeeds} setSelectedFeed={setSelectedFeed} setFeedImageIndex={setFeedImageIndex} setShowFeedDetailInHome={setShowFeedDetailInHome} />}
         {selectedNav === "feed" && <FeedView allFeeds={allFeeds} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearch={showSearch} setShowSearch={setShowSearch}
-          getFeedImageIndex={getFeedImageIndex} setFeedImageIndex={setFeedImageIndex} hasLiked={hasLiked} handleLike={handleLike} feedComments={feedComments}
-          showCommentsInFeed={showCommentsInFeed} setShowCommentsInFeed={setShowCommentsInFeed} selectedFeed={selectedFeed} setSelectedFeed={setSelectedFeed}
-          replyingTo={replyingTo} setReplyingTo={setReplyingTo} newComment={newComment} setNewComment={setNewComment} handleAddComment={handleAddComment} feedContainerRef={feedContainerRef} />}
+          getFeedImageIndex={getFeedImageIndex} setFeedImageIndex={setFeedImageIndex} hasLiked={hasLiked} handleLike={handleLike} feedContainerRef={feedContainerRef} />}
         {selectedNav === "ranking" && <RankingView />}
         {selectedNav === "medical" && <MedicalView setShowAppointment={setShowAppointment} setShowChat={setShowChat} setSelectedPrescription={setSelectedPrescription} />}
         {selectedNav === "create" && <CreatePage onCreatePost={(newFeed) => { setMyFeeds([newFeed, ...myFeeds]); }} />}

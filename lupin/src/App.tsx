@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent } from "./components/ui/card";
 import { Badge } from "./components/ui/badge";
@@ -8,21 +8,17 @@ import {
   Trophy,
   Users,
   Dumbbell,
-  Video,
   Award,
   ArrowRight,
   Check,
-  Star,
   BarChart3,
   Search,
   Zap,
   Calendar,
   Target,
-  Clock,
   MessageCircle,
   FileText,
-  UserCircle,
-  Activity
+  UserCircle
 } from "lucide-react";
 import { Toaster } from "./components/ui/sonner";
 import Login from "./components/auth/Login";

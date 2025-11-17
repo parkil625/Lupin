@@ -8,11 +8,13 @@
  * - 프로필 아바타 및 로고 표시
  */
 
+import React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { LucideIcon } from "lucide-react";
 
 interface NavItem {
   id: string;
-  icon: any;
+  icon: LucideIcon;
   label: string;
 }
 

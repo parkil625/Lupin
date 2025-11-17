@@ -7,7 +7,7 @@
  * - 운동 정보 입력 폼
  */
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -66,11 +66,15 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
 
   useEffect(() => {
     if (postImages.length > 0) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setIsWorkoutVerified(true);
       }, 1000);
+      return () => clearTimeout(timer);
     } else {
-      setIsWorkoutVerified(false);
+      const timer = setTimeout(() => {
+        setIsWorkoutVerified(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [postImages]);
 

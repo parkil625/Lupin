@@ -6,6 +6,7 @@
  * - 점수 현황 및 프로필 정보 표시
  */
 
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -20,6 +21,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
+import AdPopupDialog from "../dialogs/AdPopupDialog";
 
 interface HomeProps {
   challengeJoined: boolean;
@@ -31,6 +33,8 @@ interface HomeProps {
   setShowFeedDetailInHome: (show: boolean) => void;
 }
 
+const AD_POPUP_KEY = "adPopupHiddenUntil";
+
 export default function Home({
   challengeJoined,
   handleJoinChallenge,
@@ -40,45 +44,62 @@ export default function Home({
   setFeedImageIndex,
   setShowFeedDetailInHome,
 }: HomeProps) {
+  const [showAdPopup, setShowAdPopup] = useState(false);
+
+  useEffect(() => {
+    // 개발/테스트 모드: URL에 ?showAd=true가 있으면 강제로 표시
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceShowAd = urlParams.get('showAd') === 'true';
+
+    if (forceShowAd) {
+      console.log("광고 팝업 강제 표시 (테스트 모드)");
+      localStorage.removeItem(AD_POPUP_KEY);
+      const timer = setTimeout(() => {
+        setShowAdPopup(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+
+    // 페이지 로드 시 광고 팝업 표시 여부 확인
+    const hiddenUntil = localStorage.getItem(AD_POPUP_KEY);
+    if (hiddenUntil) {
+      const hiddenTime = parseInt(hiddenUntil);
+      if (Date.now() < hiddenTime) {
+        // 아직 숨김 시간이 유효함
+        console.log("광고 팝업 숨김 중 (남은 시간:", Math.floor((hiddenTime - Date.now()) / 1000 / 60), "분)");
+        console.log("테스트하려면 URL에 ?showAd=true를 추가하거나 콘솔에서 localStorage.removeItem('adPopupHiddenUntil')을 실행하세요");
+        return;
+      } else {
+        // 숨김 시간이 만료됨, localStorage에서 제거
+        localStorage.removeItem(AD_POPUP_KEY);
+      }
+    }
+    // 1초 후 광고 팝업 표시
+    const timer = setTimeout(() => {
+      console.log("광고 팝업 표시");
+      setShowAdPopup(true);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleCloseAdPopup = () => {
+    setShowAdPopup(false);
+  };
+
+  const handleDontShowFor24Hours = () => {
+    const hideUntil = Date.now() + 24 * 60 * 60 * 1000; // 24시간 후
+    localStorage.setItem(AD_POPUP_KEY, hideUntil.toString());
+    setShowAdPopup(false);
+  };
+
+  const handleJoinChallengeFromPopup = () => {
+    handleJoinChallenge();
+    setShowAdPopup(false);
+  };
+
   return (
     <div className="h-full overflow-auto p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Wellness Challenge Banner */}
-        {!challengeJoined && (
-          <Card className="backdrop-blur-2xl bg-white/70 border border-gray-200 shadow-xl overflow-hidden relative">
-            <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2 flex-1">
-                  <Badge className="bg-gradient-to-r from-[#C93831] to-pink-500 text-white px-4 py-1.5 font-bold border-0">
-                    <Zap className="w-4 h-4 mr-1" />
-                    진행중
-                  </Badge>
-                  <h2 className="text-3xl font-black text-gray-900">
-                    웰빙 챌린지
-                  </h2>
-                  <p className="text-gray-700 font-medium">
-                    오늘 오후 6시 시작 | 선착순 100명 특별 보상
-                  </p>
-                </div>
-
-                <div className="relative w-48 h-48 flex-shrink-0">
-                  <img
-                    src="https://images.unsplash.com/photo-1762328500413-1a4cb2023059?w=400"
-                    alt="Supplements"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleJoinChallenge}
-                  className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold px-6 py-5 rounded-2xl shadow-xl border-0 ml-6"
-                >
-                  참여하기
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
 
         {/* Profile Header */}
         <div className="p-8">
@@ -187,6 +208,14 @@ export default function Home({
           ))}
         </div>
       </div>
+
+      {/* 광고 팝업 */}
+      <AdPopupDialog
+        open={showAdPopup}
+        onClose={handleCloseAdPopup}
+        onDontShowFor24Hours={handleDontShowFor24Hours}
+        onJoinChallenge={handleJoinChallengeFromPopup}
+      />
     </div>
   );
 }

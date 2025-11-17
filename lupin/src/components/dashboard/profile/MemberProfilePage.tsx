@@ -7,7 +7,7 @@
  * - 신체 정보 관리
  */
 
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";

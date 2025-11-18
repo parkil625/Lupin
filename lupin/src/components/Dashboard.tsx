@@ -26,6 +26,7 @@ import ChatDialog from "./dashboard/dialogs/ChatDialog";
 import PrescriptionFormDialog from "./dashboard/dialogs/PrescriptionFormDialog";
 import MemberDetailDialog from "./dashboard/dialogs/MemberDetailDialog";
 import EditFeedDialog from "./dashboard/dialogs/EditFeedDialog";
+import CreateFeedDialog from "./dashboard/dialogs/CreateFeedDialog";
 import MembersPage from "./dashboard/members/MembersPage";
 import AppointmentsPage from "./dashboard/appointments/AppointmentsPage";
 import DoctorChatPage from "./dashboard/chat/DoctorChatPage";
@@ -45,8 +46,7 @@ const memberNavItems = [
   { id: "home", icon: Home, label: "홈" },
   { id: "feed", icon: Video, label: "피드" },
   { id: "ranking", icon: Trophy, label: "랭킹" },
-  { id: "medical", icon: CalendarIcon, label: "진료" },
-  { id: "create", icon: PlusSquare, label: "만들기" }
+  { id: "medical", icon: CalendarIcon, label: "진료" }
 ];
 
 const doctorNavItems = [
@@ -88,6 +88,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>([]);
   const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const navItems = userType === "member" ? memberNavItems : doctorNavItems;
   const getFeedImageIndex = (feedId: number) => feedImageIndexes[feedId] || 0;
@@ -133,6 +134,32 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     toast.success("피드가 삭제되었습니다!");
   };
 
+  const handleCreateFeed = (
+    images: string[],
+    content: string,
+    workoutType: string,
+    _startImage: string | null,
+    _endImage: string | null
+  ) => {
+    const newFeed: Feed = {
+      id: Date.now(),
+      author: "김루핀",
+      avatar: "김",
+      time: "방금 전",
+      activity: workoutType,
+      images,
+      content,
+      likes: 0,
+      comments: 0,
+      points: 10,
+      stats: {},
+      edited: false,
+    };
+    setMyFeeds([newFeed, ...myFeeds]);
+    setAllFeeds([newFeed, ...allFeeds]);
+    toast.success("피드가 작성되었습니다!");
+  };
+
   if (userType === "doctor") {
     return (
       <div className="h-screen w-screen overflow-hidden relative">
@@ -169,7 +196,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
       <div className={`h-full transition-all duration-300 ${(sidebarExpanded || showNotifications) ? 'ml-64' : 'ml-20'}`}>
         {selectedNav === "home" && <HomeView challengeJoined={challengeJoined} handleJoinChallenge={() => { toast.success("응모가 완료되었습니다!"); setChallengeJoined(true); }}
-          profileImage={profileImage} myFeeds={myFeeds} setSelectedFeed={setSelectedFeed} setFeedImageIndex={setFeedImageIndex} setShowFeedDetailInHome={setShowFeedDetailInHome} />}
+          profileImage={profileImage} myFeeds={myFeeds} setSelectedFeed={setSelectedFeed} setFeedImageIndex={setFeedImageIndex} setShowFeedDetailInHome={setShowFeedDetailInHome}
+          onCreateClick={() => setShowCreateDialog(true)} />}
         {selectedNav === "feed" && <FeedView allFeeds={allFeeds} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearch={showSearch} setShowSearch={setShowSearch}
           getFeedImageIndex={getFeedImageIndex} setFeedImageIndex={setFeedImageIndex} hasLiked={hasLiked} handleLike={handleLike} feedContainerRef={feedContainerRef} />}
         {selectedNav === "ranking" && <RankingView />}
@@ -191,6 +219,12 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         open={showEditDialog}
         onOpenChange={setShowEditDialog}
         onSave={handleUpdateFeed}
+      />
+
+      <CreateFeedDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onCreate={handleCreateFeed}
       />
 
       <PrescriptionModal prescription={selectedPrescription} open={!!selectedPrescription} onOpenChange={() => setSelectedPrescription(null)} onDownload={() => toast.success("처방전 PDF 다운로드를 시작합니다.")} />

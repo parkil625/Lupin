@@ -177,7 +177,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               <Bell className="w-7 h-7 text-gray-700" />
               {notifications.filter(n => !n.read).length > 0 && <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>}
             </div>
-            <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ml-5 ${(sidebarExpanded || showNotifications) ? 'opacity-100' : 'opacity-0 w-0'}`}>알림</span>
+            <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ml-6 ${(sidebarExpanded || showNotifications) ? 'opacity-100' : 'opacity-0 w-0'}`}>알림</span>
           </button>
           {showNotifications && <NotificationPopup notifications={notifications} onClose={(closeSidebar = true) => { setShowNotifications(false); if (closeSidebar) setSidebarExpanded(false); }} />}
         </div>

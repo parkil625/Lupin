@@ -11,6 +11,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -257,11 +258,44 @@ function FeedCard({
     return (
       <div key={comment.id} className={isReply ? 'ml-8 mt-3' : ''}>
         <div className="flex gap-3">
-          <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="bg-white">
-              <User className="w-4 h-4 text-gray-400" />
-            </AvatarFallback>
-          </Avatar>
+          <HoverCard openDelay={200} closeDelay={100}>
+            <HoverCardTrigger asChild>
+              <div>
+                <Avatar className="w-8 h-8 flex-shrink-0 cursor-pointer">
+                  <AvatarFallback className="bg-white">
+                    <User className="w-4 h-4 text-gray-400" />
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80 bg-white/95 backdrop-blur-xl border border-gray-200">
+              <div className="flex gap-4">
+                <Avatar className="w-14 h-14 border-2 border-white shadow-lg bg-white">
+                  <AvatarFallback className="bg-white">
+                    <User className="w-7 h-7 text-gray-400" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="space-y-2 flex-1">
+                  <h4 className="text-base font-black text-gray-900">{comment.author}</h4>
+                  <p className="text-sm text-gray-700 font-medium">{comment.department || '댓글 작성자'}</p>
+                  <div className="pt-1 space-y-1.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600 font-medium">이번 달 활동</span>
+                      <span className="text-gray-900 font-bold">{comment.activeDays || 0}일</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600 font-medium">평균 점수</span>
+                      <span className="text-gray-900 font-bold">{comment.avgScore || 0}점</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600 font-medium">총 점수</span>
+                      <span className="text-[#C93831] font-bold">{comment.points || 0}점</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-bold text-sm text-gray-900">{comment.author}</span>
@@ -414,11 +448,44 @@ function FeedCard({
 
                 {/* Author Avatar Only */}
                 <div className="absolute top-4 left-4">
-                  <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
-                    <AvatarFallback className="bg-white">
-                      <User className="w-5 h-5 text-gray-400" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <HoverCard openDelay={200} closeDelay={100}>
+                    <HoverCardTrigger asChild>
+                      <div>
+                        <Avatar className="w-10 h-10 border-2 border-white shadow-lg cursor-pointer">
+                          <AvatarFallback className="bg-white">
+                            <User className="w-5 h-5 text-gray-400" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80 bg-white/95 backdrop-blur-xl border border-gray-200">
+                      <div className="flex gap-4">
+                        <Avatar className="w-14 h-14 border-2 border-white shadow-lg bg-white">
+                          <AvatarFallback className="bg-white">
+                            <User className="w-7 h-7 text-gray-400" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-2 flex-1">
+                          <h4 className="text-base font-black text-gray-900">{feed.author}</h4>
+                          <p className="text-sm text-gray-700 font-medium">{feed.department || '운동 활동'}</p>
+                          <div className="pt-1 space-y-1.5">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-600 font-medium">이번 달 활동</span>
+                              <span className="text-gray-900 font-bold">{feed.activeDays || 0}일</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-600 font-medium">평균 점수</span>
+                              <span className="text-gray-900 font-bold">{feed.avgScore || 0}점</span>
+                            </div>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-600 font-medium">총 점수</span>
+                              <span className="text-[#C93831] font-bold">{feed.points}점</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
                 </div>
 
                 {/* Right Actions */}
@@ -459,11 +526,44 @@ function FeedCard({
             <>
               {/* No Image Layout - Avatar and Buttons */}
               <div className="relative p-6 bg-transparent h-[545px]">
-                <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg">
-                  <AvatarFallback className="bg-white">
-                    <User className="w-5 h-5 text-gray-400" />
-                  </AvatarFallback>
-                </Avatar>
+                <HoverCard openDelay={200} closeDelay={100}>
+                  <HoverCardTrigger asChild>
+                    <div>
+                      <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg cursor-pointer">
+                        <AvatarFallback className="bg-white">
+                          <User className="w-5 h-5 text-gray-400" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80 bg-white/95 backdrop-blur-xl border border-gray-200">
+                    <div className="flex gap-4">
+                      <Avatar className="w-14 h-14 border-2 border-white shadow-lg bg-white">
+                        <AvatarFallback className="bg-white">
+                          <User className="w-7 h-7 text-gray-400" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="space-y-2 flex-1">
+                        <h4 className="text-base font-black text-gray-900">{feed.author}</h4>
+                        <p className="text-sm text-gray-700 font-medium">{feed.department || '운동 활동'}</p>
+                        <div className="pt-1 space-y-1.5">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-600 font-medium">이번 달 활동</span>
+                            <span className="text-gray-900 font-bold">{feed.activeDays || 0}일</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-600 font-medium">평균 점수</span>
+                            <span className="text-gray-900 font-bold">{feed.avgScore || 0}점</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-600 font-medium">총 점수</span>
+                            <span className="text-[#C93831] font-bold">{feed.points}점</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
 
                 {/* Right Actions for No-Image Posts */}
                 <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
@@ -534,18 +634,16 @@ function FeedCard({
                     <Sparkles className="w-3 h-3 mr-1" />
                     +{feed.points}
                   </Badge>
-                  <Badge className="bg-white border border-blue-300 text-blue-700 px-3 py-1 font-bold text-xs">
+                  <Badge className="bg-white text-blue-700 px-3 py-1 font-bold text-xs border-0">
                     {feed.activity}
                   </Badge>
                   {feed.stats.calories && (
-                    <Badge className="bg-white border border-orange-300 text-orange-700 px-3 py-1 font-bold text-xs">
-                      <Zap className="w-3 h-3 mr-1" />
+                    <Badge className="bg-white text-orange-700 px-3 py-1 font-bold text-xs border-0">
                       {feed.stats.calories}
                     </Badge>
                   )}
                   {feed.streak && (
-                    <Badge className="bg-white border border-red-300 text-red-700 px-3 py-1 font-bold text-xs">
-                      <Flame className="w-3 h-3 mr-1" />
+                    <Badge className="bg-white text-red-700 px-3 py-1 font-bold text-xs border-0">
                       {feed.streak}일 연속
                     </Badge>
                   )}
@@ -553,8 +651,10 @@ function FeedCard({
 
                 {/* Right: Time & Edited */}
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {feed.edited && <Pencil className="w-3 h-3 text-gray-900" />}
-                  <span className="text-xs text-gray-900">{feed.time}</span>
+                  <Badge className="bg-white text-gray-700 px-3 py-1 font-bold text-xs flex items-center gap-1 border-0">
+                    {feed.edited && <Pencil className="w-3 h-3" />}
+                    {feed.time}
+                  </Badge>
                 </div>
               </div>
 

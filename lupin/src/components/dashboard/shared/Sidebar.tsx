@@ -103,7 +103,7 @@ export default function Sidebar({
             )}
           </Avatar>
           <span
-            className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ml-5 ${
+            className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ml-6 ${
               expanded ? "opacity-100" : "opacity-0 w-0"
             }`}
           >

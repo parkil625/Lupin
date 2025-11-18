@@ -11,7 +11,7 @@
 import { useState, useRef } from "react";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
-import { Home, Video, Trophy, Calendar as CalendarIcon, PlusSquare, Users, MessageCircle } from "lucide-react";
+import { Home, Video, Trophy, Calendar as CalendarIcon, PlusSquare, MessageCircle } from "lucide-react";
 import Sidebar from "./dashboard/shared/Sidebar";
 import NotificationPopup from "./dashboard/shared/NotificationPopup";
 import AnimatedBackground from "./dashboard/shared/AnimatedBackground";
@@ -24,11 +24,8 @@ import FeedDetailDialogHome from "./dashboard/dialogs/FeedDetailDialogHome";
 import AppointmentDialog from "./dashboard/dialogs/AppointmentDialog";
 import ChatDialog from "./dashboard/dialogs/ChatDialog";
 import PrescriptionFormDialog from "./dashboard/dialogs/PrescriptionFormDialog";
-import MemberDetailDialog from "./dashboard/dialogs/MemberDetailDialog";
 import EditFeedDialog from "./dashboard/dialogs/EditFeedDialog";
 import CreateFeedDialog from "./dashboard/dialogs/CreateFeedDialog";
-import MembersPage from "./dashboard/members/MembersPage";
-import AppointmentsPage from "./dashboard/appointments/AppointmentsPage";
 import DoctorChatPage from "./dashboard/chat/DoctorChatPage";
 import DoctorProfilePage from "./dashboard/profile/DoctorProfilePage";
 import CreatePage from "./dashboard/create/CreatePage";
@@ -50,8 +47,6 @@ const memberNavItems = [
 ];
 
 const doctorNavItems = [
-  { id: "members", icon: Users, label: "회원 목록" },
-  { id: "appointments", icon: CalendarIcon, label: "예약 관리" },
   { id: "chat", icon: MessageCircle, label: "채팅" }
 ];
 
@@ -60,7 +55,7 @@ const availableTimes = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 const bookedTimes = ["10:00", "15:00"];
 
 export default function Dashboard({ onLogout, userType }: DashboardProps) {
-  const [selectedNav, setSelectedNav] = useState(userType === "doctor" ? "members" : "home");
+  const [selectedNav, setSelectedNav] = useState(userType === "doctor" ? "chat" : "home");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -78,7 +73,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [selectedTime, setSelectedTime] = useState("");
   const [showChat, setShowChat] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(null);
   const [feedLikes, setFeedLikes] = useState<{[key: number]: string[]}>({});
@@ -166,14 +160,9 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         <AnimatedBackground variant="doctor" />
         <Sidebar expanded={sidebarExpanded} onExpandChange={setSidebarExpanded} navItems={navItems} selectedNav={selectedNav} onNavSelect={setSelectedNav} userType="doctor" />
         <div className={`h-full transition-all duration-300 ${sidebarExpanded ? 'ml-64' : 'ml-20'}`}>
-          {selectedNav === "members" && <MembersPage onMemberSelect={setSelectedMember} />}
-          {selectedNav === "appointments" && <AppointmentsPage onChatClick={() => setShowChat(true)} />}
           {selectedNav === "chat" && <DoctorChatPage />}
           {selectedNav === "profile" && <DoctorProfilePage onLogout={onLogout} />}
         </div>
-        <MemberDetailDialog open={!!selectedMember} onOpenChange={() => setSelectedMember(null)} member={selectedMember}
-          onStartChat={() => { setSelectedNav("chat"); setSelectedMember(null); }}
-          onWritePrescription={(p) => { setPrescriptionMember(p); setShowPrescriptionForm(true); setSelectedMember(null); }} />
       </div>
     );
   }

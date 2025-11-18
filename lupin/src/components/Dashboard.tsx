@@ -183,8 +183,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       <AnimatedBackground variant="member" />
       <Sidebar expanded={sidebarExpanded || showNotifications} onExpandChange={(expanded) => !showNotifications && setSidebarExpanded(expanded)} navItems={navItems} selectedNav={selectedNav} onNavSelect={setSelectedNav} userType="member" profileImage={profileImage}>
         <div className="relative mb-2" onMouseEnter={(e) => e.stopPropagation()} onMouseLeave={(e) => e.stopPropagation()}>
-          <button onClick={() => setShowNotifications(!showNotifications)} className="relative w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/30 transition-all">
-            <div className="relative w-7 h-7 flex items-center justify-center flex-shrink-0">
+          <button onClick={() => setShowNotifications(!showNotifications)} className={`relative w-full flex items-center ${(sidebarExpanded || showNotifications) ? 'gap-3' : 'justify-center'} px-0 py-3 rounded-2xl hover:bg-white/30 transition-all`}>
+            <div className="relative flex-shrink-0">
               <Bell className="w-7 h-7 text-gray-700" />
               {notifications.filter(n => !n.read).length > 0 && <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>}
             </div>

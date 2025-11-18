@@ -41,15 +41,15 @@ export default function Sidebar({ expanded, onExpandChange, navItems, selectedNa
         <nav className="flex-1 space-y-2">
           {navItems.map((item) => (
             <button key={item.id} onClick={() => onNavSelect(item.id)}
-              className={`w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all duration-200 ${selectedNav === item.id ? '' : 'hover:bg-white/30'}`}>
+              className={`w-full flex items-center ${expanded ? 'gap-4' : 'justify-center'} px-0 py-3 rounded-2xl transition-all duration-200 ${selectedNav === item.id ? '' : 'hover:bg-white/30'}`}>
               <item.icon className={`w-7 h-7 flex-shrink-0 ${selectedNav === item.id ? 'text-[#C93831]' : 'text-gray-700'}`} strokeWidth={selectedNav === item.id ? 2.5 : 2} />
               <span className={`whitespace-nowrap transition-opacity duration-200 font-medium text-gray-700 ${expanded ? 'opacity-100' : 'opacity-0 w-0'}`}>{item.label}</span>
             </button>
           ))}
         </nav>
         {children}
-        <button onClick={() => onNavSelect("profile")} className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/30 transition-all">
-          <Avatar className="w-9 h-9 border-2 border-[#C93831]">
+        <button onClick={() => onNavSelect("profile")} className={`flex items-center ${expanded ? 'gap-3' : 'justify-center'} px-0 py-3 rounded-2xl hover:bg-white/30 transition-all`}>
+          <Avatar className="w-9 h-9 border-2 border-[#C93831] flex-shrink-0">
             {profileImage ? <img src={profileImage} alt="Profile" className="w-full h-full object-cover" /> :
               <AvatarFallback className="bg-white">
                 <User className="w-5 h-5 text-gray-400" />

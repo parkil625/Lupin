@@ -257,9 +257,9 @@ export default function FeedDetailDialogHome({
               <span className="font-bold text-sm text-gray-900">
                 {comment.author}
               </span>
-              <span className="text-xs text-gray-500">{comment.time}</span>
+              <span className="text-xs text-gray-900">{comment.time}</span>
             </div>
-            <p className="text-sm text-gray-700 break-words mb-2">
+            <p className="text-sm text-gray-900 break-words mb-2">
               {comment.content}
             </p>
 
@@ -364,7 +364,7 @@ export default function FeedDetailDialogHome({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`p-0 h-[95vh] max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/30 border border-gray-200/30 shadow-2xl transition-all duration-300 ${
+        className={`p-0 h-[95vh] max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/50 border border-gray-200/30 shadow-2xl transition-all duration-300 ${
           showComments
             ? "!w-[825px] !max-w-[825px]"
             : "!w-[475px] !max-w-[475px]"
@@ -383,122 +383,208 @@ export default function FeedDetailDialogHome({
         <div className="relative h-full flex overflow-hidden">
           {/* Main Feed Content (Left) */}
           <div className="w-[475px] max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
-            {/* Image Carousel */}
-            <div className="relative h-[545px] w-full max-w-[475px] overflow-hidden">
-              <img
-                src={feed.images[currentImageIndex] || feed.images[0]}
-                alt={feed.activity}
-                className="w-full h-full object-cover"
-                style={{ maxWidth: "475px", width: "475px", height: "545px" }}
-              />
+            {feed.images && feed.images.length > 0 ? (
+              <>
+                {/* Image Carousel */}
+                <div className="relative h-[545px] w-full max-w-[475px] overflow-hidden bg-white">
+                  <img
+                    src={feed.images[currentImageIndex] || feed.images[0]}
+                    alt={feed.activity}
+                    className="w-full h-full object-cover"
+                    style={{ maxWidth: "475px", width: "475px", height: "545px" }}
+                  />
 
-              {feed.images.length > 1 && (
-                <>
-                  {currentImageIndex > 0 && (
-                    <button
-                      onClick={onPrevImage}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
+                  {feed.images.length > 1 && (
+                    <>
+                      {currentImageIndex > 0 && (
+                        <button
+                          onClick={onPrevImage}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                      )}
+                      {currentImageIndex < feed.images.length - 1 && (
+                        <button
+                          onClick={onNextImage}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      )}
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                        {feed.images.map((_, idx) => (
+                          <div
+                            key={idx}
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              idx === currentImageIndex ? "bg-white" : "bg-white/50"
+                            }`}
+                          ></div>
+                        ))}
+                      </div>
+                    </>
                   )}
-                  {currentImageIndex < feed.images.length - 1 && (
+
+                  {/* Author Avatar Only */}
+                  <div className="absolute top-4 left-4">
+                    <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
+                      <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-sm">
+                        {feed.avatar}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+
+                  {/* Menu Button */}
+                  <div className="absolute top-4 right-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="w-10 h-10 rounded-full backdrop-blur-xl bg-white/20 border border-white/30 flex items-center justify-center hover:bg-white/30 transition-all">
+                          <MoreVertical className="w-5 h-5 text-white" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
+                      >
+                        <DropdownMenuItem
+                          onClick={() => onEdit?.(feed)}
+                          className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span className="font-medium">수정</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (window.confirm("정말 삭제하시겠습니까?")) {
+                              onDelete?.(feed.id);
+                              onOpenChange(false);
+                            }
+                          }}
+                          className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span className="font-medium">삭제</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Right Actions */}
+                  <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center">
+                        <Heart className="w-6 h-6 fill-red-500 text-red-500" style={{ mixBlendMode: 'difference', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }} />
+                      </div>
+                      <span
+                        className="text-white text-xs font-bold"
+                        style={{
+                          textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
+                        }}
+                      >
+                        {feed.likes}
+                      </span>
+                    </div>
+
                     <button
-                      onClick={onNextImage}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                      className="flex flex-col items-center gap-1 group"
+                      onClick={() => setShowComments(!showComments)}
                     >
-                      <ChevronRight className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+                        <MessageCircle className="w-6 h-6 text-white" style={{ mixBlendMode: 'difference', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }} />
+                      </div>
+                      <span
+                        className="text-white text-xs font-bold"
+                        style={{
+                          textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
+                        }}
+                      >
+                        {totalCommentCount}
+                      </span>
                     </button>
-                  )}
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                    {feed.images.map((_, idx) => (
-                      <div
-                        key={idx}
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          idx === currentImageIndex ? "bg-white" : "bg-white/50"
-                        }`}
-                      ></div>
-                    ))}
                   </div>
-                </>
-              )}
-
-              {/* Author Info */}
-              <div className="absolute top-4 left-4 flex items-center gap-3 backdrop-blur-xl bg-white/20 rounded-full px-4 py-2 border border-white/30">
-                <Avatar className="w-8 h-8 border-2 border-white">
-                  <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-sm">
-                    {feed.avatar}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="text-white text-xs font-bold">
-                    {feed.author}
-                  </div>
-                  <div className="text-white/80 text-xs">{feed.time}</div>
                 </div>
-              </div>
+              </>
+            ) : (
+              <>
+                {/* No Image Layout */}
+                <div className="relative p-6 bg-transparent h-[545px]">
+                  <div className="flex items-center justify-between">
+                    <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg">
+                      <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-sm">
+                        {feed.avatar}
+                      </AvatarFallback>
+                    </Avatar>
 
-              {/* Menu Button (Instagram style) */}
-              <div className="absolute top-4 right-4">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="w-10 h-10 rounded-full backdrop-blur-xl bg-white/20 border border-white/30 flex items-center justify-center hover:bg-white/30 transition-all">
-                      <MoreVertical className="w-5 h-5 text-white" />
+                    {/* Menu Button */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="w-10 h-10 rounded-full bg-white/20 border border-gray-300 flex items-center justify-center hover:bg-white/30 transition-all">
+                          <MoreVertical className="w-5 h-5 text-gray-900" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
+                      >
+                        <DropdownMenuItem
+                          onClick={() => onEdit?.(feed)}
+                          className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
+                        >
+                          <Edit className="w-4 h-4" />
+                          <span className="font-medium">수정</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (window.confirm("정말 삭제하시겠습니까?")) {
+                              onDelete?.(feed.id);
+                              onOpenChange(false);
+                            }
+                          }}
+                          className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span className="font-medium">삭제</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Right Actions for No-Image Posts */}
+                  <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center">
+                        <Heart className="w-6 h-6 fill-red-500 text-red-500" style={{ mixBlendMode: 'difference', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }} />
+                      </div>
+                      <span
+                        className="text-white text-xs font-bold"
+                        style={{
+                          textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
+                        }}
+                      >
+                        {feed.likes}
+                      </span>
+                    </div>
+
+                    <button
+                      className="flex flex-col items-center gap-1 group"
+                      onClick={() => setShowComments(!showComments)}
+                    >
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+                        <MessageCircle className="w-6 h-6 text-white" style={{ mixBlendMode: 'difference', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }} />
+                      </div>
+                      <span
+                        className="text-white text-xs font-bold"
+                        style={{
+                          textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
+                        }}
+                      >
+                        {totalCommentCount}
+                      </span>
                     </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
-                  >
-                    <DropdownMenuItem
-                      onClick={() => onEdit?.(feed)}
-                      className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span className="font-medium">수정</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        if (window.confirm("정말 삭제하시겠습니까?")) {
-                          onDelete?.(feed.id);
-                          onOpenChange(false);
-                        }
-                      }}
-                      className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span className="font-medium">삭제</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Right Actions */}
-              <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                <div className="flex flex-col items-center gap-1">
-                  <Heart className="w-6 h-6 fill-red-500 text-red-500" />
-                  <span className="text-white text-xs font-bold">
-                    {feed.likes}
-                  </span>
-                </div>
-
-                <button
-                  className="flex flex-col items-center gap-1 group"
-                  onClick={() => setShowComments(!showComments)}
-                >
-                  <div
-                    className={`w-12 h-12 rounded-full backdrop-blur-xl border border-white/30 flex items-center justify-center hover:scale-110 transition-transform ${
-                      showComments ? "bg-white/40" : "bg-white/20"
-                    }`}
-                  >
-                    <MessageCircle className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-white text-xs font-bold">
-                    {totalCommentCount}
-                  </span>
-                </button>
-              </div>
-            </div>
+                </div>
+              </>
+            )}
 
             {/* Feed Content (Always visible) */}
             <div
@@ -522,6 +608,10 @@ export default function FeedDetailDialogHome({
                 }
                 .ProseMirror {
                   background: transparent !important;
+                  color: #111827 !important;
+                }
+                .ProseMirror p, .ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4, .ProseMirror h5, .ProseMirror h6, .ProseMirror li, .ProseMirror span {
+                  color: #111827 !important;
                 }
               `}</style>
               <div className="space-y-3" style={{ maxWidth: "427px" }}>
@@ -550,17 +640,17 @@ export default function FeedDetailDialogHome({
 
                   {/* Right: Time & Edited */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="text-xs text-gray-500">{feed.time}</span>
+                    <span className="text-xs text-gray-900">{feed.time}</span>
                     {feed.edited && (
                       <>
-                        <Pencil className="w-3 h-3 text-gray-400" />
-                        <span className="text-xs text-gray-400">수정됨</span>
+                        <Pencil className="w-3 h-3 text-gray-900" />
+                        <span className="text-xs text-gray-900">수정됨</span>
                       </>
                     )}
                   </div>
                 </div>
 
-                <div className="text-gray-700 font-medium text-sm leading-relaxed">
+                <div className="text-gray-900 font-medium text-sm leading-relaxed">
                   <BlockNoteView
                     editor={editor}
                     editable={false}
@@ -584,8 +674,8 @@ export default function FeedDetailDialogHome({
                     onClick={() => setShowSortMenu(!showSortMenu)}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
                   >
-                    <ArrowUpDown className="w-4 h-4 text-gray-600" />
-                    <span className="text-sm font-semibold text-gray-700">
+                    <ArrowUpDown className="w-4 h-4 text-gray-900" />
+                    <span className="text-sm font-semibold text-gray-900">
                       {sortOrder === "latest" ? "최신순" : "인기순"}
                     </span>
                   </button>
@@ -599,7 +689,7 @@ export default function FeedDetailDialogHome({
                         className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
                           sortOrder === "latest"
                             ? "bg-white/15 font-semibold text-[#C93831]"
-                            : "text-gray-700"
+                            : "text-gray-900"
                         }`}
                       >
                         최신순
@@ -612,7 +702,7 @@ export default function FeedDetailDialogHome({
                         className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
                           sortOrder === "popular"
                             ? "bg-white/15 font-semibold text-[#C93831]"
-                            : "text-gray-700"
+                            : "text-gray-900"
                         }`}
                       >
                         인기순

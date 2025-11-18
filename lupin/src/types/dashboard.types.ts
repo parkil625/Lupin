@@ -21,6 +21,9 @@ export interface Feed {
   likedBy?: string[];
   edited?: boolean;
   streak?: number;
+  department?: string;
+  activeDays?: number;
+  avgScore?: number;
 }
 
 export interface Comment {
@@ -31,6 +34,10 @@ export interface Comment {
   time: string;
   parentId?: number;
   replies?: Comment[];
+  department?: string;
+  activeDays?: number;
+  avgScore?: number;
+  points?: number;
 }
 
 export interface Prescription {

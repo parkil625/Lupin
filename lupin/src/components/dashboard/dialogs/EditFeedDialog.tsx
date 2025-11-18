@@ -12,16 +12,24 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, CheckCircle, Camera, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { X, CheckCircle, Camera, Upload, Check, ChevronsUpDown } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
@@ -56,6 +64,7 @@ export default function EditFeedDialog({
   const [endImage, setEndImage] = useState<string | null>(null);
   const [otherImages, setOtherImages] = useState<string[]>([]);
   const [workoutType, setWorkoutType] = useState<string>("");
+  const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
@@ -155,16 +164,47 @@ export default function EditFeedDialog({
             {/* Workout Type */}
             <div className="mb-4">
               <Label className="text-xs font-bold text-gray-900 mb-2 block">운동 종류</Label>
-              <Select value={workoutType} onValueChange={setWorkoutType}>
-                <SelectTrigger className="w-full bg-white border-gray-300 text-sm">
-                  <SelectValue placeholder="운동 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {WORKOUT_TYPES.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={comboboxOpen}
+                    className="w-full justify-between bg-white border-gray-300 text-sm"
+                  >
+                    {workoutType || "운동 선택"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
+                  <Command>
+                    <CommandInput placeholder="운동 검색..." />
+                    <CommandList>
+                      <CommandEmpty>운동을 찾을 수 없습니다.</CommandEmpty>
+                      <CommandGroup>
+                        {WORKOUT_TYPES.map((type) => (
+                          <CommandItem
+                            key={type}
+                            value={type}
+                            onSelect={(currentValue: string) => {
+                              setWorkoutType(currentValue);
+                              setComboboxOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                workoutType === type ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {type}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* 2x2 Photo Grid */}

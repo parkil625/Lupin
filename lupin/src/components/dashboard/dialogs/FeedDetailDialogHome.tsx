@@ -443,7 +443,7 @@ export default function FeedDetailDialogHome({
             {feed.images && feed.images.length > 0 ? (
               <>
                 {/* Image Carousel */}
-                <div className="relative h-[545px] w-full max-w-[475px] overflow-hidden">
+                <div className="relative h-[545px] w-full max-w-[475px] overflow-hidden flex-shrink-0">
                   <img
                     src={feed.images[currentImageIndex] || feed.images[0]}
                     alt={feed.activity}
@@ -640,73 +640,80 @@ export default function FeedDetailDialogHome({
             )}
 
             {/* Feed Content (Always visible) */}
-            <div
-              className="p-6 space-y-3 flex-1 overflow-auto bg-transparent"
-              style={{ width: "475px", maxWidth: "475px" }}
+            <ScrollArea
+              className="bg-transparent"
+              style={{
+                width: "475px",
+                maxWidth: "475px",
+                height: "calc(95vh - 545px)",
+                maxHeight: "calc(95vh - 545px)"
+              }}
             >
-              <style>{`
-                .bn-container {
-                  max-width: 427px !important;
-                  width: 427px !important;
-                  background: transparent !important;
-                }
-                .bn-editor {
-                  max-width: 427px !important;
-                  width: 427px !important;
-                  padding: 0 !important;
-                  background: transparent !important;
-                }
-                .bn-block-content {
-                  max-width: 427px !important;
-                }
-                .ProseMirror {
-                  background: transparent !important;
-                  color: #111827 !important;
-                }
-                .ProseMirror p, .ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4, .ProseMirror h5, .ProseMirror h6, .ProseMirror li, .ProseMirror span {
-                  color: #111827 !important;
-                }
-              `}</style>
-              <div className="space-y-3" style={{ maxWidth: "427px" }}>
-                <div className="flex items-start justify-between gap-3">
-                  {/* Left: Badges */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 font-bold border-0">
-                      <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
-                    </Badge>
-                    <Badge className="bg-white border border-blue-300 text-blue-700 px-3 py-1 font-bold text-xs">
-                      {feed.activity}
-                    </Badge>
-                    {feed.stats.calories && (
-                      <Badge className="bg-white border border-orange-300 text-orange-700 px-3 py-1 font-bold text-xs">
-                        <Zap className="w-3 h-3 mr-1" />
-                        {feed.stats.calories}
+              <div className="p-6 space-y-3">
+                <style>{`
+                  .bn-container {
+                    max-width: 427px !important;
+                    width: 427px !important;
+                    background: transparent !important;
+                  }
+                  .bn-editor {
+                    max-width: 427px !important;
+                    width: 427px !important;
+                    padding: 0 !important;
+                    background: transparent !important;
+                  }
+                  .bn-block-content {
+                    max-width: 427px !important;
+                  }
+                  .ProseMirror {
+                    background: transparent !important;
+                    color: #111827 !important;
+                  }
+                  .ProseMirror p, .ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4, .ProseMirror h5, .ProseMirror h6, .ProseMirror li, .ProseMirror span {
+                    color: #111827 !important;
+                  }
+                `}</style>
+                <div className="space-y-3" style={{ maxWidth: "427px" }}>
+                  <div className="flex items-start justify-between gap-3">
+                    {/* Left: Badges */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 font-bold border-0">
+                        <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
                       </Badge>
-                    )}
-                    {feed.streak && (
-                      <Badge className="bg-white border border-red-300 text-red-700 px-3 py-1 font-bold text-xs">
-                        <Flame className="w-3 h-3 mr-1" />
-                        {feed.streak}일 연속
+                      <Badge className="bg-white text-blue-700 px-3 py-1 font-bold text-xs border-0">
+                        {feed.activity}
                       </Badge>
-                    )}
+                      {feed.stats.calories && (
+                        <Badge className="bg-white text-orange-700 px-3 py-1 font-bold text-xs border-0">
+                          {feed.stats.calories}
+                        </Badge>
+                      )}
+                      {feed.streak && (
+                        <Badge className="bg-white text-red-700 px-3 py-1 font-bold text-xs border-0">
+                          {feed.streak}일 연속
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Right: Time & Edited */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Badge className="bg-white text-gray-700 px-3 py-1 font-bold text-xs flex items-center gap-1 border-0">
+                        {feed.edited && <Pencil className="w-3 h-3" />}
+                        {feed.time}
+                      </Badge>
+                    </div>
                   </div>
 
-                  {/* Right: Time & Edited */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {feed.edited && <Pencil className="w-3 h-3 text-gray-900" />}
-                    <span className="text-xs text-gray-900">{feed.time}</span>
+                  <div className="text-gray-900 font-medium text-sm leading-relaxed">
+                    <BlockNoteView
+                      editor={editor}
+                      editable={false}
+                      theme="light"
+                    />
                   </div>
-                </div>
-
-                <div className="text-gray-900 font-medium text-sm leading-relaxed">
-                  <BlockNoteView
-                    editor={editor}
-                    editable={false}
-                    theme="light"
-                  />
                 </div>
               </div>
-            </div>
+            </ScrollArea>
           </div>
 
           {/* Comments Panel (Right - slides in) */}

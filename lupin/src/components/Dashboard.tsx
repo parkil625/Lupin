@@ -183,12 +183,12 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       <AnimatedBackground variant="member" />
       <Sidebar expanded={sidebarExpanded || showNotifications} onExpandChange={(expanded) => !showNotifications && setSidebarExpanded(expanded)} navItems={navItems} selectedNav={selectedNav} onNavSelect={setSelectedNav} userType="member" profileImage={profileImage}>
         <div className="relative mb-2" onMouseEnter={(e) => e.stopPropagation()} onMouseLeave={(e) => e.stopPropagation()}>
-          <button onClick={() => setShowNotifications(!showNotifications)} className={`relative w-full flex items-center ${(sidebarExpanded || showNotifications) ? 'gap-3' : 'justify-center'} px-0 py-3 rounded-2xl hover:bg-white/30 transition-all`}>
+          <button onClick={() => setShowNotifications(!showNotifications)} className="relative w-full flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors" style={{ paddingLeft: '10px' }}>
             <div className="relative flex-shrink-0">
               <Bell className="w-7 h-7 text-gray-700" />
               {notifications.filter(n => !n.read).length > 0 && <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>}
             </div>
-            <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ${(sidebarExpanded || showNotifications) ? 'opacity-100' : 'opacity-0 w-0'}`}>알림</span>
+            <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ml-5 ${(sidebarExpanded || showNotifications) ? 'opacity-100' : 'opacity-0 w-0'}`}>알림</span>
           </button>
           {showNotifications && <NotificationPopup notifications={notifications} onClose={(closeSidebar = true) => { setShowNotifications(false); if (closeSidebar) setSidebarExpanded(false); }} />}
         </div>

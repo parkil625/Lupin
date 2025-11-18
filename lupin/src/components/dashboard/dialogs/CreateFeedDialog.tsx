@@ -1,19 +1,19 @@
 /**
- * EditFeedDialog.tsx
+ * CreateFeedDialog.tsx
  *
- * 피드 수정 다이얼로그 컴포넌트
- * - 기존 피드 내용 수정
+ * 피드 작성 다이얼로그 컴포넌트
+ * - 새 피드 작성
  * - BlockNote 에디터 사용
  * - 운동 시작/끝 사진 업로드
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { X, CheckCircle, Camera, Upload } from "lucide-react";
-import { Feed } from "@/types/dashboard.types";
 import { toast } from "sonner";
 import {
   Select,
@@ -26,11 +26,10 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 
-interface EditFeedDialogProps {
-  feed: Feed | null;
+interface CreateFeedDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (feedId: number, images: string[], content: string, workoutType: string, startImage: string | null, endImage: string | null) => void;
+  onCreate: (images: string[], content: string, workoutType: string, startImage: string | null, endImage: string | null) => void;
 }
 
 const WORKOUT_TYPES = [
@@ -46,47 +45,107 @@ const WORKOUT_TYPES = [
   "기타"
 ];
 
-export default function EditFeedDialog({
-  feed,
+const DRAFT_STORAGE_KEY = "createFeedDraft";
+
+export default function CreateFeedDialog({
   open,
   onOpenChange,
-  onSave,
-}: EditFeedDialogProps) {
+  onCreate,
+}: CreateFeedDialogProps) {
   const [startImage, setStartImage] = useState<string | null>(null);
   const [endImage, setEndImage] = useState<string | null>(null);
   const [otherImages, setOtherImages] = useState<string[]>([]);
-  const [workoutType, setWorkoutType] = useState<string>("");
+  const [workoutType, setWorkoutType] = useState<string>("런닝");
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
-  const editor = useCreateBlockNote();
+  const editor = useCreateBlockNote({
+    initialContent: [
+      {
+        type: "paragraph",
+        content: "",
+      },
+    ],
+  });
 
-  // Feed가 변경되면 기존 데이터로 초기화
+  // 다이얼로그 열릴 때 localStorage에서 불러오기
   useEffect(() => {
-    if (feed) {
-      setStartImage(feed.images[0] || null);
-      setEndImage(feed.images[1] || null);
-      setOtherImages(feed.images.slice(2) || []);
-      setWorkoutType("런닝"); // 기본값
-    }
-  }, [feed]);
+    if (open) {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setStartImage(draft.startImage || null);
+          setEndImage(draft.endImage || null);
+          setOtherImages(draft.otherImages || []);
+          setWorkoutType(draft.workoutType || "런닝");
 
-  // 다이얼로그 닫을 때 자동 저장
-  useEffect(() => {
-    if (!open && feed) {
-      // 운동 인증 필수: 시작 사진과 끝 사진이 모두 있어야 함
-      if (!startImage || !endImage) {
-        toast.error("운동 인증을 위해 시작 사진과 끝 사진을 모두 업로드해주세요!\n수정이 저장되지 않았습니다.");
-        return;
+          // 에디터 콘텐츠 복원
+          if (draft.content && Array.isArray(draft.content)) {
+            try {
+              editor.replaceBlocks(editor.document, draft.content);
+            } catch (error) {
+              console.log("Editor content restore failed");
+            }
+          }
+        } catch (error) {
+          console.log("Failed to load draft");
+        }
       }
-
-      const images = [startImage, endImage, ...otherImages].filter(Boolean) as string[];
-      const blocks = editor.document;
-      const contentJson = JSON.stringify(blocks);
-
-      onSave(feed.id, images, contentJson, workoutType, startImage, endImage);
     }
-  }, [open]);
+  }, [open, editor]);
+
+  // 상태 변경 시 localStorage에 자동 저장
+  useEffect(() => {
+    if (open) {
+      const draft = {
+        startImage,
+        endImage,
+        otherImages,
+        workoutType,
+        content: editor.document,
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    }
+  }, [open, startImage, endImage, otherImages, workoutType, editor]);
+
+  // 작성 버튼 클릭
+  const handleSubmit = () => {
+    // 운동 인증 필수: 시작 사진과 끝 사진이 모두 있어야 함
+    if (!startImage || !endImage) {
+      toast.error("운동 인증을 위해 시작 사진과 끝 사진을 모두 업로드해주세요!");
+      return;
+    }
+
+    const images = [startImage, endImage, ...otherImages].filter(Boolean) as string[];
+    const blocks = editor.document;
+    const contentJson = JSON.stringify(blocks);
+
+    // localStorage 초기화
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+
+    // 피드 생성
+    onCreate(images, contentJson, workoutType, startImage, endImage);
+
+    // 상태 초기화
+    setStartImage(null);
+    setEndImage(null);
+    setOtherImages([]);
+    setWorkoutType("런닝");
+    try {
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "paragraph",
+          content: "",
+        },
+      ]);
+    } catch (error) {
+      console.log("Editor reset skipped");
+    }
+
+    // 다이얼로그 닫기
+    onOpenChange(false);
+  };
 
   const handleFileSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -133,15 +192,19 @@ export default function EditFeedDialog({
 
   const isVerified = startImage && endImage;
 
-  if (!feed) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!max-w-[795px] !w-[795px] h-[95vh] p-0 overflow-hidden backdrop-blur-3xl bg-white border border-gray-200 shadow-2xl !flex !gap-0" style={{ width: '795px', maxWidth: '795px' }}>
+        <DialogHeader className="sr-only">
+          <DialogTitle>피드 작성</DialogTitle>
+          <DialogDescription>
+            새로운 피드를 작성할 수 있습니다.
+          </DialogDescription>
+        </DialogHeader>
         <div className="flex h-full overflow-hidden w-full">
           {/* Left Sidebar */}
           <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto flex-shrink-0">
-            <h2 className="text-xl font-black text-gray-900 mb-4">피드 수정</h2>
+            <h2 className="text-xl font-black text-gray-900 mb-4">피드 작성</h2>
 
             {/* Workout Type */}
             <div className="mb-4">
@@ -298,9 +361,17 @@ export default function EditFeedDialog({
               </div>
             </div>
 
+            {/* Submit Button */}
+            <Button
+              onClick={handleSubmit}
+              className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold hover:shadow-lg transition-all mb-4"
+            >
+              작성
+            </Button>
+
             {/* Verification Badge */}
             {isVerified && (
-              <Badge className="bg-green-500 text-white px-3 py-1.5 font-bold border-0 mb-4 w-full justify-center text-xs">
+              <Badge className="bg-green-500 text-white px-3 py-1.5 font-bold border-0 w-full justify-center text-xs">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 운동 인증 완료
               </Badge>

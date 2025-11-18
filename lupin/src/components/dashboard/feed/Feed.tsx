@@ -71,6 +71,53 @@ function FeedCard({
   const [commentLikes, setCommentLikes] = useState<{[key: number]: { liked: boolean, count: number }}>({});
   const [sortOrder, setSortOrder] = useState<'latest' | 'popular'>('latest');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [iconColor, setIconColor] = useState<'white' | 'black'>('white');
+
+  // 이미지 밝기 분석하여 아이콘 색상 결정
+  useEffect(() => {
+    if (feed.images && feed.images.length > 0) {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.src = feed.images[currentIndex] || feed.images[0];
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // 우측 하단 영역의 밝기 계산 (아이콘이 위치한 부분)
+        const sampleWidth = Math.min(100, img.width);
+        const sampleHeight = Math.min(150, img.height);
+        const x = img.width - sampleWidth;
+        const y = img.height - sampleHeight;
+
+        const imageData = ctx.getImageData(x, y, sampleWidth, sampleHeight);
+        const data = imageData.data;
+
+        let totalBrightness = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          // 밝기 계산 (perceived brightness)
+          const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
+          totalBrightness += brightness;
+        }
+
+        const avgBrightness = totalBrightness / (data.length / 4);
+
+        // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
+        setIconColor(avgBrightness > 128 ? 'black' : 'white');
+      };
+    } else {
+      // 이미지 없을 때는 밝은 배경이므로 검은색
+      setIconColor('black');
+    }
+  }, [feed.images, currentIndex]);
 
   // Feed가 변경되면 해당 피드의 댓글 로드
   useEffect(() => {
@@ -373,9 +420,8 @@ function FeedCard({
                     <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
                       <Heart
                         className={`w-6 h-6 ${
-                          liked ? "fill-red-500 text-red-500" : "text-white"
+                          liked ? "fill-red-500 text-red-500" : iconColor === 'white' ? "text-white" : "text-black"
                         }`}
-                        style={{ mixBlendMode: 'difference', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }}
                       />
                     </div>
                     <span
@@ -391,7 +437,9 @@ function FeedCard({
                     onClick={() => setShowComments(!showComments)}
                   >
                     <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                      <MessageCircle className="w-6 h-6 text-white" style={{ mixBlendMode: 'difference', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }} />
+                      <MessageCircle
+                        className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
+                      />
                     </div>
                     <span
                       className="text-white text-xs font-bold"
@@ -422,9 +470,8 @@ function FeedCard({
                     <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
                       <Heart
                         className={`w-6 h-6 ${
-                          liked ? "fill-red-500 text-red-500" : "text-white"
+                          liked ? "fill-red-500 text-red-500" : iconColor === 'white' ? "text-white" : "text-black"
                         }`}
-                        style={{ mixBlendMode: 'difference', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }}
                       />
                     </div>
                     <span
@@ -440,7 +487,9 @@ function FeedCard({
                     onClick={() => setShowComments(!showComments)}
                   >
                     <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                      <MessageCircle className="w-6 h-6 text-white" style={{ mixBlendMode: 'difference', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' }} />
+                      <MessageCircle
+                        className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
+                      />
                     </div>
                     <span
                       className="text-white text-xs font-bold"

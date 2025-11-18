@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Notification } from "@/types/dashboard.types";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface NotificationPopupProps {
   notifications: Notification[];
@@ -51,19 +52,20 @@ export default function NotificationPopup({
   return (
     <div
       ref={popupRef}
-      className="absolute left-0 ml-20 w-80 backdrop-blur-3xl bg-white/95 border border-white/60 shadow-2xl rounded-2xl z-50 overflow-hidden"
+      className="absolute left-0 ml-20 w-80 backdrop-blur-3xl bg-white/50 border border-white/60 shadow-2xl rounded-2xl z-50 overflow-hidden"
       style={{
         height: "544px",
         maxHeight: "544px",
         bottom: "calc(100% - 32px)",
       }}
     >
-      <div className="p-4 flex flex-col h-full">
-        <div className="flex items-center mb-4 flex-shrink-0">
+      <div className="flex flex-col" style={{ height: '544px' }}>
+        <div className="p-4 pb-2 flex-shrink-0">
           <h3 className="text-lg font-black text-gray-900">알림</h3>
         </div>
-        <div className="flex-1 overflow-y-auto pr-4">
-          <div className="space-y-2">
+        <div className="flex-1 overflow-hidden px-4">
+          <ScrollArea className="h-full">
+            <div className="space-y-2 pb-4 pr-4">
             {notifications.map((notif) => (
               <div
                 key={notif.id}
@@ -112,8 +114,9 @@ export default function NotificationPopup({
                   )}
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </div>

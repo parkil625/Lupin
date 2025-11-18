@@ -10,6 +10,7 @@
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { User } from "lucide-react";
 
 interface DoctorProfilePageProps {
   onLogout: () => void;
@@ -28,8 +29,8 @@ export default function DoctorProfilePage({ onLogout }: DoctorProfilePageProps) 
           <div className="p-8">
             <div className="flex items-center gap-6 mb-8">
               <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
-                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-cyan-600 text-white text-3xl font-black">
-                  의
+                <AvatarFallback className="bg-white">
+                  <User className="w-12 h-12 text-gray-400" />
                 </AvatarFallback>
               </Avatar>
               <div>

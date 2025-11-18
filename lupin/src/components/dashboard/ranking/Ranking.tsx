@@ -64,13 +64,9 @@ export default function Ranking() {
                           alt={ranker.name}
                           className="w-full h-full object-cover rounded-full"
                         />
-                      ) : ranker.isMe ? (
-                        <AvatarFallback className="bg-gradient-to-br from-gray-200 to-gray-300">
-                          <User className="w-5 h-5 text-gray-400" />
-                        </AvatarFallback>
                       ) : (
-                        <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-base">
-                          {ranker.avatar}
+                        <AvatarFallback className="bg-white">
+                          <User className="w-5 h-5 text-gray-400" />
                         </AvatarFallback>
                       )}
                     </Avatar>

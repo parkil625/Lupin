@@ -33,6 +33,7 @@ import {
   Pencil,
   Flame,
   Zap,
+  User,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { initialComments } from "@/mockdata/comments";
@@ -108,19 +109,28 @@ export default function FeedDetailDialogHome({
         const data = imageData.data;
 
         let totalBrightness = 0;
+        let totalAlpha = 0;
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i];
           const g = data[i + 1];
           const b = data[i + 2];
+          const a = data[i + 3];
           // 밝기 계산 (perceived brightness)
           const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
           totalBrightness += brightness;
+          totalAlpha += a;
         }
 
         const avgBrightness = totalBrightness / (data.length / 4);
+        const avgAlpha = totalAlpha / (data.length / 4);
 
-        // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
-        setIconColor(avgBrightness > 128 ? 'black' : 'white');
+        // 투명한 배경이면 검정색, 아니면 평균 밝기에 따라 결정
+        if (avgAlpha < 200) {
+          setIconColor('black');
+        } else {
+          // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
+          setIconColor(avgBrightness > 128 ? 'black' : 'white');
+        }
       };
     } else {
       // 이미지 없을 때는 밝은 배경이므로 검은색
@@ -295,8 +305,8 @@ export default function FeedDetailDialogHome({
       <div key={comment.id} className={isReply ? "ml-8 mt-3" : ""}>
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-xs">
-              {comment.avatar}
+            <AvatarFallback className="bg-white">
+              <User className="w-4 h-4 text-gray-400" />
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
@@ -411,7 +421,7 @@ export default function FeedDetailDialogHome({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`p-0 h-[95vh] max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/50 border border-gray-200/30 shadow-2xl transition-all duration-300 ${
+        className={`p-0 h-[95vh] max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl transition-all duration-300 ${
           showComments
             ? "!w-[825px] !max-w-[825px]"
             : "!w-[475px] !max-w-[475px]"
@@ -433,7 +443,7 @@ export default function FeedDetailDialogHome({
             {feed.images && feed.images.length > 0 ? (
               <>
                 {/* Image Carousel */}
-                <div className="relative h-[545px] w-full max-w-[475px] overflow-hidden bg-white">
+                <div className="relative h-[545px] w-full max-w-[475px] overflow-hidden">
                   <img
                     src={feed.images[currentImageIndex] || feed.images[0]}
                     alt={feed.activity}
@@ -446,17 +456,17 @@ export default function FeedDetailDialogHome({
                       {currentImageIndex > 0 && (
                         <button
                           onClick={onPrevImage}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
                         >
-                          <ChevronLeft className="w-5 h-5" />
+                          <ChevronLeft className={`w-8 h-8 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
                         </button>
                       )}
                       {currentImageIndex < feed.images.length - 1 && (
                         <button
                           onClick={onNextImage}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
                         >
-                          <ChevronRight className="w-5 h-5" />
+                          <ChevronRight className={`w-8 h-8 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
                         </button>
                       )}
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
@@ -475,8 +485,8 @@ export default function FeedDetailDialogHome({
                   {/* Author Avatar Only */}
                   <div className="absolute top-4 left-4">
                     <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
-                      <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-sm">
-                        {feed.avatar}
+                      <AvatarFallback className="bg-white">
+                        <User className="w-5 h-5 text-gray-400" />
                       </AvatarFallback>
                     </Avatar>
                   </div>
@@ -485,8 +495,8 @@ export default function FeedDetailDialogHome({
                   <div className="absolute top-4 right-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="w-10 h-10 rounded-full backdrop-blur-xl bg-white/20 border border-white/30 flex items-center justify-center hover:bg-white/30 transition-all">
-                          <MoreVertical className="w-5 h-5 text-white" />
+                        <button className="hover:opacity-70 transition-opacity">
+                          <MoreVertical className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -525,10 +535,7 @@ export default function FeedDetailDialogHome({
                         />
                       </div>
                       <span
-                        className="text-white text-xs font-bold"
-                        style={{
-                          textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
-                        }}
+                        className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
                       >
                         {feed.likes}
                       </span>
@@ -544,10 +551,7 @@ export default function FeedDetailDialogHome({
                         />
                       </div>
                       <span
-                        className="text-white text-xs font-bold"
-                        style={{
-                          textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
-                        }}
+                        className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
                       >
                         {totalCommentCount}
                       </span>
@@ -561,16 +565,16 @@ export default function FeedDetailDialogHome({
                 <div className="relative p-6 bg-transparent h-[545px]">
                   <div className="flex items-center justify-between">
                     <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg">
-                      <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-sm">
-                        {feed.avatar}
+                      <AvatarFallback className="bg-white">
+                        <User className="w-5 h-5 text-gray-400" />
                       </AvatarFallback>
                     </Avatar>
 
                     {/* Menu Button */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="w-10 h-10 rounded-full bg-white/20 border border-gray-300 flex items-center justify-center hover:bg-white/30 transition-all">
-                          <MoreVertical className="w-5 h-5 text-gray-900" />
+                        <button className="hover:opacity-70 transition-opacity">
+                          <MoreVertical className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -609,10 +613,7 @@ export default function FeedDetailDialogHome({
                         />
                       </div>
                       <span
-                        className="text-white text-xs font-bold"
-                        style={{
-                          textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
-                        }}
+                        className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
                       >
                         {feed.likes}
                       </span>
@@ -628,10 +629,7 @@ export default function FeedDetailDialogHome({
                         />
                       </div>
                       <span
-                        className="text-white text-xs font-bold"
-                        style={{
-                          textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
-                        }}
+                        className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
                       >
                         {totalCommentCount}
                       </span>
@@ -643,7 +641,7 @@ export default function FeedDetailDialogHome({
 
             {/* Feed Content (Always visible) */}
             <div
-              className="p-6 space-y-3 flex-1 overflow-auto bg-transparent backdrop-blur-sm"
+              className="p-6 space-y-3 flex-1 overflow-auto bg-transparent"
               style={{ width: "475px", maxWidth: "475px" }}
             >
               <style>{`
@@ -695,13 +693,8 @@ export default function FeedDetailDialogHome({
 
                   {/* Right: Time & Edited */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {feed.edited && <Pencil className="w-3 h-3 text-gray-900" />}
                     <span className="text-xs text-gray-900">{feed.time}</span>
-                    {feed.edited && (
-                      <>
-                        <Pencil className="w-3 h-3 text-gray-900" />
-                        <span className="text-xs text-gray-900">수정됨</span>
-                      </>
-                    )}
                   </div>
                 </div>
 
@@ -718,7 +711,7 @@ export default function FeedDetailDialogHome({
 
           {/* Comments Panel (Right - slides in) */}
           {showComments && (
-            <div className="flex-1 bg-transparent backdrop-blur-sm border-l border-gray-200/30 flex flex-col">
+            <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col">
               {/* Comments Header */}
               <div className="px-6 py-4 border-b border-gray-200/30 flex items-center justify-between bg-transparent">
                 <h3 className="text-lg font-bold text-gray-900">

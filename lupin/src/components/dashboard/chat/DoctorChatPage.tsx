@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle, User } from "lucide-react";
 import { toast } from "sonner";
 import { Member, ChatMessage } from "@/types/dashboard.types";
 import { members, initialDoctorChats } from "@/mockdata/members";
@@ -66,8 +66,8 @@ export default function DoctorChatPage() {
                     >
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10">
-                          <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-sm">
-                            {member.avatar}
+                          <AvatarFallback className="bg-white">
+                            <User className="w-5 h-5 text-gray-400" />
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
@@ -93,8 +93,8 @@ export default function DoctorChatPage() {
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black">
-                          {selectedChatMember.avatar}
+                        <AvatarFallback className="bg-white">
+                          <User className="w-5 h-5 text-gray-400" />
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -120,8 +120,8 @@ export default function DoctorChatPage() {
                         <div key={msg.id} className={`flex gap-3 ${msg.isMine ? 'justify-end' : ''}`}>
                           {!msg.isMine && (
                             <Avatar className="w-8 h-8">
-                              <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-xs">
-                                {msg.avatar}
+                              <AvatarFallback className="bg-white">
+                                <User className="w-4 h-4 text-gray-400" />
                               </AvatarFallback>
                             </Avatar>
                           )}

@@ -9,7 +9,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, FileText } from "lucide-react";
+import { MessageCircle, FileText, User } from "lucide-react";
 import { Member } from "@/types/dashboard.types";
 
 interface MemberDetailDialogProps {
@@ -39,8 +39,8 @@ export default function MemberDetailDialog({
         <div className="space-y-6 p-4">
           <div className="flex items-center gap-6">
             <Avatar className="w-20 h-20 border-4 border-white shadow-xl">
-              <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-2xl">
-                {member.avatar}
+              <AvatarFallback className="bg-white">
+                <User className="w-10 h-10 text-gray-400" />
               </AvatarFallback>
             </Avatar>
             <div>

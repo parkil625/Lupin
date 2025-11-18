@@ -133,14 +133,23 @@ export default function EditFeedDialog({
 
   const isVerified = startImage && endImage;
 
+  // 다이얼로그 닫기 시 검증
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && !isVerified) {
+      toast.error("운동 인증을 위해 시작 사진과 끝 사진을 모두 업로드해주세요!");
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
   if (!feed) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[795px] !w-[795px] h-[95vh] p-0 overflow-hidden backdrop-blur-3xl bg-white border border-gray-200 shadow-2xl !flex !gap-0" style={{ width: '795px', maxWidth: '795px' }}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="!max-w-[795px] !w-[795px] h-[95vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl !flex !gap-0" style={{ width: '795px', maxWidth: '795px' }}>
         <div className="flex h-full overflow-hidden w-full">
           {/* Left Sidebar */}
-          <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto flex-shrink-0">
+          <div className="w-80 bg-transparent border-r border-gray-200 p-6 flex-shrink-0">
             <h2 className="text-xl font-black text-gray-900 mb-4">피드 수정</h2>
 
             {/* Workout Type */}
@@ -237,37 +246,23 @@ export default function EditFeedDialog({
                 <Label className="text-xs font-bold text-gray-700 mb-1.5 block">기타 사진</Label>
                 <div className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 overflow-visible">
                   {otherImages.length > 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center p-2">
-                      <div className="relative w-full h-full">
-                        {otherImages.slice(0, 3).map((img, idx) => (
-                          <div
-                            key={idx}
-                            className="absolute w-16 h-16 rounded-md border-2 border-white shadow-md overflow-visible"
-                            style={{
-                              left: `${idx * 12}px`,
-                              top: `${idx * 8}px`,
-                              zIndex: 3 - idx
-                            }}
-                          >
-                            <img src={img} alt={`Other ${idx}`} className="w-full h-full object-cover rounded-md" />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOtherImages(otherImages.filter((_, i) => i !== idx));
-                              }}
-                              className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
-                            >
-                              <X className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
-                        ))}
-                        {otherImages.length > 1 && (
-                          <div className="absolute right-2 bottom-2 bg-[#C93831] text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-10">
-                            {otherImages.length}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <>
+                      <img src={otherImages[0]} alt="Other" className="w-full h-full object-cover rounded-lg" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOtherImages(otherImages.filter((_, i) => i !== 0));
+                        }}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-10"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                      {otherImages.length > 1 && (
+                        <div className="absolute right-2 bottom-2 bg-[#C93831] text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-10">
+                          +{otherImages.length - 1}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-xs text-gray-400">없음</span>
@@ -308,23 +303,32 @@ export default function EditFeedDialog({
           </div>
 
           {/* Right Editor */}
-          <div className="w-[475px] bg-white flex-shrink-0 flex flex-col">
-            <ScrollArea className="flex-1 w-[475px]" style={{ width: '475px', maxWidth: '475px' }}>
+          <div className="w-[475px] bg-transparent flex-shrink-0 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 w-[475px] h-full" style={{ width: '475px', maxWidth: '475px' }}>
               <style>{`
                 .bn-editor {
                   max-width: 443px !important;
                   width: 443px !important;
+                  background: transparent !important;
                 }
                 .bn-container {
                   max-width: 475px !important;
                   width: 475px !important;
+                  background: transparent !important;
                 }
                 .bn-block-content {
                   max-width: 443px !important;
+                  background: transparent !important;
                 }
                 .bn-inline-content {
                   word-wrap: break-word !important;
                   overflow-wrap: break-word !important;
+                }
+                .bn-block {
+                  background: transparent !important;
+                }
+                .ProseMirror {
+                  background: transparent !important;
                 }
                 [data-radix-scroll-area-viewport] {
                   width: 475px !important;

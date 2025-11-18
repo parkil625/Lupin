@@ -8,11 +8,32 @@
  * - 댓글 표시 및 작성 기능
  */
 import { useState, useEffect, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Sparkles, ChevronLeft, ChevronRight, Send, MoreVertical, Edit, Trash2, X, ArrowUpDown, Pencil, Flame, Zap } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  MoreVertical,
+  Edit,
+  Trash2,
+  X,
+  ArrowUpDown,
+  Pencil,
+  Flame,
+  Zap,
+} from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { initialComments } from "@/mockdata/comments";
 import {
@@ -44,16 +65,20 @@ export default function FeedDetailDialogHome({
   onPrevImage,
   onNextImage,
   onEdit,
-  onDelete
+  onDelete,
 }: FeedDetailDialogHomeProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [replyCommentText, setReplyCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [collapsedComments, setCollapsedComments] = useState<Set<number>>(new Set());
-  const [commentLikes, setCommentLikes] = useState<{[key: number]: { liked: boolean, count: number }}>({});
-  const [sortOrder, setSortOrder] = useState<'latest' | 'popular'>('latest');
+  const [collapsedComments, setCollapsedComments] = useState<Set<number>>(
+    new Set()
+  );
+  const [commentLikes, setCommentLikes] = useState<{
+    [key: number]: { liked: boolean; count: number };
+  }>({});
+  const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   // BlockNote 에디터 생성 (읽기 전용)
@@ -75,7 +100,7 @@ export default function FeedDetailDialogHome({
   }, [feed?.content]);
 
   const editor = useCreateBlockNote({
-    initialContent
+    initialContent,
   });
 
   // Feed가 변경되면 에디터 콘텐츠 업데이트
@@ -115,7 +140,7 @@ export default function FeedDetailDialogHome({
         avatar: "김",
         content: commentText,
         time: "방금 전",
-        replies: []
+        replies: [],
       };
       setComments([...comments, newComment]);
       setCommentText("");
@@ -125,24 +150,26 @@ export default function FeedDetailDialogHome({
   const handleSendReply = () => {
     if (replyCommentText.trim() && feed && replyingTo !== null) {
       // 루트 댓글에만 답글 추가
-      setComments(comments.map(comment => {
-        if (comment.id === replyingTo) {
-          const newReply: Comment = {
-            id: Date.now(),
-            author: "김루핀",
-            avatar: "김",
-            content: replyCommentText,
-            time: "방금 전",
-            parentId: replyingTo,
-            replies: []
-          };
-          return {
-            ...comment,
-            replies: [...(comment.replies || []), newReply]
-          };
-        }
-        return comment;
-      }));
+      setComments(
+        comments.map((comment) => {
+          if (comment.id === replyingTo) {
+            const newReply: Comment = {
+              id: Date.now(),
+              author: "김루핀",
+              avatar: "김",
+              content: replyCommentText,
+              time: "방금 전",
+              parentId: replyingTo,
+              replies: [],
+            };
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), newReply],
+            };
+          }
+          return comment;
+        })
+      );
       setReplyCommentText("");
       setReplyingTo(null);
     }
@@ -167,7 +194,7 @@ export default function FeedDetailDialogHome({
     if (comments.length === 0) return [];
 
     const sorted = [...comments];
-    if (sortOrder === 'popular') {
+    if (sortOrder === "popular") {
       return sorted.sort((a, b) => {
         const aLikes = commentLikes[a.id]?.count || 0;
         const bLikes = commentLikes[b.id]?.count || 0;
@@ -182,21 +209,23 @@ export default function FeedDetailDialogHome({
 
   // 댓글 좋아요 토글
   const toggleCommentLike = (commentId: number) => {
-    setCommentLikes(prev => {
+    setCommentLikes((prev) => {
       const current = prev[commentId] || { liked: false, count: 0 };
       return {
         ...prev,
         [commentId]: {
           liked: !current.liked,
-          count: current.liked ? Math.max(0, current.count - 1) : current.count + 1
-        }
+          count: current.liked
+            ? Math.max(0, current.count - 1)
+            : current.count + 1,
+        },
       };
     });
   };
 
   // 댓글 접기/펼치기 토글
   const toggleCollapse = (commentId: number) => {
-    setCollapsedComments(prev => {
+    setCollapsedComments((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(commentId)) {
         newSet.delete(commentId);
@@ -216,7 +245,7 @@ export default function FeedDetailDialogHome({
     const likeInfo = commentLikes[comment.id] || { liked: false, count: 0 };
 
     return (
-      <div key={comment.id} className={isReply ? 'ml-8 mt-3' : ''}>
+      <div key={comment.id} className={isReply ? "ml-8 mt-3" : ""}>
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
             <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-xs">
@@ -225,10 +254,14 @@ export default function FeedDetailDialogHome({
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-bold text-sm text-gray-900">{comment.author}</span>
+              <span className="font-bold text-sm text-gray-900">
+                {comment.author}
+              </span>
               <span className="text-xs text-gray-500">{comment.time}</span>
             </div>
-            <p className="text-sm text-gray-700 break-words mb-2">{comment.content}</p>
+            <p className="text-sm text-gray-700 break-words mb-2">
+              {comment.content}
+            </p>
 
             {/* 좋아요 + 답글 버튼 */}
             <div className="flex items-center gap-4 mb-2">
@@ -237,10 +270,16 @@ export default function FeedDetailDialogHome({
                 className="flex items-center gap-1 hover:opacity-70 transition-opacity"
               >
                 <Heart
-                  className={`w-4 h-4 ${likeInfo.liked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
+                  className={`w-4 h-4 ${
+                    likeInfo.liked
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-600"
+                  }`}
                 />
                 {likeInfo.count > 0 && (
-                  <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>
+                  <span className="text-xs text-gray-600 font-semibold">
+                    {likeInfo.count}
+                  </span>
                 )}
               </button>
               {/* 답글 버튼은 루트 댓글에만 표시 */}
@@ -262,19 +301,21 @@ export default function FeedDetailDialogHome({
                   placeholder="답글을 입력하세요..."
                   value={replyCommentText}
                   onChange={(e) => setReplyCommentText(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendReply()}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendReply()}
                   style={{
-                    width: '100%',
-                    padding: '0.5rem 0',
-                    fontSize: '0.875rem',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: '2px solid #d1d5db',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
+                    width: "100%",
+                    padding: "0.5rem 0",
+                    fontSize: "0.875rem",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "2px solid #d1d5db",
+                    outline: "none",
+                    transition: "border-color 0.2s",
                   }}
-                  onFocus={(e) => e.target.style.borderBottomColor = '#C93831'}
-                  onBlur={(e) => e.target.style.borderBottomColor = '#d1d5db'}
+                  onFocus={(e) =>
+                    (e.target.style.borderBottomColor = "#C93831")
+                  }
+                  onBlur={(e) => (e.target.style.borderBottomColor = "#d1d5db")}
                   autoFocus
                 />
                 <div className="flex gap-2 mt-2">
@@ -304,7 +345,7 @@ export default function FeedDetailDialogHome({
                 onClick={() => toggleCollapse(comment.id)}
                 className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2"
               >
-                {isCollapsed ? '▶' : '▼'} 답글 {comment.replies!.length}개
+                {isCollapsed ? "▶" : "▼"} 답글 {comment.replies!.length}개
               </button>
             )}
           </div>
@@ -323,12 +364,21 @@ export default function FeedDetailDialogHome({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`p-0 h-[95vh] max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/70 border border-gray-200 shadow-2xl transition-all duration-300 ${showComments ? '!w-[825px] !max-w-[825px]' : '!w-[475px] !max-w-[475px]'}`}
-        style={{ width: showComments ? '825px' : '475px', maxWidth: showComments ? '825px' : '475px' }}
+        className={`p-0 h-[95vh] max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/30 border border-gray-200/30 shadow-2xl transition-all duration-300 ${
+          showComments
+            ? "!w-[825px] !max-w-[825px]"
+            : "!w-[475px] !max-w-[475px]"
+        }`}
+        style={{
+          width: showComments ? "825px" : "475px",
+          maxWidth: showComments ? "825px" : "475px",
+        }}
       >
         <DialogHeader className="sr-only">
           <DialogTitle>피드 상세보기</DialogTitle>
-          <DialogDescription>피드의 상세 내용을 확인할 수 있습니다.</DialogDescription>
+          <DialogDescription>
+            피드의 상세 내용을 확인할 수 있습니다.
+          </DialogDescription>
         </DialogHeader>
         <div className="relative h-full flex overflow-hidden">
           {/* Main Feed Content (Left) */}
@@ -339,7 +389,7 @@ export default function FeedDetailDialogHome({
                 src={feed.images[currentImageIndex] || feed.images[0]}
                 alt={feed.activity}
                 className="w-full h-full object-cover"
-                style={{ maxWidth: '475px', width: '475px', height: '545px' }}
+                style={{ maxWidth: "475px", width: "475px", height: "545px" }}
               />
 
               {feed.images.length > 1 && (
@@ -362,7 +412,12 @@ export default function FeedDetailDialogHome({
                   )}
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                     {feed.images.map((_, idx) => (
-                      <div key={idx} className={`w-1.5 h-1.5 rounded-full ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}></div>
+                      <div
+                        key={idx}
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          idx === currentImageIndex ? "bg-white" : "bg-white/50"
+                        }`}
+                      ></div>
                     ))}
                   </div>
                 </>
@@ -376,7 +431,9 @@ export default function FeedDetailDialogHome({
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="text-white text-xs font-bold">{feed.author}</div>
+                  <div className="text-white text-xs font-bold">
+                    {feed.author}
+                  </div>
                   <div className="text-white/80 text-xs">{feed.time}</div>
                 </div>
               </div>
@@ -389,7 +446,10 @@ export default function FeedDetailDialogHome({
                       <MoreVertical className="w-5 h-5 text-white" />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200">
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
+                  >
                     <DropdownMenuItem
                       onClick={() => onEdit?.(feed)}
                       className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
@@ -417,56 +477,71 @@ export default function FeedDetailDialogHome({
               <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
                 <div className="flex flex-col items-center gap-1">
                   <Heart className="w-6 h-6 fill-red-500 text-red-500" />
-                  <span className="text-white text-xs font-bold">{feed.likes}</span>
+                  <span className="text-white text-xs font-bold">
+                    {feed.likes}
+                  </span>
                 </div>
 
                 <button
                   className="flex flex-col items-center gap-1 group"
                   onClick={() => setShowComments(!showComments)}
                 >
-                  <div className={`w-12 h-12 rounded-full backdrop-blur-xl border border-white/30 flex items-center justify-center hover:scale-110 transition-transform ${showComments ? 'bg-white/40' : 'bg-white/20'}`}>
+                  <div
+                    className={`w-12 h-12 rounded-full backdrop-blur-xl border border-white/30 flex items-center justify-center hover:scale-110 transition-transform ${
+                      showComments ? "bg-white/40" : "bg-white/20"
+                    }`}
+                  >
                     <MessageCircle className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-white text-xs font-bold">{totalCommentCount}</span>
+                  <span className="text-white text-xs font-bold">
+                    {totalCommentCount}
+                  </span>
                 </button>
               </div>
             </div>
 
             {/* Feed Content (Always visible) */}
-            <div className="p-6 space-y-3 flex-1 overflow-auto bg-white" style={{ width: '475px', maxWidth: '475px' }}>
+            <div
+              className="p-6 space-y-3 flex-1 overflow-auto bg-transparent backdrop-blur-sm"
+              style={{ width: "475px", maxWidth: "475px" }}
+            >
               <style>{`
                 .bn-container {
                   max-width: 427px !important;
                   width: 427px !important;
+                  background: transparent !important;
                 }
                 .bn-editor {
                   max-width: 427px !important;
                   width: 427px !important;
                   padding: 0 !important;
+                  background: transparent !important;
                 }
                 .bn-block-content {
                   max-width: 427px !important;
                 }
+                .ProseMirror {
+                  background: transparent !important;
+                }
               `}</style>
-              <div className="space-y-3" style={{ maxWidth: '427px' }}>
+              <div className="space-y-3" style={{ maxWidth: "427px" }}>
                 <div className="flex items-start justify-between gap-3">
                   {/* Left: Badges */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 font-bold border-0">
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      +{feed.points}
+                      <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
                     </Badge>
-                    <Badge className="bg-blue-100 border border-blue-300 text-blue-700 px-3 py-1 font-bold text-xs">
+                    <Badge className="bg-white border border-blue-300 text-blue-700 px-3 py-1 font-bold text-xs">
                       {feed.activity}
                     </Badge>
                     {feed.stats.calories && (
-                      <Badge className="bg-orange-100 border border-orange-300 text-orange-700 px-3 py-1 font-bold text-xs">
+                      <Badge className="bg-white border border-orange-300 text-orange-700 px-3 py-1 font-bold text-xs">
                         <Zap className="w-3 h-3 mr-1" />
                         {feed.stats.calories}
                       </Badge>
                     )}
                     {feed.streak && (
-                      <Badge className="bg-red-100 border border-red-300 text-red-700 px-3 py-1 font-bold text-xs">
+                      <Badge className="bg-white border border-red-300 text-red-700 px-3 py-1 font-bold text-xs">
                         <Flame className="w-3 h-3 mr-1" />
                         {feed.streak}일 연속
                       </Badge>
@@ -486,7 +561,11 @@ export default function FeedDetailDialogHome({
                 </div>
 
                 <div className="text-gray-700 font-medium text-sm leading-relaxed">
-                  <BlockNoteView editor={editor} editable={false} theme="light" />
+                  <BlockNoteView
+                    editor={editor}
+                    editable={false}
+                    theme="light"
+                  />
                 </div>
               </div>
             </div>
@@ -494,37 +573,47 @@ export default function FeedDetailDialogHome({
 
           {/* Comments Panel (Right - slides in) */}
           {showComments && (
-            <div className="flex-1 bg-white border-l border-gray-200 flex flex-col">
+            <div className="flex-1 bg-transparent backdrop-blur-sm border-l border-gray-200/30 flex flex-col">
               {/* Comments Header */}
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
+              <div className="px-6 py-4 border-b border-gray-200/30 flex items-center justify-between bg-transparent">
+                <h3 className="text-lg font-bold text-gray-900">
+                  댓글 {totalCommentCount}개
+                </h3>
                 <div className="relative">
                   <button
                     onClick={() => setShowSortMenu(!showSortMenu)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
                   >
                     <ArrowUpDown className="w-4 h-4 text-gray-600" />
                     <span className="text-sm font-semibold text-gray-700">
-                      {sortOrder === 'latest' ? '최신순' : '인기순'}
+                      {sortOrder === "latest" ? "최신순" : "인기순"}
                     </span>
                   </button>
                   {showSortMenu && (
-                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+                    <div className="absolute right-0 top-full mt-1 bg-white/70 backdrop-blur-md border border-gray-200/50 rounded-lg shadow-lg overflow-hidden z-50">
                       <button
                         onClick={() => {
-                          setSortOrder('latest');
+                          setSortOrder("latest");
                           setShowSortMenu(false);
                         }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors ${sortOrder === 'latest' ? 'bg-gray-50 font-semibold text-[#C93831]' : 'text-gray-700'}`}
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
+                          sortOrder === "latest"
+                            ? "bg-white/15 font-semibold text-[#C93831]"
+                            : "text-gray-700"
+                        }`}
                       >
                         최신순
                       </button>
                       <button
                         onClick={() => {
-                          setSortOrder('popular');
+                          setSortOrder("popular");
                           setShowSortMenu(false);
                         }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors ${sortOrder === 'popular' ? 'bg-gray-50 font-semibold text-[#C93831]' : 'text-gray-700'}`}
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
+                          sortOrder === "popular"
+                            ? "bg-white/15 font-semibold text-[#C93831]"
+                            : "text-gray-700"
+                        }`}
                       >
                         인기순
                       </button>
@@ -547,7 +636,7 @@ export default function FeedDetailDialogHome({
               </ScrollArea>
 
               {/* Comment Input - 일반 댓글 작성용 (항상 표시) */}
-              <div className="p-4 border-t">
+              <div className="p-4 border-t border-gray-200/30 bg-transparent">
                 <div className="flex gap-2 items-center">
                   <div className="relative flex-1">
                     <input
@@ -556,23 +645,27 @@ export default function FeedDetailDialogHome({
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           handleSendComment();
                         }
                       }}
                       style={{
-                        width: '100%',
-                        padding: '0.5rem 0',
-                        paddingRight: commentText ? '2.5rem' : '0.5rem',
-                        fontSize: '0.875rem',
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: '2px solid #d1d5db',
-                        outline: 'none',
-                        transition: 'border-color 0.2s, padding-right 0.2s'
+                        width: "100%",
+                        padding: "0.5rem 0",
+                        paddingRight: commentText ? "2.5rem" : "0.5rem",
+                        fontSize: "0.875rem",
+                        background: "transparent",
+                        border: "none",
+                        borderBottom: "2px solid #d1d5db",
+                        outline: "none",
+                        transition: "border-color 0.2s, padding-right 0.2s",
                       }}
-                      onFocus={(e) => e.target.style.borderBottomColor = '#C93831'}
-                      onBlur={(e) => e.target.style.borderBottomColor = '#d1d5db'}
+                      onFocus={(e) =>
+                        (e.target.style.borderBottomColor = "#C93831")
+                      }
+                      onBlur={(e) =>
+                        (e.target.style.borderBottomColor = "#d1d5db")
+                      }
                     />
                     {commentText && (
                       <button

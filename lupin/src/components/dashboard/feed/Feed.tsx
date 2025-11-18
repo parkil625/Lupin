@@ -26,6 +26,7 @@ import {
   Zap,
   Send,
   ArrowUpDown,
+  User,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { useCreateBlockNote } from "@blocknote/react";
@@ -99,19 +100,28 @@ function FeedCard({
         const data = imageData.data;
 
         let totalBrightness = 0;
+        let totalAlpha = 0;
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i];
           const g = data[i + 1];
           const b = data[i + 2];
+          const a = data[i + 3];
           // 밝기 계산 (perceived brightness)
           const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
           totalBrightness += brightness;
+          totalAlpha += a;
         }
 
         const avgBrightness = totalBrightness / (data.length / 4);
+        const avgAlpha = totalAlpha / (data.length / 4);
 
-        // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
-        setIconColor(avgBrightness > 128 ? 'black' : 'white');
+        // 투명한 배경이면 검정색, 아니면 평균 밝기에 따라 결정
+        if (avgAlpha < 200) {
+          setIconColor('black');
+        } else {
+          // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
+          setIconColor(avgBrightness > 128 ? 'black' : 'white');
+        }
       };
     } else {
       // 이미지 없을 때는 밝은 배경이므로 검은색
@@ -248,8 +258,8 @@ function FeedCard({
       <div key={comment.id} className={isReply ? 'ml-8 mt-3' : ''}>
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-xs">
-              {comment.avatar}
+            <AvatarFallback className="bg-white">
+              <User className="w-4 h-4 text-gray-400" />
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
@@ -349,7 +359,7 @@ function FeedCard({
   return (
     <div className="snap-start snap-always flex-shrink-0 w-full h-screen flex items-center justify-center py-4">
       <div
-        className={`h-full max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/50 border border-gray-200/30 shadow-2xl rounded-lg flex transition-all duration-300 ${showComments ? '!w-[825px] !max-w-[825px]' : '!w-[475px] !max-w-[475px]'}`}
+        className={`h-full max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl rounded-lg flex transition-all duration-300 ${showComments ? '!w-[825px] !max-w-[825px]' : '!w-[475px] !max-w-[475px]'}`}
         style={{ width: showComments ? '825px' : '475px', maxWidth: showComments ? '825px' : '475px' }}
       >
         {/* Main Feed Content (Left) */}
@@ -357,7 +367,7 @@ function FeedCard({
           {hasImages ? (
             <>
               {/* Image Carousel */}
-              <div className="relative h-[545px] w-full overflow-hidden rounded-tl-lg bg-white">
+              <div className="relative h-[545px] w-full overflow-hidden rounded-tl-lg">
                 <img
                   src={feed.images[currentIndex] || feed.images[0]}
                   alt={feed.activity}
@@ -373,9 +383,9 @@ function FeedCard({
                           e.stopPropagation();
                           setFeedImageIndex(feed.id, Math.max(0, currentIndex - 1));
                         }}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className={`w-8 h-8 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
                       </button>
                     )}
                     {currentIndex < feed.images.length - 1 && (
@@ -384,9 +394,9 @@ function FeedCard({
                           e.stopPropagation();
                           setFeedImageIndex(feed.id, Math.min(feed.images.length - 1, currentIndex + 1));
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className={`w-8 h-8 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
                       </button>
                     )}
                     <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
@@ -405,8 +415,8 @@ function FeedCard({
                 {/* Author Avatar Only */}
                 <div className="absolute top-4 left-4">
                   <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
-                    <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-sm">
-                      {feed.avatar}
+                    <AvatarFallback className="bg-white">
+                      <User className="w-5 h-5 text-gray-400" />
                     </AvatarFallback>
                   </Avatar>
                 </div>
@@ -425,10 +435,7 @@ function FeedCard({
                       />
                     </div>
                     <span
-                      className="text-white text-xs font-bold"
-                      style={{
-                        textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
-                      }}
+                      className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
                     >{feed.likes}</span>
                   </button>
 
@@ -442,10 +449,7 @@ function FeedCard({
                       />
                     </div>
                     <span
-                      className="text-white text-xs font-bold"
-                      style={{
-                        textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
-                      }}
+                      className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
                     >{totalCommentCount}</span>
                   </button>
                 </div>
@@ -456,8 +460,8 @@ function FeedCard({
               {/* No Image Layout - Avatar and Buttons */}
               <div className="relative p-6 bg-transparent h-[545px]">
                 <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg">
-                  <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white font-black text-sm">
-                    {feed.avatar}
+                  <AvatarFallback className="bg-white">
+                    <User className="w-5 h-5 text-gray-400" />
                   </AvatarFallback>
                 </Avatar>
 
@@ -475,10 +479,7 @@ function FeedCard({
                       />
                     </div>
                     <span
-                      className="text-white text-xs font-bold"
-                      style={{
-                        textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
-                      }}
+                      className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
                     >{feed.likes}</span>
                   </button>
 
@@ -492,10 +493,7 @@ function FeedCard({
                       />
                     </div>
                     <span
-                      className="text-white text-xs font-bold"
-                      style={{
-                        textShadow: '-1px -1px 2px rgba(0,0,0,0.9), 1px -1px 2px rgba(0,0,0,0.9), -1px 1px 2px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9)'
-                      }}
+                      className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
                     >{totalCommentCount}</span>
                   </button>
                 </div>
@@ -504,7 +502,7 @@ function FeedCard({
           )}
 
           {/* Feed Content */}
-          <div className={`p-6 space-y-3 flex-1 overflow-auto bg-transparent backdrop-blur-sm ${!showComments ? 'rounded-bl-lg rounded-br-lg' : ''} ${!hasImages ? 'rounded-tl-lg' : ''}`} style={{ width: '475px', maxWidth: '475px' }}>
+          <div className={`p-6 space-y-3 flex-1 overflow-auto bg-transparent ${!showComments ? 'rounded-bl-lg rounded-br-lg' : ''} ${!hasImages ? 'rounded-tl-lg' : ''}`} style={{ width: '475px', maxWidth: '475px' }}>
             <style>{`
               .bn-container {
                 max-width: 427px !important;
@@ -555,13 +553,8 @@ function FeedCard({
 
                 {/* Right: Time & Edited */}
                 <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {feed.edited && <Pencil className="w-3 h-3 text-gray-900" />}
                   <span className="text-xs text-gray-900">{feed.time}</span>
-                  {feed.edited && (
-                    <>
-                      <Pencil className="w-3 h-3 text-gray-900" />
-                      <span className="text-xs text-gray-900">수정됨</span>
-                    </>
-                  )}
                 </div>
               </div>
 
@@ -574,7 +567,7 @@ function FeedCard({
 
         {/* Comments Panel (Right - slides in) */}
         {showComments && (
-          <div className="flex-1 bg-transparent backdrop-blur-sm border-l border-gray-200/30 flex flex-col rounded-tr-lg rounded-br-lg">
+          <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col rounded-tr-lg rounded-br-lg">
             {/* Comments Header */}
             <div className="px-6 py-4 border-b border-gray-200/30 flex items-center justify-between bg-transparent">
               <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>

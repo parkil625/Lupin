@@ -37,8 +37,8 @@ export default function MembersPage({ onMemberSelect }: MembersPageProps) {
               <div className="p-6">
                 <div className="flex items-center gap-6">
                   <Avatar className="w-16 h-16 border-4 border-white shadow-lg">
-                    <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-xl">
-                      {member.avatar}
+                    <AvatarFallback className="bg-white">
+                      <User className="w-8 h-8 text-gray-400" />
                     </AvatarFallback>
                   </Avatar>
 

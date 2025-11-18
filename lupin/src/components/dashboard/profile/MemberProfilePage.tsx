@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Edit, Camera } from "lucide-react";
+import { Edit, Camera, User } from "lucide-react";
 
 interface MemberProfilePageProps {
   onLogout: () => void;
@@ -55,8 +55,8 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <AvatarFallback className="bg-gradient-to-br from-[#C93831] to-[#B02F28] text-white text-3xl font-black">
-                      김
+                    <AvatarFallback className="bg-white">
+                      <User className="w-12 h-12 text-gray-400" />
                     </AvatarFallback>
                   )}
                 </Avatar>

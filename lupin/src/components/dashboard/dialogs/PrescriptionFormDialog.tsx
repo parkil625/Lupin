@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, PlusSquare } from "lucide-react";
+import { CheckCircle, PlusSquare, User } from "lucide-react";
 import { Member } from "@/types/dashboard.types";
 
 interface PrescriptionFormDialogProps {
@@ -42,8 +42,8 @@ export default function PrescriptionFormDialog({
             <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
               <div className="flex items-center gap-4">
                 <Avatar className="w-16 h-16">
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-black text-xl">
-                    {member.avatar}
+                  <AvatarFallback className="bg-white">
+                    <User className="w-8 h-8 text-gray-400" />
                   </AvatarFallback>
                 </Avatar>
                 <div>

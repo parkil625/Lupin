@@ -112,7 +112,7 @@ export default function Home({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                <div className="w-full h-full flex items-center justify-center bg-white">
                   <User className="w-20 h-20 text-gray-400" />
                 </div>
               )}

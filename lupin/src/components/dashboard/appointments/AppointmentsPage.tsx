@@ -16,6 +16,7 @@ import {
   FileText,
   MessageCircle,
   XCircle,
+  User,
 } from "lucide-react";
 import { appointments } from "@/mockdata/members";
 
@@ -44,8 +45,8 @@ export default function AppointmentsPage({
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-12 h-12 border-2 border-white shadow-lg">
-                      <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black">
-                        {apt.memberAvatar}
+                      <AvatarFallback className="bg-white">
+                        <User className="w-6 h-6 text-gray-400" />
                       </AvatarFallback>
                     </Avatar>
                     <div>

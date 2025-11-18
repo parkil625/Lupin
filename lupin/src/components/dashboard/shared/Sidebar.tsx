@@ -10,7 +10,7 @@
 
 import React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, User } from "lucide-react";
 
 interface NavItem {
   id: string;
@@ -51,8 +51,8 @@ export default function Sidebar({ expanded, onExpandChange, navItems, selectedNa
         <button onClick={() => onNavSelect("profile")} className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/30 transition-all">
           <Avatar className="w-9 h-9 border-2 border-[#C93831]">
             {profileImage ? <img src={profileImage} alt="Profile" className="w-full h-full object-cover" /> :
-              <AvatarFallback className={`${userType === "doctor" ? "bg-gradient-to-br from-blue-600 to-cyan-600" : "bg-gradient-to-br from-[#C93831] to-[#B02F28]"} text-white font-black`}>
-                {userType === "doctor" ? "의" : "김"}
+              <AvatarFallback className="bg-white">
+                <User className="w-5 h-5 text-gray-400" />
               </AvatarFallback>}
           </Avatar>
           <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ${expanded ? 'opacity-100' : 'opacity-0 w-0'}`}>

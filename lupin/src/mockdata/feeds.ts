@@ -19,7 +19,10 @@ export const myFeeds: Feed[] = [
     stats: { strength: "+15", endurance: "+10", calories: "450kcal" },
     isMine: true,
     likedBy: [],
-    streak: 7
+    streak: 7,
+    department: "개발팀",
+    activeDays: 18,
+    avgScore: 48
   },
   {
     id: 2,
@@ -39,7 +42,10 @@ export const myFeeds: Feed[] = [
     stats: { cardio: "+20", calories: "320kcal" },
     isMine: true,
     likedBy: [],
-    streak: 6
+    streak: 6,
+    department: "개발팀",
+    activeDays: 18,
+    avgScore: 48
   },
   {
     id: 3,
@@ -56,7 +62,10 @@ export const myFeeds: Feed[] = [
     stats: { flexibility: "+25", mindfulness: "+30", calories: "180kcal" },
     isMine: true,
     likedBy: [],
-    streak: 5
+    streak: 5,
+    department: "개발팀",
+    activeDays: 18,
+    avgScore: 48
   },
   {
     id: 4,
@@ -73,7 +82,10 @@ export const myFeeds: Feed[] = [
     stats: { cardio: "+20", calories: "380kcal" },
     isMine: true,
     likedBy: [],
-    streak: 4
+    streak: 4,
+    department: "개발팀",
+    activeDays: 18,
+    avgScore: 48
   },
   {
     id: 5,
@@ -90,7 +102,10 @@ export const myFeeds: Feed[] = [
     stats: { core: "+30", calories: "250kcal" },
     isMine: true,
     likedBy: [],
-    streak: 3
+    streak: 3,
+    department: "개발팀",
+    activeDays: 18,
+    avgScore: 48
   }
 ];
 
@@ -113,7 +128,10 @@ export const allFeeds: Feed[] = [
     time: "2시간 전",
     stats: { strength: "+15", endurance: "+10", calories: "480kcal" },
     likedBy: [],
-    streak: 10
+    streak: 10,
+    department: "개발팀",
+    activeDays: 28,
+    avgScore: 52
   },
   {
     id: 6,
@@ -132,7 +150,10 @@ export const allFeeds: Feed[] = [
     time: "5시간 전",
     stats: { cardio: "+20", calories: "520kcal" },
     likedBy: [],
-    streak: 14
+    streak: 14,
+    department: "기획팀",
+    activeDays: 26,
+    avgScore: 48
   },
   {
     id: 7,
@@ -148,6 +169,9 @@ export const allFeeds: Feed[] = [
     time: "1일 전",
     stats: { flexibility: "+25", mindfulness: "+30", calories: "200kcal" },
     likedBy: [],
-    streak: 5
+    streak: 5,
+    department: "영업팀",
+    activeDays: 25,
+    avgScore: 45
   }
 ];

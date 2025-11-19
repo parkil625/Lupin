@@ -48,4 +48,9 @@ public class Comment extends BaseEntity {
     public boolean isReply() {
         return this.parent != null;
     }
+
+    // 댓글 수정
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }

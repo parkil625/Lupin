@@ -12,7 +12,8 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Card } from "../ui/card";
-import { ArrowLeft, Sparkles, Lock, User } from "lucide-react";
+import { ArrowLeft, Sparkles, Lock, User, AlertCircle } from "lucide-react";
+import { authApi } from "../../api";
 
 interface LoginProps {
   onBack: () => void;
@@ -22,10 +23,40 @@ interface LoginProps {
 export default function Login({ onBack, onLogin }: LoginProps) {
   const [employeeId, setEmployeeId] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(employeeId);
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await authApi.login(employeeId, password);
+
+      // JWT 토큰과 사용자 정보 저장
+      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem('userId', response.userId.toString());
+      localStorage.setItem('userEmail', response.email);
+      localStorage.setItem('userName', response.name);
+      localStorage.setItem('userRole', response.role);
+
+      // 로그인 성공
+      onLogin(response.name);
+    } catch (err: any) {
+      // 로그인 실패 처리
+      console.error('Login failed:', err);
+
+      if (err.response?.status === 401) {
+        setError("아이디 또는 비밀번호가 일치하지 않습니다.");
+      } else if (err.response?.status === 404) {
+        setError("존재하지 않는 사용자입니다.");
+      } else {
+        setError("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -105,13 +136,31 @@ export default function Login({ onBack, onLogin }: LoginProps) {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-center gap-2 p-4 rounded-xl bg-red-50 border border-red-200">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-700 font-medium">{error}</p>
+              </div>
+            )}
+
             {/* Login Button */}
-            <Button 
-              type="submit" 
-              className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all border-0"
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all border-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Sparkles className="w-5 h-5 mr-2" />
-              로그인
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  로그인 중...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  로그인
+                </>
+              )}
             </Button>
           </form>
 

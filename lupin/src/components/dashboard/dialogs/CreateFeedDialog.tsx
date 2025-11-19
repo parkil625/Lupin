@@ -40,16 +40,16 @@ interface CreateFeedDialogProps {
 }
 
 const WORKOUT_TYPES = [
-  "런닝",
-  "걷기",
-  "사이클",
-  "수영",
-  "웨이트",
-  "요가",
-  "필라테스",
-  "크로스핏",
-  "등산",
-  "기타"
+  { value: "running", label: "런닝" },
+  { value: "walking", label: "걷기" },
+  { value: "cycling", label: "사이클" },
+  { value: "swimming", label: "수영" },
+  { value: "weight", label: "웨이트" },
+  { value: "yoga", label: "요가" },
+  { value: "pilates", label: "필라테스" },
+  { value: "crossfit", label: "크로스핏" },
+  { value: "hiking", label: "등산" },
+  { value: "other", label: "기타" }
 ];
 
 const DRAFT_STORAGE_KEY = "createFeedDraft";
@@ -62,7 +62,7 @@ export default function CreateFeedDialog({
   const [startImage, setStartImage] = useState<string | null>(null);
   const [endImage, setEndImage] = useState<string | null>(null);
   const [otherImages, setOtherImages] = useState<string[]>([]);
-  const [workoutType, setWorkoutType] = useState<string>("런닝");
+  const [workoutType, setWorkoutType] = useState<string>("running");
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +86,7 @@ export default function CreateFeedDialog({
           setStartImage(draft.startImage || null);
           setEndImage(draft.endImage || null);
           setOtherImages(draft.otherImages || []);
-          setWorkoutType(draft.workoutType || "런닝");
+          setWorkoutType(draft.workoutType || "running");
 
           // 에디터 콘텐츠 복원
           if (draft.content && Array.isArray(draft.content)) {
@@ -139,7 +139,7 @@ export default function CreateFeedDialog({
     setStartImage(null);
     setEndImage(null);
     setOtherImages([]);
-    setWorkoutType("런닝");
+    setWorkoutType("running");
     try {
       editor.replaceBlocks(editor.document, [
         {
@@ -224,8 +224,14 @@ export default function CreateFeedDialog({
                     role="combobox"
                     aria-expanded={comboboxOpen}
                     className="w-full justify-between bg-white border-gray-300 text-sm"
+                    onClick={() => {
+                      console.log("Button clicked, current state:", comboboxOpen);
+                      setComboboxOpen(!comboboxOpen);
+                    }}
                   >
-                    {workoutType || "운동 선택"}
+                    {workoutType
+                      ? WORKOUT_TYPES.find((type) => type.value === workoutType)?.label || "값 없음"
+                      : "운동 선택"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -237,20 +243,20 @@ export default function CreateFeedDialog({
                       <CommandGroup>
                         {WORKOUT_TYPES.map((type) => (
                           <CommandItem
-                            key={type}
-                            value={type}
+                            key={type.value}
+                            value={type.value}
                             onSelect={(currentValue: string) => {
-                              setWorkoutType(currentValue);
+                              setWorkoutType(currentValue === workoutType ? "" : currentValue);
                               setComboboxOpen(false);
                             }}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                workoutType === type ? "opacity-100" : "opacity-0"
+                                workoutType === type.value ? "opacity-100" : "opacity-0"
                               )}
                             />
-                            {type}
+                            {type.label}
                           </CommandItem>
                         ))}
                       </CommandGroup>

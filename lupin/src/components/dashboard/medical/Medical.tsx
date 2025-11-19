@@ -143,9 +143,12 @@ export default function Medical({
     },
   ];
 
+  // 예정된 예약이 있는지 확인
+  const hasActiveAppointment = appointments.some(apt => apt.status === "예정");
+
   return (
     <div className="h-full overflow-auto p-8">
-      <div className="max-w-[1800px] mx-auto">
+      <div className="max-w-[1200px] mx-auto">
         <div className="mb-6">
           <h1 className="text-5xl font-black text-gray-900 mb-2">
             비대면 진료
@@ -155,42 +158,19 @@ export default function Medical({
           </p>
         </div>
 
-        <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl h-[calc(100vh-200px)]">
-          <div className="h-full flex">
-            {/* 좌측: 예약 및 처방전 */}
-            <div className="w-[600px] border-r border-gray-200 p-6 overflow-auto">
-              <div className="space-y-6">
-                {/* 새 진료 예약 */}
-                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl hover:shadow-2xl transition-all">
-                  <div className="p-6 flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#C93831] to-[#B02F28] rounded-3xl flex items-center justify-center shadow-xl flex-shrink-0">
-                      <CalendarIcon className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-black text-gray-900 mb-1">
-                        새 진료 예약
-                      </h3>
-                      <p className="text-gray-600 font-medium text-sm">
-                        의료진과 비대면 상담
-                      </p>
-                    </div>
-                    <Button
-                      onClick={() => setShowAppointment(true)}
-                      className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold px-6 py-3 rounded-2xl"
-                    >
-                      예약하기
-                    </Button>
-                  </div>
-                </Card>
-
+        <div className="h-[calc(100vh-200px)] flex gap-4">
+          {/* 좌측: 예약 내역 및 처방전 */}
+          <div className="w-96 flex flex-col gap-4">
                 {/* 예약 내역 */}
-                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
-                  <div className="p-4">
+                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[calc((100vh-216px)/2)] flex flex-col overflow-hidden">
+                  <div className="p-4 flex-shrink-0">
                     <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
                       <Clock className="w-5 h-5 text-[#C93831]" />
                       예약 내역
                     </h3>
-                    <div className="space-y-2 max-h-64 overflow-auto pr-2">
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-4 pb-4">
+                    <div className="space-y-2">
                       {appointments.map((apt) => (
                         <div
                           key={apt.id}
@@ -239,13 +219,15 @@ export default function Medical({
                 </Card>
 
                 {/* 처방전 */}
-                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
-                  <div className="p-4">
+                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[calc((100vh-216px)/2)] flex flex-col overflow-hidden">
+                  <div className="p-4 flex-shrink-0">
                     <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
                       <FileText className="w-5 h-5 text-[#C93831]" />
                       처방전
                     </h3>
-                    <div className="grid grid-cols-2 gap-3">
+                  </div>
+                  <div className="flex-1 overflow-y-auto px-4 pb-4">
+                    <div className="space-y-2">
                       {prescriptions.map((pres) => (
                         <div
                           key={pres.id}
@@ -273,93 +255,119 @@ export default function Medical({
                     </div>
                   </div>
                 </Card>
-              </div>
-            </div>
+          </div>
 
-            {/* 우측: 채팅 */}
-            <div className="flex-1 flex flex-col p-6">
-              <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-10 h-10">
-                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black">
-                      김
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-bold text-gray-900">김의사</div>
-                    <div className="text-xs text-gray-600">온라인</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-xs font-bold text-green-700">
-                    진료 중
-                  </span>
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1 mb-4">
-                <div className="space-y-4">
-                  {chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex gap-3 ${
-                        msg.isMine ? "justify-end" : ""
-                      }`}
-                    >
-                      {!msg.isMine && (
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black text-xs">
-                            {msg.avatar}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div
-                        className={`rounded-2xl p-3 max-w-md ${
-                          msg.isMine ? "bg-[#C93831] text-white" : "bg-gray-100"
-                        }`}
-                      >
-                        {!msg.isMine && (
-                          <div className="font-bold text-xs text-gray-900 mb-1">
-                            {msg.author}
-                          </div>
-                        )}
-                        <div className="text-sm">{msg.content}</div>
-                        <div
-                          className={`text-xs mt-1 ${
-                            msg.isMine ? "text-white/80" : "text-gray-500"
-                          }`}
-                        >
-                          {msg.time}
-                        </div>
+          {/* 우측: 채팅 */}
+          <Card className="flex-1 backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl">
+            <div className="h-full flex flex-col p-6">
+              {hasActiveAppointment ? (
+                <>
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black">
+                          김
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-bold text-gray-900">김의사</div>
+                        <div className="text-xs text-gray-600">온라인</div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-xs font-bold text-green-700">
+                        진료 중
+                      </span>
+                    </div>
+                  </div>
 
-              <div className="flex gap-2">
-                <Input
-                  placeholder="메시지 입력..."
-                  className="rounded-xl"
-                  value={chatMessage}
-                  onChange={(e) => setChatMessage(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  className="bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white rounded-xl"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+                  <ScrollArea className="flex-1 mb-4">
+                    <div className="space-y-4">
+                      {chatMessages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`flex gap-3 ${
+                            msg.isMine ? "justify-end" : ""
+                          }`}
+                        >
+                          {!msg.isMine && (
+                            <Avatar className="w-8 h-8">
+                              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black text-xs">
+                                {msg.avatar}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                          <div
+                            className={`rounded-2xl p-3 max-w-md ${
+                              msg.isMine ? "bg-[#C93831] text-white" : "bg-gray-100"
+                            }`}
+                          >
+                            {!msg.isMine && (
+                              <div className="font-bold text-xs text-gray-900 mb-1">
+                                {msg.author}
+                              </div>
+                            )}
+                            <div className="text-sm">{msg.content}</div>
+                            <div
+                              className={`text-xs mt-1 ${
+                                msg.isMine ? "text-white/80" : "text-gray-500"
+                              }`}
+                            >
+                              {msg.time}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="메시지 입력..."
+                      className="rounded-xl"
+                      value={chatMessage}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") {
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      className="bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white rounded-xl"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl hover:shadow-2xl transition-all max-w-md">
+                    <div className="p-8 text-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-[#C93831] to-[#B02F28] rounded-3xl flex items-center justify-center shadow-xl mx-auto mb-6">
+                        <CalendarIcon className="w-10 h-10 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-black text-gray-900 mb-3">
+                        새 진료 예약
+                      </h3>
+                      <p className="text-gray-600 font-medium mb-6">
+                        의료진과 비대면 상담을 시작하세요
+                      </p>
+                      <Button
+                        onClick={() => setShowAppointment(true)}
+                        className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold px-8 py-3 rounded-2xl w-full"
+                      >
+                        예약하기
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              )}
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   );

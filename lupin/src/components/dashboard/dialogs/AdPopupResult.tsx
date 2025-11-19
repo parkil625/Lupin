@@ -42,9 +42,9 @@ export default function AdPopResult({ status, failReason }: AdPopResultProps) {
 
             {isSuccess ? (
               <p className="text-lg font-medium drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]">
-                웰빙 챌린지 이벤트에 성공적으로 응모되었습니다.
+                응모 성공!.
                 <br />
-                당첨 결과는 추후 안내드릴게요.
+                상품은 알림을 확인해주세요.
               </p>
             ) : (
               <p className="text-lg font-medium drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]">

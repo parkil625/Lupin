@@ -33,7 +33,7 @@ import { Feed, Comment } from "@/types/dashboard.types";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
-import { initialComments } from "@/mockdata/comments";
+import { commentApi } from "@/api";
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -78,10 +78,42 @@ function FeedCard({
 
   // Feed가 변경되면 상태 리셋 (렌더링 중 상태 업데이트 패턴)
   if (feed.id !== prevFeedId) {
-    setComments(initialComments[feed.id] || []);
+    setComments([]);
     setShowComments(false);
     setPrevFeedId(feed.id);
   }
+
+  // 댓글 데이터 로드
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!showComments) return;
+
+      try {
+        const response = await commentApi.getCommentsByFeedId(feed.id, 0, 100);
+        // API 응답이 Page 객체인 경우
+        const commentList = response.content || response;
+
+        // 답글 정보도 함께 로드
+        const commentsWithReplies = await Promise.all(
+          commentList.map(async (comment: any) => {
+            try {
+              const replies = await commentApi.getRepliesByCommentId(comment.id);
+              return { ...comment, replies: replies || [] };
+            } catch (error) {
+              return { ...comment, replies: [] };
+            }
+          })
+        );
+
+        setComments(commentsWithReplies);
+      } catch (error) {
+        console.error("댓글 데이터 로드 실패:", error);
+        setComments([]);
+      }
+    };
+
+    fetchComments();
+  }, [feed.id, showComments]);
 
   // 이미지 밝기 분석하여 아이콘 색상 결정
   useEffect(() => {
@@ -638,7 +670,7 @@ function FeedCard({
                   <Badge className="bg-white text-blue-700 px-3 py-1 font-bold text-xs border-0">
                     {feed.activity}
                   </Badge>
-                  {feed.stats.calories && (
+                  {feed.stats?.calories && (
                     <Badge className="bg-white text-orange-700 px-3 py-1 font-bold text-xs border-0">
                       {feed.stats.calories}
                     </Badge>

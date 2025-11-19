@@ -52,11 +52,14 @@ export interface Prescription {
 
 export interface Notification {
   id: number;
-  type: "challenge" | "appointment" | "like" | "comment";
+  type: "challenge" | "appointment" | "like" | "comment" | "chat";
   title: string;
   content: string;
   time: string;
   read: boolean;
+  feedId?: number;  // 피드 관련 알림일 경우
+  commentId?: number;  // 댓글 관련 알림일 경우
+  chatRoomId?: number;  // 채팅 관련 알림일 경우
 }
 
 export interface Member {

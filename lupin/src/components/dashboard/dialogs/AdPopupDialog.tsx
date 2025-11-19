@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import AdPopResult from "./AdPopupResult";
 
@@ -63,6 +63,14 @@ export default function AdPopupDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl p-0 gap-0 bg-transparent border-0 shadow-none">
+        <DialogTitle className="sr-only">웰빙 챌린지 이벤트</DialogTitle>
+        <DialogDescription className="sr-only">
+          {showResult
+            ? resultStatus === "success"
+              ? "응모가 완료되었습니다."
+              : "응모에 실패했습니다."
+            : "웰빙 챌린지 이벤트에 지금 참여하고 푸짐한 상품을 받아가세요!"}
+        </DialogDescription>
         <div className="relative">
           <div className="relative bg-white rounded-2xl overflow-hidden shadow-2xl">
             {showResult ? (

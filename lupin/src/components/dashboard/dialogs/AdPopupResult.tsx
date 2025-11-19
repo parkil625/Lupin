@@ -30,7 +30,7 @@ export default function AdPopResult({ status, failReason }: AdPopResultProps) {
               {isSuccess ? (
                 <>
                   <CheckCircle2 className="w-8 h-8 text-emerald-300" />
-                  응모가 완료되었어요! 🎉
+                  응모가 완료되었어요!
                 </>
               ) : (
                 <>

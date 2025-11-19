@@ -17,7 +17,6 @@ import {
   Calendar as CalendarIcon,
   Clock,
   FileText,
-  MessageCircle,
   XCircle,
   Send,
 } from "lucide-react";
@@ -144,7 +143,9 @@ export default function Medical({
   ];
 
   // 예정된 예약이 있는지 확인
-  const hasActiveAppointment = appointments.some(apt => apt.status === "예정");
+  const hasActiveAppointment = appointments.some(
+    (apt) => apt.status === "예정"
+  );
 
   return (
     <div className="h-full overflow-auto p-8">
@@ -161,100 +162,98 @@ export default function Medical({
         <div className="h-[calc(100vh-200px)] flex gap-4">
           {/* 좌측: 예약 내역 및 처방전 */}
           <div className="w-96 flex flex-col gap-4">
-                {/* 예약 내역 */}
-                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[calc((100vh-216px)/2)] flex flex-col overflow-hidden">
-                  <div className="p-4 flex-shrink-0">
-                    <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-[#C93831]" />
-                      예약 내역
-                    </h3>
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-4 pb-4">
-                    <div className="space-y-2">
-                      {appointments.map((apt) => (
-                        <div
-                          key={apt.id}
-                          className={`p-3 rounded-xl ${
+            {/* 예약 내역 */}
+            <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[calc((100vh-216px)/2)] flex flex-col overflow-hidden">
+              <div className="p-4 flex-shrink-0">
+                <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-[#C93831]" />
+                  예약 내역
+                </h3>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 pb-4">
+                <div className="space-y-2">
+                  {appointments.map((apt) => (
+                    <div
+                      key={apt.id}
+                      className={`p-3 rounded-xl ${
+                        apt.status === "예정" ? "bg-white/80" : "bg-gray-100/50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-1">
+                        <div>
+                          <div className="font-bold text-gray-900 text-sm">
+                            {apt.type}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            {apt.doctor} 원장
+                          </div>
+                        </div>
+                        <Badge
+                          className={`${
                             apt.status === "예정"
-                              ? "bg-white/80"
-                              : "bg-gray-100/50"
-                          }`}
+                              ? "bg-green-500"
+                              : "bg-gray-500"
+                          } text-white font-bold border-0 text-xs`}
                         >
-                          <div className="flex items-start justify-between mb-1">
-                            <div>
-                              <div className="font-bold text-gray-900 text-sm">
-                                {apt.type}
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                {apt.doctor} 원장
-                              </div>
-                            </div>
-                            <Badge
-                              className={`${
-                                apt.status === "예정"
-                                  ? "bg-green-500"
-                                  : "bg-gray-500"
-                              } text-white font-bold border-0 text-xs`}
-                            >
-                              {apt.status}
-                            </Badge>
-                          </div>
-                          <div className="text-xs text-gray-600 font-medium mb-2">
-                            {apt.date} {apt.time}
-                          </div>
-                          {apt.status === "예정" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full rounded-lg text-xs border-red-300 text-red-600 hover:bg-red-50"
-                            >
-                              <XCircle className="w-3 h-3 mr-1" />
-                              취소
-                            </Button>
-                          )}
-                        </div>
-                      ))}
+                          {apt.status}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-gray-600 font-medium mb-2">
+                        {apt.date} {apt.time}
+                      </div>
+                      {apt.status === "예정" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full rounded-lg text-xs border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <XCircle className="w-3 h-3 mr-1" />
+                          취소
+                        </Button>
+                      )}
                     </div>
-                  </div>
-                </Card>
+                  ))}
+                </div>
+              </div>
+            </Card>
 
-                {/* 처방전 */}
-                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[calc((100vh-216px)/2)] flex flex-col overflow-hidden">
-                  <div className="p-4 flex-shrink-0">
-                    <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-[#C93831]" />
-                      처방전
-                    </h3>
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-4 pb-4">
-                    <div className="space-y-2">
-                      {prescriptions.map((pres) => (
-                        <div
-                          key={pres.id}
-                          className="p-3 rounded-xl bg-white/80 border border-gray-200"
-                        >
-                          <div className="font-bold text-gray-900 mb-1 text-sm">
-                            {pres.name}
-                          </div>
-                          <div className="text-xs text-gray-600 mb-1">
-                            {pres.doctor} 원장
-                          </div>
-                          <div className="text-xs text-gray-500 mb-2">
-                            {pres.date}
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full rounded-lg text-xs"
-                            onClick={() => setSelectedPrescription(pres)}
-                          >
-                            상세보기
-                          </Button>
-                        </div>
-                      ))}
+            {/* 처방전 */}
+            <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[calc((100vh-216px)/2)] flex flex-col overflow-hidden">
+              <div className="p-4 flex-shrink-0">
+                <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[#C93831]" />
+                  처방전
+                </h3>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 pb-4">
+                <div className="space-y-2">
+                  {prescriptions.map((pres) => (
+                    <div
+                      key={pres.id}
+                      className="p-3 rounded-xl bg-white/80 border border-gray-200"
+                    >
+                      <div className="font-bold text-gray-900 mb-1 text-sm">
+                        {pres.name}
+                      </div>
+                      <div className="text-xs text-gray-600 mb-1">
+                        {pres.doctor} 원장
+                      </div>
+                      <div className="text-xs text-gray-500 mb-2">
+                        {pres.date}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full rounded-lg text-xs"
+                        onClick={() => setSelectedPrescription(pres)}
+                      >
+                        상세보기
+                      </Button>
                     </div>
-                  </div>
-                </Card>
+                  ))}
+                </div>
+              </div>
+            </Card>
           </div>
 
           {/* 우측: 채팅 */}
@@ -300,7 +299,9 @@ export default function Medical({
                           )}
                           <div
                             className={`rounded-2xl p-3 max-w-md ${
-                              msg.isMine ? "bg-[#C93831] text-white" : "bg-gray-100"
+                              msg.isMine
+                                ? "bg-[#C93831] text-white"
+                                : "bg-gray-100"
                             }`}
                           >
                             {!msg.isMine && (

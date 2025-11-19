@@ -28,8 +28,15 @@ public class Notification extends BaseEntity {
     @Builder.Default
     private String isRead = "N"; // Y/N
 
+    @Column(name = "ref_type", length = 50)
+    private String refType; // FEED, COMMENT, CHAT 등
+
+    @Column(name = "ref_id")
+    private String refId; // 관련 엔티티 ID
+
     @Column(name = "related_id")
-    private Long relatedId; // 관련 엔티티 ID (Feed, Comment 등)
+    @Deprecated
+    private Long relatedId; // 하위 호환성을 위해 유지
 
     // 연관관계
     @ManyToOne(fetch = FetchType.LAZY)

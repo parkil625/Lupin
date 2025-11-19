@@ -45,6 +45,11 @@ public class FeedService {
     public FeedDetailResponse createFeed(Long userId, FeedCreateRequest request) {
         User user = findUserById(userId);
 
+        // 하루 1회 피드 작성 제한 확인
+        if (feedRepository.hasUserPostedToday(userId)) {
+            throw new BusinessException(ErrorCode.DAILY_FEED_LIMIT_EXCEEDED);
+        }
+
         // 피드 생성
         Feed feed = Feed.builder()
                 .activityType(request.getActivityType())
@@ -183,10 +188,18 @@ public class FeedService {
     }
 
     /**
-     * 포인트 계산 (5분당 5점)
+     * 오늘 피드 작성 가능 여부 확인
+     */
+    public boolean canPostToday(Long userId) {
+        return !feedRepository.hasUserPostedToday(userId);
+    }
+
+    /**
+     * 포인트 계산 (5분당 5점, 최대 30점)
      */
     private Long calculatePoints(Integer duration) {
-        return (long) ((duration / 5) * 5);
+        long points = (long) ((duration / 5) * 5);
+        return Math.min(points, 30L); // 최대 30점
     }
 
     /**

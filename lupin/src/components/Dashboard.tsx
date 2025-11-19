@@ -8,7 +8,7 @@
  * - 각 페이지 컴포넌트의 Props 전달 및 이벤트 핸들링
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
 import { Home, Video, Trophy, Calendar as CalendarIcon, PlusSquare, MessageCircle } from "lucide-react";
@@ -31,8 +31,7 @@ import DoctorProfilePage from "./dashboard/profile/DoctorProfilePage";
 import CreatePage from "./dashboard/create/CreatePage";
 import MemberProfilePage from "./dashboard/profile/MemberProfilePage";
 import { Feed, Prescription, Notification, Member, ChatMessage } from "@/types/dashboard.types";
-import { myFeeds as initialMyFeeds, allFeeds as initialAllFeeds } from "@/mockdata/feeds";
-import { initialNotifications } from "@/mockdata/notifications";
+import { feedApi, notificationApi } from "@/api";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -67,6 +66,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [feedImageIndexes, setFeedImageIndexes] = useState<{[key: number]: number}>({});
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [userId] = useState<number>(parseInt(localStorage.getItem('userId') || '1'));
   const [showAppointment, setShowAppointment] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -76,13 +76,116 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(null);
   const [feedLikes, setFeedLikes] = useState<{[key: number]: string[]}>({});
-  const [notifications] = useState<Notification[]>(initialNotifications);
-  const [myFeeds, setMyFeeds] = useState<Feed[]>(initialMyFeeds);
-  const [allFeeds, setAllFeeds] = useState<Feed[]>(initialAllFeeds);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [myFeeds, setMyFeeds] = useState<Feed[]>([]);
+  const [allFeeds, setAllFeeds] = useState<Feed[]>([]);
   const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>([]);
   const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  // 피드 데이터 로드
+  useEffect(() => {
+    const fetchFeeds = async () => {
+      try {
+        const response = await feedApi.getAllFeeds(0, 100);
+        // API 응답이 Page 객체인 경우
+        const feeds = response.content || response;
+
+        // 현재 로그인한 사용자 이름
+        const currentUserName = localStorage.getItem('userName') || localStorage.getItem('userId') || 'user01';
+
+        // 내 피드와 전체 피드 분리
+        const myFeedsList = feeds.filter((feed: Feed) => feed.author === currentUserName);
+        const otherFeeds = feeds.filter((feed: Feed) => feed.author !== currentUserName);
+
+        setMyFeeds(myFeedsList);
+        setAllFeeds(otherFeeds); // 피드 메뉴에는 내 피드 제외
+      } catch (error) {
+        console.error("피드 데이터 로드 실패:", error);
+        toast.error("피드 데이터를 불러오는데 실패했습니다.");
+      }
+    };
+
+    if (userType === "member") {
+      fetchFeeds();
+    }
+  }, [userType]);
+
+  // 알림 데이터 로드
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        // 임시 사용자 ID (추후 실제 사용자 ID로 교체 필요)
+        const userId = 1;
+        const response = await notificationApi.getAllNotifications(userId);
+        setNotifications(response);
+      } catch (error) {
+        console.error("알림 데이터 로드 실패:", error);
+        // 에러가 발생해도 사용자 경험을 해치지 않도록 토스트 메시지는 표시하지 않음
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
+  // 알림 클릭 핸들러
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      // 읽음 처리
+      if (!notification.read) {
+        const userId = 1; // 임시 사용자 ID
+        await notificationApi.markAsRead(notification.id, userId);
+
+        // 로컬 상태 업데이트
+        setNotifications(notifications.map(n =>
+          n.id === notification.id ? { ...n, read: true } : n
+        ));
+      }
+
+      // 알림 팝업 닫기
+      setShowNotifications(false);
+      setSidebarExpanded(false);
+
+      // 알림 타입에 따라 적절한 페이지로 이동
+      if (notification.type === "like" || notification.type === "comment") {
+        // 피드 관련 알림 - 내 게시글이면 홈으로, 아니면 피드 페이지로
+        if (notification.feedId) {
+          const feed = myFeeds.find(f => f.id === notification.feedId);
+          if (feed) {
+            // 내 피드면 홈으로 이동
+            setSelectedNav("home");
+            setSelectedFeed(feed);
+            setShowFeedDetailInHome(true);
+          } else {
+            // 다른 사람 피드면 피드 페이지로
+            setSelectedNav("feed");
+            const otherFeed = allFeeds.find(f => f.id === notification.feedId);
+            if (otherFeed) {
+              setSelectedFeed(otherFeed);
+              setShowFeedDetailInHome(true);
+            }
+          }
+        }
+      } else if (notification.type === "chat") {
+        // 채팅 알림 - 채팅 페이지로 이동
+        if (userType === "doctor") {
+          setSelectedNav("chat");
+        } else {
+          setShowChat(true);
+        }
+      } else if (notification.type === "appointment") {
+        // 예약 알림 - 진료 페이지로 이동
+        setSelectedNav("medical");
+      } else if (notification.type === "challenge") {
+        // 챌린지 알림 - 홈으로 이동
+        setSelectedNav("home");
+      }
+    } catch (error) {
+      console.error("알림 처리 실패:", error);
+      toast.error("알림을 처리하는데 실패했습니다.");
+    }
+  };
 
   const navItems = userType === "member" ? memberNavItems : doctorNavItems;
   const getFeedImageIndex = (feedId: number) => feedImageIndexes[feedId] || 0;
@@ -180,7 +283,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             </div>
             <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ml-6 ${(sidebarExpanded || showNotifications) ? 'opacity-100' : 'opacity-0 w-0'}`}>알림</span>
           </button>
-          {showNotifications && <NotificationPopup notifications={notifications} onClose={(closeSidebar = true) => { setShowNotifications(false); if (closeSidebar) setSidebarExpanded(false); }} />}
+          {showNotifications && <NotificationPopup notifications={notifications} onClose={(closeSidebar = true) => { setShowNotifications(false); if (closeSidebar) setSidebarExpanded(false); }} onNotificationClick={handleNotificationClick} />}
         </div>
       </Sidebar>
 
@@ -190,7 +293,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           onCreateClick={() => setShowCreateDialog(true)} />}
         {selectedNav === "feed" && <FeedView allFeeds={allFeeds} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearch={showSearch} setShowSearch={setShowSearch}
           getFeedImageIndex={getFeedImageIndex} setFeedImageIndex={setFeedImageIndex} hasLiked={hasLiked} handleLike={handleLike} feedContainerRef={feedContainerRef} />}
-        {selectedNav === "ranking" && <RankingView />}
+        {selectedNav === "ranking" && <RankingView userId={userId} profileImage={profileImage} />}
         {selectedNav === "medical" && <MedicalView setShowAppointment={setShowAppointment} setShowChat={setShowChat} setSelectedPrescription={setSelectedPrescription} />}
         {selectedNav === "create" && <CreatePage onCreatePost={(newFeed) => { setMyFeeds([newFeed, ...myFeeds]); }} />}
         {selectedNav === "profile" && <MemberProfilePage onLogout={onLogout} profileImage={profileImage} setProfileImage={setProfileImage} />}

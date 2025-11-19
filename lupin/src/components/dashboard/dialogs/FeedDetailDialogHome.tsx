@@ -36,7 +36,7 @@ import {
   User,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
-import { initialComments } from "@/mockdata/comments";
+import { commentApi } from "@/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -182,10 +182,38 @@ export default function FeedDetailDialogHome({
 
   // Feed가 변경되면 해당 피드의 댓글 로드
   useEffect(() => {
-    if (feed) {
-      setComments(initialComments[feed.id] || []);
+    const fetchComments = async () => {
+      if (!feed) {
+        setComments([]);
+        return;
+      }
+
+      try {
+        const response = await commentApi.getCommentsByFeedId(feed.id, 0, 100);
+        const commentList = response.content || response;
+
+        // 답글 정보도 함께 로드
+        const commentsWithReplies = await Promise.all(
+          commentList.map(async (comment: any) => {
+            try {
+              const replies = await commentApi.getRepliesByCommentId(comment.id);
+              return { ...comment, replies: replies || [] };
+            } catch (error) {
+              return { ...comment, replies: [] };
+            }
+          })
+        );
+
+        setComments(commentsWithReplies);
+      } catch (error) {
+        console.error("댓글 데이터 로드 실패:", error);
+        setComments([]);
+      }
+
       setShowComments(false); // 피드 변경 시 댓글창 닫기
-    }
+    };
+
+    fetchComments();
   }, [feed]);
 
   const handleSendComment = () => {

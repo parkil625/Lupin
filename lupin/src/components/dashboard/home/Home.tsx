@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import AdPopupDialog from "../dialogs/AdPopupDialog";
+import { userApi, feedApi } from "@/api";
 
 interface HomeProps {
   challengeJoined: boolean;
@@ -45,6 +46,91 @@ export default function Home({
   onCreateClick,
 }: HomeProps) {
   const [showAdPopup, setShowAdPopup] = useState(false);
+  const [canPostToday, setCanPostToday] = useState(true);
+  const [userStats, setUserStats] = useState({
+    points: 0,
+    lotteryTickets: 0,
+    rank: 0,
+    has7DayStreak: false,
+    isTop10: false,
+    isTop100: false,
+    name: "",
+  });
+
+  // 사용자 통계 로드
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        const userId = parseInt(localStorage.getItem("userId") || "1");
+
+        // 사용자 정보 조회
+        const user = await userApi.getUserById(userId);
+
+        // 랭킹 컨텍스트 조회 (현재 사용자의 순위 포함)
+        const rankingContext = await userApi.getUserRankingContext(userId);
+        const myRanking = rankingContext.find((r: any) => r.id === userId);
+
+        // 7일 연속 체크 (myFeeds가 7개 이상이고 연속인지 확인)
+        const has7DayStreak = checkSevenDayStreak(myFeeds);
+
+        const rank = myRanking?.rank || 999;
+        setUserStats({
+          points: user.currentPoints || 0,
+          lotteryTickets: Math.floor((user.currentPoints || 0) / 10),
+          rank: rank,
+          has7DayStreak,
+          isTop10: rank <= 10,
+          isTop100: rank <= 100,
+          name: user.realName || localStorage.getItem("userName") || "사용자",
+        });
+      } catch (error) {
+        console.error("사용자 통계 로드 실패:", error);
+      }
+    };
+
+    fetchUserStats();
+  }, [myFeeds]);
+
+  // 오늘 피드 작성 가능 여부 확인
+  useEffect(() => {
+    const checkCanPost = async () => {
+      try {
+        const userId = parseInt(localStorage.getItem("userId") || "1");
+        const canPost = await feedApi.canPostToday(userId);
+        setCanPostToday(canPost);
+      } catch (error) {
+        console.error("피드 작성 가능 여부 확인 실패:", error);
+      }
+    };
+
+    checkCanPost();
+  }, [myFeeds]); // myFeeds가 변경되면 다시 확인
+
+  // 7일 연속 체크 함수
+  const checkSevenDayStreak = (feeds: Feed[]) => {
+    if (feeds.length < 7) return false;
+
+    // 피드를 날짜순으로 정렬 (최신순)
+    const sortedFeeds = [...feeds].sort(
+      (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+    );
+
+    // 최근 7일 연속 체크
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() - i);
+
+      const hasPostOnDate = sortedFeeds.some((feed) => {
+        const feedDate = new Date(feed.time);
+        return feedDate.toDateString() === targetDate.toDateString();
+      });
+
+      if (!hasPostOnDate) return false;
+    }
+
+    return true;
+  };
 
   useEffect(() => {
     // 개발/테스트 모드: URL에 ?showAd=true가 있으면 강제로 표시
@@ -124,13 +210,13 @@ export default function Home({
             </Avatar>
 
             <div className="flex-1">
-              <h1 className="text-3xl font-black text-gray-900 mb-4">김루핀</h1>
+              <h1 className="text-3xl font-black text-gray-900 mb-4">
+                {userStats.name}
+              </h1>
 
               <div className="flex gap-8 mb-4">
                 <div>
-                  <span className="text-sm text-gray-600 font-bold">
-                    게시물{" "}
-                  </span>
+                  <span className="text-sm text-gray-600 font-bold">피드 </span>
                   <span className="text-sm font-black text-[#C93831]">
                     {myFeeds.length}
                   </span>
@@ -139,29 +225,45 @@ export default function Home({
                   <span className="text-sm text-gray-600 font-bold">
                     이번 달 점수{" "}
                   </span>
-                  <span className="text-sm font-black text-[#C93831]">30</span>
+                  <span className="text-sm font-black text-[#C93831]">
+                    {userStats.points}
+                  </span>
                 </div>
                 <div>
                   <span className="text-sm text-gray-600 font-bold">
                     추첨권{" "}
                   </span>
-                  <span className="text-sm font-black text-[#C93831]">1</span>
+                  <span className="text-sm font-black text-[#C93831]">
+                    {userStats.lotteryTickets}
+                  </span>
                 </div>
                 <div>
                   <span className="text-sm text-gray-600 font-bold">순위 </span>
-                  <span className="text-sm font-black text-[#C93831]">#12</span>
+                  <span className="text-sm font-black text-[#C93831]">
+                    #{userStats.rank || "-"}
+                  </span>
                 </div>
               </div>
 
               <div className="flex gap-2 flex-wrap">
-                <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                  <Flame className="w-3 h-3 mr-1" />
-                  7일 연속
-                </Badge>
-                <Badge className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                  <Award className="w-3 h-3 mr-1" />
-                  TOP 20
-                </Badge>
+                {userStats.has7DayStreak && (
+                  <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                    <Flame className="w-3 h-3 mr-1" />
+                    7일 연속
+                  </Badge>
+                )}
+                {userStats.isTop10 && (
+                  <Badge className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                    <Award className="w-3 h-3 mr-1" />
+                    TOP 10
+                  </Badge>
+                )}
+                {!userStats.isTop10 && userStats.isTop100 && (
+                  <Badge className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                    <Award className="w-3 h-3 mr-1" />
+                    TOP 100
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -173,8 +275,16 @@ export default function Home({
           <div className="flex items-center justify-between mb-6 px-8">
             <h2 className="text-2xl font-black text-gray-900">피드</h2>
             <button
-              onClick={onCreateClick}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white rounded-lg hover:shadow-lg transition-all font-bold"
+              onClick={canPostToday ? onCreateClick : undefined}
+              disabled={!canPostToday}
+              title={
+                !canPostToday ? "하루에 한 번만 피드를 작성할 수 있습니다." : ""
+              }
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-bold ${
+                canPostToday
+                  ? "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg cursor-pointer"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
               <Plus className="w-5 h-5" />
               만들기

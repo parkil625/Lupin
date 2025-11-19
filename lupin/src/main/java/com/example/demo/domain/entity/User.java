@@ -85,4 +85,14 @@ public class User extends BaseEntity {
         }
         this.currentPoints -= amount;
     }
+
+    // 편의 메서드
+    public String getName() {
+        return this.email; // email을 name으로 사용 (user01, user02 등)
+    }
+
+    public String getProfileImage() {
+        // 추후 구현 - 현재는 null 반환
+        return null;
+    }
 }

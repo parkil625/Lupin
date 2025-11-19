@@ -148,15 +148,15 @@ export default function DoctorChatPage() {
 
   return (
     <div className="h-full overflow-auto p-8">
-      <div className="max-w-[1784px] mx-auto">
+      <div className="max-w-[1200px] mx-auto">
         <div>
           <h1 className="text-5xl font-black text-gray-900 mb-6">
             채팅 & 처방전 작성
           </h1>
         </div>
 
-        <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl h-[calc(100vh-200px)] w-fit">
-          <div className="h-full flex w-fit">
+        <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl h-[calc(100vh-200px)] mx-auto">
+          <div className="h-full flex">
             {/* 좌측: 대화 목록 (예약 정보 포함) */}
             <div className="w-96 border-r border-gray-200 p-4">
               <h3 className="text-xl font-black text-gray-900 mb-4">
@@ -238,7 +238,7 @@ export default function DoctorChatPage() {
             </div>
 
             {/* 중앙: 채팅 영역 */}
-            <div className="w-[1000px] flex-shrink-0 flex flex-col p-6 border-r border-gray-200">
+            <div className="flex-1 flex flex-col p-6 border-r border-gray-200">
               {selectedChatMember ? (
                 <>
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
@@ -285,7 +285,7 @@ export default function DoctorChatPage() {
                               </Avatar>
                             )}
                             <div
-                              className={`rounded-2xl p-3 max-w-[1200px] ${
+                              className={`rounded-2xl p-3 max-w-md ${
                                 msg.isMine
                                   ? "bg-[#C93831] text-white"
                                   : "bg-gray-100"
@@ -339,7 +339,7 @@ export default function DoctorChatPage() {
             </div>
 
             {/* 우측: 처방전 작성 */}
-            <div className="w-[400px] px-6 py-6 flex flex-col">
+            <div className="w-96 px-6 py-6 flex flex-col">
               <h3 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-[#C93831]" />
                 처방전 작성

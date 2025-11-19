@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class FeedDetailResponse {
 
     private Long id;
+    private Long writerId;
     private String authorName;
     private String activityType;
     private Integer duration;
@@ -33,6 +34,7 @@ public class FeedDetailResponse {
     public static FeedDetailResponse from(Feed feed) {
         return FeedDetailResponse.builder()
                 .id(feed.getId())
+                .writerId(feed.getWriter().getId())
                 .authorName(feed.getWriter().getRealName())
                 .activityType(feed.getActivityType())
                 .duration(feed.getDuration())

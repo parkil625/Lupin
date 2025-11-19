@@ -37,4 +37,19 @@ public interface FeedRepositoryCustom {
      * 사용자의 총 활동 시간 조회 (분 단위)
      */
     Long sumUserActivityDuration(Long userId);
+
+    /**
+     * 사용자의 이번 달 활동 일수 조회 (피드 작성한 날짜 수)
+     */
+    Integer countUserActiveDaysInCurrentMonth(Long userId);
+
+    /**
+     * 사용자가 오늘 피드를 작성했는지 확인
+     */
+    boolean hasUserPostedToday(Long userId);
+
+    /**
+     * 사용자의 이번 달 피드에 대한 총 좋아요 수 조회
+     */
+    Integer countUserTotalLikesInCurrentMonth(Long userId);
 }

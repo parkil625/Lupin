@@ -4,35 +4,119 @@
  * 랭킹 페이지 컴포넌트
  * - 사용자 점수 기반 순위 표시
  * - 상위 랭커 하이라이트
+ * - 실제 user 테이블 데이터 반영
  */
 
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { TrendingUp, Users, User, Crown, Calendar } from "lucide-react";
+import { userApi } from "@/api";
+import { toast } from "sonner";
 
-export default function Ranking() {
+interface RankingProps {
+  userId: number;
+  profileImage: string | null;
+}
+
+interface RankerData {
+  rank: number;
+  name: string;
+  points: number;
+  avatar: string;
+  profileImage?: string;
+  department: string;
+  activeDays: number;
+  avgScore: number;
+  isMe?: boolean;
+}
+
+interface Statistics {
+  totalUsers: number;
+  activeUsersThisMonth: number;
+  averagePoints: number;
+}
+
+export default function Ranking({ userId, profileImage }: RankingProps) {
   const currentMonth = new Date().getMonth() + 1;
+  const [topRankers, setTopRankers] = useState<RankerData[]>([]);
+  const [myRankingContext, setMyRankingContext] = useState<RankerData[]>([]);
+  const [statistics, setStatistics] = useState<Statistics>({
+    totalUsers: 0,
+    activeUsersThisMonth: 0,
+    averagePoints: 0,
+  });
+  const [myStats, setMyStats] = useState({
+    activeDays: 0,
+    avgScore: 0,
+    streak: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const topRankers = [
-    { rank: 1, name: "이철수", points: 520, avatar: "이", profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop", department: "개발팀", activeDays: 28, avgScore: 52 },
-    { rank: 2, name: "박영희", points: 480, avatar: "박", profileImage: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop", department: "기획팀", activeDays: 26, avgScore: 48 },
-    { rank: 3, name: "최민수", points: 450, avatar: "최", profileImage: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop", department: "영업팀", activeDays: 25, avgScore: 45 },
-    { rank: 4, name: "정수진", points: 420, avatar: "정", profileImage: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop", department: "디자인팀", activeDays: 24, avgScore: 44 },
-    { rank: 5, name: "강민호", points: 390, avatar: "강", profileImage: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop", department: "인사팀", activeDays: 23, avgScore: 42 },
-    { rank: 6, name: "윤서연", points: 370, avatar: "윤", profileImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop", department: "마케팅팀", activeDays: 22, avgScore: 40 },
-    { rank: 7, name: "장동건", points: 350, avatar: "장", profileImage: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&h=150&fit=crop", department: "재무팀", activeDays: 21, avgScore: 38 },
-    { rank: 8, name: "송혜교", points: 330, avatar: "송", profileImage: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&h=150&fit=crop", department: "법무팀", activeDays: 20, avgScore: 36 },
-    { rank: 9, name: "전지현", points: 310, avatar: "전", profileImage: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=150&h=150&fit=crop", department: "경영지원팀", activeDays: 19, avgScore: 34 },
-    { rank: 10, name: "현빈", points: 290, avatar: "현", profileImage: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=150&h=150&fit=crop", department: "연구개발팀", activeDays: 18, avgScore: 32 },
-  ];
+  // 데이터 로드
+  useEffect(() => {
+    const fetchRankingData = async () => {
+      try {
+        setLoading(true);
 
-  const myRankers = [
-    { rank: 52, name: "이민정", points: 145, avatar: "이", profileImage: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop", department: "마케팅팀", activeDays: 15, avgScore: 30 },
-    { rank: 53, name: "김루핀", points: 138, avatar: "김", isMe: true, department: "개발팀", activeDays: 18, avgScore: 48 },
-    { rank: 54, name: "박서준", points: 125, avatar: "박", profileImage: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&h=150&fit=crop", department: "영업팀", activeDays: 14, avgScore: 28 },
-  ];
+        // Top 10 사용자 조회
+        const topUsersResponse = await userApi.getTopUsersByPoints(10);
+        const topUsers = topUsersResponse.map((user: any, index: number) => ({
+          rank: index + 1,
+          name: user.name || "이름 없음",
+          points: user.points || 0,
+          avatar: user.name ? user.name[0] : "?",
+          profileImage: user.profileImage,
+          department: user.department || "부서 미정",
+          activeDays: user.activeDays || 0,
+          avgScore: user.avgScore || 0,
+        }));
+        setTopRankers(topUsers);
+
+        // 현재 사용자 랭킹 컨텍스트 조회 (본인 + 앞뒤 1명)
+        const contextResponse = await userApi.getUserRankingContext(userId);
+        const contextUsers = contextResponse.map((user: any) => ({
+          rank: user.rank || 0,
+          name: user.name || "이름 없음",
+          points: user.points || 0,
+          avatar: user.name ? user.name[0] : "?",
+          profileImage: user.id === userId ? profileImage : user.profileImage,
+          department: user.department || "부서 미정",
+          activeDays: user.activeDays || 0,
+          avgScore: user.avgScore || 0,
+          isMe: user.id === userId,
+        }));
+        setMyRankingContext(contextUsers);
+
+        // 현재 사용자의 통계 설정
+        const currentUser = contextUsers.find((u: any) => u.isMe);
+        if (currentUser) {
+          setMyStats({
+            activeDays: currentUser.activeDays,
+            avgScore: currentUser.avgScore,
+            streak: currentUser.streak || 0,
+          });
+        }
+
+        // 전체 통계 조회
+        const statsResponse = await userApi.getStatistics();
+        setStatistics({
+          totalUsers: statsResponse.totalUsers || 0,
+          activeUsersThisMonth: statsResponse.activeUsersThisMonth || 0,
+          averagePoints: statsResponse.averagePoints || 0,
+        });
+      } catch (error) {
+        console.error("랭킹 데이터 로드 실패:", error);
+        toast.error("랭킹 데이터를 불러오는데 실패했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRankingData();
+  }, [userId, profileImage]);
 
   return (
     <div className="h-full overflow-auto p-8">
@@ -148,7 +232,9 @@ export default function Ranking() {
             </div>
 
             {/* My Ranking Area */}
-            {myRankers.map((ranker) => (
+            {myRankingContext
+              .filter((ranker) => ranker.rank > 10) // Top 10에 이미 표시된 사용자 제외
+              .map((ranker) => (
               <Card
                 key={ranker.rank}
                 className={`backdrop-blur-2xl border shadow-lg overflow-hidden transition-all ${
@@ -247,19 +333,19 @@ export default function Ranking() {
                       이번 달 활동
                     </span>
                     <span className="font-black text-xl text-[#C93831]">
-                      18일
+                      {myStats.activeDays}일
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700 font-medium">평균 점수</span>
+                    <span className="text-gray-700 font-medium">총 점수</span>
                     <span className="font-black text-xl text-[#C93831]">
-                      48
+                      {myStats.avgScore}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">연속 기록</span>
                     <span className="font-black text-xl text-[#C93831]">
-                      7일
+                      {myStats.streak}일
                     </span>
                   </div>
                 </div>
@@ -277,7 +363,7 @@ export default function Ranking() {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">총 참여자</span>
                     <span className="font-black text-xl text-gray-900">
-                      248명
+                      {statistics.totalUsers}명
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -285,13 +371,13 @@ export default function Ranking() {
                       이번 달 활동
                     </span>
                     <span className="font-black text-xl text-gray-900">
-                      220명
+                      {statistics.activeUsersThisMonth}명
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">평균 점수</span>
                     <span className="font-black text-xl text-gray-900">
-                      42점
+                      {statistics.averagePoints}점
                     </span>
                   </div>
                 </div>

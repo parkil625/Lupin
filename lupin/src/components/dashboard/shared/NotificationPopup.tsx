@@ -20,11 +20,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface NotificationPopupProps {
   notifications: Notification[];
   onClose: (closeSidebar?: boolean) => void;
+  onNotificationClick: (notification: Notification) => void;
 }
 
 export default function NotificationPopup({
   notifications,
   onClose,
+  onNotificationClick,
 }: NotificationPopupProps) {
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +71,8 @@ export default function NotificationPopup({
             {notifications.map((notif) => (
               <div
                 key={notif.id}
-                className={`p-3 rounded-xl cursor-pointer transition-all ${
+                onClick={() => onNotificationClick(notif)}
+                className={`p-3 rounded-xl cursor-pointer transition-all hover:shadow-md ${
                   notif.read
                     ? "bg-white/60"
                     : "bg-gradient-to-r from-red-50/80 to-pink-50/80"

@@ -6,7 +6,7 @@
  * - 처방 약물 및 복용법 안내
  * - PDF 다운로드 기능
  */
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, FileText } from "lucide-react";
@@ -35,6 +35,9 @@ export default function PrescriptionModal({
             <FileText className="w-6 h-6 text-[#C93831]" />
             처방전 상세
           </DialogTitle>
+          <DialogDescription>
+            발급된 처방전의 상세 정보를 확인할 수 있습니다.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">

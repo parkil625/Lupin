@@ -9,6 +9,16 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -64,6 +74,7 @@ export default function CreateFeedDialog({
   const [otherImages, setOtherImages] = useState<string[]>([]);
   const [workoutType, setWorkoutType] = useState<string>("running");
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +86,13 @@ export default function CreateFeedDialog({
       },
     ],
   });
+
+  // 다이얼로그가 닫히면 상태 초기화
+  useEffect(() => {
+    if (!open) {
+      setShowCloseConfirm(false);
+    }
+  }, [open]);
 
   // 다이얼로그 열릴 때 localStorage에서 불러오기
   useEffect(() => {
@@ -200,8 +218,40 @@ export default function CreateFeedDialog({
 
   const isVerified = startImage && endImage;
 
+  // 변경사항이 있는지 확인
+  const hasChanges =
+    startImage !== null ||
+    endImage !== null ||
+    otherImages.length > 0 ||
+    workoutType !== "running" ||
+    JSON.stringify(editor.document) !== JSON.stringify([{ type: "paragraph", content: "" }]);
+
+  // 다이얼로그 닫기 핸들러
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && hasChanges) {
+      setShowCloseConfirm(true);
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
+  // 확인 없이 닫기
+  const handleCloseWithoutSaving = () => {
+    setShowCloseConfirm(false);
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+
+    // 상태 초기화
+    setStartImage(null);
+    setEndImage(null);
+    setOtherImages([]);
+    setWorkoutType("running");
+
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="!max-w-[795px] !w-[795px] h-[95vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl !flex !gap-0" style={{ width: '795px', maxWidth: '795px' }}>
         <DialogHeader className="sr-only">
           <DialogTitle>피드 작성</DialogTitle>
@@ -453,5 +503,27 @@ export default function CreateFeedDialog({
         </div>
       </DialogContent>
     </Dialog>
+
+      {/* 닫기 확인 다이얼로그 */}
+      <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>작성 중인 내용이 있습니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              작성 중인 피드가 임시 저장되어 있습니다. 정말로 닫으시겠습니까?
+              (임시 저장된 내용은 다음에 다시 열 때 복원됩니다)
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowCloseConfirm(false)}>
+              계속 작성하기
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleCloseWithoutSaving}>
+              임시저장 삭제하고 닫기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

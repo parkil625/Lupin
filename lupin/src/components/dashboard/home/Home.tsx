@@ -49,7 +49,7 @@ export default function Home({
   useEffect(() => {
     // 개발/테스트 모드: URL에 ?showAd=true가 있으면 강제로 표시
     const urlParams = new URLSearchParams(window.location.search);
-    const forceShowAd = urlParams.get('showAd') === 'true';
+    const forceShowAd = urlParams.get("showAd") === "true";
 
     if (forceShowAd) {
       console.log("광고 팝업 강제 표시 (테스트 모드)");
@@ -66,8 +66,14 @@ export default function Home({
       const hiddenTime = parseInt(hiddenUntil);
       if (Date.now() < hiddenTime) {
         // 아직 숨김 시간이 유효함
-        console.log("광고 팝업 숨김 중 (남은 시간:", Math.floor((hiddenTime - Date.now()) / 1000 / 60), "분)");
-        console.log("테스트하려면 URL에 ?showAd=true를 추가하거나 콘솔에서 localStorage.removeItem('adPopupHiddenUntil')을 실행하세요");
+        console.log(
+          "광고 팝업 숨김 중 (남은 시간:",
+          Math.floor((hiddenTime - Date.now()) / 1000 / 60),
+          "분)"
+        );
+        console.log(
+          "테스트하려면 URL에 ?showAd=true를 추가하거나 콘솔에서 localStorage.removeItem('adPopupHiddenUntil')을 실행하세요"
+        );
         return;
       } else {
         // 숨김 시간이 만료됨, localStorage에서 제거
@@ -100,7 +106,6 @@ export default function Home({
   return (
     <div className="h-full overflow-auto p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-
         {/* Profile Header */}
         <div className="p-8">
           <div className="flex items-start gap-8 mb-8">
@@ -123,15 +128,23 @@ export default function Home({
 
               <div className="flex gap-8 mb-4">
                 <div>
-                  <span className="text-sm text-gray-600 font-bold">게시물 </span>
-                  <span className="text-sm font-black text-[#C93831]">{myFeeds.length}</span>
+                  <span className="text-sm text-gray-600 font-bold">
+                    게시물{" "}
+                  </span>
+                  <span className="text-sm font-black text-[#C93831]">
+                    {myFeeds.length}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-600 font-bold">이번 달 점수 </span>
+                  <span className="text-sm text-gray-600 font-bold">
+                    이번 달 점수{" "}
+                  </span>
                   <span className="text-sm font-black text-[#C93831]">30</span>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-600 font-bold">추첨권 </span>
+                  <span className="text-sm text-gray-600 font-bold">
+                    추첨권{" "}
+                  </span>
                   <span className="text-sm font-black text-[#C93831]">1</span>
                 </div>
                 <div>
@@ -158,7 +171,7 @@ export default function Home({
         <div>
           {/* Posts Header */}
           <div className="flex items-center justify-between mb-6 px-8">
-            <h2 className="text-2xl font-black text-gray-900">게시물</h2>
+            <h2 className="text-2xl font-black text-gray-900">피드</h2>
             <button
               onClick={onCreateClick}
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white rounded-lg hover:shadow-lg transition-all font-bold"
@@ -171,54 +184,56 @@ export default function Home({
           {/* Posts Grid */}
           <div className="grid grid-cols-5 gap-3">
             {myFeeds.map((feed) => (
-            <div
-              key={feed.id}
-              className="cursor-pointer group aspect-[3/4]"
-              onClick={() => {
-                setSelectedFeed(feed);
-                setFeedImageIndex(feed.id, 0);
-                setShowFeedDetailInHome(true);
-              }}
-            >
-              <Card className="h-full overflow-hidden backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg hover:shadow-2xl transition-all relative">
-                <div className="w-full h-full bg-white">
-                  {feed.images && feed.images.length > 0 ? (
-                    <img
-                      src={feed.images[0]}
-                      alt={feed.activity}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                      <div className="text-center p-4">
-                        <Sparkles className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                        <p className="text-sm font-bold text-gray-600">{feed.activity}</p>
+              <div
+                key={feed.id}
+                className="cursor-pointer group aspect-[3/4]"
+                onClick={() => {
+                  setSelectedFeed(feed);
+                  setFeedImageIndex(feed.id, 0);
+                  setShowFeedDetailInHome(true);
+                }}
+              >
+                <Card className="h-full overflow-hidden backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg hover:shadow-2xl transition-all relative">
+                  <div className="w-full h-full bg-white">
+                    {feed.images && feed.images.length > 0 ? (
+                      <img
+                        src={feed.images[0]}
+                        alt={feed.activity}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                        <div className="text-center p-4">
+                          <Sparkles className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                          <p className="text-sm font-bold text-gray-600">
+                            {feed.activity}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                    <div className="text-center text-white space-y-2">
+                      <div className="flex items-center justify-center gap-4">
+                        <span className="flex items-center gap-1 font-bold text-base">
+                          <Heart className="w-5 h-5" />
+                          {feed.likes}
+                        </span>
+                        <span className="flex items-center gap-1 font-bold text-base">
+                          <MessageCircle className="w-5 h-5" />
+                          {feed.comments}
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold">
+                        <Sparkles className="w-4 h-4 inline mr-1" />+
+                        {feed.points}점
                       </div>
                     </div>
-                  )}
-                </div>
-
-                <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                  <div className="text-center text-white space-y-2">
-                    <div className="flex items-center justify-center gap-4">
-                      <span className="flex items-center gap-1 font-bold text-base">
-                        <Heart className="w-5 h-5" />
-                        {feed.likes}
-                      </span>
-                      <span className="flex items-center gap-1 font-bold text-base">
-                        <MessageCircle className="w-5 h-5" />
-                        {feed.comments}
-                      </span>
-                    </div>
-                    <div className="text-sm font-bold">
-                      <Sparkles className="w-4 h-4 inline mr-1" />+{feed.points}
-                      점
-                    </div>
                   </div>
-                </div>
-              </Card>
-            </div>
-          ))}
+                </Card>
+              </div>
+            ))}
           </div>
         </div>
       </div>

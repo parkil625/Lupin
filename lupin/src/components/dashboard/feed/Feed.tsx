@@ -74,71 +74,72 @@ function FeedCard({
   const [sortOrder, setSortOrder] = useState<'latest' | 'popular'>('latest');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [iconColor, setIconColor] = useState<'white' | 'black'>('white');
+  const [prevFeedId, setPrevFeedId] = useState(feed.id);
+
+  // Feed가 변경되면 상태 리셋 (렌더링 중 상태 업데이트 패턴)
+  if (feed.id !== prevFeedId) {
+    setComments(initialComments[feed.id] || []);
+    setShowComments(false);
+    setPrevFeedId(feed.id);
+  }
 
   // 이미지 밝기 분석하여 아이콘 색상 결정
   useEffect(() => {
-    if (feed.images && feed.images.length > 0) {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = feed.images[currentIndex] || feed.images[0];
-
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-
-        // 우측 하단 영역의 밝기 계산 (아이콘이 위치한 부분)
-        const sampleWidth = Math.min(100, img.width);
-        const sampleHeight = Math.min(150, img.height);
-        const x = img.width - sampleWidth;
-        const y = img.height - sampleHeight;
-
-        const imageData = ctx.getImageData(x, y, sampleWidth, sampleHeight);
-        const data = imageData.data;
-
-        let totalBrightness = 0;
-        let totalAlpha = 0;
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const a = data[i + 3];
-          // 밝기 계산 (perceived brightness)
-          const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
-          totalBrightness += brightness;
-          totalAlpha += a;
-        }
-
-        const avgBrightness = totalBrightness / (data.length / 4);
-        const avgAlpha = totalAlpha / (data.length / 4);
-
-        // 투명한 배경이면 검정색, 아니면 평균 밝기에 따라 결정
-        if (avgAlpha < 200) {
-          setIconColor('black');
-        } else {
-          // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
-          setIconColor(avgBrightness > 128 ? 'black' : 'white');
-        }
-      };
-    } else {
-      // 이미지 없을 때는 밝은 배경이므로 검은색
-      setIconColor('black');
+    if (!feed.images || feed.images.length === 0) {
+      return;
     }
-  }, [feed.images, currentIndex]);
 
-  // Feed가 변경되면 해당 피드의 댓글 로드
-  useEffect(() => {
-    setComments(initialComments[feed.id] || []);
-    setShowComments(false);
-  }, [feed.id]);
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = feed.images[currentIndex] || feed.images[0];
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      // 우측 하단 영역의 밝기 계산 (아이콘이 위치한 부분)
+      const sampleWidth = Math.min(100, img.width);
+      const sampleHeight = Math.min(150, img.height);
+      const x = img.width - sampleWidth;
+      const y = img.height - sampleHeight;
+
+      const imageData = ctx.getImageData(x, y, sampleWidth, sampleHeight);
+      const data = imageData.data;
+
+      let totalBrightness = 0;
+      let totalAlpha = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        // 밝기 계산 (perceived brightness)
+        const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
+        totalBrightness += brightness;
+        totalAlpha += a;
+      }
+
+      const avgBrightness = totalBrightness / (data.length / 4);
+      const avgAlpha = totalAlpha / (data.length / 4);
+
+      // 투명한 배경이면 검정색, 아니면 평균 밝기에 따라 결정
+      if (avgAlpha < 200) {
+        setIconColor('black');
+      } else {
+        // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
+        setIconColor(avgBrightness > 128 ? 'black' : 'white');
+      }
+    };
+  }, [feed.images, currentIndex]);
 
   // BlockNote 에디터 생성
   const initialContent = useMemo(() => {
-    if (!feed?.content) return undefined;
+    if (!feed.content) return undefined;
     try {
       const parsed = JSON.parse(feed.content);
       return parsed;
@@ -150,7 +151,7 @@ function FeedCard({
         },
       ];
     }
-  }, [feed?.content]);
+  }, [feed.content]);
 
   const editor = useCreateBlockNote({
     initialContent,

@@ -141,6 +141,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       avatar: "김",
       time: "방금 전",
       activity: workoutType,
+      duration: "30분",
       images,
       content,
       likes: 0,

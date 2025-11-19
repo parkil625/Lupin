@@ -8,7 +8,17 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -65,37 +75,87 @@ export default function EditFeedDialog({
   const [otherImages, setOtherImages] = useState<string[]>([]);
   const [workoutType, setWorkoutType] = useState<string>("");
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const initialDataRef = useRef<{
+    startImage: string | null;
+    endImage: string | null;
+    otherImages: string[];
+    workoutType: string;
+    content: string;
+  } | null>(null);
 
   const editor = useCreateBlockNote();
 
-  // Feed가 변경되면 기존 데이터로 초기화
+  // 다이얼로그가 닫히면 상태 초기화
   useEffect(() => {
-    if (feed) {
-      setStartImage(feed.images[0] || null);
-      setEndImage(feed.images[1] || null);
-      setOtherImages(feed.images.slice(2) || []);
-      setWorkoutType("running"); // 기본값
-    }
-  }, [feed]);
-
-  // 다이얼로그 닫을 때 자동 저장
-  useEffect(() => {
-    if (!open && feed) {
-      // 운동 인증 필수: 시작 사진과 끝 사진이 모두 있어야 함
-      if (!startImage || !endImage) {
-        toast.error("운동 인증을 위해 시작 사진과 끝 사진을 모두 업로드해주세요!\n수정이 저장되지 않았습니다.");
-        return;
-      }
-
-      const images = [startImage, endImage, ...otherImages].filter(Boolean) as string[];
-      const blocks = editor.document;
-      const contentJson = JSON.stringify(blocks);
-
-      onSave(feed.id, images, contentJson, workoutType, startImage, endImage);
+    if (!open) {
+      setShowCloseConfirm(false);
+      setHasChanges(false);
+      initialDataRef.current = null;
     }
   }, [open]);
+
+  // Feed가 변경되면 기존 데이터로 초기화
+  useEffect(() => {
+    if (feed && editor && open) {
+      const initialStartImage = feed.images[0] || null;
+      const initialEndImage = feed.images[1] || null;
+      const initialOtherImages = feed.images.slice(2) || [];
+      const initialWorkoutType = feed.activity || "running";
+
+      setStartImage(initialStartImage);
+      setEndImage(initialEndImage);
+      setOtherImages(initialOtherImages);
+      setWorkoutType(initialWorkoutType);
+      setHasChanges(false);
+
+      // 초기 데이터 저장
+      initialDataRef.current = {
+        startImage: initialStartImage,
+        endImage: initialEndImage,
+        otherImages: initialOtherImages,
+        workoutType: initialWorkoutType,
+        content: JSON.stringify(feed.content),
+      };
+
+      // 기존 내용을 에디터에 로드
+      try {
+        let blocks;
+        if (typeof feed.content === 'string' && feed.content.startsWith('[')) {
+          blocks = JSON.parse(feed.content);
+        } else if (typeof feed.content === 'string') {
+          blocks = [{ type: "paragraph", content: feed.content }];
+        } else {
+          blocks = feed.content;
+        }
+
+        editor.replaceBlocks(editor.document, blocks);
+      } catch (error) {
+        console.error('Failed to load feed content:', error);
+        editor.replaceBlocks(editor.document, [
+          { type: "paragraph", content: feed.content || "" }
+        ]);
+      }
+    }
+  }, [feed, editor, open]);
+
+  // 변경사항 감지
+  useEffect(() => {
+    if (!initialDataRef.current) return;
+
+    const currentContent = JSON.stringify(editor.document);
+    const changed =
+      startImage !== initialDataRef.current.startImage ||
+      endImage !== initialDataRef.current.endImage ||
+      JSON.stringify(otherImages) !== JSON.stringify(initialDataRef.current.otherImages) ||
+      workoutType !== initialDataRef.current.workoutType ||
+      currentContent !== initialDataRef.current.content;
+
+    setHasChanges(changed);
+  }, [startImage, endImage, otherImages, workoutType, editor]);
 
   const handleFileSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -142,21 +202,51 @@ export default function EditFeedDialog({
 
   const isVerified = startImage && endImage;
 
+  // 저장 처리
+  const handleSave = () => {
+    if (!feed) return;
+
+    if (!startImage || !endImage) {
+      toast.error("운동 인증을 위해 시작 사진과 끝 사진을 모두 업로드해주세요!");
+      return;
+    }
+
+    const images = [startImage, endImage, ...otherImages].filter(Boolean) as string[];
+    const blocks = editor.document;
+    const contentJson = JSON.stringify(blocks);
+
+    onSave(feed.id, images, contentJson, workoutType, startImage, endImage);
+    toast.success("피드가 수정되었습니다!");
+    onOpenChange(false);
+  };
+
   // 다이얼로그 닫기 시 검증
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && !isVerified) {
-      toast.error("운동 인증을 위해 시작 사진과 끝 사진을 모두 업로드해주세요!");
+    if (!newOpen && hasChanges) {
+      setShowCloseConfirm(true);
       return;
     }
     onOpenChange(newOpen);
   };
 
+  // 확인 없이 닫기
+  const handleCloseWithoutSaving = () => {
+    setShowCloseConfirm(false);
+    setHasChanges(false);
+    onOpenChange(false);
+  };
+
   if (!feed) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="!max-w-[795px] !w-[795px] h-[95vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl !flex !gap-0" style={{ width: '795px', maxWidth: '795px' }}>
-        <div className="flex h-full overflow-hidden w-full">
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="!max-w-[795px] !w-[795px] h-[95vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl !flex !gap-0" style={{ width: '795px', maxWidth: '795px' }}>
+          <DialogTitle className="sr-only">피드 수정</DialogTitle>
+          <DialogDescription className="sr-only">
+            기존 피드 내용을 수정합니다. 운동 종류, 시작/끝 사진, 그리고 내용을 수정할 수 있습니다.
+          </DialogDescription>
+          <div className="flex h-full overflow-hidden w-full">
           {/* Left Sidebar */}
           <div className="w-80 bg-transparent border-r border-gray-200 p-6 flex-shrink-0">
             <h2 className="text-xl font-black text-gray-900 mb-4">피드 수정</h2>
@@ -346,6 +436,15 @@ export default function EditFeedDialog({
                 운동 인증 완료
               </Badge>
             )}
+
+            {/* 작성 버튼 */}
+            <Button
+              onClick={handleSave}
+              disabled={!isVerified}
+              className="w-full bg-gradient-to-r from-[#C93831] to-[#a82e28] hover:from-[#a82e28] hover:to-[#8b2521] text-white font-bold py-2.5 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isVerified ? '수정 완료' : '시작/끝 사진 필요'}
+            </Button>
           </div>
 
           {/* Right Editor */}
@@ -389,7 +488,28 @@ export default function EditFeedDialog({
             </ScrollArea>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* 닫기 확인 다이얼로그 */}
+      <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>변경사항이 저장되지 않았습니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              수정한 내용이 저장되지 않았습니다. 정말로 닫으시겠습니까?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowCloseConfirm(false)}>
+              계속 수정하기
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleCloseWithoutSaving}>
+              저장하지 않고 닫기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

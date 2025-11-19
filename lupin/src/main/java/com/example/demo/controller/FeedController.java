@@ -101,4 +101,13 @@ public class FeedController {
         feedService.unlikeFeed(feedId, userId);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * 오늘 피드 작성 가능 여부 확인
+     */
+    @GetMapping("/can-post")
+    public ResponseEntity<Boolean> canPostToday(@RequestParam Long userId) {
+        boolean canPost = feedService.canPostToday(userId);
+        return ResponseEntity.ok(canPost);
+    }
 }

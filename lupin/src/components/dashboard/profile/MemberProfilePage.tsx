@@ -15,6 +15,13 @@ import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Edit, Camera, User, LogOut } from "lucide-react";
 
 interface MemberProfilePageProps {
@@ -111,8 +118,8 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                 </AspectRatio>
               </div>
               <div className="flex-1">
-                <h2 className="text-3xl font-black text-gray-900 mb-2">김루핀</h2>
-                <p className="text-gray-600 font-medium">EMP001</p>
+                <h2 className="text-3xl font-black text-gray-900 mb-2">{localStorage.getItem('userName') || 'user01'}</h2>
+                <p className="text-gray-600 font-medium">{localStorage.getItem('userEmail') || 'user01'}</p>
               </div>
             </div>
 
@@ -169,15 +176,15 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                   </div>
                   <div>
                     <Label className="text-sm text-gray-600 font-medium">성별</Label>
-                    <InputGroup className="mt-1.5">
-                      <InputGroupInput
-                        type="text"
-                        value={gender}
-                        onChange={(e) => setGender(e.target.value)}
-                        disabled={!isEditingProfile}
-                        className="rounded-xl bg-white/80 border-gray-200"
-                      />
-                    </InputGroup>
+                    <Select value={gender} onValueChange={setGender} disabled={!isEditingProfile}>
+                      <SelectTrigger className="mt-1.5 rounded-xl bg-white/80 border-gray-200">
+                        <SelectValue placeholder="성별 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="남성">남성</SelectItem>
+                        <SelectItem value="여성">여성</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-600 font-medium">주소</Label>

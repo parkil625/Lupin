@@ -195,11 +195,12 @@ public class FeedService {
     }
 
     /**
-     * 포인트 계산 (5분당 5점, 최대 30점)
+     * 포인트 계산 (1분당 1점, 최대 30점)
+     * - 하루 1피드, 피드당 최대 30점
      */
     private Long calculatePoints(Integer duration) {
-        long points = (long) ((duration / 5) * 5);
-        return Math.min(points, 30L); // 최대 30점
+        // 1분당 1점, 최대 30점
+        return Math.min(duration.longValue(), 30L);
     }
 
     /**

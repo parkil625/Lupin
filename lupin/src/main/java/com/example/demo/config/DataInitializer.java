@@ -35,6 +35,8 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final FeedRepository feedRepository;
     private final NotificationRepository notificationRepository;
+    private final LotteryTicketRepository lotteryTicketRepository;
+    private final PointLogRepository pointLogRepository;
     private final EntityManager entityManager;
 
     // Service 레이어 주입
@@ -54,8 +56,10 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.count() > 0) {
             log.info("기존 데이터 삭제 중...");
 
-            // 기존 데이터 삭제
+            // 기존 데이터 삭제 (순서 중요: 외래키 참조 순서대로)
             notificationRepository.deleteAll();
+            lotteryTicketRepository.deleteAll();
+            pointLogRepository.deleteAll();
             feedRepository.deleteAll();
             userRepository.deleteAll();
 
@@ -66,6 +70,8 @@ public class DataInitializer implements CommandLineRunner {
             entityManager.createNativeQuery("ALTER TABLE comment AUTO_INCREMENT = 1").executeUpdate();
             entityManager.createNativeQuery("ALTER TABLE feed_like AUTO_INCREMENT = 1").executeUpdate();
             entityManager.createNativeQuery("ALTER TABLE feed_image AUTO_INCREMENT = 1").executeUpdate();
+            entityManager.createNativeQuery("ALTER TABLE lottery_ticket AUTO_INCREMENT = 1").executeUpdate();
+            entityManager.createNativeQuery("ALTER TABLE point_log AUTO_INCREMENT = 1").executeUpdate();
 
             log.info("기존 데이터 삭제 완료");
         }

@@ -1,11 +1,13 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.entity.LotteryTicket;
 import com.example.demo.domain.entity.PointLog;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.response.UserProfileResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.repository.LotteryTicketRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,9 @@ public class UserService {
 
     private final FeedRepository feedRepository;
     private final UserRepository userRepository;
+    private final LotteryTicketRepository lotteryTicketRepository;
+
+    private static final Long POINTS_PER_TICKET = 30L; // 30점마다 추첨권 1장
 
     /**
      * 사용자 프로필 조회
@@ -50,8 +55,27 @@ public class UserService {
     public void addPoints(Long userId, Long amount, String reason, String refId) {
         User user = findUserById(userId);
 
+        // 적립 전 총 포인트 기준 추첨권 개수
+        Long previousTotalPoints = user.getTotalPoints();
+        Long previousTicketCount = previousTotalPoints / POINTS_PER_TICKET;
+
         // 포인트 적립
         user.addPoints(amount);
+
+        // 적립 후 총 포인트 기준 추첨권 개수
+        Long newTotalPoints = user.getTotalPoints();
+        Long newTicketCount = newTotalPoints / POINTS_PER_TICKET;
+
+        // 추첨권 생성 (30점마다 1장)
+        Long ticketsToCreate = newTicketCount - previousTicketCount;
+        for (int i = 0; i < ticketsToCreate; i++) {
+            LotteryTicket ticket = LotteryTicket.builder()
+                    .isUsed("N")
+                    .build();
+            ticket.setUser(user);
+            lotteryTicketRepository.save(ticket);
+            log.info("추첨권 생성 - userId: {}, totalPoints: {}", userId, newTotalPoints);
+        }
 
         // 포인트 로그 생성
         PointLog pointLog = PointLog.builder()
@@ -61,7 +85,8 @@ public class UserService {
                 .build();
         pointLog.setUser(user);
 
-        log.info("포인트 적립 완료 - userId: {}, amount: {}, reason: {}", userId, amount, reason);
+        log.info("포인트 적립 완료 - userId: {}, amount: {}, reason: {}, 추첨권 {}장 생성",
+                userId, amount, reason, ticketsToCreate);
     }
 
     /**

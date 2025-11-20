@@ -45,4 +45,4 @@ server:
 # 애플리케이션 설정
 app:
   seed-data:
-    enabled: false  # 개발 환경에서 샘플 데이터 생성 활성화 (운영: false)
+    enabled: true  # 개발 환경에서 샘플 데이터 생성 활성화 (운영: false)

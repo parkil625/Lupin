@@ -94,8 +94,11 @@ export const feedApi = {
   /**
    * 피드 삭제
    */
-  deleteFeed: async (feedId: number) => {
-    const response = await apiClient.delete(`/feeds/${feedId}`);
+  deleteFeed: async (feedId: number, userId?: number) => {
+    const currentUserId = userId || parseInt(localStorage.getItem('userId') || '0');
+    const response = await apiClient.delete(`/feeds/${feedId}`, {
+      params: { userId: currentUserId }
+    });
     return response.data;
   },
 

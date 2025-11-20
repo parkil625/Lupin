@@ -3,6 +3,8 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedImage;
 import com.example.demo.domain.entity.FeedLike;
+import com.example.demo.domain.entity.LotteryTicket;
+import com.example.demo.domain.entity.PointLog;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ImageType;
 import com.example.demo.dto.request.FeedCreateRequest;
@@ -13,6 +15,8 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.repository.LotteryTicketRepository;
+import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +44,12 @@ public class FeedService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final NotificationService notificationService;
+    private final ImageService imageService;
+    private final PointLogRepository pointLogRepository;
+    private final LotteryTicketRepository lotteryTicketRepository;
+
+    // 추첨권 가격 (30포인트 = 1장)
+    private static final long TICKET_PRICE = 30L;
 
     /**
      * 피드 생성
@@ -134,9 +144,8 @@ public class FeedService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_FEED_ACCESS);
         }
 
-        // 필드 업데이트 (빌더 패턴 대신 setter 사용 또는 엔티티에 업데이트 메서드 추가)
-        // 여기서는 간단히 새로운 Feed를 만들지 않고 기존 엔티티 수정
-        // Feed 엔티티에 update 메서드 추가 권장
+        // 변경 감지를 통한 업데이트
+        feed.update(request.getContent(), request.getStatsJson());
 
         log.info("피드 수정 완료 - feedId: {}, userId: {}", feedId, userId);
 
@@ -149,15 +158,97 @@ public class FeedService {
     @Transactional
     public void deleteFeed(Long feedId, Long userId) {
         Feed feed = findFeedById(feedId);
+        User user = findUserById(userId);
 
         // 작성자 확인
         if (!feed.getWriter().getId().equals(userId)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_FEED_ACCESS);
         }
 
+        // 실제 부여된 포인트 조회
+        List<PointLog> pointLogs = pointLogRepository.findByUserIdAndRefIdAndReason(
+                userId, String.valueOf(feedId), "운동 인증");
+
+        Long pointsToReclaim = pointLogs.stream()
+                .mapToLong(PointLog::getAmount)
+                .sum();
+
+        // 포인트 회수 (3단계 로직)
+        if (pointsToReclaim > 0) {
+            reclaimPoints(user, pointsToReclaim, feedId);
+        }
+
+        // S3 이미지 삭제
+        feed.getImages().forEach(image -> {
+            imageService.deleteImage(image.getImageUrl());
+        });
+
         feedRepository.delete(feed);
 
-        log.info("피드 삭제 완료 - feedId: {}, userId: {}", feedId, userId);
+        log.info("피드 삭제 완료 - feedId: {}, userId: {}, 회수 포인트: {}, 삭제 이미지: {}개",
+                feedId, userId, pointsToReclaim, feed.getImages().size());
+    }
+
+    /**
+     * 포인트 회수 (3단계 로직)
+     * 1. currentPoints에서 차감
+     * 2. 부족하면 추첨권 판매 (TICKET_PRICE 포인트로 환산)
+     * 3. 그래도 부족하면 totalPoints에서 차감
+     */
+    private void reclaimPoints(User user, Long pointsToReclaim, Long feedId) {
+        Long currentPoints = user.getCurrentPoints();
+        Long remainingDebt = pointsToReclaim;
+
+        // 1단계: currentPoints에서 차감
+        if (currentPoints >= remainingDebt) {
+            user.setCurrentPoints(currentPoints - remainingDebt);
+            remainingDebt = 0L;
+        } else {
+            user.setCurrentPoints(0L);
+            remainingDebt -= currentPoints;
+        }
+
+        // 2단계: 추첨권 판매로 충당 (미사용 추첨권만)
+        if (remainingDebt > 0) {
+            List<LotteryTicket> tickets = lotteryTicketRepository.findByUserIdAndIsUsed(user.getId(), "N");
+
+            for (LotteryTicket ticket : tickets) {
+                if (remainingDebt <= 0) break;
+
+                // 미사용 추첨권 삭제
+                lotteryTicketRepository.delete(ticket);
+
+                // 추첨권 가치에서 빚 차감
+                if (TICKET_PRICE >= remainingDebt) {
+                    // 거스름돈 발생
+                    Long change = TICKET_PRICE - remainingDebt;
+                    user.setCurrentPoints(user.getCurrentPoints() + change);
+                    remainingDebt = 0L;
+                } else {
+                    remainingDebt -= TICKET_PRICE;
+                }
+            }
+        }
+
+        // 3단계: 그래도 부족하면 totalPoints에서 차감
+        if (remainingDebt > 0) {
+            Long totalPoints = user.getTotalPoints();
+            user.setTotalPoints(Math.max(0L, totalPoints - remainingDebt));
+        }
+
+        // 포인트 차감 로그 기록
+        PointLog deductLog = PointLog.builder()
+                .amount(-pointsToReclaim)
+                .reason("피드 삭제")
+                .refId(String.valueOf(feedId))
+                .build();
+        deductLog.setUser(user);
+        pointLogRepository.save(deductLog);
+
+        userRepository.save(user);
+
+        log.info("포인트 회수 완료 - userId: {}, 회수: {}, 현재포인트: {}, 총포인트: {}",
+                user.getId(), pointsToReclaim, user.getCurrentPoints(), user.getTotalPoints());
     }
 
     /**

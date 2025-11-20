@@ -18,8 +18,8 @@ export default function AdPopResult({ status, failReason }: AdPopResultProps) {
         <img
           src={
             isSuccess
-              ? "https://images.unsplash.com/photo-1517832207067-4db24a2ae47c?w=1200&h=800&fit=crop"
-              : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=800&fit=crop"
+              ? "https://images.unsplash.com/photo-1517832207067-4db24a2ae47c?w=600&q=75&fit=crop"
+              : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=75&fit=crop"
           }
           alt={isSuccess ? "웰빙 챌린지 응모 완료" : "웰빙 챌린지 응모 실패"}
           className="w-full h-auto object-cover"

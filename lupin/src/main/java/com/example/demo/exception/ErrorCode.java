@@ -56,7 +56,13 @@ public enum ErrorCode {
 
     // Lottery
     LOTTERY_TICKET_NOT_FOUND(HttpStatus.NOT_FOUND, "추첨권을 찾을 수 없습니다."),
-    LOTTERY_TICKET_ALREADY_USED(HttpStatus.BAD_REQUEST, "이미 사용된 추첨권입니다.");
+    LOTTERY_TICKET_ALREADY_USED(HttpStatus.BAD_REQUEST, "이미 사용된 추첨권입니다."),
+
+    // File
+    INVALID_FILE(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "이미지 파일만 업로드 가능합니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "파일 크기가 10MB를 초과합니다."),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다.");
 
     private final HttpStatus status;
     private final String message;

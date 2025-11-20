@@ -47,11 +47,19 @@ public class DataInitializer implements CommandLineRunner {
     // PasswordEncoder 주입
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${app.seed-data.enabled:false}")
+    private boolean seedDataEnabled;
+
     private final Random random = new Random();
 
     @Override
     @Transactional
     public void run(String... args) {
+        if (!seedDataEnabled) {
+            log.info("시드 데이터 생성이 비활성화되어 있습니다. (app.seed-data.enabled=false)");
+            return;
+        }
+
         // 기존 데이터 삭제 및 재생성 (JWT 인증 시스템 적용)
         if (userRepository.count() > 0) {
             log.info("기존 데이터 삭제 중...");

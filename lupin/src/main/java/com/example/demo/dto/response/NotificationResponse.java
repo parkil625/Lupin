@@ -29,11 +29,35 @@ public class NotificationResponse {
     private Long userId;
     private String userName;
     private LocalDateTime createdAt;
+    private Long feedId;     // 피드 ID
+    private Long commentId;  // 댓글 ID (댓글 알림인 경우)
 
     /**
      * Entity -> Response DTO 변환
      */
     public static NotificationResponse from(Notification notification) {
+        Long feedId = null;
+        Long commentId = null;
+
+        // refId에서 feedId 추출
+        if (notification.getRefId() != null && "FEED".equals(notification.getRefType())) {
+            try {
+                feedId = Long.parseLong(notification.getRefId());
+            } catch (NumberFormatException e) {
+                // 무시
+            }
+        }
+
+        // comment/reply/comment_like 타입인 경우 relatedId는 commentId
+        if ("comment".equals(notification.getType()) || "reply".equals(notification.getType()) || "comment_like".equals(notification.getType())) {
+            commentId = notification.getRelatedId();
+        } else if ("like".equals(notification.getType())) {
+            // like 타입인 경우 relatedId는 feedId
+            if (feedId == null) {
+                feedId = notification.getRelatedId();
+            }
+        }
+
         return NotificationResponse.builder()
                 .id(notification.getId())
                 .type(notification.getType())
@@ -46,6 +70,8 @@ public class NotificationResponse {
                 .userId(notification.getUser().getId())
                 .userName(notification.getUser().getRealName())
                 .createdAt(notification.getCreatedAt())
+                .feedId(feedId)
+                .commentId(commentId)
                 .build();
     }
 }

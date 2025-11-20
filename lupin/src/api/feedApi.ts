@@ -18,6 +18,7 @@ const mapBackendFeedToFrontend = (backendFeed: any): Feed => {
 
   return {
     id: backendFeed.id,
+    authorId: backendFeed.writerId,
     author: backendFeed.authorName,
     avatar: '', // 백엔드에 없으면 기본값
     activity: backendFeed.activityType,
@@ -45,9 +46,9 @@ export const feedApi = {
   /**
    * 모든 피드 조회 (페이징)
    */
-  getAllFeeds: async (page: number = 0, size: number = 20) => {
+  getAllFeeds: async (page: number = 0, size: number = 20, excludeUserId?: number) => {
     const response = await apiClient.get('/feeds', {
-      params: { page, size },
+      params: { page, size, excludeUserId },
     });
 
     // Page 객체인 경우 content 배열을 매핑

@@ -5,6 +5,7 @@ export interface DashboardProps {
 
 export interface Feed {
   id: number;
+  authorId?: number;
   author: string;
   avatar: string;
   activity: string;
@@ -38,6 +39,7 @@ export interface Comment {
   activeDays?: number;
   avgScore?: number;
   points?: number;
+  isDeleted?: boolean;
 }
 
 export interface Prescription {
@@ -52,7 +54,7 @@ export interface Prescription {
 
 export interface Notification {
   id: number;
-  type: "challenge" | "appointment" | "like" | "comment" | "chat";
+  type: "challenge" | "appointment" | "like" | "comment" | "reply" | "chat" | "comment_like";
   title: string;
   content: string;
   time: string;

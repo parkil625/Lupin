@@ -30,8 +30,8 @@ public class AuthService {
      * 로그인
      */
     public LoginResponse login(LoginRequest request) {
-        // 사용자 조회
-        User user = userRepository.findByEmail(request.getEmail())
+        // 사용자 조회 (userId로 로그인)
+        User user = userRepository.findByUserId(request.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 비밀번호 검증
@@ -40,14 +40,14 @@ public class AuthService {
         }
 
         // JWT 토큰 생성
-        String token = jwtTokenProvider.createToken(user.getEmail(), user.getRole().name());
+        String token = jwtTokenProvider.createToken(user.getUserId(), user.getRole().name());
 
-        log.info("로그인 성공: email={}, role={}", user.getEmail(), user.getRole());
+        log.info("로그인 성공: userId={}, role={}", user.getUserId(), user.getRole());
 
         return LoginResponse.of(
                 token,
                 user.getId(),
-                user.getEmail(),
+                user.getUserId(),
                 user.getRealName(),
                 user.getRole().name()
         );

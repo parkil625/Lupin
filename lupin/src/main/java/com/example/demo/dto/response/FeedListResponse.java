@@ -15,6 +15,7 @@ import java.util.List;
 public class FeedListResponse {
 
     private Long id;
+    private Long writerId;
     private String authorName;
     private String activityType;
     private Integer duration;

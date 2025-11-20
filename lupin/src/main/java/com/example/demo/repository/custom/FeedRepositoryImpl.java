@@ -30,7 +30,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<FeedListResponse> searchFeeds(String keyword, String activityType, Pageable pageable) {
+    public Page<FeedListResponse> searchFeeds(String keyword, String activityType, Long excludeUserId, Pageable pageable) {
         // Feed 엔티티를 이미지와 함께 조회
         List<Feed> feeds = queryFactory
                 .selectFrom(feed)
@@ -39,7 +39,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .leftJoin(feed.images, feedImage).fetchJoin()
                 .where(
                         containsKeyword(keyword),
-                        eqActivityType(activityType)
+                        eqActivityType(activityType),
+                        excludeWriter(excludeUserId)
                 )
                 .orderBy(getOrderSpecifier(pageable))
                 .offset(pageable.getOffset())
@@ -50,6 +51,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
         List<FeedListResponse> content = feeds.stream()
                 .map(f -> FeedListResponse.builder()
                         .id(f.getId())
+                        .writerId(f.getWriter().getId())
                         .authorName(f.getWriter().getRealName())
                         .activityType(f.getActivityType())
                         .duration(f.getDuration())
@@ -70,8 +72,51 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .from(feed)
                 .where(
                         containsKeyword(keyword),
-                        eqActivityType(activityType)
+                        eqActivityType(activityType),
+                        excludeWriter(excludeUserId)
                 );
+
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
+    }
+
+    @Override
+    public Page<FeedListResponse> findByWriterId(Long userId, Pageable pageable) {
+        // Feed 엔티티를 이미지와 함께 조회
+        List<Feed> feeds = queryFactory
+                .selectFrom(feed)
+                .distinct()
+                .leftJoin(feed.writer, user).fetchJoin()
+                .leftJoin(feed.images, feedImage).fetchJoin()
+                .where(feed.writer.id.eq(userId))
+                .orderBy(getOrderSpecifier(pageable))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        // Feed 엔티티를 FeedListResponse DTO로 변환
+        List<FeedListResponse> content = feeds.stream()
+                .map(f -> FeedListResponse.builder()
+                        .id(f.getId())
+                        .writerId(f.getWriter().getId())
+                        .authorName(f.getWriter().getRealName())
+                        .activityType(f.getActivityType())
+                        .duration(f.getDuration())
+                        .calories(f.getCalories())
+                        .content(f.getContent())
+                        .statsJson(f.getStatsJson())
+                        .createdAt(f.getCreatedAt())
+                        .likesCount(f.getLikesCount())
+                        .commentsCount(f.getCommentsCount())
+                        .images(f.getImages().stream()
+                                .map(FeedImage::getImageUrl)
+                                .collect(Collectors.toList()))
+                        .build())
+                .collect(Collectors.toList());
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(feed.count())
+                .from(feed)
+                .where(feed.writer.id.eq(userId));
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
@@ -195,6 +240,10 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
 
     private BooleanExpression eqActivityType(String activityType) {
         return activityType != null ? feed.activityType.eq(activityType) : null;
+    }
+
+    private BooleanExpression excludeWriter(Long excludeUserId) {
+        return excludeUserId != null ? feed.writer.id.ne(excludeUserId) : null;
     }
 
     private OrderSpecifier<?> getOrderSpecifier(Pageable pageable) {

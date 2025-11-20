@@ -40,6 +40,7 @@ interface HomeProps {
   setFeedImageIndex: (feedId: number, index: number) => void;
   setShowFeedDetailInHome: (show: boolean) => void;
   onCreateClick: () => void;
+  refreshTrigger?: number;
 }
 
 const AD_POPUP_KEY = "adPopupHiddenUntil";
@@ -53,6 +54,7 @@ export default function Home({
   setFeedImageIndex,
   setShowFeedDetailInHome,
   onCreateClick,
+  refreshTrigger,
 }: HomeProps) {
   const [showAdPopup, setShowAdPopup] = useState(false);
   const [showPrizeClaim, setShowPrizeClaim] = useState(false);
@@ -246,7 +248,7 @@ export default function Home({
     };
 
     checkCanPost();
-  }, [myFeeds]); // myFeeds가 변경되면 다시 확인
+  }, [myFeeds, refreshTrigger]); // myFeeds가 변경되거나 refreshTrigger가 변경되면 다시 확인
 
   useEffect(() => {
     // 개발/테스트 모드: URL에 ?showAd=true가 있으면 강제로 표시
@@ -351,6 +353,17 @@ export default function Home({
                   </span>
                   <span className="text-sm font-black text-[#C93831]">
                     {userStats.lotteryTickets}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600 font-bold">
+                    현재 점수{" "}
+                  </span>
+                  <span className="text-sm font-black text-yellow-600">
+                    {userStats.points % 30}
+                  </span>
+                  <span className="text-xs text-gray-500 ml-1">
+                    (+{30 - (userStats.points % 30) || 30}점 → 추첨권)
                   </span>
                 </div>
                 <div>

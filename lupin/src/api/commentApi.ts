@@ -32,7 +32,12 @@ export const commentApi = {
     writerId: number;
     parentId?: number;
   }) => {
-    const response = await apiClient.post('/comments', commentData);
+    const response = await apiClient.post(`/comments/feeds/${commentData.feedId}`, {
+      content: commentData.content,
+      parentId: commentData.parentId,
+    }, {
+      params: { userId: commentData.writerId }
+    });
     return response.data;
   },
 
@@ -47,8 +52,10 @@ export const commentApi = {
   /**
    * 댓글 삭제
    */
-  deleteComment: async (commentId: number) => {
-    const response = await apiClient.delete(`/comments/${commentId}`);
+  deleteComment: async (commentId: number, userId: number) => {
+    const response = await apiClient.delete(`/comments/${commentId}`, {
+      params: { userId }
+    });
     return response.data;
   },
 

@@ -1,12 +1,14 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.Comment;
+import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.CommentCreateRequest;
 import com.example.demo.dto.response.CommentResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.UserRepository;
@@ -30,8 +32,10 @@ import java.util.stream.Collectors;
 public class CommentService {
 
     private final CommentRepository commentRepository;
+    private final CommentLikeRepository commentLikeRepository;
     private final FeedRepository feedRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     /**
      * 댓글 생성
@@ -61,6 +65,29 @@ public class CommentService {
         }
 
         Comment savedComment = commentRepository.save(comment);
+
+        // 피드 작성자에게 댓글 알림 (자신의 피드가 아닌 경우)
+        if (!feed.getWriter().getId().equals(userId)) {
+            notificationService.createCommentNotification(
+                feed.getWriter().getId(),
+                userId,
+                feedId,
+                savedComment.getId()
+            );
+        }
+
+        // 답글인 경우, 부모 댓글 작성자에게도 알림 (자신이 아닌 경우)
+        if (request.getParentId() != null) {
+            Comment parentComment = findCommentById(request.getParentId());
+            if (!parentComment.getWriter().getId().equals(userId)) {
+                notificationService.createReplyNotification(
+                    parentComment.getWriter().getId(),
+                    userId,
+                    feedId,
+                    savedComment.getId()
+                );
+            }
+        }
 
         log.info("댓글 생성 완료 - commentId: {}, feedId: {}, userId: {}",
                 savedComment.getId(), feedId, userId);
@@ -159,6 +186,64 @@ public class CommentService {
     public Page<CommentResponse> getCommentsByUserId(Long userId, Pageable pageable) {
         return commentRepository.findByWriterId(userId, pageable)
                 .map(CommentResponse::from);
+    }
+
+    /**
+     * 댓글 좋아요
+     */
+    @Transactional
+    public void likeComment(Long commentId, Long userId) {
+        Comment comment = findCommentById(commentId);
+        User user = findUserById(userId);
+
+        // 이미 좋아요를 눌렀는지 확인
+        if (commentLikeRepository.existsByUserIdAndCommentId(userId, commentId)) {
+            throw new BusinessException(ErrorCode.ALREADY_LIKED, "이미 좋아요를 눌렀습니다.");
+        }
+
+        CommentLike commentLike = CommentLike.builder()
+                .user(user)
+                .comment(comment)
+                .build();
+
+        commentLikeRepository.save(commentLike);
+
+        // 댓글 작성자에게 좋아요 알림
+        notificationService.createCommentLikeNotification(
+            comment.getWriter().getId(),
+            userId,
+            comment.getFeed().getId(),
+            commentId
+        );
+
+        log.info("댓글 좋아요 완료 - commentId: {}, userId: {}", commentId, userId);
+    }
+
+    /**
+     * 댓글 좋아요 취소
+     */
+    @Transactional
+    public void unlikeComment(Long commentId, Long userId) {
+        CommentLike commentLike = commentLikeRepository.findByUserIdAndCommentId(userId, commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND, "좋아요를 누르지 않았습니다."));
+
+        commentLikeRepository.delete(commentLike);
+
+        log.info("댓글 좋아요 취소 완료 - commentId: {}, userId: {}", commentId, userId);
+    }
+
+    /**
+     * 댓글 좋아요 여부 확인
+     */
+    public boolean hasUserLikedComment(Long commentId, Long userId) {
+        return commentLikeRepository.existsByUserIdAndCommentId(userId, commentId);
+    }
+
+    /**
+     * 댓글 좋아요 수 조회
+     */
+    public Long getCommentLikeCount(Long commentId) {
+        return commentLikeRepository.countByCommentId(commentId);
     }
 
     // === 헬퍼 메서드 ===

@@ -9,7 +9,6 @@ import com.example.demo.dto.response.FeedDetailResponse;
 import com.example.demo.repository.*;
 import com.example.demo.service.CommentService;
 import com.example.demo.service.FeedService;
-import com.example.demo.service.NotificationService;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +17,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 /**
  * 테스트 데이터 초기화 - Service 레이어 사용
@@ -42,15 +40,15 @@ public class DataInitializer implements CommandLineRunner {
     // Service 레이어 주입
     private final FeedService feedService;
     private final CommentService commentService;
-    private final NotificationService notificationService;
+
+    // Repository for comment likes
+    private final com.example.demo.repository.CommentLikeRepository commentLikeRepository;
 
     // PasswordEncoder 주입
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @org.springframework.beans.factory.annotation.Value("${app.seed-data.enabled:false}")
     private boolean seedDataEnabled;
-
-    private final Random random = new Random();
 
     @Override
     @Transactional
@@ -68,6 +66,7 @@ public class DataInitializer implements CommandLineRunner {
             notificationRepository.deleteAll();
             lotteryTicketRepository.deleteAll();
             pointLogRepository.deleteAll();
+            commentLikeRepository.deleteAll();
             feedRepository.deleteAll();
             userRepository.deleteAll();
 
@@ -80,6 +79,7 @@ public class DataInitializer implements CommandLineRunner {
             entityManager.createNativeQuery("ALTER TABLE feed_image AUTO_INCREMENT = 1").executeUpdate();
             entityManager.createNativeQuery("ALTER TABLE lottery_ticket AUTO_INCREMENT = 1").executeUpdate();
             entityManager.createNativeQuery("ALTER TABLE point_log AUTO_INCREMENT = 1").executeUpdate();
+            entityManager.createNativeQuery("ALTER TABLE comment_like AUTO_INCREMENT = 1").executeUpdate();
 
             log.info("기존 데이터 삭제 완료");
         }
@@ -102,189 +102,261 @@ public class DataInitializer implements CommandLineRunner {
         createTestLikes(users, feeds);
         log.info("테스트 좋아요 생성 완료");
 
+        // 5. 댓글 좋아요 생성 (알림 테스트용)
+        createTestCommentLikes(users, comments);
+        log.info("테스트 댓글 좋아요 생성 완료");
+
         log.info("=== 테스트 데이터 초기화 완료 ===");
     }
 
     private List<User> createTestUsers() {
         List<User> users = new ArrayList<>();
-        String[][] userData = {
-            {"user01", "김강민", "남성", "개발팀"},
-            {"user02", "이서연", "여성", "마케팅팀"},
-            {"user03", "박준호", "남성", "영업팀"},
-            {"user04", "최지우", "여성", "디자인팀"},
-            {"user05", "정민수", "남성", "인사팀"},
-            {"user06", "강혜진", "여성", "재무팀"},
-            {"user07", "윤태양", "남성", "법무팀"},
-            {"user08", "한소희", "여성", "경영지원팀"},
-            {"user09", "오성민", "남성", "연구개발팀"},
-            {"user10", "서은주", "여성", "기획팀"},
-            {"user11", "임동혁", "남성", "개발팀"},
-            {"user12", "배수지", "여성", "마케팅팀"},
-            {"user13", "신재호", "남성", "영업팀"},
-            {"user14", "조미라", "여성", "디자인팀"},
-            {"user15", "홍길동", "남성", "인사팀"},
-            {"user16", "안지영", "여성", "재무팀"},
-            {"user17", "유재석", "남성", "법무팀"},
-            {"user18", "송혜교", "여성", "경영지원팀"},
-            {"user19", "전지현", "여성", "연구개발팀"},
-            {"user20", "현빈", "남성", "기획팀"}
-        };
 
-        // 비밀번호 암호화 (모든 사용자 비밀번호: "1")
-        String encodedPassword = passwordEncoder.encode("1");
-
-        for (String[] data : userData) {
-            // 이미 존재하는 이메일이면 스킵
-            if (userRepository.findByEmail(data[0]).isPresent()) {
-                User existingUser = userRepository.findByEmail(data[0]).get();
-                users.add(existingUser);
-                continue;
-            }
-
-            // 점수는 0으로 시작 (피드 작성 시 자동 적립)
-            User user = User.builder()
-                    .email(data[0])
-                    .password(encodedPassword)  // BCrypt로 암호화된 비밀번호
-                    .realName(data[1])
-                    .role(Role.MEMBER)
-                    .height(165.0 + random.nextDouble() * 20)
-                    .weight(50.0 + random.nextDouble() * 30)
-                    .gender(data[2])
-                    .birthDate(LocalDate.of(1990 + random.nextInt(10), 1 + random.nextInt(12), 1 + random.nextInt(28)))
-                    .currentPoints(0L)
-                    .totalPoints(0L)
-                    .department(data[3])
-                    .build();
-            users.add(userRepository.save(user));
-        }
+        users.add(createUser("김강민", "남성", "개발팀", 175.5, 72.5, LocalDate.of(1990, 3, 15), "user01"));
+        users.add(createUser("이서연", "여성", "마케팅팀", 162.3, 52.3, LocalDate.of(1992, 7, 22), "user02"));
+        users.add(createUser("박준호", "남성", "영업팀", 180.2, 78.8, LocalDate.of(1988, 11, 8), "user03"));
+        users.add(createUser("최지우", "여성", "디자인팀", 158.7, 48.5, LocalDate.of(1995, 1, 30), "user04"));
+        users.add(createUser("정민수", "남성", "인사팀", 172.8, 68.2, LocalDate.of(1991, 5, 12), "user05"));
+        users.add(createUser("강혜진", "여성", "재무팀", 165.4, 55.7, LocalDate.of(1993, 9, 25), "user06"));
+        users.add(createUser("윤태양", "남성", "법무팀", 178.1, 75.3, LocalDate.of(1989, 2, 18), "user07"));
+        users.add(createUser("한소희", "여성", "경영지원팀", 160.9, 50.8, LocalDate.of(1994, 6, 7), "user08"));
+        users.add(createUser("오성민", "남성", "연구개발팀", 183.5, 82.1, LocalDate.of(1987, 10, 3), "user09"));
+        users.add(createUser("서은주", "여성", "기획팀", 167.2, 58.4, LocalDate.of(1996, 4, 28), "user10"));
+        users.add(createUser("임동혁", "남성", "개발팀", 176.3, 70.6, LocalDate.of(1990, 8, 11), "user11"));
+        users.add(createUser("배수지", "여성", "마케팅팀", 163.8, 54.2, LocalDate.of(1992, 12, 19), "user12"));
+        users.add(createUser("신재호", "남성", "영업팀", 179.4, 77.5, LocalDate.of(1988, 3, 6), "user13"));
+        users.add(createUser("조미라", "여성", "디자인팀", 159.5, 49.8, LocalDate.of(1995, 7, 14), "user14"));
+        users.add(createUser("홍길동", "남성", "인사팀", 171.6, 67.3, LocalDate.of(1991, 11, 23), "user15"));
+        users.add(createUser("안지영", "여성", "재무팀", 164.7, 56.1, LocalDate.of(1993, 1, 9), "user16"));
+        users.add(createUser("유재석", "남성", "법무팀", 177.9, 74.8, LocalDate.of(1989, 5, 27), "user17"));
+        users.add(createUser("송혜교", "여성", "경영지원팀", 161.2, 51.5, LocalDate.of(1994, 9, 16), "user18"));
+        users.add(createUser("전지현", "여성", "연구개발팀", 182.3, 80.2, LocalDate.of(1987, 2, 4), "user19"));
+        users.add(createUser("현빈", "남성", "기획팀", 168.5, 59.7, LocalDate.of(1996, 6, 21), "user20"));
 
         return users;
+    }
+
+    private User createUser(String realName, String gender, String department,
+                            Double height, Double weight, LocalDate birthDate, String userId) {
+        // 이미 존재하는 userId이면 기존 사용자 반환
+        if (userRepository.findByUserId(userId).isPresent()) {
+            return userRepository.findByUserId(userId).get();
+        }
+
+        User user = User.builder()
+                .userId(userId)
+                .email(userId + "@company.com")
+                .password(passwordEncoder.encode("1"))
+                .realName(realName)
+                .role(Role.MEMBER)
+                .height(height)
+                .weight(weight)
+                .gender(gender)
+                .birthDate(birthDate)
+                .currentPoints(0L)
+                .totalPoints(0L)
+                .department(department)
+                .build();
+
+        return userRepository.save(user);
     }
 
     private List<FeedDetailResponse> createTestFeeds(List<User> users) {
         List<FeedDetailResponse> feeds = new ArrayList<>();
 
-        // 각 유저당 하루 1개의 피드만 생성 (일일 제한 준수)
-        String[] activities = {"러닝", "걷기", "자전거", "수영", "등산", "요가"};
-        String[] activityImages = {
-                "https://picsum.photos/seed/running/800/600", // 러닝
-                "https://picsum.photos/seed/walking/800/600", // 걷기
-                "https://picsum.photos/seed/cycling/800/600", // 자전거
-                "https://picsum.photos/seed/swimming/800/600", // 수영
-                "https://picsum.photos/seed/hiking/800/600", // 등산
-                "https://picsum.photos/seed/yoga/800/600"  // 요가
-        };
-
-        for (int i = 0; i < users.size(); i++) {
-            User user = users.get(i);
-            int duration = 20 + random.nextInt(60); // 20-80분
-            int activityIndex = i % activities.length;
-            int endImageIndex = (activityIndex + 1) % activityImages.length;
-
-            // 이미지 URL (START, END)
-            List<String> imageUrls = Arrays.asList(
-                activityImages[activityIndex],
-                activityImages[endImageIndex]
-            );
-
-            FeedCreateRequest request = FeedCreateRequest.builder()
-                    .activityType(activities[activityIndex])
-                    .duration(duration)
-                    .calories((double)(100 + random.nextInt(300)))
-                    .content(String.format("%s 운동 완료! 오늘도 건강하게 💪", activities[activityIndex]))
-                    .imageUrls(imageUrls)
-                    .build();
-
-            // Service를 통해 피드 생성 (자동으로 포인트 적립)
-            FeedDetailResponse savedFeed = feedService.createFeed(user.getId(), request);
-            feeds.add(savedFeed);
-        }
+        // createFeed(user, activityType, duration(분), content) - 칼로리/포인트 자동 계산
+        // 포인트 = (MET × duration) / 10, 최대 30점
+        feeds.add(createFeed(users.get(0), "러닝", 31, "아침 러닝으로 상쾌하게 하루 시작! 한강 따라 5km 완주했습니다 🏃‍♂️"));  // 30점
+        feeds.add(createFeed(users.get(1), "걷기", 13, "짧은 점심 산책! 기분 전환에 딱이에요 ☀️"));  // 5점
+        feeds.add(createFeed(users.get(2), "자전거", 40, "주말 자전거 라이딩! 북한산 둘레길 완주하고 왔습니다 🚴"));  // 30점
+        feeds.add(createFeed(users.get(3), "수영", 19, "수영장에서 가볍게 몇 바퀴! 폼 연습 중이에요 🏊‍♀️"));  // 15점
+        feeds.add(createFeed(users.get(4), "등산", 23, "동네 뒷산 가볍게 다녀왔어요 ⛰️"));  // 15점
+        feeds.add(createFeed(users.get(5), "요가", 20, "아침 요가로 하루를 열었어요. 마음이 편안해지는 시간이에요 🧘‍♀️"));  // 5점
+        feeds.add(createFeed(users.get(6), "러닝", 10, "짧게 동네 한 바퀴! 오늘은 컨디션이 별로라 가볍게 🌙"));  // 10점
+        feeds.add(createFeed(users.get(7), "걷기", 53, "퇴근 후 동네 한바퀴! 요즘 걷기 운동에 빠졌어요 👟"));  // 20점
+        feeds.add(createFeed(users.get(8), "자전거", 27, "출퇴근 자전거 시작했습니다! 교통비도 절약하고 운동도 되고 👍"));  // 20점
+        feeds.add(createFeed(users.get(9), "수영", 38, "오늘 접영 배웠어요! 생각보다 어렵지만 재밌네요 🏊"));  // 30점
+        feeds.add(createFeed(users.get(10), "등산", 8, "점심시간에 회사 뒷산 살짝 올라갔다 왔어요 🌲"));  // 5점
+        feeds.add(createFeed(users.get(11), "요가", 48, "핫요가 처음 해봤는데 땀이 엄청 나네요! 개운해요 💦"));  // 12점
+        feeds.add(createFeed(users.get(12), "러닝", 26, "마라톤 대회 준비 중! 오늘 5km 페이스 측정했어요 🏅"));  // 25점
+        feeds.add(createFeed(users.get(13), "걷기", 26, "카페 갈 때도 걸어가기! 작은 습관이 모여 건강을 만들어요 ☕"));  // 10점
+        feeds.add(createFeed(users.get(14), "자전거", 20, "한강 자전거 도로 여의도까지 🚲"));  // 15점
+        feeds.add(createFeed(users.get(15), "수영", 25, "배영 폼 교정 받았어요. 코치님 말씀대로 하니까 확실히 다르네요 🤽"));  // 20점
+        feeds.add(createFeed(users.get(16), "등산", 46, "관악산 정상! 힘들었지만 뷰가 최고였어요. 다음엔 도봉산 도전 🏔️"));  // 30점
+        feeds.add(createFeed(users.get(17), "요가", 8, "스트레칭 위주로 가볍게! 🌸"));  // 2점
+        feeds.add(createFeed(users.get(18), "러닝", 15, "가벼운 조깅으로 하루 마무리 💨"));  // 15점
+        feeds.add(createFeed(users.get(19), "걷기", 79, "저녁 산책하면서 팟캐스트 듣기! 나만의 힐링 타임이에요 🎧"));  // 30점
 
         return feeds;
+    }
+
+    private FeedDetailResponse createFeed(User user, String activityType, int duration, String content) {
+        Map<String, String> activityImages = Map.of(
+            "러닝", "https://picsum.photos/seed/running/800/600",
+            "걷기", "https://picsum.photos/seed/walking/800/600",
+            "자전거", "https://picsum.photos/seed/cycling/800/600",
+            "수영", "https://picsum.photos/seed/swimming/800/600",
+            "등산", "https://picsum.photos/seed/hiking/800/600",
+            "요가", "https://picsum.photos/seed/yoga/800/600"
+        );
+
+        // 칼로리는 FeedService에서 자동 계산
+        FeedCreateRequest request = FeedCreateRequest.builder()
+                .activityType(activityType)
+                .duration(duration)
+                .content(content)
+                .imageUrls(Arrays.asList(activityImages.get(activityType)))
+                .build();
+
+        return feedService.createFeed(user.getId(), request);
     }
 
     private List<CommentResponse> createTestComments(List<User> users, List<FeedDetailResponse> feeds) {
         List<CommentResponse> comments = new ArrayList<>();
 
-        // 각 피드에 댓글 추가
-        for (FeedDetailResponse feed : feeds) {
-            int commentCount = random.nextInt(5); // 0-4개의 댓글
+        // 명확한 시나리오로 댓글/답글 생성
+        // user01(김강민)의 피드에 user02(이서연)가 댓글 -> user03(박준호)가 답글
+        if (feeds.size() > 0) {
+            FeedDetailResponse feed1 = feeds.get(0); // user01의 피드
 
-            for (int i = 0; i < commentCount; i++) {
-                User commenter = users.get(random.nextInt(users.size()));
+            CommentResponse comment1 = commentService.createComment(feed1.getId(), users.get(1).getId(),
+                CommentCreateRequest.builder().content("대단하세요! 러닝 화이팅! 👍").build());
+            comments.add(comment1);
 
-                CommentCreateRequest request = CommentCreateRequest.builder()
-                        .content("대단하세요! 저도 같이 운동하고 싶네요 👍")
-                        .build();
+            CommentResponse reply1 = commentService.createComment(feed1.getId(), users.get(2).getId(),
+                CommentCreateRequest.builder().content("저도 같이 뛰고 싶네요 💪").parentId(comment1.getId()).build());
+            comments.add(reply1);
+        }
 
-                // Service를 통해 댓글 생성
-                CommentResponse savedComment = commentService.createComment(feed.getId(), commenter.getId(), request);
-                comments.add(savedComment);
+        // user02(이서연)의 피드에 user04(최지우)가 댓글
+        if (feeds.size() > 1) {
+            FeedDetailResponse feed2 = feeds.get(1);
 
-                // 알림 생성 (피드 작성자에게)
-                notificationService.createCommentNotification(
-                    feed.getWriterId(),
-                    commenter.getId(),
-                    feed.getId(),
-                    savedComment.getId()
-                );
+            CommentResponse comment2 = commentService.createComment(feed2.getId(), users.get(3).getId(),
+                CommentCreateRequest.builder().content("오늘도 운동 완료! 멋져요 ✨").build());
+            comments.add(comment2);
+        }
 
-                // 대댓글 추가 (50% 확률)
-                if (random.nextBoolean()) {
-                    User replier = users.get(random.nextInt(users.size()));
+        // user03(박준호)의 피드에 user01(김강민)이 댓글 -> user05(정민수)가 답글
+        if (feeds.size() > 2) {
+            FeedDetailResponse feed3 = feeds.get(2);
 
-                    CommentCreateRequest replyRequest = CommentCreateRequest.builder()
-                            .content("감사합니다! 함께 화이팅해요 💪")
-                            .parentId(savedComment.getId())
-                            .build();
+            CommentResponse comment3 = commentService.createComment(feed3.getId(), users.get(0).getId(),
+                CommentCreateRequest.builder().content("좋은 운동이네요! 👏").build());
+            comments.add(comment3);
 
-                    CommentResponse reply = commentService.createComment(feed.getId(), replier.getId(), replyRequest);
-                    comments.add(reply);
+            CommentResponse reply3 = commentService.createComment(feed3.getId(), users.get(4).getId(),
+                CommentCreateRequest.builder().content("동의합니다! 함께해요").parentId(comment3.getId()).build());
+            comments.add(reply3);
+        }
 
-                    // 답글 알림 생성 (원댓글 작성자에게)
-                    if (!savedComment.getWriterId().equals(replier.getId())) {
-                        notificationService.createCommentNotification(
-                            savedComment.getWriterId(),
-                            replier.getId(),
-                            feed.getId(),
-                            reply.getId()
-                        );
-                    }
-                }
-            }
+        // user04(최지우)의 피드에 user06(강혜진)이 댓글
+        if (feeds.size() > 3) {
+            FeedDetailResponse feed4 = feeds.get(3);
+
+            CommentResponse comment4 = commentService.createComment(feed4.getId(), users.get(5).getId(),
+                CommentCreateRequest.builder().content("꾸준히 하시는 모습이 멋져요! 🌟").build());
+            comments.add(comment4);
+        }
+
+        // user05(정민수)의 피드에 user07(윤태양)이 댓글 -> user08(한소희)가 답글
+        if (feeds.size() > 4) {
+            FeedDetailResponse feed5 = feeds.get(4);
+
+            CommentResponse comment5 = commentService.createComment(feed5.getId(), users.get(6).getId(),
+                CommentCreateRequest.builder().content("오늘도 파이팅! 💯").build());
+            comments.add(comment5);
+
+            CommentResponse reply5 = commentService.createComment(feed5.getId(), users.get(7).getId(),
+                CommentCreateRequest.builder().content("응원합니다! 화이팅! 🔥").parentId(comment5.getId()).build());
+            comments.add(reply5);
         }
 
         return comments;
     }
 
     private void createTestLikes(List<User> users, List<FeedDetailResponse> feeds) {
-        // 각 피드에 좋아요 추가
-        for (FeedDetailResponse feed : feeds) {
-            int likeCount = random.nextInt(10); // 0-9개의 좋아요
-            List<Long> likedUserIds = new ArrayList<>();
+        // 명확한 시나리오로 좋아요 생성
 
-            for (int i = 0; i < likeCount && i < users.size(); i++) {
-                User liker = users.get(random.nextInt(users.size()));
+        // user01(김강민)의 피드에 user02, user03, user04가 좋아요
+        if (feeds.size() > 0) {
+            FeedDetailResponse feed1 = feeds.get(0);
+            feedService.likeFeed(feed1.getId(), users.get(1).getId());
+            feedService.likeFeed(feed1.getId(), users.get(2).getId());
+            feedService.likeFeed(feed1.getId(), users.get(3).getId());
+        }
 
-                // 이미 좋아요를 누른 사용자인지 확인
-                if (!likedUserIds.contains(liker.getId())) {
-                    try {
-                        // Service를 통해 좋아요 추가
-                        feedService.likeFeed(feed.getId(), liker.getId());
-                        likedUserIds.add(liker.getId());
+        // user02(이서연)의 피드에 user01, user05가 좋아요
+        if (feeds.size() > 1) {
+            FeedDetailResponse feed2 = feeds.get(1);
+            feedService.likeFeed(feed2.getId(), users.get(0).getId());
+            feedService.likeFeed(feed2.getId(), users.get(4).getId());
+        }
 
-                        // 알림 생성 (피드 작성자에게)
-                        notificationService.createLikeNotification(
-                            feed.getWriterId(),
-                            liker.getId(),
-                            feed.getId()
-                        );
-                    } catch (Exception e) {
-                        // 이미 좋아요를 누른 경우 무시
-                        log.debug("좋아요 중복: feedId={}, userId={}", feed.getId(), liker.getId());
-                    }
-                }
-            }
+        // user03(박준호)의 피드에 user01, user02, user06, user07이 좋아요
+        if (feeds.size() > 2) {
+            FeedDetailResponse feed3 = feeds.get(2);
+            feedService.likeFeed(feed3.getId(), users.get(0).getId());
+            feedService.likeFeed(feed3.getId(), users.get(1).getId());
+            feedService.likeFeed(feed3.getId(), users.get(5).getId());
+            feedService.likeFeed(feed3.getId(), users.get(6).getId());
+        }
+
+        // user04(최지우)의 피드에 user08, user09가 좋아요
+        if (feeds.size() > 3) {
+            FeedDetailResponse feed4 = feeds.get(3);
+            feedService.likeFeed(feed4.getId(), users.get(7).getId());
+            feedService.likeFeed(feed4.getId(), users.get(8).getId());
+        }
+
+        // user05(정민수)의 피드에 user10, user11, user12가 좋아요
+        if (feeds.size() > 4) {
+            FeedDetailResponse feed5 = feeds.get(4);
+            feedService.likeFeed(feed5.getId(), users.get(9).getId());
+            feedService.likeFeed(feed5.getId(), users.get(10).getId());
+            feedService.likeFeed(feed5.getId(), users.get(11).getId());
+        }
+    }
+
+    private void createTestCommentLikes(List<User> users, List<CommentResponse> comments) {
+        // user01(김강민)의 피드를 기준으로 테스트 데이터 생성
+        // 현재 comments 구조:
+        // 0: user02가 user01의 피드에 단 댓글
+        // 1: user03이 comment0에 단 답글
+        // 2: user04가 user02의 피드에 단 댓글
+        // 3: user01이 user03의 피드에 단 댓글
+        // 4: user05가 comment3에 단 답글
+        // 5: user06이 user04의 피드에 단 댓글
+        // 6: user07이 user05의 피드에 단 댓글
+        // 7: user08이 comment6에 단 답글
+
+        if (comments.size() > 0) {
+            // user01의 피드에 user02가 단 댓글(comment0)에 user03, user04, user05가 좋아요
+            // -> user02에게 댓글 좋아요 알림 3개
+            commentService.likeComment(comments.get(0).getId(), users.get(2).getId()); // user03
+            commentService.likeComment(comments.get(0).getId(), users.get(3).getId()); // user04
+            commentService.likeComment(comments.get(0).getId(), users.get(4).getId()); // user05
+        }
+
+        if (comments.size() > 1) {
+            // user03이 단 답글(comment1)에 user01, user02가 좋아요
+            // -> user03에게 댓글 좋아요 알림 2개
+            commentService.likeComment(comments.get(1).getId(), users.get(0).getId()); // user01
+            commentService.likeComment(comments.get(1).getId(), users.get(1).getId()); // user02
+        }
+
+        if (comments.size() > 3) {
+            // user01이 user03의 피드에 단 댓글(comment3)에 user06, user07이 좋아요
+            // -> user01에게 댓글 좋아요 알림 2개
+            commentService.likeComment(comments.get(3).getId(), users.get(5).getId()); // user06
+            commentService.likeComment(comments.get(3).getId(), users.get(6).getId()); // user07
+        }
+
+        if (comments.size() > 6) {
+            // user07이 단 댓글(comment6)에 user08, user09가 좋아요
+            // -> user07에게 댓글 좋아요 알림 2개
+            commentService.likeComment(comments.get(6).getId(), users.get(7).getId()); // user08
+            commentService.likeComment(comments.get(6).getId(), users.get(8).getId()); // user09
         }
     }
 }

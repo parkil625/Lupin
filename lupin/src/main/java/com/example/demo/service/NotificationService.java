@@ -43,6 +43,8 @@ public class NotificationService {
                 .title(request.getTitle())
                 .content(request.getContent())
                 .relatedId(request.getRelatedId())
+                .refType(request.getRefType())
+                .refId(request.getRefId())
                 .build();
 
         notification.setUser(user);
@@ -181,9 +183,11 @@ public class NotificationService {
         NotificationCreateRequest request = NotificationCreateRequest.builder()
                 .type("like")
                 .title("새로운 좋아요")
-                .content(liker.getRealName() + "님이 회원님의 게시물을 좋아합니다.")
+                .content(liker.getRealName() + "님이 회원님 피드를 좋아합니다.")
                 .userId(feedOwnerId)
                 .relatedId(feedId)
+                .refType("FEED")
+                .refId(String.valueOf(feedId))
                 .build();
 
         createNotification(request);
@@ -205,9 +209,63 @@ public class NotificationService {
         NotificationCreateRequest request = NotificationCreateRequest.builder()
                 .type("comment")
                 .title("새로운 댓글")
-                .content(commenter.getRealName() + "님이 회원님의 게시물에 댓글을 남겼습니다.")
+                .content(commenter.getRealName() + "님이 회원님의 피드에 댓글을 남겼습니다.")
                 .userId(feedOwnerId)
                 .relatedId(commentId)
+                .refType("FEED")
+                .refId(String.valueOf(feedId))
+                .build();
+
+        createNotification(request);
+    }
+
+    /**
+     * 답글 알림 생성
+     */
+    @Transactional
+    public void createReplyNotification(Long parentCommentOwnerId, Long replierUserId, Long feedId, Long commentId) {
+        User parentOwner = findUserById(parentCommentOwnerId);
+        User replier = findUserById(replierUserId);
+
+        // 자기 자신의 댓글에 답글을 단 경우 알림 생성하지 않음
+        if (parentCommentOwnerId.equals(replierUserId)) {
+            return;
+        }
+
+        NotificationCreateRequest request = NotificationCreateRequest.builder()
+                .type("reply")
+                .title("새로운 답글")
+                .content(replier.getRealName() + "님이 회원님의 댓글에 답글을 남겼습니다.")
+                .userId(parentCommentOwnerId)
+                .relatedId(commentId)
+                .refType("FEED")
+                .refId(String.valueOf(feedId))
+                .build();
+
+        createNotification(request);
+    }
+
+    /**
+     * 댓글 좋아요 알림 생성
+     */
+    @Transactional
+    public void createCommentLikeNotification(Long commentOwnerId, Long likerUserId, Long feedId, Long commentId) {
+        User commentOwner = findUserById(commentOwnerId);
+        User liker = findUserById(likerUserId);
+
+        // 자기 자신의 댓글에 좋아요를 누른 경우 알림 생성하지 않음
+        if (commentOwnerId.equals(likerUserId)) {
+            return;
+        }
+
+        NotificationCreateRequest request = NotificationCreateRequest.builder()
+                .type("comment_like")
+                .title("댓글 좋아요")
+                .content(liker.getRealName() + "님이 회원님의 댓글을 좋아합니다.")
+                .userId(commentOwnerId)
+                .relatedId(commentId)
+                .refType("FEED")
+                .refId(String.valueOf(feedId))
                 .build();
 
         createNotification(request);

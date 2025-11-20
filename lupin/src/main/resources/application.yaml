@@ -25,6 +25,23 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
     open-in-view: false
 
+  # 파일 업로드 용량 제한
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # AWS S3 설정 (Spring Cloud AWS 3.x)
+  cloud:
+    aws:
+      credentials:
+        access-key: "AKIARTMWXCLSALD4F2MH"
+        secret-key: "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"
+      s3:
+        bucket: "lupin-storage"
+      region:
+        static: ap-northeast-2
+
 # 로깅 설정
 logging:
   level:

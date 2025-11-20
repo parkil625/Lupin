@@ -42,6 +42,7 @@ import {
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
+import { imageApi } from "@/api/imageApi";
 
 interface CreateFeedDialogProps {
   open: boolean;
@@ -75,6 +76,7 @@ export default function CreateFeedDialog({
   const [workoutType, setWorkoutType] = useState<string>("running");
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
@@ -173,47 +175,68 @@ export default function CreateFeedDialog({
     onOpenChange(false);
   };
 
-  const handleFileSelect = (
+  const handleFileSelect = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'start' | 'end' | 'upload'
   ) => {
-    const files = type === 'upload' ? Array.from(e.target.files || []) : [e.target.files?.[0]].filter(Boolean) as File[];
+    const files = type === 'upload'
+      ? Array.from(e.target.files || [])
+      : [e.target.files?.[0]].filter(Boolean) as File[];
 
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
+    if (files.length === 0) return;
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          const imageData = event.target.result as string;
-          if (type === 'start') setStartImage(imageData);
-          else if (type === 'end') setEndImage(imageData);
-          else setOtherImages(prev => [...prev, imageData]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    setIsUploading(true);
+    const loadingToast = toast.loading("이미지를 업로드하고 있습니다...");
+
+    try {
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+
+        // 백엔드로 전송 -> S3 URL 받기
+        const s3Url = await imageApi.uploadImage(file);
+
+        if (type === 'start') setStartImage(s3Url);
+        else if (type === 'end') setEndImage(s3Url);
+        else setOtherImages(prev => [...prev, s3Url]);
+      }
+      toast.success("업로드 완료!");
+    } catch (error) {
+      console.error(error);
+      toast.error("이미지 업로드 실패");
+    } finally {
+      toast.dismiss(loadingToast);
+      setIsUploading(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
-  const handleDrop = (e: React.DragEvent, type: 'start' | 'end' | 'upload') => {
+  const handleDrop = async (e: React.DragEvent, type: 'start' | 'end' | 'upload') => {
     e.preventDefault();
     e.stopPropagation();
 
     const files = Array.from(e.dataTransfer.files);
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
+    if (files.length === 0) return;
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          const imageData = event.target.result as string;
-          if (type === 'start') setStartImage(imageData);
-          else if (type === 'end') setEndImage(imageData);
-          else setOtherImages(prev => [...prev, imageData]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    setIsUploading(true);
+    const loadingToast = toast.loading("이미지를 업로드하고 있습니다...");
+
+    try {
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+
+        const s3Url = await imageApi.uploadImage(file);
+
+        if (type === 'start') setStartImage(s3Url);
+        else if (type === 'end') setEndImage(s3Url);
+        else setOtherImages(prev => [...prev, s3Url]);
+      }
+      toast.success("업로드 완료!");
+    } catch (error) {
+      toast.error("이미지 업로드 실패");
+    } finally {
+      toast.dismiss(loadingToast);
+      setIsUploading(false);
+    }
   };
 
   const isVerified = startImage && endImage;
@@ -445,10 +468,10 @@ export default function CreateFeedDialog({
             {/* Submit Button */}
             <Button
               onClick={handleSubmit}
-              disabled={!isVerified}
+              disabled={!isVerified || isUploading}
               className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              작성
+              {isUploading ? "사진 올리는 중..." : "작성"}
             </Button>
 
             {/* Verification Badge */}

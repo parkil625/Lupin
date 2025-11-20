@@ -149,7 +149,7 @@ export default function App() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
               <img
-                src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1080"
+                src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=75"
                 alt="운동 활동"
                 className="relative rounded-3xl shadow-2xl border-8 border-white/50 backdrop-blur-sm"
               />
@@ -219,7 +219,7 @@ export default function App() {
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <img
-              src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1080"
+              src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=75"
               alt="운동 기록"
               className="rounded-3xl shadow-2xl border-8 border-white/50 backdrop-blur-sm"
             />

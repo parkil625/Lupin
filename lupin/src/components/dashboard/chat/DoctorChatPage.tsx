@@ -5,7 +5,7 @@
  * - 대화 목록 + 채팅창 + 처방전 작성 (3단 레이아웃)
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,6 +33,8 @@ import {
 import { toast } from "sonner";
 import { Member, ChatMessage } from "@/types/dashboard.types";
 import { members, initialDoctorChats, appointments } from "@/mockdata/members";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 
 interface MedicineQuantity {
   name: string;
@@ -40,12 +42,15 @@ interface MedicineQuantity {
 }
 
 export default function DoctorChatPage() {
+  // 현재 로그인한 의사 정보 (실제로는 Context나 Redux에서 가져와야 함)
+  const currentDoctorId = 2; // 예시: 의사 ID
+  const currentUserId = 2; // 예시: 사용자 ID
+
   const [selectedChatMember, setSelectedChatMember] = useState<Member | null>(
     null
   );
-  const [chatMessages, setChatMessages] = useState<{
-    [key: number]: ChatMessage[];
-  }>(initialDoctorChats);
+  const [chatRooms, setChatRooms] = useState<ChatRoomResponse[]>([]);
+  const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
   const [chatMessage, setChatMessage] = useState("");
   const [showMedicineDialog, setShowMedicineDialog] = useState(false);
 
@@ -67,26 +72,70 @@ export default function DoctorChatPage() {
     { name: "항히스타민제", quantity: 0 },
   ]);
 
+  // WebSocket 연결 (선택된 채팅방이 있을 때만)
+  const roomId = selectedChatMember
+    ? `${selectedChatMember.id}:${currentDoctorId}`
+    : "";
+
+  const { isConnected, sendMessage: sendWebSocketMessage, markAsRead } = useWebSocket({
+    roomId: roomId || "placeholder",
+    userId: currentUserId,
+    onMessageReceived: (message: ChatMessageResponse) => {
+      setMessages((prev) => [...prev, message]);
+      toast.success("새 메시지가 도착했습니다");
+    },
+    onReadNotification: (notification) => {
+      console.log("상대방이 메시지를 읽었습니다:", notification);
+    },
+  });
+
+  // 채팅방 목록 로드
+  useEffect(() => {
+    const loadChatRooms = async () => {
+      try {
+        const rooms = await chatApi.getChatRoomsByUserId(currentUserId);
+        setChatRooms(rooms);
+      } catch (error) {
+        console.error("채팅방 목록 로드 실패:", error);
+      }
+    };
+
+    loadChatRooms();
+  }, [currentUserId]);
+
+  // 선택된 채팅방의 메시지 로드
+  useEffect(() => {
+    if (!selectedChatMember) return;
+
+    const loadMessages = async () => {
+      try {
+        const roomId = `${selectedChatMember.id}:${currentDoctorId}`;
+        const loadedMessages = await chatApi.getAllMessagesByRoomId(roomId);
+        setMessages(loadedMessages);
+
+        // 메시지 읽음 처리
+        if (isConnected) {
+          markAsRead();
+        }
+      } catch (error) {
+        console.error("메시지 로드 실패:", error);
+      }
+    };
+
+    loadMessages();
+  }, [selectedChatMember, currentDoctorId, isConnected, markAsRead]);
+
   const handleSendDoctorChat = () => {
     if (!chatMessage.trim() || !selectedChatMember) return;
 
-    const newMsg: ChatMessage = {
-      id: Date.now(),
-      author: "김의사",
-      avatar: "의",
-      content: chatMessage,
-      time: new Date().toLocaleTimeString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isMine: true,
-    };
+    // WebSocket으로 메시지 전송
+    sendWebSocketMessage(
+      chatMessage,
+      currentUserId,
+      selectedChatMember.id,
+      currentDoctorId
+    );
 
-    const memberChats = chatMessages[selectedChatMember.id] || [];
-    setChatMessages({
-      ...chatMessages,
-      [selectedChatMember.id]: [...memberChats, newMsg],
-    });
     setChatMessage("");
   };
 
@@ -164,75 +213,59 @@ export default function DoctorChatPage() {
               </h3>
               <ScrollArea className="h-[calc(100vh-280px)]">
                 <div className="space-y-3">
-                  {members.slice(0, 4).map((member) => {
-                    const appointment = getMemberAppointment(member.name);
-                    return (
-                      <div
-                        key={member.id}
-                        onClick={() => setSelectedChatMember(member)}
-                        className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
-                          selectedChatMember?.id === member.id
-                            ? "bg-blue-50 border-blue-300"
-                            : "bg-white/80 border-gray-200"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <Avatar className="w-10 h-10">
-                            <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-sm">
-                              {member.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-bold text-sm text-gray-900">
-                              {member.name}
-                            </div>
-                            <div className="text-xs text-gray-600 truncate">
-                              {chatMessages[member.id]?.[
-                                chatMessages[member.id].length - 1
-                              ]?.content || "메시지 없음"}
-                            </div>
-                          </div>
-                          {chatMessages[member.id] &&
-                            chatMessages[member.id].length > 0 && (
-                              <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></div>
-                            )}
-                        </div>
+                  {chatRooms.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      채팅방이 없습니다
+                    </div>
+                  ) : (
+                    chatRooms.map((room) => {
+                      const patientName = room.patientName;
+                      const isSelected =
+                        selectedChatMember &&
+                        `${selectedChatMember.id}:${currentDoctorId}` === room.roomId;
 
-                        {/* 예약 정보 표시 */}
-                        {appointment && (
-                          <div className="mt-2 pt-2 border-t border-gray-200">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="flex items-center gap-2">
-                                <CalendarIcon className="w-3 h-3 text-gray-600" />
-                                <span className="text-xs text-gray-700">
-                                  {appointment.date} {appointment.time}
-                                </span>
+                      return (
+                        <div
+                          key={room.roomId}
+                          onClick={() =>
+                            setSelectedChatMember({
+                              id: room.patientId,
+                              name: patientName,
+                              avatar: patientName.charAt(0),
+                              age: 0,
+                              gender: "",
+                            })
+                          }
+                          className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
+                            isSelected
+                              ? "bg-blue-50 border-blue-300"
+                              : "bg-white/80 border-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <Avatar className="w-10 h-10">
+                              <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-sm">
+                                {patientName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-sm text-gray-900">
+                                {patientName}
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-600">
-                                  {appointment.department}
-                                </span>
-                                <Badge
-                                  className={`${
-                                    appointment.status === "scheduled"
-                                      ? "bg-blue-500"
-                                      : "bg-green-500"
-                                  } text-white font-bold border-0 text-xs`}
-                                >
-                                  {appointment.status === "scheduled"
-                                    ? "예약"
-                                    : "완료"}
-                                </Badge>
+                              <div className="text-xs text-gray-600 truncate">
+                                {room.lastMessage || "메시지 없음"}
                               </div>
                             </div>
-                            <div className="text-xs text-gray-600 mt-1">
-                              {appointment.reason}
-                            </div>
+                            {room.unreadCount > 0 && (
+                              <Badge className="bg-red-500 text-white font-bold border-0 text-xs">
+                                {room.unreadCount}
+                              </Badge>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </ScrollArea>
             </div>
@@ -269,45 +302,47 @@ export default function DoctorChatPage() {
 
                   <ScrollArea className="flex-1 mb-4">
                     <div className="space-y-4">
-                      {(chatMessages[selectedChatMember.id] || []).map(
-                        (msg) => (
+                      {messages.map((msg) => {
+                        const isMine = msg.senderId === currentUserId;
+                        const senderInitial = isMine ? "의" : msg.senderName.charAt(0);
+
+                        return (
                           <div
                             key={msg.id}
-                            className={`flex gap-3 ${
-                              msg.isMine ? "justify-end" : ""
-                            }`}
+                            className={`flex gap-3 ${isMine ? "justify-end" : ""}`}
                           >
-                            {!msg.isMine && (
+                            {!isMine && (
                               <Avatar className="w-8 h-8">
                                 <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-xs">
-                                  {msg.avatar}
+                                  {senderInitial}
                                 </AvatarFallback>
                               </Avatar>
                             )}
                             <div
                               className={`rounded-2xl p-3 max-w-md ${
-                                msg.isMine
-                                  ? "bg-[#C93831] text-white"
-                                  : "bg-gray-100"
+                                isMine ? "bg-[#C93831] text-white" : "bg-gray-100"
                               }`}
                             >
-                              {!msg.isMine && (
+                              {!isMine && (
                                 <div className="font-bold text-xs text-gray-900 mb-1">
-                                  {msg.author}
+                                  {msg.senderName}
                                 </div>
                               )}
                               <div className="text-sm">{msg.content}</div>
                               <div
                                 className={`text-xs mt-1 ${
-                                  msg.isMine ? "text-white/80" : "text-gray-500"
+                                  isMine ? "text-white/80" : "text-gray-500"
                                 }`}
                               >
-                                {msg.time}
+                                {new Date(msg.sentAt).toLocaleTimeString("ko-KR", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
                               </div>
                             </div>
                           </div>
-                        )
-                      )}
+                        );
+                      })}
                     </div>
                   </ScrollArea>
 

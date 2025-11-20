@@ -6,7 +6,7 @@
  * - 우측: 실시간 채팅
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ import {
   Send,
 } from "lucide-react";
 import { Prescription, ChatMessage } from "@/types/dashboard.types";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { chatApi, ChatMessageResponse } from "@/api/chatApi";
+import { toast } from "sonner";
 
 interface MedicalProps {
   setShowAppointment: (show: boolean) => void;
@@ -32,34 +35,59 @@ export default function Medical({
   setShowAppointment,
   setSelectedPrescription,
 }: MedicalProps) {
+  // 현재 로그인한 환자 정보 (실제로는 Context나 Redux에서 가져와야 함)
+  const currentPatientId = 1; // 예시: 환자 ID
+  const currentUserId = 1; // 예시: 사용자 ID
+  const doctorId = 2; // 예시: 담당 의사 ID
+
   const [chatMessage, setChatMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: 1,
-      author: "김의사",
-      avatar: "김",
-      content: "안녕하세요! 무엇을 도와드릴까요?",
-      time: "오전 10:00",
-      isMine: false,
+  const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
+
+  // WebSocket 연결
+  const roomId = `${currentPatientId}:${doctorId}`;
+
+  const { isConnected, sendMessage: sendWebSocketMessage, markAsRead } = useWebSocket({
+    roomId,
+    userId: currentUserId,
+    onMessageReceived: (message: ChatMessageResponse) => {
+      setMessages((prev) => [...prev, message]);
+      toast.success("새 메시지가 도착했습니다");
     },
-  ]);
+    onReadNotification: (notification) => {
+      console.log("상대방이 메시지를 읽었습니다:", notification);
+    },
+  });
+
+  // 메시지 로드
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const loadedMessages = await chatApi.getAllMessagesByRoomId(roomId);
+        setMessages(loadedMessages);
+
+        // 메시지 읽음 처리
+        if (isConnected) {
+          markAsRead();
+        }
+      } catch (error) {
+        console.error("메시지 로드 실패:", error);
+      }
+    };
+
+    loadMessages();
+  }, [roomId, isConnected, markAsRead]);
 
   const handleSendMessage = () => {
     if (!chatMessage.trim()) return;
 
-    const newMsg: ChatMessage = {
-      id: Date.now(),
-      author: "김루핀",
-      avatar: "김",
-      content: chatMessage,
-      time: new Date().toLocaleTimeString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isMine: true,
-    };
+    // WebSocket으로 메시지 전송
+    sendWebSocketMessage(
+      chatMessage,
+      currentUserId,
+      currentPatientId,
+      doctorId
+    );
 
-    setChatMessages([...chatMessages, newMsg]);
     setChatMessage("");
   };
 
@@ -283,43 +311,47 @@ export default function Medical({
 
                   <ScrollArea className="flex-1 mb-4">
                     <div className="space-y-4">
-                      {chatMessages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex gap-3 ${
-                            msg.isMine ? "justify-end" : ""
-                          }`}
-                        >
-                          {!msg.isMine && (
-                            <Avatar className="w-8 h-8">
-                              <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black text-xs">
-                                {msg.avatar}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
+                      {messages.map((msg) => {
+                        const isMine = msg.senderId === currentUserId;
+                        const senderInitial = isMine ? "김" : msg.senderName.charAt(0);
+
+                        return (
                           <div
-                            className={`rounded-2xl p-3 max-w-md ${
-                              msg.isMine
-                                ? "bg-[#C93831] text-white"
-                                : "bg-gray-100"
-                            }`}
+                            key={msg.id}
+                            className={`flex gap-3 ${isMine ? "justify-end" : ""}`}
                           >
-                            {!msg.isMine && (
-                              <div className="font-bold text-xs text-gray-900 mb-1">
-                                {msg.author}
-                              </div>
+                            {!isMine && (
+                              <Avatar className="w-8 h-8">
+                                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black text-xs">
+                                  {senderInitial}
+                                </AvatarFallback>
+                              </Avatar>
                             )}
-                            <div className="text-sm">{msg.content}</div>
                             <div
-                              className={`text-xs mt-1 ${
-                                msg.isMine ? "text-white/80" : "text-gray-500"
+                              className={`rounded-2xl p-3 max-w-md ${
+                                isMine ? "bg-[#C93831] text-white" : "bg-gray-100"
                               }`}
                             >
-                              {msg.time}
+                              {!isMine && (
+                                <div className="font-bold text-xs text-gray-900 mb-1">
+                                  {msg.senderName}
+                                </div>
+                              )}
+                              <div className="text-sm">{msg.content}</div>
+                              <div
+                                className={`text-xs mt-1 ${
+                                  isMine ? "text-white/80" : "text-gray-500"
+                                }`}
+                              >
+                                {new Date(msg.sentAt).toLocaleTimeString("ko-KR", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </ScrollArea>
 

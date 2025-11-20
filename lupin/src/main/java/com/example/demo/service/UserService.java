@@ -8,6 +8,7 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.LotteryTicketRepository;
+import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class UserService {
     private final FeedRepository feedRepository;
     private final UserRepository userRepository;
     private final LotteryTicketRepository lotteryTicketRepository;
+    private final PointLogRepository pointLogRepository;
 
     private static final Long POINTS_PER_TICKET = 30L; // 30점마다 추첨권 1장
 
@@ -77,16 +79,17 @@ public class UserService {
             log.info("추첨권 생성 - userId: {}, totalPoints: {}", userId, newTotalPoints);
         }
 
-        // 포인트 로그 생성
+        // 포인트 로그 생성 및 저장
         PointLog pointLog = PointLog.builder()
                 .amount(amount)
                 .reason(reason)
                 .refId(refId)
                 .build();
         pointLog.setUser(user);
+        pointLogRepository.save(pointLog);
 
-        log.info("포인트 적립 완료 - userId: {}, amount: {}, reason: {}, 추첨권 {}장 생성",
-                userId, amount, reason, ticketsToCreate);
+        log.info("포인트 적립 완료 - userId: {}, amount: {}, reason: {}, refId: {}, 추첨권 {}장 생성",
+                userId, amount, reason, refId, ticketsToCreate);
     }
 
     /**
@@ -99,17 +102,83 @@ public class UserService {
         try {
             user.usePoints(amount);
 
-            // 포인트 로그 생성 (음수로 기록)
+            // 포인트 로그 생성 및 저장 (음수로 기록)
             PointLog pointLog = PointLog.builder()
                     .amount(-amount)
                     .reason(reason)
                     .build();
             pointLog.setUser(user);
+            pointLogRepository.save(pointLog);
 
             log.info("포인트 차감 완료 - userId: {}, amount: {}, reason: {}", userId, amount, reason);
         } catch (IllegalStateException e) {
             throw new BusinessException(ErrorCode.INSUFFICIENT_POINTS);
         }
+    }
+
+    /**
+     * 포인트 회수 (피드 삭제 시)
+     * - 현재 포인트에서 우선 차감
+     * - 현재 포인트가 부족하면 추첨권 회수
+     * - 추첨권이 이미 사용됐으면 남은 포인트라도 0으로
+     */
+    @Transactional
+    public void revokePoints(Long userId, Long amount, String reason, String refId) {
+        User user = findUserById(userId);
+
+        Long currentPoints = user.getCurrentPoints();
+        Long totalPoints = user.getTotalPoints();
+
+        // 회수 전 추첨권 개수
+        Long previousTicketCount = totalPoints / POINTS_PER_TICKET;
+
+        if (currentPoints >= amount) {
+            // 현재 포인트로 충분한 경우
+            user.revokePoints(amount);
+            log.info("포인트 회수 - userId: {}, 현재 포인트에서 {}점 차감", userId, amount);
+        } else {
+            // 현재 포인트가 부족한 경우
+            Long remaining = amount - currentPoints;
+
+            // 현재 포인트는 0으로
+            user.revokePoints(amount);
+
+            // 추첨권 회수 필요 (30점 = 1장)
+            Long ticketsNeeded = (remaining + POINTS_PER_TICKET - 1) / POINTS_PER_TICKET; // 올림 계산
+
+            // 미사용 추첨권 조회
+            List<LotteryTicket> unusedTickets = lotteryTicketRepository.findByUserIdAndIsUsed(userId, "N");
+            int actualRevoked = Math.min(ticketsNeeded.intValue(), unusedTickets.size());
+
+            for (int i = 0; i < actualRevoked; i++) {
+                lotteryTicketRepository.delete(unusedTickets.get(i));
+            }
+
+            if (actualRevoked > 0) {
+                log.info("추첨권 회수 - userId: {}, 회수: {}장 (미사용 {}장 중)", userId, actualRevoked, unusedTickets.size());
+            }
+
+            if (unusedTickets.size() < ticketsNeeded) {
+                log.info("추첨권 부족 - userId: {}, 필요: {}장, 미사용: {}장 (이미 사용된 추첨권 있음)",
+                        userId, ticketsNeeded, unusedTickets.size());
+            }
+        }
+
+        // 회수 후 추첨권 개수 확인 (totalPoints 기반)
+        Long newTicketCount = user.getTotalPoints() / POINTS_PER_TICKET;
+        Long ticketDiff = previousTicketCount - newTicketCount;
+
+        // 포인트 로그 생성 및 저장 (음수로 기록)
+        PointLog pointLog = PointLog.builder()
+                .amount(-amount)
+                .reason(reason)
+                .refId(refId)
+                .build();
+        pointLog.setUser(user);
+        pointLogRepository.save(pointLog);
+
+        log.info("포인트 회수 완료 - userId: {}, amount: {}, reason: {}, 추첨권 변화: {}장",
+                userId, amount, reason, ticketDiff);
     }
 
     /**

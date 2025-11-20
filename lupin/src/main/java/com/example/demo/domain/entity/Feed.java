@@ -83,4 +83,16 @@ public class Feed extends BaseEntity {
     public int getCommentsCount() {
         return comments != null ? comments.size() : 0;
     }
+
+    /**
+     * 피드 수정 (변경 감지 활용)
+     */
+    public void update(String content, String statsJson) {
+        if (content != null) {
+            this.content = content;
+        }
+        if (statsJson != null) {
+            this.statsJson = statsJson;
+        }
+    }
 }

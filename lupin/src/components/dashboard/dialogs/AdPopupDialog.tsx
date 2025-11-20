@@ -82,7 +82,7 @@ export default function AdPopupDialog({
               <>
                 <div className="relative">
                   <img
-                    src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1200&h=800&fit=crop"
+                    src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=75&fit=crop"
                     alt="웰빙 챌린지 광고"
                     className="w-full h-auto object-cover"
                   />

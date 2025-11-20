@@ -6,7 +6,7 @@
  * - 우측: 실시간 채팅
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
   XCircle,
   Send,
 } from "lucide-react";
-import { Prescription, ChatMessage } from "@/types/dashboard.types";
+import { Prescription } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { toast } from "sonner";
@@ -46,16 +46,33 @@ export default function Medical({
   // WebSocket 연결
   const roomId = `${currentPatientId}:${doctorId}`;
 
-  const { isConnected, sendMessage: sendWebSocketMessage, markAsRead } = useWebSocket({
-    roomId,
-    userId: currentUserId,
-    onMessageReceived: (message: ChatMessageResponse) => {
-      setMessages((prev) => [...prev, message]);
-      toast.success("새 메시지가 도착했습니다");
-    },
-    onReadNotification: (notification) => {
+  // 메시지 수신 콜백 (useCallback으로 메모이제이션)
+  const handleMessageReceived = useCallback((message: ChatMessageResponse) => {
+    setMessages((prev) => [...prev, message]);
+    toast.success("새 메시지가 도착했습니다");
+  }, []);
+
+  // 읽음 알림 콜백 (useCallback으로 메모이제이션)
+  const handleReadNotification = useCallback(
+    (notification: { userId: number; roomId: string }) => {
+      // 본인의 읽음 알림은 무시 (상대방이 읽었을 때만 처리)
+      if (notification.userId === currentUserId) {
+        return;
+      }
       console.log("상대방이 메시지를 읽었습니다:", notification);
     },
+    [currentUserId]
+  );
+
+  const {
+    isConnected,
+    sendMessage: sendWebSocketMessage,
+    markAsRead,
+  } = useWebSocket({
+    roomId,
+    userId: currentUserId,
+    onMessageReceived: handleMessageReceived,
+    onReadNotification: handleReadNotification,
   });
 
   // 메시지 로드
@@ -314,12 +331,16 @@ export default function Medical({
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isMine = msg.senderId === currentUserId;
-                        const senderInitial = isMine ? "김" : msg.senderName.charAt(0);
+                        const senderInitial = isMine
+                          ? "김"
+                          : msg.senderName.charAt(0);
 
                         return (
                           <div
                             key={msg.id}
-                            className={`flex gap-3 ${isMine ? "justify-end" : ""}`}
+                            className={`flex gap-3 ${
+                              isMine ? "justify-end" : ""
+                            }`}
                           >
                             {!isMine && (
                               <Avatar className="w-8 h-8">
@@ -330,7 +351,9 @@ export default function Medical({
                             )}
                             <div
                               className={`rounded-2xl p-3 max-w-md ${
-                                isMine ? "bg-[#C93831] text-white" : "bg-gray-100"
+                                isMine
+                                  ? "bg-[#C93831] text-white"
+                                  : "bg-gray-100"
                               }`}
                             >
                               {!isMine && (
@@ -344,10 +367,13 @@ export default function Medical({
                                   isMine ? "text-white/80" : "text-gray-500"
                                 }`}
                               >
-                                {new Date(msg.sentAt).toLocaleTimeString("ko-KR", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
+                                {new Date(msg.sentAt).toLocaleTimeString(
+                                  "ko-KR",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
                               </div>
                             </div>
                           </div>

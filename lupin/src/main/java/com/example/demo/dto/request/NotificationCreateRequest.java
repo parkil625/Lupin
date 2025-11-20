@@ -29,4 +29,10 @@ public class NotificationCreateRequest {
 
     // 관련 엔티티 ID (선택)
     private Long relatedId;
+
+    // 참조 타입 (FEED, COMMENT, CHAT 등)
+    private String refType;
+
+    // 참조 ID (String)
+    private String refId;
 }

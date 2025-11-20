@@ -21,8 +21,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 피드 관련 비즈니스 로직을 처리하는 서비스
@@ -37,6 +39,7 @@ public class FeedService {
     private final FeedLikeRepository feedLikeRepository;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
 
     /**
      * 피드 생성
@@ -50,11 +53,17 @@ public class FeedService {
             throw new BusinessException(ErrorCode.DAILY_FEED_LIMIT_EXCEEDED);
         }
 
+        // 칼로리 계산 (request에 없으면 자동 계산)
+        Double calories = request.getCalories();
+        if (calories == null || calories == 0) {
+            calories = calculateCalories(request.getActivityType(), user, request.getDuration());
+        }
+
         // 피드 생성
         Feed feed = Feed.builder()
                 .activityType(request.getActivityType())
                 .duration(request.getDuration())
-                .calories(request.getCalories())
+                .calories(calories)
                 .content(request.getContent())
                 .statsJson(request.getStatsJson())
                 .startedAt(LocalDateTime.now())
@@ -82,8 +91,8 @@ public class FeedService {
 
         Feed savedFeed = feedRepository.save(feed);
 
-        // 포인트 적립 (운동 시간에 따라)
-        Long points = calculatePoints(request.getDuration());
+        // 포인트 적립 (MET × 시간 기반)
+        Long points = calculatePoints(request.getActivityType(), request.getDuration());
         userService.addPoints(userId, points, "운동 인증", String.valueOf(savedFeed.getId()));
 
         log.info("피드 생성 완료 - feedId: {}, userId: {}, points: {}", savedFeed.getId(), userId, points);
@@ -94,8 +103,15 @@ public class FeedService {
     /**
      * 피드 목록 조회 (검색, 페이징)
      */
-    public Page<FeedListResponse> getFeeds(String keyword, String activityType, Pageable pageable) {
-        return feedRepository.searchFeeds(keyword, activityType, pageable);
+    public Page<FeedListResponse> getFeeds(String keyword, String activityType, Long excludeUserId, Pageable pageable) {
+        return feedRepository.searchFeeds(keyword, activityType, excludeUserId, pageable);
+    }
+
+    /**
+     * 특정 사용자의 피드 조회
+     */
+    public Page<FeedListResponse> getFeedsByUserId(Long userId, Pageable pageable) {
+        return feedRepository.findByWriterId(userId, pageable);
     }
 
     /**
@@ -164,6 +180,15 @@ public class FeedService {
 
         feedLikeRepository.save(feedLike);
 
+        // 피드 작성자에게 좋아요 알림 (자신의 피드가 아닌 경우)
+        if (!feed.getWriter().getId().equals(userId)) {
+            notificationService.createLikeNotification(
+                feed.getWriter().getId(),
+                userId,
+                feedId
+            );
+        }
+
         log.info("피드 좋아요 - feedId: {}, userId: {}", feedId, userId);
     }
 
@@ -195,12 +220,53 @@ public class FeedService {
     }
 
     /**
-     * 포인트 계산 (1분당 1점, 최대 30점)
-     * - 하루 1피드, 피드당 최대 30점
+     * 포인트 계산 (MET × 시간 기반, 최대 30점)
+     * - 성별/체중 무관하게 운동 강도와 시간으로만 계산
      */
-    private Long calculatePoints(Integer duration) {
-        // 1분당 1점, 최대 30점
-        return Math.min(duration.longValue(), 30L);
+    private Long calculatePoints(String activityType, Integer duration) {
+        double met = getMET(activityType);
+        // points = (MET × duration) / 10, 최대 30점
+        double points = (met * duration) / 10.0;
+        return Math.min(Math.round(points), 30L);
+    }
+
+    /**
+     * 칼로리 계산 (Mifflin-St Jeor BMR 공식)
+     * - 성별, 키, 체중, 나이를 고려한 정확한 칼로리 계산
+     */
+    private Double calculateCalories(String activityType, User user, Integer durationMinutes) {
+        double met = getMET(activityType);
+        double durationHours = durationMinutes / 60.0;
+
+        // BMR 계산 (Mifflin-St Jeor 공식)
+        int age = LocalDate.now().getYear() - user.getBirthDate().getYear();
+        double bmr;
+        if ("남성".equals(user.getGender())) {
+            // 남성: BMR = 10 × weight + 6.25 × height - 5 × age + 5
+            bmr = 10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age + 5;
+        } else {
+            // 여성: BMR = 10 × weight + 6.25 × height - 5 × age - 161
+            bmr = 10 * user.getWeight() + 6.25 * user.getHeight() - 5 * age - 161;
+        }
+
+        // Calories = BMR × (MET / 24) × duration (hours)
+        double calories = bmr * (met / 24.0) * durationHours;
+        return (double) Math.round(calories);
+    }
+
+    /**
+     * MET (Metabolic Equivalent of Task) 값 조회
+     */
+    private double getMET(String activityType) {
+        Map<String, Double> metValues = Map.of(
+            "러닝", 9.8,
+            "걷기", 3.8,
+            "자전거", 7.5,
+            "수영", 8.0,
+            "등산", 6.5,
+            "요가", 2.5
+        );
+        return metValues.getOrDefault(activityType, 5.0);
     }
 
     /**

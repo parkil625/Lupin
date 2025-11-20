@@ -191,9 +191,32 @@ public class UserService {
     public List<Map<String, Object>> getUserRankingContext(Long userId) {
         User currentUser = findUserById(userId);
 
-        // 모든 사용자를 포인트 순으로 정렬
-        List<User> allUsers = userRepository.findAll().stream()
-                .sorted((u1, u2) -> Long.compare(u2.getCurrentPoints(), u1.getCurrentPoints()))
+        List<User> allUsersList = userRepository.findAll();
+
+        // 각 사용자의 이번 달 좋아요 수를 미리 계산
+        Map<Long, Integer> userLikesMap = allUsersList.stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        user -> feedRepository.countUserTotalLikesInCurrentMonth(user.getId())
+                ));
+
+        // 다단계 정렬: 1) 포인트 내림차순 2) 이번 달 좋아요 수 내림차순 3) 이름 오름차순
+        List<User> allUsers = allUsersList.stream()
+                .sorted((u1, u2) -> {
+                    // 1차: 포인트 비교 (내림차순)
+                    int pointsCompare = Long.compare(u2.getCurrentPoints(), u1.getCurrentPoints());
+                    if (pointsCompare != 0) return pointsCompare;
+
+                    // 2차: 이번 달 좋아요 수 비교 (내림차순)
+                    int likesCompare = Integer.compare(
+                            userLikesMap.getOrDefault(u2.getId(), 0),
+                            userLikesMap.getOrDefault(u1.getId(), 0)
+                    );
+                    if (likesCompare != 0) return likesCompare;
+
+                    // 3차: 이름 비교 (오름차순)
+                    return u1.getRealName().compareTo(u2.getRealName());
+                })
                 .collect(Collectors.toList());
 
         // 현재 사용자의 인덱스 찾기

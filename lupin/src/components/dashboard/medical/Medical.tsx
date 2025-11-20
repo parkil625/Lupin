@@ -75,7 +75,8 @@ export default function Medical({
     };
 
     loadMessages();
-  }, [roomId, isConnected, markAsRead]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
 
   const handleSendMessage = () => {
     if (!chatMessage.trim()) return;

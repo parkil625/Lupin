@@ -1,8 +1,9 @@
 /**
  * DoctorChatPage.tsx
  *
- * 의사 채팅 & 처방전 작성 페이지
- * - 대화 목록 + 채팅창 + 처방전 작성 (3단 레이아웃)
+ * [수정 내용]
+ * 1. 상태 관리 간소화: 'waiting' 제거 -> 'in-progress'(진료 중) 와 'completed'(완료됨) 만 사용
+ * 2. [진료 종료] 버튼 클릭 시: '완료됨' 처리 후 채팅창 닫기 로직 추가
  */
 
 import { useState, useEffect } from "react";
@@ -21,18 +22,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Send,
-  CheckCircle,
-  Calendar as CalendarIcon,
-  FileText,
-  Plus,
-  Minus,
-  Edit2,
-} from "lucide-react";
+import { Send, CheckCircle, FileText, Plus, Minus, Edit2 } from "lucide-react";
 import { toast } from "sonner";
-import { Member, ChatMessage } from "@/types/dashboard.types";
-import { members, initialDoctorChats, appointments } from "@/mockdata/members";
+import { Member } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 
@@ -42,9 +34,9 @@ interface MedicineQuantity {
 }
 
 export default function DoctorChatPage() {
-  // 현재 로그인한 의사 정보 (실제로는 Context나 Redux에서 가져와야 함)
-  const currentDoctorId = 2; // 예시: 의사 ID
-  const currentUserId = 2; // 예시: 사용자 ID
+  // 현재 로그인한 의사 정보
+  const currentDoctorId = 2;
+  const currentUserId = 2;
 
   const [selectedChatMember, setSelectedChatMember] = useState<Member | null>(
     null
@@ -72,17 +64,23 @@ export default function DoctorChatPage() {
     { name: "항히스타민제", quantity: 0 },
   ]);
 
-  // WebSocket 연결 (선택된 채팅방이 있을 때만)
+  // WebSocket 연결
   const roomId = selectedChatMember
     ? `${selectedChatMember.id}:${currentDoctorId}`
     : "";
 
-  const { isConnected, sendMessage: sendWebSocketMessage, markAsRead } = useWebSocket({
+  const {
+    isConnected,
+    sendMessage: sendWebSocketMessage,
+    markAsRead,
+  } = useWebSocket({
     roomId: roomId || "placeholder",
     userId: currentUserId,
     onMessageReceived: (message: ChatMessageResponse) => {
       setMessages((prev) => [...prev, message]);
-      toast.success("새 메시지가 도착했습니다");
+      if (message.senderId !== currentUserId) {
+        toast.success("새 메시지가 도착했습니다");
+      }
     },
     onReadNotification: (notification) => {
       console.log("상대방이 메시지를 읽었습니다:", notification);
@@ -103,32 +101,54 @@ export default function DoctorChatPage() {
     loadChatRooms();
   }, [currentUserId]);
 
-  // 선택된 채팅방의 메시지 로드
+  // 메시지 로드 (HTTP 요청)
   useEffect(() => {
     if (!selectedChatMember) return;
 
     const loadMessages = async () => {
       try {
-        const roomId = `${selectedChatMember.id}:${currentDoctorId}`;
-        const loadedMessages = await chatApi.getAllMessagesByRoomId(roomId);
+        const targetRoomId = `${selectedChatMember.id}:${currentDoctorId}`;
+        const loadedMessages = await chatApi.getAllMessagesByRoomId(
+          targetRoomId
+        );
         setMessages(loadedMessages);
-
-        // 메시지 읽음 처리
-        if (isConnected) {
-          markAsRead();
-        }
       } catch (error) {
         console.error("메시지 로드 실패:", error);
       }
     };
 
     loadMessages();
-  }, [selectedChatMember, currentDoctorId, isConnected, markAsRead]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChatMember?.id, currentDoctorId]);
+
+  // 읽음 처리 전용 useEffect
+  useEffect(() => {
+    if (isConnected && selectedChatMember && roomId) {
+      const timer = setTimeout(() => {
+        markAsRead();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, roomId, markAsRead, selectedChatMember]);
+
+  // ✅ [진료 종료] 버튼 핸들러
+  const handleFinishConsultation = () => {
+    if (!selectedChatMember) return;
+
+    // 1. 실제로는 여기서 API를 호출하여 DB 상태를 'completed'로 변경해야 함
+    // await chatApi.completeConsultation(selectedChatMember.id);
+
+    // 2. UI 처리: 완료 메시지 출력 및 채팅창 닫기
+    toast.success(`${selectedChatMember.name}님의 진료가 완료되었습니다.`);
+    setSelectedChatMember(null); // 현재 선택된 환자 해제 (채팅창 닫힘)
+
+    // 필요하다면 목록 갱신 로직 추가
+    // loadChatRooms();
+  };
 
   const handleSendDoctorChat = () => {
     if (!chatMessage.trim() || !selectedChatMember) return;
 
-    // WebSocket으로 메시지 전송
     sendWebSocketMessage(
       chatMessage,
       currentUserId,
@@ -147,7 +167,6 @@ export default function DoctorChatPage() {
   };
 
   const handleOpenMedicineDialog = () => {
-    // 현재 선택된 약을 tempMedicines에 반영
     const updatedTemp = tempMedicines.map((temp) => {
       const selected = selectedMedicines.find((s) => s.name === temp.name);
       return selected ? { ...temp, quantity: selected.quantity } : temp;
@@ -173,10 +192,8 @@ export default function DoctorChatPage() {
       return;
     }
 
-    // 여기서 처방전 저장 로직
     toast.success("처방전이 저장되었습니다");
 
-    // 폼 초기화
     setPrescriptionName("");
     setDiagnosis("");
     setInstructions("");
@@ -184,12 +201,6 @@ export default function DoctorChatPage() {
     setTempMedicines(tempMedicines.map((m) => ({ ...m, quantity: 0 })));
   };
 
-  // 회원의 예약 정보 찾기
-  const getMemberAppointment = (memberName: string) => {
-    return appointments.find((apt) => apt.memberName === memberName);
-  };
-
-  // 약품 텍스트 생성
   const getMedicinesText = () => {
     if (selectedMedicines.length === 0) return "약품을 선택하세요";
     return selectedMedicines.map((m) => `${m.name} ${m.quantity}개`).join(", ");
@@ -206,7 +217,7 @@ export default function DoctorChatPage() {
 
         <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl h-[calc(100vh-200px)] mx-auto">
           <div className="h-full flex">
-            {/* 좌측: 대화 목록 (예약 정보 포함) */}
+            {/* 좌측: 대화 목록 */}
             <div className="w-96 border-r border-gray-200 p-4">
               <h3 className="text-xl font-black text-gray-900 mb-4">
                 대화 목록
@@ -222,18 +233,23 @@ export default function DoctorChatPage() {
                       const patientName = room.patientName;
                       const isSelected =
                         selectedChatMember &&
-                        `${selectedChatMember.id}:${currentDoctorId}` === room.roomId;
+                        `${selectedChatMember.id}:${currentDoctorId}` ===
+                          room.roomId;
 
                       return (
                         <div
                           key={room.roomId}
                           onClick={() =>
+                            // ✅ 목록 클릭 시 무조건 "진료 중(in-progress)" 상태로 설정
                             setSelectedChatMember({
                               id: room.patientId,
                               name: patientName,
                               avatar: patientName.charAt(0),
                               age: 0,
                               gender: "",
+                              lastVisit: "정보 없음",
+                              condition: "양호",
+                              status: "in-progress", // 대기 상태 없이 바로 진료 중으로 시작
                             })
                           }
                           className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
@@ -285,13 +301,16 @@ export default function DoctorChatPage() {
                         <div className="font-bold text-gray-900">
                           {selectedChatMember.name}
                         </div>
-                        <div className="text-xs text-gray-600">온라인</div>
+                        {/* 상태 표시도 단순화 */}
+                        <div className="text-xs text-gray-600 flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                          진료 중
+                        </div>
                       </div>
                     </div>
+                    {/* ✅ 진료 종료 버튼 연결 */}
                     <Button
-                      onClick={() => {
-                        toast.success("진료가 종료되었습니다.");
-                      }}
+                      onClick={handleFinishConsultation}
                       variant="outline"
                       className="rounded-xl border-red-300 text-red-600 hover:bg-red-50"
                     >
@@ -304,12 +323,16 @@ export default function DoctorChatPage() {
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isMine = msg.senderId === currentUserId;
-                        const senderInitial = isMine ? "의" : msg.senderName.charAt(0);
+                        const senderInitial = isMine
+                          ? "의"
+                          : msg.senderName.charAt(0);
 
                         return (
                           <div
                             key={msg.id}
-                            className={`flex gap-3 ${isMine ? "justify-end" : ""}`}
+                            className={`flex gap-3 ${
+                              isMine ? "justify-end" : ""
+                            }`}
                           >
                             {!isMine && (
                               <Avatar className="w-8 h-8">
@@ -320,7 +343,9 @@ export default function DoctorChatPage() {
                             )}
                             <div
                               className={`rounded-2xl p-3 max-w-md ${
-                                isMine ? "bg-[#C93831] text-white" : "bg-gray-100"
+                                isMine
+                                  ? "bg-[#C93831] text-white"
+                                  : "bg-gray-100"
                               }`}
                             >
                               {!isMine && (
@@ -334,10 +359,13 @@ export default function DoctorChatPage() {
                                   isMine ? "text-white/80" : "text-gray-500"
                                 }`}
                               >
-                                {new Date(msg.sentAt).toLocaleTimeString("ko-KR", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
+                                {new Date(msg.sentAt).toLocaleTimeString(
+                                  "ko-KR",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )}
                               </div>
                             </div>
                           </div>

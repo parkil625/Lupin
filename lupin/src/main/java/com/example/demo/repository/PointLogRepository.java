@@ -69,4 +69,10 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
      */
     @Query("SELECT COUNT(pl) FROM PointLog pl WHERE pl.user.id = :userId")
     Long countByUserId(@Param("userId") Long userId);
+
+    /**
+     * 특정 사용자의 참조ID와 사유로 포인트 로그 조회
+     */
+    @Query("SELECT pl FROM PointLog pl WHERE pl.user.id = :userId AND pl.refId = :refId AND pl.reason = :reason")
+    List<PointLog> findByUserIdAndRefIdAndReason(@Param("userId") Long userId, @Param("refId") String refId, @Param("reason") String reason);
 }

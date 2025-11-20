@@ -39,6 +39,10 @@ public class Comment extends BaseEntity {
     @Builder.Default
     private List<Comment> replies = new ArrayList<>();
 
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<CommentLike> likes = new ArrayList<>();
+
     // 편의 메서드
     public void addReply(Comment reply) {
         this.replies.add(reply);

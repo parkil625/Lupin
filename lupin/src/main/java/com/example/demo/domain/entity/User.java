@@ -89,6 +89,21 @@ public class User extends BaseEntity {
         this.currentPoints -= amount;
     }
 
+    public void revokePoints(Long amount) {
+        // currentPoints 차감 (0 미만으로 내려가지 않음)
+        this.currentPoints = Math.max(0, this.currentPoints - amount);
+        // totalPoints도 차감 (추첨권 회수를 위해)
+        this.totalPoints = Math.max(0, this.totalPoints - amount);
+    }
+
+    public void setCurrentPoints(Long currentPoints) {
+        this.currentPoints = currentPoints;
+    }
+
+    public void setTotalPoints(Long totalPoints) {
+        this.totalPoints = totalPoints;
+    }
+
     // 편의 메서드
     public String getName() {
         return this.realName; // 실제 이름 반환

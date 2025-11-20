@@ -22,7 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit, Camera, User, LogOut } from "lucide-react";
+import { Edit, Camera, User, LogOut, X } from "lucide-react";
+import { toast } from "sonner";
+import { imageApi } from "@/api/imageApi";
 
 interface MemberProfilePageProps {
   onLogout: () => void;
@@ -38,18 +40,51 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
   const [birthDate, setBirthDate] = useState("1990-01-01");
   const [gender, setGender] = useState("남성");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const profileImageInputRef = useRef<HTMLInputElement>(null);
 
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setProfileImage(event.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+
+    setIsUploading(true);
+    const loadingToast = toast.loading("프로필 사진을 변경하고 있습니다...");
+
+    try {
+      // 이전 프로필 이미지 삭제 (S3 URL인 경우만)
+      if (profileImage && profileImage.includes('s3.')) {
+        await imageApi.deleteImage(profileImage).catch(() => {});
+      }
+
+      const s3Url = await imageApi.uploadImage(file, 'profile');
+      setProfileImage(s3Url);
+      toast.success("프로필 사진이 변경되었습니다!");
+    } catch (error) {
+      console.error("프로필 이미지 업로드 실패:", error);
+      toast.error("사진 업로드에 실패했습니다.");
+    } finally {
+      toast.dismiss(loadingToast);
+      setIsUploading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleRemoveProfileImage = async () => {
+    if (window.confirm("프로필 사진을 삭제하고 기본 이미지로 변경하시겠습니까?")) {
+      // S3에서 이미지 삭제
+      if (profileImage && profileImage.includes('s3.')) {
+        await imageApi.deleteImage(profileImage).catch(() => {});
+      }
+
+      setProfileImage(null);
+      if (profileImageInputRef.current) {
+        profileImageInputRef.current.value = '';
+      }
     }
   };
 
@@ -100,12 +135,29 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                       )}
                     </Avatar>
                     {isEditingProfile && (
-                      <button
-                        onClick={() => profileImageInputRef.current?.click()}
-                        className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#C93831] text-white flex items-center justify-center shadow-lg hover:bg-[#B02F28]"
-                      >
-                        <Camera className="w-5 h-5" />
-                      </button>
+                      <>
+                        <button
+                          onClick={() => !isUploading && profileImageInputRef.current?.click()}
+                          disabled={isUploading}
+                          className={`absolute bottom-0 right-0 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-colors ${
+                            isUploading
+                              ? "bg-gray-400 cursor-not-allowed"
+                              : "bg-[#C93831] text-white hover:bg-[#B02F28]"
+                          }`}
+                        >
+                          <Camera className="w-5 h-5" />
+                        </button>
+                        {profileImage && (
+                          <button
+                            onClick={handleRemoveProfileImage}
+                            disabled={isUploading}
+                            className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center shadow-md hover:bg-red-100 hover:text-red-500 transition-all z-10"
+                            title="기본 이미지로 변경"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
                     )}
                     <input
                       ref={profileImageInputRef}

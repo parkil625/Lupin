@@ -441,7 +441,7 @@ export default function EditFeedDialog({
             <Button
               onClick={handleSave}
               disabled={!isVerified}
-              className="w-full bg-gradient-to-r from-[#C93831] to-[#a82e28] hover:from-[#a82e28] hover:to-[#8b2521] text-white font-bold py-2.5 rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isVerified ? '수정 완료' : '시작/끝 사진 필요'}
             </Button>

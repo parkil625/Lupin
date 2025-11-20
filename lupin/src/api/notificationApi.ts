@@ -10,13 +10,13 @@ export const notificationApi = {
    */
   getAllNotifications: async (userId: number) => {
     const response = await apiClient.get(`/notifications/users/${userId}/all`);
-    // Backend의 refId를 feedId로 매핑
+    // Backend 응답을 프론트엔드 타입으로 매핑
     const notifications = response.data.map((notif: any) => ({
       ...notif,
       read: notif.isRead,
       time: new Date(notif.createdAt).toLocaleString('ko-KR'),
-      feedId: notif.refType === 'FEED' && notif.refId ? parseInt(notif.refId) : undefined,
-      commentId: notif.refType === 'COMMENT' && notif.refId ? parseInt(notif.refId) : undefined,
+      feedId: notif.feedId || undefined,
+      commentId: notif.commentId || undefined,
       chatRoomId: notif.refType === 'CHAT' && notif.refId ? parseInt(notif.refId) : undefined,
     }));
     return notifications;

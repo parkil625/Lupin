@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { ChatMessageResponse } from '@/api/chatApi';
@@ -71,7 +71,7 @@ export const useWebSocket = ({
   }, [roomId, userId, onMessageReceived, onReadNotification]);
 
   // 메시지 전송
-  const sendMessage = (content: string, senderId: number, patientId: number, doctorId: number) => {
+  const sendMessage = useCallback((content: string, senderId: number, patientId: number, doctorId: number) => {
     if (!clientRef.current?.connected) {
       console.error('WebSocket이 연결되지 않았습니다.');
       return;
@@ -90,10 +90,10 @@ export const useWebSocket = ({
     });
 
     console.log('📤 메시지 전송:', messageRequest);
-  };
+  }, []);
 
   // 읽음 처리
-  const markAsRead = () => {
+  const markAsRead = useCallback(() => {
     if (!clientRef.current?.connected) {
       console.error('WebSocket이 연결되지 않았습니다.');
       return;
@@ -105,7 +105,7 @@ export const useWebSocket = ({
     });
 
     console.log('👁️ 읽음 처리 전송:', { roomId, userId });
-  };
+  }, [roomId, userId]);
 
   return {
     isConnected,

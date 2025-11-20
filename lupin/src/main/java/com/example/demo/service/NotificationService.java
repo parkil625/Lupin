@@ -245,6 +245,21 @@ public class NotificationService {
         createNotification(request);
     }
 
+    /**
+     * 시스템 알림 생성 (추첨 당첨 등)
+     */
+    @Transactional
+    public void createSystemNotification(Long userId, String content) {
+        NotificationCreateRequest request = NotificationCreateRequest.builder()
+                .type("system")
+                .title("시스템 알림")
+                .content(content)
+                .userId(userId)
+                .build();
+
+        createNotification(request);
+    }
+
     // === 헬퍼 메서드 ===
 
     private User findUserById(Long userId) {

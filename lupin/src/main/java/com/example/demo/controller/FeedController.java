@@ -43,8 +43,9 @@ public class FeedController {
     public ResponseEntity<Page<FeedListResponse>> getFeeds(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String activityType,
+            @RequestParam(required = false) Long excludeUserId,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<FeedListResponse> feeds = feedService.getFeeds(keyword, activityType, pageable);
+        Page<FeedListResponse> feeds = feedService.getFeeds(keyword, activityType, excludeUserId, pageable);
         return ResponseEntity.ok(feeds);
     }
 
@@ -100,6 +101,17 @@ public class FeedController {
             @RequestParam Long userId) {
         feedService.unlikeFeed(feedId, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 특정 사용자의 피드 조회
+     */
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<Page<FeedListResponse>> getFeedsByUserId(
+            @PathVariable Long userId,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<FeedListResponse> feeds = feedService.getFeedsByUserId(userId, pageable);
+        return ResponseEntity.ok(feeds);
     }
 
     /**

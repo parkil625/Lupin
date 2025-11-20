@@ -446,7 +446,7 @@ export default function CreateFeedDialog({
             <Button
               onClick={handleSubmit}
               disabled={!isVerified}
-              className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold hover:shadow-lg transition-all mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               작성
             </Button>

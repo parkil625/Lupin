@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
     name = "challenge_entry",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"challenge_id", "user_id"})
+    uniqueConstraints = @UniqueConstraint(columnNames = {"challenge_id", "user_id"}),
+    indexes = @Index(name="idx_challenge_id", columnList = "challenge_id")
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

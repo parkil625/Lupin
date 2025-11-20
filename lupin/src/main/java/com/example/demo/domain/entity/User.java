@@ -20,6 +20,9 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id", nullable = false, unique = true, length = 50)
+    private String userId;  // 로그인용 ID (user01, user02 등)
+
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
@@ -88,7 +91,7 @@ public class User extends BaseEntity {
 
     // 편의 메서드
     public String getName() {
-        return this.email; // email을 name으로 사용 (user01, user02 등)
+        return this.realName; // 실제 이름 반환
     }
 
     public String getProfileImage() {

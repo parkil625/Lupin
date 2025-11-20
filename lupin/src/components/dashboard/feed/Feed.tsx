@@ -7,11 +7,14 @@
  * - 검색 및 필터링 기능
  */
 
-import React, { useMemo, useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -23,8 +26,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
-  Flame,
-  Zap,
   Send,
   ArrowUpDown,
   User,
@@ -34,6 +35,28 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { commentApi } from "@/api";
+
+// 상대적 시간 표시 함수
+function getRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const targetDate = typeof date === 'string' ? new Date(date) : date;
+  const diffMs = now.getTime() - targetDate.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSeconds < 60) return "방금 전";
+  if (diffMinutes < 60) return `${diffMinutes}분 전`;
+  if (diffHours < 24) return `${diffHours}시간 전`;
+  if (diffDays < 7) return `${diffDays}일 전`;
+  if (diffWeeks < 4) return `${diffWeeks}주 전`;
+  if (diffMonths < 12) return `${diffMonths}개월 전`;
+  return `${diffYears}년 전`;
+}
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -46,6 +69,11 @@ interface FeedViewProps {
   hasLiked: (feedId: number) => boolean;
   handleLike: (feedId: number) => void;
   feedContainerRef: React.RefObject<HTMLDivElement | null>;
+  scrollToFeedId: number | null;
+  setScrollToFeedId: (id: number | null) => void;
+  loadMoreFeeds: () => void;
+  hasMoreFeeds: boolean;
+  isLoadingFeeds: boolean;
 }
 
 // 개별 피드 카드 컴포넌트
@@ -69,11 +97,15 @@ function FeedCard({
   const [replyCommentText, setReplyCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [collapsedComments, setCollapsedComments] = useState<Set<number>>(new Set());
-  const [commentLikes, setCommentLikes] = useState<{[key: number]: { liked: boolean, count: number }}>({});
-  const [sortOrder, setSortOrder] = useState<'latest' | 'popular'>('latest');
+  const [collapsedComments, setCollapsedComments] = useState<Set<number>>(
+    new Set()
+  );
+  const [commentLikes, setCommentLikes] = useState<{
+    [key: number]: { liked: boolean; count: number };
+  }>({});
+  const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [iconColor, setIconColor] = useState<'white' | 'black'>('white');
+  const [iconColor, setIconColor] = useState<"white" | "black">("white");
   const [prevFeedId, setPrevFeedId] = useState(feed.id);
 
   // Feed가 변경되면 상태 리셋 (렌더링 중 상태 업데이트 패턴)
@@ -97,10 +129,25 @@ function FeedCard({
         const commentsWithReplies = await Promise.all(
           commentList.map(async (comment: any) => {
             try {
-              const replies = await commentApi.getRepliesByCommentId(comment.id);
-              return { ...comment, replies: replies || [] };
+              const replies = await commentApi.getRepliesByCommentId(
+                comment.id
+              );
+              // 답글도 시간 포맷팅
+              const formattedReplies = (replies || []).map((reply: { createdAt: string; [key: string]: unknown }) => ({
+                ...reply,
+                time: getRelativeTime(reply.createdAt),
+              }));
+              return {
+                ...comment,
+                time: getRelativeTime(comment.createdAt),
+                replies: formattedReplies,
+              };
             } catch (error) {
-              return { ...comment, replies: [] };
+              return {
+                ...comment,
+                time: getRelativeTime(comment.createdAt),
+                replies: [],
+              };
             }
           })
         );
@@ -126,8 +173,8 @@ function FeedCard({
     img.src = feed.images[currentIndex] || feed.images[0];
 
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       canvas.width = img.width;
@@ -151,7 +198,7 @@ function FeedCard({
         const b = data[i + 2];
         const a = data[i + 3];
         // 밝기 계산 (perceived brightness)
-        const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
+        const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
         totalBrightness += brightness;
         totalAlpha += a;
       }
@@ -161,10 +208,10 @@ function FeedCard({
 
       // 투명한 배경이면 검정색, 아니면 평균 밝기에 따라 결정
       if (avgAlpha < 200) {
-        setIconColor('black');
+        setIconColor("black");
       } else {
         // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
-        setIconColor(avgBrightness > 128 ? 'black' : 'white');
+        setIconColor(avgBrightness > 128 ? "black" : "white");
       }
     };
   }, [feed.images, currentIndex]);
@@ -189,43 +236,75 @@ function FeedCard({
     initialContent,
   });
 
-  const handleSendComment = () => {
+  // 현재 사용자 정보
+  const currentUserName = localStorage.getItem("userName") || "알 수 없음";
+  const currentUserId = parseInt(localStorage.getItem("userId") || "1");
+
+  const handleSendComment = async () => {
     if (commentText.trim()) {
-      const newComment: Comment = {
-        id: Date.now(),
-        author: "김루핀",
-        avatar: "김",
-        content: commentText,
-        time: "방금 전",
-        replies: []
-      };
-      setComments([...comments, newComment]);
-      setCommentText("");
+      try {
+        const response = await commentApi.createComment({
+          content: commentText,
+          feedId: feed.id,
+          writerId: currentUserId,
+        });
+
+        const authorName = response.writerName || currentUserName;
+        const newComment: Comment = {
+          id: response.id,
+          author: authorName,
+          avatar: authorName.charAt(0),
+          content: response.content,
+          time: "방금 전",
+          replies: [],
+        };
+        setComments([...comments, newComment]);
+        setCommentText("");
+      } catch (error) {
+        console.error("댓글 작성 실패:", error);
+        alert("댓글 작성에 실패했습니다.");
+      }
     }
   };
 
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (replyCommentText.trim() && replyingTo !== null) {
-      setComments(comments.map(comment => {
-        if (comment.id === replyingTo) {
-          const newReply: Comment = {
-            id: Date.now(),
-            author: "김루핀",
-            avatar: "김",
-            content: replyCommentText,
-            time: "방금 전",
-            parentId: replyingTo,
-            replies: []
-          };
-          return {
-            ...comment,
-            replies: [...(comment.replies || []), newReply]
-          };
-        }
-        return comment;
-      }));
-      setReplyCommentText("");
-      setReplyingTo(null);
+      try {
+        const response = await commentApi.createComment({
+          content: replyCommentText,
+          feedId: feed.id,
+          writerId: currentUserId,
+          parentId: replyingTo,
+        });
+
+        const replyAuthorName = response.writerName || currentUserName;
+        const newReply: Comment = {
+          id: response.id,
+          author: replyAuthorName,
+          avatar: replyAuthorName.charAt(0),
+          content: response.content,
+          time: "방금 전",
+          parentId: replyingTo,
+          replies: [],
+        };
+
+        setComments(
+          comments.map((comment) => {
+            if (comment.id === replyingTo) {
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), newReply],
+              };
+            }
+            return comment;
+          })
+        );
+        setReplyCommentText("");
+        setReplyingTo(null);
+      } catch (error) {
+        console.error("답글 작성 실패:", error);
+        alert("답글 작성에 실패했습니다.");
+      }
     }
   };
 
@@ -240,12 +319,14 @@ function FeedCard({
     return count;
   };
 
-  const totalCommentCount = countAllComments(comments);
+  // 댓글이 로드되지 않았으면 feed.comments 사용, 로드되었으면 실제 카운트 사용
+  const totalCommentCount =
+    comments.length > 0 ? countAllComments(comments) : feed.comments;
 
   const sortedComments = useMemo(() => {
     if (comments.length === 0) return [];
     const sorted = [...comments];
-    if (sortOrder === 'popular') {
+    if (sortOrder === "popular") {
       return sorted.sort((a, b) => {
         const aLikes = commentLikes[a.id]?.count || 0;
         const bLikes = commentLikes[b.id]?.count || 0;
@@ -257,20 +338,22 @@ function FeedCard({
   }, [comments, sortOrder, commentLikes]);
 
   const toggleCommentLike = (commentId: number) => {
-    setCommentLikes(prev => {
+    setCommentLikes((prev) => {
       const current = prev[commentId] || { liked: false, count: 0 };
       return {
         ...prev,
         [commentId]: {
           liked: !current.liked,
-          count: current.liked ? Math.max(0, current.count - 1) : current.count + 1
-        }
+          count: current.liked
+            ? Math.max(0, current.count - 1)
+            : current.count + 1,
+        },
       };
     });
   };
 
   const toggleCollapse = (commentId: number) => {
-    setCollapsedComments(prev => {
+    setCollapsedComments((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(commentId)) {
         newSet.delete(commentId);
@@ -289,7 +372,7 @@ function FeedCard({
     const likeInfo = commentLikes[comment.id] || { liked: false, count: 0 };
 
     return (
-      <div key={comment.id} className={isReply ? 'ml-8 mt-3' : ''}>
+      <div key={comment.id} className={isReply ? "ml-8 mt-3" : ""}>
         <div className="flex gap-3">
           <HoverCard openDelay={200} closeDelay={100}>
             <HoverCardTrigger asChild>
@@ -309,20 +392,34 @@ function FeedCard({
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2 flex-1">
-                  <h4 className="text-base font-black text-gray-900">{comment.author}</h4>
-                  <p className="text-sm text-gray-700 font-medium">{comment.department || '댓글 작성자'}</p>
+                  <h4 className="text-base font-black text-gray-900">
+                    {comment.author}
+                  </h4>
+                  <p className="text-sm text-gray-700 font-medium">
+                    {comment.department || "댓글 작성자"}
+                  </p>
                   <div className="pt-1 space-y-1.5">
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-600 font-medium">이번 달 활동</span>
-                      <span className="text-gray-900 font-bold">{comment.activeDays || 0}일</span>
+                      <span className="text-gray-600 font-medium">
+                        이번 달 활동
+                      </span>
+                      <span className="text-gray-900 font-bold">
+                        {comment.activeDays || 0}일
+                      </span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-600 font-medium">평균 점수</span>
-                      <span className="text-gray-900 font-bold">{comment.avgScore || 0}점</span>
+                      <span className="text-gray-600 font-medium">
+                        평균 점수
+                      </span>
+                      <span className="text-gray-900 font-bold">
+                        {comment.avgScore || 0}점
+                      </span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600 font-medium">총 점수</span>
-                      <span className="text-[#C93831] font-bold">{comment.points || 0}점</span>
+                      <span className="text-[#C93831] font-bold">
+                        {comment.points || 0}점
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -331,10 +428,14 @@ function FeedCard({
           </HoverCard>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-bold text-sm text-gray-900">{comment.author}</span>
+              <span className="font-bold text-sm text-gray-900">
+                {comment.author}
+              </span>
               <span className="text-xs text-gray-900">{comment.time}</span>
             </div>
-            <p className="text-sm text-gray-900 break-words mb-2">{comment.content}</p>
+            <p className="text-sm text-gray-900 break-words mb-2">
+              {comment.content}
+            </p>
 
             <div className="flex items-center gap-4 mb-2">
               <button
@@ -342,10 +443,16 @@ function FeedCard({
                 className="flex items-center gap-1 hover:opacity-70 transition-opacity"
               >
                 <Heart
-                  className={`w-4 h-4 ${likeInfo.liked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
+                  className={`w-4 h-4 ${
+                    likeInfo.liked
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-600"
+                  }`}
                 />
                 {likeInfo.count > 0 && (
-                  <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>
+                  <span className="text-xs text-gray-600 font-semibold">
+                    {likeInfo.count}
+                  </span>
                 )}
               </button>
               {depth === 0 && (
@@ -365,19 +472,21 @@ function FeedCard({
                   placeholder="답글을 입력하세요..."
                   value={replyCommentText}
                   onChange={(e) => setReplyCommentText(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendReply()}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendReply()}
                   style={{
-                    width: '100%',
-                    padding: '0.5rem 0',
-                    fontSize: '0.875rem',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: '2px solid #d1d5db',
-                    outline: 'none',
-                    transition: 'border-color 0.2s'
+                    width: "100%",
+                    padding: "0.5rem 0",
+                    fontSize: "0.875rem",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "2px solid #d1d5db",
+                    outline: "none",
+                    transition: "border-color 0.2s",
                   }}
-                  onFocus={(e) => e.target.style.borderBottomColor = '#C93831'}
-                  onBlur={(e) => e.target.style.borderBottomColor = '#d1d5db'}
+                  onFocus={(e) =>
+                    (e.target.style.borderBottomColor = "#C93831")
+                  }
+                  onBlur={(e) => (e.target.style.borderBottomColor = "#d1d5db")}
                   autoFocus
                 />
                 <div className="flex gap-2 mt-2">
@@ -406,7 +515,7 @@ function FeedCard({
                 onClick={() => toggleCollapse(comment.id)}
                 className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2"
               >
-                {isCollapsed ? '▶' : '▼'} 답글 {comment.replies!.length}개
+                {isCollapsed ? "▶" : "▼"} 답글 {comment.replies!.length}개
               </button>
             )}
           </div>
@@ -426,8 +535,15 @@ function FeedCard({
   return (
     <div className="snap-start snap-always flex-shrink-0 w-full h-screen flex items-center justify-center py-4">
       <div
-        className={`h-full max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl rounded-lg flex transition-all duration-300 ${showComments ? '!w-[825px] !max-w-[825px]' : '!w-[475px] !max-w-[475px]'}`}
-        style={{ width: showComments ? '825px' : '475px', maxWidth: showComments ? '825px' : '475px' }}
+        className={`h-full max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl rounded-lg flex transition-all duration-300 ${
+          showComments
+            ? "!w-[825px] !max-w-[825px]"
+            : "!w-[475px] !max-w-[475px]"
+        }`}
+        style={{
+          width: showComments ? "825px" : "475px",
+          maxWidth: showComments ? "825px" : "475px",
+        }}
       >
         {/* Main Feed Content (Left) */}
         <div className="w-[475px] max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
@@ -439,7 +555,7 @@ function FeedCard({
                   src={feed.images[currentIndex] || feed.images[0]}
                   alt={feed.activity}
                   className="w-full h-full object-cover rounded-tl-lg"
-                  style={{ maxWidth: '475px', width: '475px', height: '545px' }}
+                  style={{ maxWidth: "475px", width: "475px", height: "545px" }}
                 />
 
                 {feed.images.length > 1 && (
@@ -448,22 +564,36 @@ function FeedCard({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setFeedImageIndex(feed.id, Math.max(0, currentIndex - 1));
+                          setFeedImageIndex(
+                            feed.id,
+                            Math.max(0, currentIndex - 1)
+                          );
                         }}
                         className="absolute left-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
                       >
-                        <ChevronLeft className={`w-8 h-8 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
+                        <ChevronLeft
+                          className={`w-8 h-8 ${
+                            iconColor === "white" ? "text-white" : "text-black"
+                          }`}
+                        />
                       </button>
                     )}
                     {currentIndex < feed.images.length - 1 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setFeedImageIndex(feed.id, Math.min(feed.images.length - 1, currentIndex + 1));
+                          setFeedImageIndex(
+                            feed.id,
+                            Math.min(feed.images.length - 1, currentIndex + 1)
+                          );
                         }}
                         className="absolute right-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
                       >
-                        <ChevronRight className={`w-8 h-8 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
+                        <ChevronRight
+                          className={`w-8 h-8 ${
+                            iconColor === "white" ? "text-white" : "text-black"
+                          }`}
+                        />
                       </button>
                     )}
                     <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
@@ -499,20 +629,36 @@ function FeedCard({
                           </AvatarFallback>
                         </Avatar>
                         <div className="space-y-2 flex-1">
-                          <h4 className="text-base font-black text-gray-900">{feed.author}</h4>
-                          <p className="text-sm text-gray-700 font-medium">{feed.department || '운동 활동'}</p>
+                          <h4 className="text-base font-black text-gray-900">
+                            {feed.author}
+                          </h4>
+                          <p className="text-sm text-gray-700 font-medium">
+                            {feed.department || "운동 활동"}
+                          </p>
                           <div className="pt-1 space-y-1.5">
                             <div className="flex justify-between text-xs">
-                              <span className="text-gray-600 font-medium">이번 달 활동</span>
-                              <span className="text-gray-900 font-bold">{feed.activeDays || 0}일</span>
+                              <span className="text-gray-600 font-medium">
+                                이번 달 활동
+                              </span>
+                              <span className="text-gray-900 font-bold">
+                                {feed.activeDays || 0}일
+                              </span>
                             </div>
                             <div className="flex justify-between text-xs">
-                              <span className="text-gray-600 font-medium">평균 점수</span>
-                              <span className="text-gray-900 font-bold">{feed.avgScore || 0}점</span>
+                              <span className="text-gray-600 font-medium">
+                                평균 점수
+                              </span>
+                              <span className="text-gray-900 font-bold">
+                                {feed.avgScore || 0}점
+                              </span>
                             </div>
                             <div className="flex justify-between text-xs">
-                              <span className="text-gray-600 font-medium">총 점수</span>
-                              <span className="text-[#C93831] font-bold">{feed.points}점</span>
+                              <span className="text-gray-600 font-medium">
+                                총 점수
+                              </span>
+                              <span className="text-[#C93831] font-bold">
+                                {feed.points}점
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -530,13 +676,21 @@ function FeedCard({
                     <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
                       <Heart
                         className={`w-6 h-6 ${
-                          liked ? "fill-red-500 text-red-500" : iconColor === 'white' ? "text-white" : "text-black"
+                          liked
+                            ? "fill-red-500 text-red-500"
+                            : iconColor === "white"
+                            ? "text-white"
+                            : "text-black"
                         }`}
                       />
                     </div>
                     <span
-                      className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                    >{feed.likes}</span>
+                      className={`text-xs font-bold ${
+                        iconColor === "white" ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {feed.likes}
+                    </span>
                   </button>
 
                   <button
@@ -545,12 +699,18 @@ function FeedCard({
                   >
                     <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
                       <MessageCircle
-                        className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
+                        className={`w-6 h-6 ${
+                          iconColor === "white" ? "text-white" : "text-black"
+                        }`}
                       />
                     </div>
                     <span
-                      className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                    >{totalCommentCount}</span>
+                      className={`text-xs font-bold ${
+                        iconColor === "white" ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {totalCommentCount}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -577,20 +737,36 @@ function FeedCard({
                         </AvatarFallback>
                       </Avatar>
                       <div className="space-y-2 flex-1">
-                        <h4 className="text-base font-black text-gray-900">{feed.author}</h4>
-                        <p className="text-sm text-gray-700 font-medium">{feed.department || '운동 활동'}</p>
+                        <h4 className="text-base font-black text-gray-900">
+                          {feed.author}
+                        </h4>
+                        <p className="text-sm text-gray-700 font-medium">
+                          {feed.department || "운동 활동"}
+                        </p>
                         <div className="pt-1 space-y-1.5">
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-600 font-medium">이번 달 활동</span>
-                            <span className="text-gray-900 font-bold">{feed.activeDays || 0}일</span>
+                            <span className="text-gray-600 font-medium">
+                              이번 달 활동
+                            </span>
+                            <span className="text-gray-900 font-bold">
+                              {feed.activeDays || 0}일
+                            </span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-600 font-medium">평균 점수</span>
-                            <span className="text-gray-900 font-bold">{feed.avgScore || 0}점</span>
+                            <span className="text-gray-600 font-medium">
+                              평균 점수
+                            </span>
+                            <span className="text-gray-900 font-bold">
+                              {feed.avgScore || 0}점
+                            </span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-600 font-medium">총 점수</span>
-                            <span className="text-[#C93831] font-bold">{feed.points}점</span>
+                            <span className="text-gray-600 font-medium">
+                              총 점수
+                            </span>
+                            <span className="text-[#C93831] font-bold">
+                              {feed.points}점
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -607,13 +783,21 @@ function FeedCard({
                     <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
                       <Heart
                         className={`w-6 h-6 ${
-                          liked ? "fill-red-500 text-red-500" : iconColor === 'white' ? "text-white" : "text-black"
+                          liked
+                            ? "fill-red-500 text-red-500"
+                            : iconColor === "white"
+                            ? "text-white"
+                            : "text-black"
                         }`}
                       />
                     </div>
                     <span
-                      className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                    >{feed.likes}</span>
+                      className={`text-xs font-bold ${
+                        iconColor === "white" ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {feed.likes}
+                    </span>
                   </button>
 
                   <button
@@ -622,12 +806,18 @@ function FeedCard({
                   >
                     <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
                       <MessageCircle
-                        className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
+                        className={`w-6 h-6 ${
+                          iconColor === "white" ? "text-white" : "text-black"
+                        }`}
                       />
                     </div>
                     <span
-                      className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                    >{totalCommentCount}</span>
+                      className={`text-xs font-bold ${
+                        iconColor === "white" ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {totalCommentCount}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -635,7 +825,12 @@ function FeedCard({
           )}
 
           {/* Feed Content */}
-          <div className={`p-6 space-y-3 flex-1 overflow-auto bg-transparent ${!showComments ? 'rounded-bl-lg rounded-br-lg' : ''} ${!hasImages ? 'rounded-tl-lg' : ''}`} style={{ width: '475px', maxWidth: '475px' }}>
+          <div
+            className={`p-6 space-y-3 flex-1 overflow-auto bg-transparent ${
+              !showComments ? "rounded-bl-lg rounded-br-lg" : ""
+            } ${!hasImages ? "rounded-tl-lg" : ""}`}
+            style={{ width: "475px", maxWidth: "475px" }}
+          >
             <style>{`
               .bn-container {
                 max-width: 427px !important;
@@ -659,13 +854,12 @@ function FeedCard({
                 color: #111827 !important;
               }
             `}</style>
-            <div className="space-y-3" style={{ maxWidth: '427px' }}>
+            <div className="space-y-3" style={{ maxWidth: "427px" }}>
               <div className="flex items-start justify-between gap-3">
                 {/* Left: Badges */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 font-bold border-0">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    +{feed.points}
+                    <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
                   </Badge>
                   <Badge className="bg-white text-blue-700 px-3 py-1 font-bold text-xs border-0">
                     {feed.activity}
@@ -700,10 +894,12 @@ function FeedCard({
 
         {/* Comments Panel (Right - slides in) */}
         {showComments && (
-          <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col rounded-tr-lg rounded-br-lg">
+          <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col overflow-hidden rounded-tr-lg rounded-br-lg">
             {/* Comments Header */}
             <div className="px-6 py-4 border-b border-gray-200/30 flex items-center justify-between bg-transparent">
-              <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                댓글 {totalCommentCount}개
+              </h3>
               <div className="relative">
                 <button
                   onClick={() => setShowSortMenu(!showSortMenu)}
@@ -711,26 +907,34 @@ function FeedCard({
                 >
                   <ArrowUpDown className="w-4 h-4 text-gray-900" />
                   <span className="text-sm font-semibold text-gray-900">
-                    {sortOrder === 'latest' ? '최신순' : '인기순'}
+                    {sortOrder === "latest" ? "최신순" : "인기순"}
                   </span>
                 </button>
                 {showSortMenu && (
                   <div className="absolute right-0 top-full mt-1 bg-white/70 backdrop-blur-md border border-gray-200/50 rounded-lg shadow-lg overflow-hidden z-50">
                     <button
                       onClick={() => {
-                        setSortOrder('latest');
+                        setSortOrder("latest");
                         setShowSortMenu(false);
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${sortOrder === 'latest' ? 'bg-white/15 font-semibold text-[#C93831]' : 'text-gray-900'}`}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
+                        sortOrder === "latest"
+                          ? "bg-white/15 font-semibold text-[#C93831]"
+                          : "text-gray-900"
+                      }`}
                     >
                       최신순
                     </button>
                     <button
                       onClick={() => {
-                        setSortOrder('popular');
+                        setSortOrder("popular");
                         setShowSortMenu(false);
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${sortOrder === 'popular' ? 'bg-white/15 font-semibold text-[#C93831]' : 'text-gray-900'}`}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
+                        sortOrder === "popular"
+                          ? "bg-white/15 font-semibold text-[#C93831]"
+                          : "text-gray-900"
+                      }`}
                     >
                       인기순
                     </button>
@@ -740,17 +944,19 @@ function FeedCard({
             </div>
 
             {/* Comments List */}
-            <ScrollArea className="flex-1 px-6 pt-4">
-              <div className="space-y-4 pb-4">
-                {comments.length === 0 ? (
-                  <div className="text-center text-gray-500 text-sm py-8">
-                    첫 댓글을 남겨보세요!
-                  </div>
-                ) : (
-                  sortedComments.map((comment) => renderComment(comment))
-                )}
-              </div>
-            </ScrollArea>
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="space-y-4 px-6 pt-4 pb-4">
+                  {comments.length === 0 ? (
+                    <div className="text-center text-gray-500 text-sm py-8">
+                      첫 댓글을 남겨보세요!
+                    </div>
+                  ) : (
+                    sortedComments.map((comment) => renderComment(comment))
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
 
             {/* Comment Input */}
             <div className="p-4 border-t border-gray-200/30 bg-transparent">
@@ -762,23 +968,27 @@ function FeedCard({
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         handleSendComment();
                       }
                     }}
                     style={{
-                      width: '100%',
-                      padding: '0.5rem 0',
-                      paddingRight: commentText ? '2.5rem' : '0.5rem',
-                      fontSize: '0.875rem',
-                      background: 'transparent',
-                      border: 'none',
-                      borderBottom: '2px solid #d1d5db',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, padding-right 0.2s'
+                      width: "100%",
+                      padding: "0.5rem 0",
+                      paddingRight: commentText ? "2.5rem" : "0.5rem",
+                      fontSize: "0.875rem",
+                      background: "transparent",
+                      border: "none",
+                      borderBottom: "2px solid #d1d5db",
+                      outline: "none",
+                      transition: "border-color 0.2s, padding-right 0.2s",
                     }}
-                    onFocus={(e) => e.target.style.borderBottomColor = '#C93831'}
-                    onBlur={(e) => e.target.style.borderBottomColor = '#d1d5db'}
+                    onFocus={(e) =>
+                      (e.target.style.borderBottomColor = "#C93831")
+                    }
+                    onBlur={(e) =>
+                      (e.target.style.borderBottomColor = "#d1d5db")
+                    }
                   />
                   {commentText && (
                     <button
@@ -816,7 +1026,88 @@ export default function FeedView({
   hasLiked,
   handleLike,
   feedContainerRef,
+  scrollToFeedId,
+  setScrollToFeedId,
+  loadMoreFeeds,
+  hasMoreFeeds,
+  isLoadingFeeds,
 }: FeedViewProps) {
+  // 마지막 피드 감지를 위한 ref
+  const lastFeedRef = useRef<HTMLDivElement>(null);
+
+  // 윈도잉을 위한 현재 보이는 피드 인덱스
+  const [visibleIndex, setVisibleIndex] = useState(0);
+  const feedRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // 윈도잉: 현재 보이는 피드 기준 앞뒤 1개씩만 렌더링
+  const windowSize = 1;
+
+  // 현재 보이는 피드 감지
+  useEffect(() => {
+    if (!feedContainerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const feedId = parseInt(entry.target.getAttribute('data-feed-id') || '0');
+            const index = allFeeds.findIndex(f => f.id === feedId);
+            if (index !== -1 && index !== visibleIndex) {
+              setVisibleIndex(index);
+            }
+          }
+        });
+      },
+      {
+        root: feedContainerRef.current,
+        threshold: 0.5
+      }
+    );
+
+    feedRefs.current.forEach((el) => {
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [allFeeds, visibleIndex, feedContainerRef]);
+
+  // 특정 피드로 스크롤
+  useEffect(() => {
+    if (scrollToFeedId && feedContainerRef.current) {
+      // 피드 목록이 렌더링된 후 스크롤 실행
+      const scrollToTarget = () => {
+        const feedElement = feedContainerRef.current?.querySelector(
+          `[data-feed-id="${scrollToFeedId}"]`
+        );
+        if (feedElement) {
+          feedElement.scrollIntoView({ behavior: "smooth", block: "center" });
+          setScrollToFeedId(null); // 스크롤 후 초기화
+        }
+      };
+
+      // 약간의 딜레이를 주어 렌더링 완료 후 스크롤
+      setTimeout(scrollToTarget, 100);
+    }
+  }, [scrollToFeedId, feedContainerRef, setScrollToFeedId]);
+
+  // IntersectionObserver로 무한 스크롤 구현
+  useEffect(() => {
+    if (!lastFeedRef.current || !hasMoreFeeds || isLoadingFeeds) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreFeeds();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(lastFeedRef.current);
+
+    return () => observer.disconnect();
+  }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds, allFeeds.length]);
+
   return (
     <div className="h-full relative flex items-center justify-center">
       <div
@@ -865,29 +1156,60 @@ export default function FeedView({
             </div>
           )}
 
-          {/* Feed Cards */}
+          {/* Feed Cards with Windowing */}
           {allFeeds
             .filter(
               (feed) =>
-                feed.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                feed.content
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()) ||
                 feed.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 feed.activity.toLowerCase().includes(searchQuery.toLowerCase())
             )
-            .map((feed) => {
+            .map((feed, index, arr) => {
               const currentIndex = getFeedImageIndex(feed.id);
               const liked = hasLiked(feed.id);
+              const isLast = index === arr.length - 1;
+
+              // 윈도잉: 현재 보이는 피드 기준 앞뒤 1개만 실제 렌더링
+              const isInWindow = index >= visibleIndex - windowSize && index <= visibleIndex + windowSize;
+
               return (
-                <FeedCard
+                <div
                   key={feed.id}
-                  feed={feed}
-                  currentIndex={currentIndex}
-                  liked={liked}
-                  getFeedImageIndex={getFeedImageIndex}
-                  setFeedImageIndex={setFeedImageIndex}
-                  handleLike={handleLike}
-                />
+                  data-feed-id={feed.id}
+                  ref={(el) => {
+                    if (el) {
+                      feedRefs.current.set(feed.id, el);
+                    } else {
+                      feedRefs.current.delete(feed.id);
+                    }
+                    if (isLast && el) {
+                      (lastFeedRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                    }
+                  }}
+                >
+                  {isInWindow ? (
+                    <FeedCard
+                      feed={feed}
+                      currentIndex={currentIndex}
+                      liked={liked}
+                      getFeedImageIndex={getFeedImageIndex}
+                      setFeedImageIndex={setFeedImageIndex}
+                      handleLike={handleLike}
+                    />
+                  ) : (
+                    // 윈도우 밖의 피드는 빈 공간으로 대체 (스크롤 위치 유지)
+                    <div className="snap-start snap-always flex-shrink-0 w-full h-screen" />
+                  )}
+                </div>
               );
             })}
+          {isLoadingFeeds && (
+            <div className="flex justify-center py-8">
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-[#C93831] rounded-full animate-spin"></div>
+            </div>
+          )}
         </div>
       </div>
     </div>

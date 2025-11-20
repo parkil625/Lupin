@@ -11,6 +11,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Heart,
   MessageCircle,
   Sparkles,
@@ -384,21 +390,27 @@ export default function Home({
           {/* Posts Header */}
           <div className="flex items-center justify-between mb-6 px-8">
             <h2 className="text-2xl font-black text-gray-900">피드</h2>
-            <button
-              onClick={canPostToday ? onCreateClick : undefined}
-              disabled={!canPostToday}
-              title={
-                !canPostToday ? "하루에 한 번만 피드를 작성할 수 있습니다." : ""
-              }
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-bold ${
-                canPostToday
-                  ? "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg cursor-pointer"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              <Plus className="w-5 h-5" />
-              만들기
-            </button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={canPostToday ? onCreateClick : undefined}
+                    disabled={!canPostToday}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-bold ${
+                      canPostToday
+                        ? "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg cursor-pointer"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    <Plus className="w-5 h-5" />
+                    만들기
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" sideOffset={8}>
+                  <p>{canPostToday ? "피드 작성" : "하루에 한 번만 피드를 작성할 수 있습니다."}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           {/* Posts Grid */}

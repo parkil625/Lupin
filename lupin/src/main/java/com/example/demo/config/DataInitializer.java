@@ -35,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
     private final NotificationRepository notificationRepository;
     private final LotteryTicketRepository lotteryTicketRepository;
     private final PointLogRepository pointLogRepository;
+    private final com.example.demo.repository.ChatMessageRepository chatMessageRepository;
     private final EntityManager entityManager;
 
     // Service 레이어 주입
@@ -68,6 +69,7 @@ public class DataInitializer implements CommandLineRunner {
             pointLogRepository.deleteAll();
             commentLikeRepository.deleteAll();
             feedRepository.deleteAll();
+            chatMessageRepository.deleteAll();  // chat_message가 users를 참조하므로 먼저 삭제
             userRepository.deleteAll();
 
             // AUTO_INCREMENT 초기화
@@ -80,6 +82,7 @@ public class DataInitializer implements CommandLineRunner {
             entityManager.createNativeQuery("ALTER TABLE lottery_ticket AUTO_INCREMENT = 1").executeUpdate();
             entityManager.createNativeQuery("ALTER TABLE point_log AUTO_INCREMENT = 1").executeUpdate();
             entityManager.createNativeQuery("ALTER TABLE comment_like AUTO_INCREMENT = 1").executeUpdate();
+            entityManager.createNativeQuery("ALTER TABLE chat_message AUTO_INCREMENT = 1").executeUpdate();
 
             log.info("기존 데이터 삭제 완료");
         }

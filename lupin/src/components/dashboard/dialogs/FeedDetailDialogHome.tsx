@@ -47,6 +47,28 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 
+// 상대적 시간 표시 함수
+function getRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const targetDate = typeof date === 'string' ? new Date(date) : date;
+  const diffMs = now.getTime() - targetDate.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
+
+  if (diffSeconds < 60) return "방금 전";
+  if (diffMinutes < 60) return `${diffMinutes}분 전`;
+  if (diffHours < 24) return `${diffHours}시간 전`;
+  if (diffDays < 7) return `${diffDays}일 전`;
+  if (diffWeeks < 4) return `${diffWeeks}주 전`;
+  if (diffMonths < 12) return `${diffMonths}개월 전`;
+  return `${diffYears}년 전`;
+}
+
 interface FeedDetailDialogHomeProps {
   feed: Feed | null;
   open: boolean;
@@ -56,6 +78,7 @@ interface FeedDetailDialogHomeProps {
   onNextImage: () => void;
   onEdit?: (feed: Feed) => void;
   onDelete?: (feedId: number) => void;
+  targetCommentId?: number | null;
 }
 
 export default function FeedDetailDialogHome({
@@ -67,6 +90,7 @@ export default function FeedDetailDialogHome({
   onNextImage,
   onEdit,
   onDelete,
+  targetCommentId,
 }: FeedDetailDialogHomeProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -82,6 +106,10 @@ export default function FeedDetailDialogHome({
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [iconColor, setIconColor] = useState<'white' | 'black'>('white');
+
+  // 현재 사용자 정보
+  const currentUserName = localStorage.getItem("userName") || "알 수 없음";
+  const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
   // 이미지 밝기 분석하여 아이콘 색상 결정
   useEffect(() => {
@@ -192,71 +220,147 @@ export default function FeedDetailDialogHome({
         const response = await commentApi.getCommentsByFeedId(feed.id, 0, 100);
         const commentList = response.content || response;
 
-        // 답글 정보도 함께 로드
+        // 답글 정보도 함께 로드하고 필드 매핑
         const commentsWithReplies = await Promise.all(
           commentList.map(async (comment: any) => {
             try {
-              const replies = await commentApi.getRepliesByCommentId(comment.id);
-              return { ...comment, replies: replies || [] };
+              const repliesData = await commentApi.getRepliesByCommentId(comment.id);
+              const replies = (repliesData || []).map((reply: any) => ({
+                ...reply,
+                author: reply.writerName || "알 수 없음",
+                avatar: (reply.writerName || "?").charAt(0),
+                time: getRelativeTime(reply.createdAt),
+              }));
+              return {
+                ...comment,
+                author: comment.writerName || "알 수 없음",
+                avatar: (comment.writerName || "?").charAt(0),
+                time: getRelativeTime(comment.createdAt),
+                replies,
+              };
             } catch (error) {
-              return { ...comment, replies: [] };
+              return {
+                ...comment,
+                author: comment.writerName || "알 수 없음",
+                avatar: (comment.writerName || "?").charAt(0),
+                time: getRelativeTime(comment.createdAt),
+                replies: [],
+              };
             }
           })
         );
 
         setComments(commentsWithReplies);
+
+        // targetCommentId가 있으면 댓글창 열기
+        if (targetCommentId) {
+          setShowComments(true);
+        }
       } catch (error) {
         console.error("댓글 데이터 로드 실패:", error);
         setComments([]);
       }
 
-      setShowComments(false); // 피드 변경 시 댓글창 닫기
+      // targetCommentId가 없을 때만 댓글창 닫기
+      if (!targetCommentId) {
+        setShowComments(false);
+      }
     };
 
     fetchComments();
-  }, [feed]);
+  }, [feed, targetCommentId]);
 
-  const handleSendComment = () => {
+  // targetCommentId가 있으면 해당 댓글로 스크롤
+  useEffect(() => {
+    if (targetCommentId && open && comments.length > 0 && showComments) {
+      // DOM 업데이트 후 스크롤
+      setTimeout(() => {
+        const commentElement = document.getElementById(`comment-${targetCommentId}`);
+        if (commentElement) {
+          commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // 하이라이트 효과 (인라인 스타일 사용)
+          commentElement.style.backgroundColor = '#fef3c7';
+          commentElement.style.borderRadius = '8px';
+          commentElement.style.padding = '8px';
+          setTimeout(() => {
+            commentElement.style.backgroundColor = '';
+            commentElement.style.borderRadius = '';
+            commentElement.style.padding = '';
+          }, 2000);
+        }
+      }, 300);
+    }
+  }, [targetCommentId, open, comments, showComments]);
+
+  const handleSendComment = async () => {
     if (commentText.trim() && feed) {
-      // 일반 댓글 추가
-      const newComment: Comment = {
-        id: Date.now(),
-        author: "김루핀",
-        avatar: "김",
-        content: commentText,
-        time: "방금 전",
-        replies: [],
-      };
-      setComments([...comments, newComment]);
-      setCommentText("");
+      try {
+        // API 호출하여 댓글 생성
+        const response = await commentApi.createComment({
+          content: commentText,
+          feedId: feed.id,
+          writerId: currentUserId,
+        });
+
+        // 새 댓글을 리스트에 추가
+        const authorName = response.writerName || currentUserName;
+        const newComment: Comment = {
+          id: response.id,
+          author: authorName,
+          avatar: authorName.charAt(0),
+          content: response.content,
+          time: "방금 전",
+          replies: [],
+        };
+        setComments([...comments, newComment]);
+        setCommentText("");
+      } catch (error) {
+        console.error("댓글 작성 실패:", error);
+        alert("댓글 작성에 실패했습니다.");
+      }
     }
   };
 
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (replyCommentText.trim() && feed && replyingTo !== null) {
-      // 루트 댓글에만 답글 추가
-      setComments(
-        comments.map((comment) => {
-          if (comment.id === replyingTo) {
-            const newReply: Comment = {
-              id: Date.now(),
-              author: "김루핀",
-              avatar: "김",
-              content: replyCommentText,
-              time: "방금 전",
-              parentId: replyingTo,
-              replies: [],
-            };
-            return {
-              ...comment,
-              replies: [...(comment.replies || []), newReply],
-            };
-          }
-          return comment;
-        })
-      );
-      setReplyCommentText("");
-      setReplyingTo(null);
+      try {
+        // API 호출하여 답글 생성
+        const response = await commentApi.createComment({
+          content: replyCommentText,
+          feedId: feed.id,
+          writerId: currentUserId,
+          parentId: replyingTo,
+        });
+
+        // 새 답글을 해당 댓글에 추가
+        const replyAuthorName = response.writerName || currentUserName;
+        const newReply: Comment = {
+          id: response.id,
+          author: replyAuthorName,
+          avatar: replyAuthorName.charAt(0),
+          content: response.content,
+          time: "방금 전",
+          parentId: replyingTo,
+          replies: [],
+        };
+
+        setComments(
+          comments.map((comment) => {
+            if (comment.id === replyingTo) {
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), newReply],
+              };
+            }
+            return comment;
+          })
+        );
+        setReplyCommentText("");
+        setReplyingTo(null);
+      } catch (error) {
+        console.error("답글 작성 실패:", error);
+        alert("답글 작성에 실패했습니다.");
+      }
     }
   };
 
@@ -321,6 +425,44 @@ export default function FeedDetailDialogHome({
     });
   };
 
+  // 댓글 삭제
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm("댓글을 삭제하시겠습니까?")) return;
+
+    try {
+      await commentApi.deleteComment(commentId, currentUserId);
+
+      // 로컬 상태에서 댓글 처리
+      setComments(prevComments => {
+        return prevComments.map(c => {
+          // 최상위 댓글인 경우
+          if (c.id === commentId) {
+            // 답글이 있으면 "삭제된 댓글"로 표시
+            if (c.replies && c.replies.length > 0) {
+              return {
+                ...c,
+                author: "",
+                content: "삭제된 댓글입니다.",
+                isDeleted: true,
+              };
+            }
+            // 답글이 없으면 완전히 제거
+            return null;
+          }
+
+          // 답글에서 삭제
+          return {
+            ...c,
+            replies: c.replies?.filter(r => r.id !== commentId) || []
+          };
+        }).filter(Boolean) as Comment[];
+      });
+    } catch (error) {
+      console.error("댓글 삭제 실패:", error);
+      alert("댓글 삭제에 실패했습니다.");
+    }
+  };
+
   // 댓글 렌더링 함수 (재귀적으로 대댓글 표시)
   const renderComment = (comment: Comment, depth: number = 0) => {
     const isReply = depth > 0;
@@ -328,9 +470,10 @@ export default function FeedDetailDialogHome({
     const isCollapsed = collapsedComments.has(comment.id);
     const isReplying = replyingTo === comment.id;
     const likeInfo = commentLikes[comment.id] || { liked: false, count: 0 };
+    const isDeleted = comment.isDeleted;
 
     return (
-      <div key={comment.id} className={isReply ? "ml-8 mt-3" : ""}>
+      <div key={comment.id} id={`comment-${comment.id}`} className={`transition-colors duration-500 ${isReply ? "ml-8 mt-3" : ""}`}>
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
             <AvatarFallback className="bg-white">
@@ -338,45 +481,64 @@ export default function FeedDetailDialogHome({
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-bold text-sm text-gray-900">
-                {comment.author}
-              </span>
-              <span className="text-xs text-gray-900">{comment.time}</span>
-            </div>
-            <p className="text-sm text-gray-900 break-words mb-2">
-              {comment.content}
-            </p>
-
-            {/* 좋아요 + 답글 버튼 */}
-            <div className="flex items-center gap-4 mb-2">
-              <button
-                onClick={() => toggleCommentLike(comment.id)}
-                className="flex items-center gap-1 hover:opacity-70 transition-opacity"
-              >
-                <Heart
-                  className={`w-4 h-4 ${
-                    likeInfo.liked
-                      ? "fill-red-500 text-red-500"
-                      : "text-gray-600"
-                  }`}
-                />
-                {likeInfo.count > 0 && (
-                  <span className="text-xs text-gray-600 font-semibold">
-                    {likeInfo.count}
+            {isDeleted ? (
+              <>
+                <p className="text-sm text-gray-400 italic mb-2">
+                  삭제된 댓글입니다.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-bold text-sm text-gray-900">
+                    {comment.author}
                   </span>
-                )}
-              </button>
-              {/* 답글 버튼은 루트 댓글에만 표시 */}
-              {depth === 0 && (
-                <button
-                  onClick={() => setReplyingTo(isReplying ? null : comment.id)}
-                  className="text-xs text-gray-600 hover:text-[#C93831] font-semibold"
-                >
-                  답글
-                </button>
-              )}
-            </div>
+                  <span className="text-xs text-gray-900">{comment.time}</span>
+                </div>
+                <p className="text-sm text-gray-900 break-words mb-2">
+                  {comment.content}
+                </p>
+
+                {/* 좋아요 + 답글 + 삭제 버튼 */}
+                <div className="flex items-center gap-4 mb-2">
+                  <button
+                    onClick={() => toggleCommentLike(comment.id)}
+                    className="flex items-center gap-1 hover:opacity-70 transition-opacity"
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${
+                        likeInfo.liked
+                          ? "fill-red-500 text-red-500"
+                          : "text-gray-600"
+                      }`}
+                    />
+                    {likeInfo.count > 0 && (
+                      <span className="text-xs text-gray-600 font-semibold">
+                        {likeInfo.count}
+                      </span>
+                    )}
+                  </button>
+                  {/* 답글 버튼 - 루트 댓글에만 표시 */}
+                  {depth === 0 && (
+                    <button
+                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                      className="text-xs text-gray-600 hover:text-[#C93831] font-semibold"
+                    >
+                      답글
+                    </button>
+                  )}
+                  {/* 삭제 버튼 - 내가 쓴 댓글만 */}
+                  {comment.author === currentUserName && (
+                    <button
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="text-xs text-gray-600 hover:text-red-500 font-semibold"
+                    >
+                      삭제
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* 답글 입력 칸 (답글 버튼 클릭 시) */}
             {isReplying && (
@@ -746,7 +908,7 @@ export default function FeedDetailDialogHome({
 
           {/* Comments Panel (Right - slides in) */}
           {showComments && (
-            <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col">
+            <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col overflow-hidden">
               {/* Comments Header */}
               <div className="px-6 py-4 border-b border-gray-200/30 flex items-center justify-between bg-transparent">
                 <h3 className="text-lg font-bold text-gray-900">
@@ -796,17 +958,19 @@ export default function FeedDetailDialogHome({
               </div>
 
               {/* Comments List */}
-              <ScrollArea className="flex-1 px-6 pt-4">
-                <div className="space-y-4 pb-4">
-                  {comments.length === 0 ? (
-                    <div className="text-center text-gray-500 text-sm py-8">
-                      첫 댓글을 남겨보세요!
-                    </div>
-                  ) : (
-                    sortedComments.map((comment) => renderComment(comment))
-                  )}
-                </div>
-              </ScrollArea>
+              <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="space-y-4 px-6 pt-4 pb-4">
+                    {comments.length === 0 ? (
+                      <div className="text-center text-gray-500 text-sm py-8">
+                        첫 댓글을 남겨보세요!
+                      </div>
+                    ) : (
+                      sortedComments.map((comment) => renderComment(comment))
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
 
               {/* Comment Input - 일반 댓글 작성용 (항상 표시) */}
               <div className="p-4 border-t border-gray-200/30 bg-transparent">

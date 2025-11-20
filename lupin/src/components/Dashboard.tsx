@@ -82,6 +82,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
   const [showFeedDetailInHome, setShowFeedDetailInHome] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const feedContainerRef = useRef<HTMLDivElement>(null);
   const [challengeJoined, setChallengeJoined] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -189,13 +190,13 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     }
   };
 
-  // 초기 피드 로드
+  // 초기 피드 로드 및 refreshTrigger 감지
   useEffect(() => {
     if (userType === "member") {
       loadMyFeeds(); // 내 피드는 전체 로드
       loadFeeds(0, true); // 다른 피드는 페이지네이션
     }
-  }, [userType]);
+  }, [userType, refreshTrigger]); // refreshTrigger 변경 시 데이터 재로드
 
   // 알림 데이터 로드
   useEffect(() => {
@@ -363,10 +364,17 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     toast.success("피드가 수정되었습니다!");
   };
 
-  const handleDeleteFeed = (feedId: number) => {
-    setMyFeeds(myFeeds.filter(feed => feed.id !== feedId));
-    setAllFeeds(allFeeds.filter(feed => feed.id !== feedId));
-    toast.success("피드가 삭제되었습니다!");
+  const handleDeleteFeed = async (feedId: number) => {
+    try {
+      await feedApi.deleteFeed(feedId);
+      setMyFeeds(myFeeds.filter(feed => feed.id !== feedId));
+      setAllFeeds(allFeeds.filter(feed => feed.id !== feedId));
+      setRefreshTrigger(prev => prev + 1); // canPostToday 재확인 + 데이터 재로드
+      toast.success("피드가 삭제되고 포인트가 회수되었습니다!");
+    } catch (error) {
+      console.error("피드 삭제 실패:", error);
+      toast.error("피드 삭제에 실패했습니다.");
+    }
   };
 
   const handleCreateFeed = (
@@ -428,6 +436,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       <div className={`h-full transition-all duration-300 ${(sidebarExpanded || showNotifications) ? 'ml-64' : 'ml-20'}`}>
         {selectedNav === "home" && <HomeView challengeJoined={challengeJoined} handleJoinChallenge={() => { toast.success("응모가 완료되었습니다!"); setChallengeJoined(true); }}
           profileImage={profileImage} myFeeds={myFeeds} setSelectedFeed={setSelectedFeed} setFeedImageIndex={setFeedImageIndex} setShowFeedDetailInHome={setShowFeedDetailInHome}
+          refreshTrigger={refreshTrigger}
           onCreateClick={() => setShowCreateDialog(true)} />}
         {selectedNav === "feed" && <FeedView allFeeds={allFeeds} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearch={showSearch} setShowSearch={setShowSearch}
           getFeedImageIndex={getFeedImageIndex} setFeedImageIndex={setFeedImageIndex} hasLiked={hasLiked} handleLike={handleLike} feedContainerRef={feedContainerRef} scrollToFeedId={scrollToFeedId} setScrollToFeedId={setScrollToFeedId}

@@ -55,6 +55,12 @@ dependencies {
 	// AWS S3 (Spring Cloud AWS 3.x)
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.1.1'
 
+	// Google OAuth2
+	implementation 'com.google.api-client:google-api-client:2.2.0'
+
+	// Dotenv for environment variables
+	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

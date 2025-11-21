@@ -43,7 +43,7 @@ public class ChallengeScheduler {
 
     private void runActivationCheck(LocalDateTime now) {
         List<Challenge> targets = challengeRepository.findScheduledChallengesToOpen(now);
-        for (Challenge c : targets) c.open();
+        for (Challenge c : targets) c.open(now);
     }
 
 
@@ -55,7 +55,7 @@ public class ChallengeScheduler {
 
         List<Challenge> targets = challengeRepository.findActiveChallengesToClose(now);
         for (Challenge c : targets){
-            c.close();
+            c.close(now);
         }
     }
 }

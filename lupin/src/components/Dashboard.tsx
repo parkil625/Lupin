@@ -11,7 +11,14 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
-import { Home, Video, Trophy, Calendar as CalendarIcon, PlusSquare, MessageCircle } from "lucide-react";
+import {
+  Home,
+  Video,
+  Trophy,
+  Calendar as CalendarIcon,
+  PlusSquare,
+  MessageCircle,
+} from "lucide-react";
 import Sidebar from "./dashboard/shared/Sidebar";
 import NotificationPopup from "./dashboard/shared/NotificationPopup";
 import AnimatedBackground from "./dashboard/shared/AnimatedBackground";
@@ -30,13 +37,19 @@ import DoctorChatPage from "./dashboard/chat/DoctorChatPage";
 import DoctorProfilePage from "./dashboard/profile/DoctorProfilePage";
 import CreatePage from "./dashboard/create/CreatePage";
 import MemberProfilePage from "./dashboard/profile/MemberProfilePage";
-import { Feed, Prescription, Notification, Member, ChatMessage } from "@/types/dashboard.types";
+import {
+  Feed,
+  Prescription,
+  Notification,
+  Member,
+  ChatMessage,
+} from "@/types/dashboard.types";
 import { feedApi, notificationApi } from "@/api";
 
 // 상대적 시간 표시 함수
 function getRelativeTime(date: Date | string): string {
   const now = new Date();
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
+  const targetDate = typeof date === "string" ? new Date(date) : date;
   const diffMs = now.getTime() - targetDate.getTime();
   const diffSeconds = Math.floor(diffMs / 1000);
   const diffMinutes = Math.floor(diffSeconds / 60);
@@ -64,19 +77,28 @@ const memberNavItems = [
   { id: "home", icon: Home, label: "홈" },
   { id: "feed", icon: Video, label: "피드" },
   { id: "ranking", icon: Trophy, label: "랭킹" },
-  { id: "medical", icon: CalendarIcon, label: "진료" }
+  { id: "medical", icon: CalendarIcon, label: "진료" },
 ];
 
-const doctorNavItems = [
-  { id: "chat", icon: MessageCircle, label: "채팅" }
-];
+const doctorNavItems = [{ id: "chat", icon: MessageCircle, label: "채팅" }];
 
-const availableDates = [new Date(2024, 10, 15), new Date(2024, 10, 16), new Date(2024, 10, 18), new Date(2024, 10, 20), new Date(2024, 10, 22), new Date(2024, 10, 25), new Date(2024, 10, 27), new Date(2024, 10, 29)];
+const availableDates = [
+  new Date(2024, 10, 15),
+  new Date(2024, 10, 16),
+  new Date(2024, 10, 18),
+  new Date(2024, 10, 20),
+  new Date(2024, 10, 22),
+  new Date(2024, 10, 25),
+  new Date(2024, 10, 27),
+  new Date(2024, 10, 29),
+];
 const availableTimes = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 const bookedTimes = ["10:00", "15:00"];
 
 export default function Dashboard({ onLogout, userType }: DashboardProps) {
-  const [selectedNav, setSelectedNav] = useState(userType === "doctor" ? "chat" : "home");
+  const [selectedNav, setSelectedNav] = useState(
+    userType === "doctor" ? "chat" : "home"
+  );
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -86,10 +108,15 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const feedContainerRef = useRef<HTMLDivElement>(null);
   const [challengeJoined, setChallengeJoined] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [feedImageIndexes, setFeedImageIndexes] = useState<{[key: number]: number}>({});
-  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
+  const [feedImageIndexes, setFeedImageIndexes] = useState<{
+    [key: number]: number;
+  }>({});
+  const [selectedPrescription, setSelectedPrescription] =
+    useState<Prescription | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [userId] = useState<number>(parseInt(localStorage.getItem('userId') || '1'));
+  const [userId] = useState<number>(
+    parseInt(localStorage.getItem("userId") || "1")
+  );
   const [showAppointment, setShowAppointment] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -97,12 +124,16 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [showChat, setShowChat] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
-  const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(null);
-  const [feedLikes, setFeedLikes] = useState<{[key: number]: string[]}>({});
+  const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(
+    null
+  );
+  const [feedLikes, setFeedLikes] = useState<{ [key: number]: string[] }>({});
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [myFeeds, setMyFeeds] = useState<Feed[]>([]);
   const [allFeeds, setAllFeeds] = useState<Feed[]>([]);
-  const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>([]);
+  const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>(
+    []
+  );
   const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [targetCommentId, setTargetCommentId] = useState<number | null>(null);
@@ -115,7 +146,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   // 내 피드 로드 (전체)
   const loadMyFeeds = async () => {
     try {
-      const currentUserId = parseInt(localStorage.getItem('userId') || '0');
+      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
       const response = await feedApi.getFeedsByUserId(currentUserId, 0, 100);
       const feeds = response.content || response;
 
@@ -123,9 +154,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       const mappedFeeds = feeds.map((backendFeed: any) => {
         let stats = {};
         try {
-          stats = backendFeed.statsJson ? JSON.parse(backendFeed.statsJson) : {};
+          stats = backendFeed.statsJson
+            ? JSON.parse(backendFeed.statsJson)
+            : {};
         } catch (e) {
-          console.error('Failed to parse statsJson:', e);
+          console.error("Failed to parse statsJson:", e);
         }
         const points = Math.min(Math.floor(backendFeed.duration / 5) * 5, 30);
 
@@ -133,7 +166,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           id: backendFeed.id,
           authorId: backendFeed.writerId,
           author: backendFeed.authorName,
-          avatar: '',
+          avatar: "",
           activity: backendFeed.activityType,
           duration: `${backendFeed.duration}분`,
           points: points,
@@ -160,7 +193,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     setIsLoadingFeeds(true);
     try {
       const pageSize = 1; // 한 번에 1개씩 로드 (성능 최적화)
-      const currentUserId = parseInt(localStorage.getItem('userId') || '0');
+      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
       // 백엔드에서 내 피드 제외
       const response = await feedApi.getAllFeeds(page, pageSize, currentUserId);
       const feeds = response.content || response;
@@ -168,7 +201,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       if (reset) {
         setAllFeeds(feeds);
       } else {
-        setAllFeeds(prev => [...prev, ...feeds]);
+        setAllFeeds((prev) => [...prev, ...feeds]);
       }
 
       // 더 이상 로드할 피드가 있는지 확인
@@ -224,9 +257,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         await notificationApi.markAsRead(notification.id, userId);
 
         // 로컬 상태 업데이트
-        setNotifications(notifications.map(n =>
-          n.id === notification.id ? { ...n, read: true } : n
-        ));
+        setNotifications(
+          notifications.map((n) =>
+            n.id === notification.id ? { ...n, read: true } : n
+          )
+        );
       }
 
       // 알림 팝업 닫기
@@ -234,16 +269,26 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       setSidebarExpanded(false);
 
       // 알림 타입에 따라 적절한 페이지로 이동
-      if (notification.type === "like" || notification.type === "comment" || notification.type === "reply" || notification.type === "comment_like") {
+      if (
+        notification.type === "like" ||
+        notification.type === "comment" ||
+        notification.type === "reply" ||
+        notification.type === "comment_like"
+      ) {
         // 피드 관련 알림 - 내 게시글이면 홈으로, 아니면 피드 페이지로
         if (notification.feedId) {
           // 내 피드와 다른 피드 모두에서 검색
-          const myFeed = myFeeds.find(f => f.id === notification.feedId);
-          let otherFeed = allFeeds.find(f => f.id === notification.feedId);
+          const myFeed = myFeeds.find((f) => f.id === notification.feedId);
+          let otherFeed = allFeeds.find((f) => f.id === notification.feedId);
           let feed = myFeed || otherFeed;
 
           // 댓글/답글/댓글좋아요 알림이면 댓글 ID 설정
-          if ((notification.type === "comment" || notification.type === "reply" || notification.type === "comment_like") && notification.commentId) {
+          if (
+            (notification.type === "comment" ||
+              notification.type === "reply" ||
+              notification.type === "comment_like") &&
+            notification.commentId
+          ) {
             setTargetCommentId(notification.commentId);
           } else {
             setTargetCommentId(null);
@@ -257,17 +302,22 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               const backendFeed = response;
               let stats = {};
               try {
-                stats = backendFeed.statsJson ? JSON.parse(backendFeed.statsJson) : {};
+                stats = backendFeed.statsJson
+                  ? JSON.parse(backendFeed.statsJson)
+                  : {};
               } catch (e) {
-                console.error('Failed to parse statsJson:', e);
+                console.error("Failed to parse statsJson:", e);
               }
-              const points = Math.min(Math.floor(backendFeed.duration / 5) * 5, 30);
+              const points = Math.min(
+                Math.floor(backendFeed.duration / 5) * 5,
+                30
+              );
 
               feed = {
                 id: backendFeed.id,
                 authorId: backendFeed.writerId,
                 author: backendFeed.authorName,
-                avatar: '',
+                avatar: "",
                 activity: backendFeed.activityType,
                 duration: `${backendFeed.duration}분`,
                 points: points,
@@ -281,17 +331,20 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               };
 
               // allFeeds에 추가 (맨 앞에)
-              setAllFeeds(prev => [feed!, ...prev]);
+              setAllFeeds((prev) => [feed!, ...prev]);
             } catch (error) {
-              console.error('피드 로드 실패:', error);
+              console.error("피드 로드 실패:", error);
               return;
             }
           }
 
           if (feed) {
             // 현재 사용자 ID로 내 피드인지 확인
-            const currentUserId = parseInt(localStorage.getItem('userId') || '0');
-            const isMyFeed = feed.authorId === currentUserId || myFeed !== undefined;
+            const currentUserId = parseInt(
+              localStorage.getItem("userId") || "0"
+            );
+            const isMyFeed =
+              feed.authorId === currentUserId || myFeed !== undefined;
 
             if (isMyFeed) {
               // 내 피드면 홈으로 이동
@@ -328,14 +381,27 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
   const navItems = userType === "member" ? memberNavItems : doctorNavItems;
   const getFeedImageIndex = (feedId: number) => feedImageIndexes[feedId] || 0;
-  const setFeedImageIndex = (feedId: number, index: number) => setFeedImageIndexes(prev => ({ ...prev, [feedId]: index }));
+  const setFeedImageIndex = (feedId: number, index: number) =>
+    setFeedImageIndexes((prev) => ({ ...prev, [feedId]: index }));
   const handleLike = (feedId: number) => {
     const currentLikes = feedLikes[feedId] || [];
     const hasLiked = currentLikes.includes("김루핀");
-    setFeedLikes({ ...feedLikes, [feedId]: hasLiked ? currentLikes.filter(name => name !== "김루핀") : [...currentLikes, "김루핀"] });
-    setAllFeeds(allFeeds.map(feed => feed.id === feedId ? { ...feed, likes: hasLiked ? feed.likes - 1 : feed.likes + 1 } : feed));
+    setFeedLikes({
+      ...feedLikes,
+      [feedId]: hasLiked
+        ? currentLikes.filter((name) => name !== "김루핀")
+        : [...currentLikes, "김루핀"],
+    });
+    setAllFeeds(
+      allFeeds.map((feed) =>
+        feed.id === feedId
+          ? { ...feed, likes: hasLiked ? feed.likes - 1 : feed.likes + 1 }
+          : feed
+      )
+    );
   };
-  const hasLiked = (feedId: number) => (feedLikes[feedId] || []).includes("김루핀");
+  const hasLiked = (feedId: number) =>
+    (feedLikes[feedId] || []).includes("김루핀");
 
   const handleEditFeed = (feed: Feed) => {
     setEditingFeed(feed);
@@ -351,25 +417,43 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     _startImage: string | null,
     _endImage: string | null
   ) => {
-    setMyFeeds(myFeeds.map(feed =>
-      feed.id === feedId
-        ? { ...feed, images, content, activity: workoutType, time: "방금 전", edited: true }
-        : feed
-    ));
-    setAllFeeds(allFeeds.map(feed =>
-      feed.id === feedId
-        ? { ...feed, images, content, activity: workoutType, time: "방금 전", edited: true }
-        : feed
-    ));
+    setMyFeeds(
+      myFeeds.map((feed) =>
+        feed.id === feedId
+          ? {
+              ...feed,
+              images,
+              content,
+              activity: workoutType,
+              time: "방금 전",
+              edited: true,
+            }
+          : feed
+      )
+    );
+    setAllFeeds(
+      allFeeds.map((feed) =>
+        feed.id === feedId
+          ? {
+              ...feed,
+              images,
+              content,
+              activity: workoutType,
+              time: "방금 전",
+              edited: true,
+            }
+          : feed
+      )
+    );
     toast.success("피드가 수정되었습니다!");
   };
 
   const handleDeleteFeed = async (feedId: number) => {
     try {
       await feedApi.deleteFeed(feedId);
-      setMyFeeds(myFeeds.filter(feed => feed.id !== feedId));
-      setAllFeeds(allFeeds.filter(feed => feed.id !== feedId));
-      setRefreshTrigger(prev => prev + 1); // canPostToday 재확인 + 데이터 재로드
+      setMyFeeds(myFeeds.filter((feed) => feed.id !== feedId));
+      setAllFeeds(allFeeds.filter((feed) => feed.id !== feedId));
+      setRefreshTrigger((prev) => prev + 1); // canPostToday 재확인 + 데이터 재로드
       toast.success("피드가 삭제되고 포인트가 회수되었습니다!");
     } catch (error) {
       console.error("피드 삭제 실패:", error);
@@ -408,10 +492,23 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     return (
       <div className="h-screen w-screen overflow-hidden relative">
         <AnimatedBackground variant="doctor" />
-        <Sidebar expanded={sidebarExpanded} onExpandChange={setSidebarExpanded} navItems={navItems} selectedNav={selectedNav} onNavSelect={setSelectedNav} userType="doctor" />
-        <div className={`h-full transition-all duration-300 ${sidebarExpanded ? 'ml-64' : 'ml-20'}`}>
+        <Sidebar
+          expanded={sidebarExpanded}
+          onExpandChange={setSidebarExpanded}
+          navItems={navItems}
+          selectedNav={selectedNav}
+          onNavSelect={setSelectedNav}
+          userType="doctor"
+        />
+        <div
+          className={`h-full transition-all duration-300 ${
+            sidebarExpanded ? "ml-64" : "ml-20"
+          }`}
+        >
           {selectedNav === "chat" && <DoctorChatPage />}
-          {selectedNav === "profile" && <DoctorProfilePage onLogout={onLogout} />}
+          {selectedNav === "profile" && (
+            <DoctorProfilePage onLogout={onLogout} />
+          )}
         </div>
       </div>
     );
@@ -420,41 +517,157 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   return (
     <div className="h-screen w-screen overflow-hidden relative">
       <AnimatedBackground variant="member" />
-      <Sidebar expanded={sidebarExpanded || showNotifications} onExpandChange={(expanded) => !showNotifications && setSidebarExpanded(expanded)} navItems={navItems} selectedNav={selectedNav} onNavSelect={setSelectedNav} userType="member" profileImage={profileImage}>
-        <div className="relative mb-2" onMouseEnter={(e) => e.stopPropagation()} onMouseLeave={(e) => e.stopPropagation()}>
-          <button onClick={() => setShowNotifications(!showNotifications)} className="relative w-full flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors" style={{ paddingLeft: '10px' }}>
+      <Sidebar
+        expanded={sidebarExpanded || showNotifications}
+        onExpandChange={(expanded) =>
+          !showNotifications && setSidebarExpanded(expanded)
+        }
+        navItems={navItems}
+        selectedNav={selectedNav}
+        onNavSelect={setSelectedNav}
+        userType="member"
+        profileImage={profileImage}
+      >
+        <div
+          className="relative mb-2"
+          onMouseEnter={(e) => e.stopPropagation()}
+          onMouseLeave={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative w-full flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors"
+            style={{ paddingLeft: "10px" }}
+          >
             <div className="relative flex-shrink-0">
               <Bell className="w-7 h-7 text-gray-700" />
-              {notifications.filter(n => !n.read).length > 0 && <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>}
+              {notifications.filter((n) => !n.read).length > 0 && (
+                <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>
+              )}
             </div>
-            <span className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ml-6 ${(sidebarExpanded || showNotifications) ? 'opacity-100' : 'opacity-0 w-0'}`}>알림</span>
+            <span
+              className={`whitespace-nowrap transition-opacity duration-200 text-sm font-medium text-gray-700 ml-6 ${
+                sidebarExpanded || showNotifications
+                  ? "opacity-100"
+                  : "opacity-0 w-0"
+              }`}
+            >
+              알림
+            </span>
           </button>
-          {showNotifications && <NotificationPopup notifications={notifications} onClose={(closeSidebar = true) => { setShowNotifications(false); if (closeSidebar) setSidebarExpanded(false); }} onNotificationClick={handleNotificationClick} />}
+          {showNotifications && (
+            <NotificationPopup
+              notifications={notifications}
+              onClose={(closeSidebar = true) => {
+                setShowNotifications(false);
+                if (closeSidebar) setSidebarExpanded(false);
+              }}
+              onNotificationClick={handleNotificationClick}
+            />
+          )}
         </div>
       </Sidebar>
 
-      <div className={`h-full transition-all duration-300 ${(sidebarExpanded || showNotifications) ? 'ml-64' : 'ml-20'}`}>
-        {selectedNav === "home" && <HomeView challengeJoined={challengeJoined} handleJoinChallenge={() => { toast.success("응모가 완료되었습니다!"); setChallengeJoined(true); }}
-          profileImage={profileImage} myFeeds={myFeeds} setSelectedFeed={setSelectedFeed} setFeedImageIndex={setFeedImageIndex} setShowFeedDetailInHome={setShowFeedDetailInHome}
-          refreshTrigger={refreshTrigger}
-          onCreateClick={() => setShowCreateDialog(true)} />}
-        {selectedNav === "feed" && <FeedView allFeeds={allFeeds} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showSearch={showSearch} setShowSearch={setShowSearch}
-          getFeedImageIndex={getFeedImageIndex} setFeedImageIndex={setFeedImageIndex} hasLiked={hasLiked} handleLike={handleLike} feedContainerRef={feedContainerRef} scrollToFeedId={scrollToFeedId} setScrollToFeedId={setScrollToFeedId}
-          loadMoreFeeds={loadMoreFeeds} hasMoreFeeds={hasMoreFeeds} isLoadingFeeds={isLoadingFeeds} />}
-        {selectedNav === "ranking" && <RankingView userId={userId} profileImage={profileImage} />}
-        {selectedNav === "medical" && <MedicalView setShowAppointment={setShowAppointment} setShowChat={setShowChat} setSelectedPrescription={setSelectedPrescription} />}
-        {selectedNav === "create" && <CreatePage onCreatePost={(newFeed) => { setMyFeeds([newFeed, ...myFeeds]); }} />}
-        {selectedNav === "profile" && <MemberProfilePage onLogout={onLogout} profileImage={profileImage} setProfileImage={setProfileImage} />}
+      <div
+        className={`h-full transition-all duration-300 ${
+          sidebarExpanded || showNotifications ? "ml-64" : "ml-20"
+        }`}
+      >
+        {selectedNav === "home" && (
+          <HomeView
+            challengeJoined={challengeJoined}
+            handleJoinChallenge={() => {
+              toast.success("응모가 완료되었습니다!");
+              setChallengeJoined(true);
+            }}
+            profileImage={profileImage}
+            myFeeds={myFeeds}
+            setSelectedFeed={setSelectedFeed}
+            setFeedImageIndex={setFeedImageIndex}
+            setShowFeedDetailInHome={setShowFeedDetailInHome}
+            refreshTrigger={refreshTrigger}
+            onCreateClick={() => setShowCreateDialog(true)}
+          />
+        )}
+        {selectedNav === "feed" && (
+          <FeedView
+            allFeeds={allFeeds}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            showSearch={showSearch}
+            setShowSearch={setShowSearch}
+            getFeedImageIndex={getFeedImageIndex}
+            setFeedImageIndex={setFeedImageIndex}
+            hasLiked={hasLiked}
+            handleLike={handleLike}
+            feedContainerRef={feedContainerRef}
+            scrollToFeedId={scrollToFeedId}
+            setScrollToFeedId={setScrollToFeedId}
+            loadMoreFeeds={loadMoreFeeds}
+            hasMoreFeeds={hasMoreFeeds}
+            isLoadingFeeds={isLoadingFeeds}
+          />
+        )}
+        {selectedNav === "ranking" && (
+          <RankingView userId={userId} profileImage={profileImage} />
+        )}
+        {selectedNav === "medical" && (
+          <MedicalView
+            setShowAppointment={setShowAppointment}
+            setShowChat={setShowChat}
+            setSelectedPrescription={setSelectedPrescription}
+          />
+        )}
+        {selectedNav === "create" && (
+          <CreatePage
+            onCreatePost={(newFeed) => {
+              setMyFeeds([newFeed, ...myFeeds]);
+            }}
+          />
+        )}
+        {selectedNav === "profile" && (
+          <MemberProfilePage
+            onLogout={onLogout}
+            profileImage={profileImage}
+            setProfileImage={setProfileImage}
+          />
+        )}
       </div>
 
-      <FeedDetailDialogHome feed={selectedFeed} open={showFeedDetailInHome && (selectedNav === "home" || selectedNav === "feed")}
-        onOpenChange={() => { setShowFeedDetailInHome(false); setSelectedFeed(null); setTargetCommentId(null); }}
-        currentImageIndex={selectedFeed ? getFeedImageIndex(selectedFeed.id) : 0}
-        onPrevImage={() => selectedFeed && setFeedImageIndex(selectedFeed.id, Math.max(0, getFeedImageIndex(selectedFeed.id) - 1))}
-        onNextImage={() => selectedFeed && setFeedImageIndex(selectedFeed.id, Math.min(selectedFeed.images.length - 1, getFeedImageIndex(selectedFeed.id) + 1))}
+      <FeedDetailDialogHome
+        feed={selectedFeed}
+        open={
+          showFeedDetailInHome &&
+          (selectedNav === "home" || selectedNav === "feed")
+        }
+        onOpenChange={() => {
+          setShowFeedDetailInHome(false);
+          setSelectedFeed(null);
+          setTargetCommentId(null);
+        }}
+        currentImageIndex={
+          selectedFeed ? getFeedImageIndex(selectedFeed.id) : 0
+        }
+        onPrevImage={() =>
+          selectedFeed &&
+          setFeedImageIndex(
+            selectedFeed.id,
+            Math.max(0, getFeedImageIndex(selectedFeed.id) - 1)
+          )
+        }
+        onNextImage={() =>
+          selectedFeed &&
+          setFeedImageIndex(
+            selectedFeed.id,
+            Math.min(
+              selectedFeed.images.length - 1,
+              getFeedImageIndex(selectedFeed.id) + 1
+            )
+          )
+        }
         onEdit={handleEditFeed}
         onDelete={handleDeleteFeed}
-        targetCommentId={targetCommentId} />
+        targetCommentId={targetCommentId}
+      />
 
       <EditFeedDialog
         feed={editingFeed}
@@ -469,17 +682,74 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         onCreate={handleCreateFeed}
       />
 
-      <PrescriptionModal prescription={selectedPrescription} open={!!selectedPrescription} onOpenChange={() => setSelectedPrescription(null)} onDownload={() => toast.success("처방전 PDF 다운로드를 시작합니다.")} />
+      <PrescriptionModal
+        prescription={selectedPrescription}
+        open={!!selectedPrescription}
+        onOpenChange={() => setSelectedPrescription(null)}
+        onDownload={() => toast.success("처방전 PDF 다운로드를 시작합니다.")}
+      />
 
-      <ChatDialog open={showChat} onOpenChange={setShowChat} messages={medicalChatMessages} chatMessage={chatMessage} setChatMessage={setChatMessage}
-        onSend={() => { if (chatMessage.trim()) { setMedicalChatMessages([...medicalChatMessages, { id: Date.now(), author: "김루핀", avatar: "김", content: chatMessage, time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }), isMine: true }]); setChatMessage(""); }}} />
+      <ChatDialog
+        open={showChat}
+        onOpenChange={setShowChat}
+        messages={medicalChatMessages}
+        chatMessage={chatMessage}
+        setChatMessage={setChatMessage}
+        onSend={() => {
+          if (chatMessage.trim()) {
+            setMedicalChatMessages([
+              ...medicalChatMessages,
+              {
+                id: Date.now(),
+                author: "김루핀",
+                avatar: "김",
+                content: chatMessage,
+                time: new Date().toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+                isMine: true,
+              },
+            ]);
+            setChatMessage("");
+          }
+        }}
+      />
 
-      <PrescriptionFormDialog open={showPrescriptionForm} onOpenChange={(open) => { setShowPrescriptionForm(open); if (!open) setPrescriptionMember(null); }} member={prescriptionMember}
-        onSubmit={() => { toast.success("처방전이 저장되었습니다."); setShowPrescriptionForm(false); setPrescriptionMember(null); }} />
+      <PrescriptionFormDialog
+        open={showPrescriptionForm}
+        onOpenChange={(open) => {
+          setShowPrescriptionForm(open);
+          if (!open) setPrescriptionMember(null);
+        }}
+        member={prescriptionMember}
+        onSubmit={() => {
+          toast.success("처방전이 저장되었습니다.");
+          setShowPrescriptionForm(false);
+          setPrescriptionMember(null);
+        }}
+      />
 
-      <AppointmentDialog open={showAppointment} onOpenChange={setShowAppointment} selectedDepartment={selectedDepartment} setSelectedDepartment={setSelectedDepartment}
-        selectedDate={selectedDate} setSelectedDate={setSelectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} availableDates={availableDates}
-        availableTimes={availableTimes} bookedTimes={bookedTimes} onConfirm={() => { toast.success("예약이 완료되었습니다!"); setShowAppointment(false); setSelectedDepartment(""); setSelectedDate(undefined); setSelectedTime(""); }} />
+      <AppointmentDialog
+        open={showAppointment}
+        onOpenChange={setShowAppointment}
+        selectedDepartment={selectedDepartment}
+        setSelectedDepartment={setSelectedDepartment}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        selectedTime={selectedTime}
+        setSelectedTime={setSelectedTime}
+        availableDates={availableDates}
+        availableTimes={availableTimes}
+        bookedTimes={bookedTimes}
+        onConfirm={() => {
+          toast.success("예약이 완료되었습니다!");
+          setShowAppointment(false);
+          setSelectedDepartment("");
+          setSelectedDate(undefined);
+          setSelectedTime("");
+        }}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -28,9 +29,10 @@ public class PrescriptionController {
     private final PrescriptionService prescriptionService;
 
     /**
-     * 처방전 생성
+     * 처방전 생성 (의사만 가능)
      */
     @PostMapping
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<PrescriptionResponse> createPrescription(
             @Valid @RequestBody PrescriptionCreateRequest request) {
         PrescriptionResponse response = prescriptionService.createPrescription(request);
@@ -58,9 +60,10 @@ public class PrescriptionController {
     }
 
     /**
-     * 특정 의사가 발행한 처방전 목록 조회 (페이징)
+     * 특정 의사가 발행한 처방전 목록 조회 (페이징) - 의사만 가능
      */
     @GetMapping("/doctors/{doctorId}")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<Page<PrescriptionResponse>> getPrescriptionsByDoctorId(
             @PathVariable Long doctorId,
             @PageableDefault(size = 20, sort = "prescribedDate", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -69,9 +72,10 @@ public class PrescriptionController {
     }
 
     /**
-     * 특정 의사가 발행한 처방전 목록 조회 (전체)
+     * 특정 의사가 발행한 처방전 목록 조회 (전체) - 의사만 가능
      */
     @GetMapping("/doctors/{doctorId}/all")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<List<PrescriptionResponse>> getAllPrescriptionsByDoctorId(@PathVariable Long doctorId) {
         List<PrescriptionResponse> prescriptions = prescriptionService.getAllPrescriptionsByDoctorId(doctorId);
         return ResponseEntity.ok(prescriptions);
@@ -120,9 +124,10 @@ public class PrescriptionController {
     }
 
     /**
-     * 처방전 삭제
+     * 처방전 삭제 (의사만 가능)
      */
     @DeleteMapping("/{prescriptionId}")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<Void> deletePrescription(
             @PathVariable Long prescriptionId,
             @RequestParam Long doctorId) {

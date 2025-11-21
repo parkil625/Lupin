@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:mysql://lupin-db.croa8saikppw.ap-northeast-2.rds.amazonaws.com:3306/lupin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: admin
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+
+logging:
+  level:
+    org.hibernate.SQL: warn
+    com.example.demo: info
+
+app:
+  seed-data:
+    enabled: false

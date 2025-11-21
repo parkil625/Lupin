@@ -87,37 +87,17 @@ public class DataInitializer implements CommandLineRunner {
             log.info("기존 데이터 삭제 완료");
         }
 
-        log.info("=== 테스트 데이터 초기화 시작 (Service 레이어 사용 + JWT 인증) ===");
+        log.info("=== 테스트 데이터 초기화 시작 (로그인용 유저만 생성) ===");
 
         // 1. 20명의 일반 유저 생성
         List<User> users = createTestUsers();
-        log.info("20명의 테스트 유저 생성 완료");
+        log.info("{}명의 테스트 유저 생성 완료", users.size());
 
         // 2. 의사 계정 생성
         List<User> doctors = createTestDoctors();
         log.info("{}명의 테스트 의사 계정 생성 완료", doctors.size());
 
-        // 3. 테스트 채팅 메시지 생성 (WebSocket 테스트용)
-        createTestChatMessages(users, doctors);
-        log.info("테스트 채팅 메시지 생성 완료");
-
-        // 4. 피드 생성 (Service 사용 - 자동으로 포인트 적립)
-        List<FeedDetailResponse> feeds = createTestFeeds(users);
-        log.info("테스트 피드 생성 완료 (포인트 자동 적립됨)");
-
-        // 5. 댓글 및 대댓글 생성 (Service 사용)
-        List<CommentResponse> comments = createTestComments(users, feeds);
-        log.info("테스트 댓글 생성 완료");
-
-        // 6. 좋아요 생성 (Service 사용)
-        createTestLikes(users, feeds);
-        log.info("테스트 좋아요 생성 완료");
-
-        // 7. 댓글 좋아요 생성 (알림 테스트용)
-        createTestCommentLikes(users, comments);
-        log.info("테스트 댓글 좋아요 생성 완료");
-
-        log.info("=== 테스트 데이터 초기화 완료 ===");
+        log.info("=== 테스트 데이터 초기화 완료 (로그인만 가능) ===");
     }
 
     private List<User> createTestUsers() {

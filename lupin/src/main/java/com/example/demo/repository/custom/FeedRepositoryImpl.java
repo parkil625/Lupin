@@ -54,10 +54,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                         .writerId(f.getWriter().getId())
                         .authorName(f.getWriter().getRealName())
                         .activityType(f.getActivityType())
-                        .duration(f.getDuration())
                         .calories(f.getCalories())
                         .content(f.getContent())
-                        .statsJson(f.getStatsJson())
                         .createdAt(f.getCreatedAt())
                         .likesCount(f.getLikesCount())
                         .commentsCount(f.getCommentsCount())
@@ -100,10 +98,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                         .writerId(f.getWriter().getId())
                         .authorName(f.getWriter().getRealName())
                         .activityType(f.getActivityType())
-                        .duration(f.getDuration())
                         .calories(f.getCalories())
                         .content(f.getContent())
-                        .statsJson(f.getStatsJson())
                         .createdAt(f.getCreatedAt())
                         .likesCount(f.getLikesCount())
                         .commentsCount(f.getCommentsCount())
@@ -153,16 +149,6 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     }
 
     @Override
-    public Long sumUserActivityDuration(Long userId) {
-        Integer sum = queryFactory
-                .select(feed.duration.sum())
-                .from(feed)
-                .where(feed.writer.id.eq(userId))
-                .fetchOne();
-        return sum != null ? sum.longValue() : 0L;
-    }
-
-    @Override
     public Integer countUserActiveDaysInCurrentMonth(Long userId) {
         // 이번 달의 시작일과 마지막일 계산
         LocalDateTime now = LocalDateTime.now();
@@ -205,31 +191,6 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .fetchOne();
 
         return count != null && count > 0;
-    }
-
-    @Override
-    public Integer countUserTotalLikesInCurrentMonth(Long userId) {
-        // 이번 달의 시작일과 마지막일 계산
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
-        LocalDateTime endOfMonth = now.withDayOfMonth(now.toLocalDate().lengthOfMonth()).withHour(23).withMinute(59).withSecond(59).withNano(999999999);
-
-        // 해당 기간 동안의 사용자 피드 조회
-        List<Feed> feeds = queryFactory
-                .selectFrom(feed)
-                .leftJoin(feed.likes, feedLike).fetchJoin()
-                .where(
-                        feed.writer.id.eq(userId),
-                        feed.createdAt.between(startOfMonth, endOfMonth)
-                )
-                .fetch();
-
-        // 전체 좋아요 수 합산
-        int totalLikes = feeds.stream()
-                .mapToInt(f -> f.getLikesCount())
-                .sum();
-
-        return totalLikes;
     }
 
     // === 동적 쿼리 조건 메서드 ===

@@ -12,7 +12,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class FeedLike extends BaseEntity {
+public class FeedLike {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

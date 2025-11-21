@@ -3,20 +3,22 @@ package com.example.demo.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "notification")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Notification extends BaseEntity {
+public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 50)
-    private String type; // challenge, appointment, like, comment
+    private String type; // like, comment, reply, comment_like
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -28,15 +30,12 @@ public class Notification extends BaseEntity {
     @Builder.Default
     private String isRead = "N"; // Y/N
 
-    @Column(name = "ref_type", length = 50)
-    private String refType; // FEED, COMMENT, CHAT 등
-
     @Column(name = "ref_id")
-    private String refId; // 관련 엔티티 ID
+    private String refId; // 관련 엔티티 ID (feedId 또는 commentId)
 
-    @Column(name = "related_id")
-    @Deprecated
-    private Long relatedId; // 하위 호환성을 위해 유지
+    @Column(name = "created_at", nullable = false)
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     // 연관관계
     @ManyToOne(fetch = FetchType.LAZY)

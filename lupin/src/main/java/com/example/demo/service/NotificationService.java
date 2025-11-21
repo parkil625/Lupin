@@ -42,8 +42,6 @@ public class NotificationService {
                 .type(request.getType())
                 .title(request.getTitle())
                 .content(request.getContent())
-                .relatedId(request.getRelatedId())
-                .refType(request.getRefType())
                 .refId(request.getRefId())
                 .build();
 
@@ -185,8 +183,6 @@ public class NotificationService {
                 .title("새로운 좋아요")
                 .content(liker.getRealName() + "님이 회원님 피드를 좋아합니다.")
                 .userId(feedOwnerId)
-                .relatedId(feedId)
-                .refType("FEED")
                 .refId(String.valueOf(feedId))
                 .build();
 
@@ -211,8 +207,6 @@ public class NotificationService {
                 .title("새로운 댓글")
                 .content(commenter.getRealName() + "님이 회원님의 피드에 댓글을 남겼습니다.")
                 .userId(feedOwnerId)
-                .relatedId(commentId)
-                .refType("FEED")
                 .refId(String.valueOf(feedId))
                 .build();
 
@@ -237,8 +231,6 @@ public class NotificationService {
                 .title("새로운 답글")
                 .content(replier.getRealName() + "님이 회원님의 댓글에 답글을 남겼습니다.")
                 .userId(parentCommentOwnerId)
-                .relatedId(commentId)
-                .refType("FEED")
                 .refId(String.valueOf(feedId))
                 .build();
 
@@ -263,8 +255,6 @@ public class NotificationService {
                 .title("댓글 좋아요")
                 .content(liker.getRealName() + "님이 회원님의 댓글을 좋아합니다.")
                 .userId(commentOwnerId)
-                .relatedId(commentId)
-                .refType("FEED")
                 .refId(String.valueOf(feedId))
                 .build();
 
@@ -281,7 +271,7 @@ public class NotificationService {
                 .title(title)
                 .content(content)
                 .userId(userId)
-                .relatedId(challengeId)
+                .refId(String.valueOf(challengeId))
                 .build();
 
         createNotification(request);
@@ -297,7 +287,7 @@ public class NotificationService {
                 .title(title)
                 .content(content)
                 .userId(userId)
-                .relatedId(appointmentId)
+                .refId(String.valueOf(appointmentId))
                 .build();
 
         createNotification(request);

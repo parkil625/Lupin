@@ -1,6 +1,5 @@
 package com.example.demo.domain.entity;
 
-import com.example.demo.domain.enums.LoginType;
 import com.example.demo.domain.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class User extends BaseEntity {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,24 +50,18 @@ public class User extends BaseEntity {
 
     @Column(name = "current_points")
     @Builder.Default
-    private Long currentPoints = 0L;
+    private Long currentPoints = 0L;  // 추첨권 계산용 잔여 포인트 (0~29)
 
-    @Column(name = "total_points")
+    @Column(name = "monthly_points")
     @Builder.Default
-    private Long totalPoints = 0L;
+    private Long monthlyPoints = 0L;  // 이번 달 누적 포인트 (랭킹용, 매월 초기화)
+
+    @Column(name = "monthly_likes")
+    @Builder.Default
+    private Long monthlyLikes = 0L;  // 이번 달 받은 좋아요 수 (랭킹용, 매월 초기화)
 
     @Column(length = 100)
     private String department;
-
-    // 로그인 유형 (일반: LOCAL, 구글: GOOGLE)
-    @Enumerated(EnumType.STRING)
-    @Column(name = "login_type", length = 20)
-    @Builder.Default
-    private LoginType loginType = LoginType.LOCAL;
-
-    // 소셜 로그인 식별자 (구글의 sub 값). 일반 로그인이면 null
-    @Column(name = "social_id", length = 100)
-    private String socialId;
 
     // 연관관계
     @OneToMany(mappedBy = "writer", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -81,16 +74,19 @@ public class User extends BaseEntity {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<PointLog> pointLogs = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<LotteryTicket> lotteryTickets = new ArrayList<>();
 
     // 비즈니스 로직
     public void addPoints(Long amount) {
         this.currentPoints += amount;
-        this.totalPoints += amount;
+        this.monthlyPoints += amount;
+    }
+
+    /**
+     * 추첨권 발급 후 currentPoints 차감
+     */
+    public void deductCurrentPointsForTicket() {
+        this.currentPoints -= 30;
     }
 
     public void usePoints(Long amount) {
@@ -103,16 +99,45 @@ public class User extends BaseEntity {
     public void revokePoints(Long amount) {
         // currentPoints 차감 (0 미만으로 내려가지 않음)
         this.currentPoints = Math.max(0, this.currentPoints - amount);
-        // totalPoints도 차감 (추첨권 회수를 위해)
-        this.totalPoints = Math.max(0, this.totalPoints - amount);
+        // monthlyPoints도 차감
+        this.monthlyPoints = Math.max(0, this.monthlyPoints - amount);
     }
 
     public void setCurrentPoints(Long currentPoints) {
         this.currentPoints = currentPoints;
     }
 
-    public void setTotalPoints(Long totalPoints) {
-        this.totalPoints = totalPoints;
+    public void setMonthlyPoints(Long monthlyPoints) {
+        this.monthlyPoints = monthlyPoints;
+    }
+
+    public void setMonthlyLikes(Long monthlyLikes) {
+        this.monthlyLikes = monthlyLikes;
+    }
+
+    /**
+     * 월초 리셋
+     */
+    public void resetMonthlyData() {
+        this.monthlyPoints = 0L;
+        this.currentPoints = 0L;
+        this.monthlyLikes = 0L;
+    }
+
+    /**
+     * 월별 좋아요 증가
+     */
+    public void incrementMonthlyLikes() {
+        this.monthlyLikes++;
+    }
+
+    /**
+     * 월별 좋아요 감소
+     */
+    public void decrementMonthlyLikes() {
+        if (this.monthlyLikes > 0) {
+            this.monthlyLikes--;
+        }
     }
 
     // 편의 메서드
@@ -123,11 +148,5 @@ public class User extends BaseEntity {
     public String getProfileImage() {
         // 추후 구현 - 현재는 null 반환
         return null;
-    }
-
-    // 소셜 로그인 정보 업데이트 (최초 로그인 시 매핑용)
-    public void linkSocialLogin(LoginType loginType, String socialId) {
-        this.loginType = loginType;
-        this.socialId = socialId;
     }
 }

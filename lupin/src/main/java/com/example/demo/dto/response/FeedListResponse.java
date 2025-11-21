@@ -18,10 +18,8 @@ public class FeedListResponse {
     private Long writerId;
     private String authorName;
     private String activityType;
-    private Integer duration;
     private Double calories;
     private String content;
-    private String statsJson;
     private LocalDateTime createdAt;
     private Integer likesCount;
     private Integer commentsCount;

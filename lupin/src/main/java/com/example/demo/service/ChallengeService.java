@@ -58,11 +58,11 @@ public class ChallengeService {
         }
 
         // 챌린지 참가 가능 여부 확인
-        if (!challenge.canJoin()) {
+        if (!challenge.canJoin(LocalDateTime.now())) {
             throw new BusinessException(ErrorCode.CHALLENGE_NOT_ACTIVE);
         }
 
-        ChallengeEntry entry = ChallengeEntry.of(challenge, user);
+        ChallengeEntry entry = ChallengeEntry.of(challenge, user, LocalDateTime.now());
         challengeEntryRepository.save(entry);
 
         log.info("챌린지 참가 완료 - challengeId: {}, userId: {}", challengeId, userId);
@@ -87,10 +87,11 @@ public class ChallengeService {
      */
     @Transactional
     public void startChallenge(Long challengeId) {
+        LocalDateTime now = LocalDateTime.now();
         Challenge challenge = findChallengeById(challengeId);
 
         try {
-            challenge.open();
+            challenge.open(now);
             log.info("챌린지 시작 - challengeId: {}", challengeId);
         } catch (IllegalStateException e) {
             throw new BusinessException(ErrorCode.CHALLENGE_NOT_ACTIVE, e.getMessage());
@@ -103,7 +104,7 @@ public class ChallengeService {
     @Transactional
     public void closeChallenge(Long challengeId) {
         Challenge challenge = findChallengeById(challengeId);
-        challenge.close();
+        challenge.close(LocalDateTime.now());
 
         log.info("챌린지 종료 - challengeId: {}", challengeId);
     }

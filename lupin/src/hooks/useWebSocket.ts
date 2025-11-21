@@ -4,112 +4,115 @@ import SockJS from 'sockjs-client';
 import { ChatMessageResponse } from '@/api/chatApi';
 
 interface UseWebSocketProps {
-  roomId: string;
-  userId: number;
-  onMessageReceived: (message: ChatMessageResponse) => void;
-  onReadNotification?: (notification: { userId: number; roomId: string }) => void;
+    roomId: string;
+    userId: number;
+    onMessageReceived: (message: ChatMessageResponse) => void;
+    onReadNotification?: (notification: { userId: number; roomId: string }) => void;
 }
 
 export const useWebSocket = ({
-  roomId,
-  userId,
-  onMessageReceived,
-  onReadNotification,
-}: UseWebSocketProps) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const clientRef = useRef<Client | null>(null);
+                                 roomId,
+                                 userId,
+                                 onMessageReceived,
+                                 onReadNotification,
+                             }: UseWebSocketProps) => {
+    const [isConnected, setIsConnected] = useState(false);
+    const clientRef = useRef<Client | null>(null);
 
-  useEffect(() => {
-    // WebSocket 클라이언트 생성
-    const client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8081/ws'),
-      debug: (str) => {
-        console.log('[STOMP Debug]', str);
-      },
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-      onConnect: () => {
-        console.log('✅ WebSocket 연결 성공');
-        setIsConnected(true);
+    useEffect(() => {
+        // ----------------------------------------------------
+        // [업그레이드] 도메인 자동 감지 로직
+        // ----------------------------------------------------
+        const isLocal = window.location.hostname === 'localhost';
 
-        // 채팅방 메시지 구독
-        client.subscribe(`/topic/chat/${roomId}`, (message) => {
-          const receivedMessage: ChatMessageResponse = JSON.parse(message.body);
-          console.log('📩 메시지 수신:', receivedMessage);
-          onMessageReceived(receivedMessage);
+        // 로컬이면 백엔드 포트(8081)로,
+        // 배포 환경이면 '현재 접속한 도메인(lupin-care 등)' 뒤에 /ws를 붙여서 연결
+        const socketUrl = isLocal
+            ? 'http://localhost:8081/ws'
+            : `${window.location.origin}/ws`;
+
+        console.log(`[WebSocket] 연결 URL: ${socketUrl}`);
+
+        const client = new Client({
+            webSocketFactory: () => new SockJS(socketUrl),
+            debug: (str) => {
+                if (isLocal) console.log('[STOMP Debug]', str);
+            },
+            reconnectDelay: 5000,
+            heartbeatIncoming: 4000,
+            heartbeatOutgoing: 4000,
+            onConnect: () => {
+                console.log('✅ WebSocket 연결 성공');
+                setIsConnected(true);
+
+                client.subscribe(`/topic/chat/${roomId}`, (message) => {
+                    const receivedMessage: ChatMessageResponse = JSON.parse(message.body);
+                    console.log('📩 메시지 수신:', receivedMessage);
+                    onMessageReceived(receivedMessage);
+                });
+
+                if (onReadNotification) {
+                    client.subscribe(`/topic/chat/${roomId}/read`, (message) => {
+                        const notification = JSON.parse(message.body);
+                        console.log('👀 읽음 알림 수신:', notification);
+                        onReadNotification(notification);
+                    });
+                }
+            },
+            onStompError: (frame) => {
+                console.error('❌ STOMP 에러:', frame.headers['message']);
+                console.error('상세:', frame.body);
+            },
+            onDisconnect: () => {
+                console.log('❌ WebSocket 연결 해제');
+                setIsConnected(false);
+            },
         });
 
-        // 읽음 알림 구독
-        if (onReadNotification) {
-          client.subscribe(`/topic/chat/${roomId}/read`, (message) => {
-            const notification = JSON.parse(message.body);
-            console.log('👀 읽음 알림 수신:', notification);
-            onReadNotification(notification);
-          });
+        clientRef.current = client;
+        client.activate();
+
+        return () => {
+            if (client.active) {
+                client.deactivate();
+            }
+        };
+    }, [roomId, userId, onMessageReceived, onReadNotification]);
+
+    const sendMessage = useCallback((content: string, senderId: number, patientId: number, doctorId: number) => {
+        if (!clientRef.current?.connected) {
+            console.error('WebSocket이 연결되지 않았습니다.');
+            return;
         }
-      },
-      onStompError: (frame) => {
-        console.error('❌ STOMP 에러:', frame.headers['message']);
-        console.error('상세:', frame.body);
-      },
-      onDisconnect: () => {
-        console.log('❌ WebSocket 연결 해제');
-        setIsConnected(false);
-      },
-    });
 
-    clientRef.current = client;
-    client.activate();
+        const messageRequest = {
+            senderId,
+            patientId,
+            doctorId,
+            content,
+        };
 
-    // 클린업
-    return () => {
-      if (client.active) {
-        client.deactivate();
-      }
+        clientRef.current.publish({
+            destination: '/app/chat.sendMessage',
+            body: JSON.stringify(messageRequest),
+        });
+    }, []);
+
+    const markAsRead = useCallback(() => {
+        if (!clientRef.current?.connected) {
+            console.error('WebSocket이 연결되지 않았습니다.');
+            return;
+        }
+
+        clientRef.current.publish({
+            destination: '/app/chat.markAsRead',
+            body: JSON.stringify({ roomId, userId }),
+        });
+    }, [roomId, userId]);
+
+    return {
+        isConnected,
+        sendMessage,
+        markAsRead,
     };
-  }, [roomId, userId, onMessageReceived, onReadNotification]);
-
-  // 메시지 전송
-  const sendMessage = useCallback((content: string, senderId: number, patientId: number, doctorId: number) => {
-    if (!clientRef.current?.connected) {
-      console.error('WebSocket이 연결되지 않았습니다.');
-      return;
-    }
-
-    const messageRequest = {
-      senderId,
-      patientId,
-      doctorId,
-      content,
-    };
-
-    clientRef.current.publish({
-      destination: '/app/chat.sendMessage',
-      body: JSON.stringify(messageRequest),
-    });
-
-    console.log('📤 메시지 전송:', messageRequest);
-  }, []);
-
-  // 읽음 처리
-  const markAsRead = useCallback(() => {
-    if (!clientRef.current?.connected) {
-      console.error('WebSocket이 연결되지 않았습니다.');
-      return;
-    }
-
-    clientRef.current.publish({
-      destination: '/app/chat.markAsRead',
-      body: JSON.stringify({ roomId, userId }),
-    });
-
-    console.log('👁️ 읽음 처리 전송:', { roomId, userId });
-  }, [roomId, userId]);
-
-  return {
-    isConnected,
-    sendMessage,
-    markAsRead,
-  };
 };

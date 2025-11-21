@@ -1,5 +1,6 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.enums.LoginType;
 import com.example.demo.domain.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
@@ -59,6 +60,16 @@ public class User extends BaseEntity {
     @Column(length = 100)
     private String department;
 
+    // 로그인 유형 (일반: LOCAL, 구글: GOOGLE)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "login_type", length = 20)
+    @Builder.Default
+    private LoginType loginType = LoginType.LOCAL;
+
+    // 소셜 로그인 식별자 (구글의 sub 값). 일반 로그인이면 null
+    @Column(name = "social_id", length = 100)
+    private String socialId;
+
     // 연관관계
     @OneToMany(mappedBy = "writer", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -112,5 +123,11 @@ public class User extends BaseEntity {
     public String getProfileImage() {
         // 추후 구현 - 현재는 null 반환
         return null;
+    }
+
+    // 소셜 로그인 정보 업데이트 (최초 로그인 시 매핑용)
+    public void linkSocialLogin(LoginType loginType, String socialId) {
+        this.loginType = loginType;
+        this.socialId = socialId;
     }
 }

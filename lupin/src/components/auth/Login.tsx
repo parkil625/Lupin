@@ -17,7 +17,7 @@ import { authApi } from "../../api";
 
 interface LoginProps {
   onBack: () => void;
-  onLogin: (username: string) => void;
+  onLogin: (username: string, role: string) => void;
 }
 
 export default function Login({ onBack, onLogin }: LoginProps) {
@@ -41,8 +41,8 @@ export default function Login({ onBack, onLogin }: LoginProps) {
       localStorage.setItem('userName', response.name);
       localStorage.setItem('userRole', response.role);
 
-      // 로그인 성공
-      onLogin(response.name);
+      // 로그인 성공 - role 정보도 함께 전달
+      onLogin(response.name, response.role);
     } catch (err: any) {
       // 로그인 실패 처리
       console.error('Login failed:', err);

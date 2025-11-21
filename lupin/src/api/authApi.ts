@@ -28,4 +28,14 @@ export const authApi = {
     });
     return response.data;
   },
+
+  /**
+   * 구글 로그인
+   */
+  googleLogin: async (googleToken: string): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>('/auth/google', {
+      token: googleToken,
+    });
+    return response.data;
+  },
 };

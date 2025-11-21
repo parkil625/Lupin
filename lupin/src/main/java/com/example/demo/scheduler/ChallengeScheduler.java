@@ -36,14 +36,14 @@ public class ChallengeScheduler {
                         &&  now.toLocalTime().isBefore(end); // now < end
 
         if(isMonday &&  inWatchWindow){
-            runActivationCheck();
+            runActivationCheck(now);
         }
 
     }
 
-    private void runActivationCheck() {
-        List<Challenge> targets = challengeRepository.findScheduledChallengesToOpen(LocalDateTime.now());
-        for (Challenge c : targets) c.open();
+    private void runActivationCheck(LocalDateTime now) {
+        List<Challenge> targets = challengeRepository.findScheduledChallengesToOpen(now);
+        for (Challenge c : targets) c.open(now);
     }
 
 
@@ -55,7 +55,7 @@ public class ChallengeScheduler {
 
         List<Challenge> targets = challengeRepository.findActiveChallengesToClose(now);
         for (Challenge c : targets){
-            c.close();
+            c.close(now);
         }
     }
 }

@@ -144,6 +144,12 @@ public class DataInitializer implements CommandLineRunner {
         users.add(createUser("전지현", "여성", "연구개발팀", 182.3, 80.2, LocalDate.of(1987, 2, 4), "user19", Role.MEMBER));
         users.add(createUser("현빈", "남성", "기획팀", 168.5, 59.7, LocalDate.of(1996, 6, 21), "user20", Role.MEMBER));
 
+        // 구글 로그인 테스트용 유저
+        users.add(createUserWithEmail("박선일", "남성", "개발팀", 175.0, 70.0, LocalDate.of(1994, 6, 25), "parkil625", "parkil625@gmail.com"));
+        users.add(createUserWithEmail("홍세민", "남성", "개발팀", 175.0, 70.0, LocalDate.of(2000, 11, 28), "pfielskdh46", "pfielskdh46@gmail.com"));
+        users.add(createUserWithEmail("최재홍", "남성", "개발팀", 175.0, 70.0, LocalDate.of(2003, 5, 15), "chdjehong2", "chdjehong2@gmail.com"));
+
+
         return users;
     }
 
@@ -220,6 +226,31 @@ public class DataInitializer implements CommandLineRunner {
                 .password(passwordEncoder.encode("1"))
                 .realName(realName)
                 .role(role)
+                .height(height)
+                .weight(weight)
+                .gender(gender)
+                .birthDate(birthDate)
+                .currentPoints(0L)
+                .totalPoints(0L)
+                .department(department)
+                .build();
+
+        return userRepository.save(user);
+    }
+
+    private User createUserWithEmail(String realName, String gender, String department,
+                            Double height, Double weight, LocalDate birthDate, String userId, String email) {
+        // 이미 존재하는 userId이면 기존 사용자 반환
+        if (userRepository.findByUserId(userId).isPresent()) {
+            return userRepository.findByUserId(userId).get();
+        }
+
+        User user = User.builder()
+                .userId(userId)
+                .email(email)
+                .password(passwordEncoder.encode("1"))
+                .realName(realName)
+                .role(Role.MEMBER)
                 .height(height)
                 .weight(weight)
                 .gender(gender)

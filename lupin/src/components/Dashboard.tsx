@@ -461,31 +461,32 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     }
   };
 
-  const handleCreateFeed = (
+  const handleCreateFeed = async (
     images: string[],
     content: string,
     workoutType: string,
     _startImage: string | null,
     _endImage: string | null
   ) => {
-    const newFeed: Feed = {
-      id: Date.now(),
-      author: "김루핀",
-      avatar: "김",
-      time: "방금 전",
-      activity: workoutType,
-      duration: "30분",
-      images,
-      content,
-      likes: 0,
-      comments: 0,
-      points: 10,
-      stats: {},
-      edited: false,
-    };
-    setMyFeeds([newFeed, ...myFeeds]);
-    setAllFeeds([newFeed, ...allFeeds]);
-    toast.success("피드가 작성되었습니다!");
+    try {
+      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
+
+      // API 호출로 피드 생성
+      await feedApi.createFeed({
+        writerId: currentUserId,
+        activityType: workoutType,
+        duration: 30,
+        content: content,
+        images: images,
+      } as any);
+
+      // 데이터 재로드 및 canPostToday 재확인
+      setRefreshTrigger((prev) => prev + 1);
+      toast.success("피드가 작성되었습니다!");
+    } catch (error) {
+      console.error("피드 생성 실패:", error);
+      toast.error("피드 작성에 실패했습니다.");
+    }
   };
 
   if (userType === "doctor") {

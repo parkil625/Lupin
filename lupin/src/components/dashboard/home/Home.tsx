@@ -63,6 +63,7 @@ export default function Home({
     isTop10: false,
     isTop100: false,
     name: "",
+    monthlyLikes: 0,
   });
 
   // 7일 연속 체크 함수
@@ -134,6 +135,7 @@ export default function Home({
           isTop10: rank <= 10,
           isTop100: rank <= 100,
           name: user.realName || localStorage.getItem("userName") || "사용자",
+          monthlyLikes: user.monthlyLikes || 0,
         });
       } catch (error) {
         console.error("사용자 통계 로드 실패:", error);
@@ -265,10 +267,10 @@ export default function Home({
                 </div>
                 <div>
                   <span className="text-sm text-gray-600 font-bold">
-                    현재 점수{" "}
+                    좋아요{" "}
                   </span>
-                  <span className="text-sm font-black text-yellow-600">
-                    {userStats.points % 30}
+                  <span className="text-sm font-black text-[#C93831]">
+                    {userStats.monthlyLikes}
                   </span>
                 </div>
                 <div>
@@ -281,19 +283,19 @@ export default function Home({
 
               <div className="flex gap-2 flex-wrap">
                 {userStats.has7DayStreak && (
-                  <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                  <Badge className="bg-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
                     <Flame className="w-3 h-3 mr-1" />
                     7일 연속
                   </Badge>
                 )}
                 {userStats.isTop10 && (
-                  <Badge className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                  <Badge className="bg-yellow-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
                     <Award className="w-3 h-3 mr-1" />
                     TOP 10
                   </Badge>
                 )}
                 {!userStats.isTop10 && userStats.isTop100 && (
-                  <Badge className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                  <Badge className="bg-purple-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
                     <Award className="w-3 h-3 mr-1" />
                     TOP 100
                   </Badge>

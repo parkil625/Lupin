@@ -34,9 +34,11 @@ import {
   Flame,
   Zap,
   User,
+  Flag,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
-import { commentApi } from "@/api";
+import { commentApi, reportApi } from "@/api";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,6 +108,8 @@ export default function FeedDetailDialogHome({
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [iconColor, setIconColor] = useState<'white' | 'black'>('white');
+  const [feedReported, setFeedReported] = useState(false);
+  const [commentReported, setCommentReported] = useState<{ [key: number]: boolean }>({});
 
   // 현재 사용자 정보
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
@@ -269,6 +273,47 @@ export default function FeedDetailDialogHome({
 
     fetchComments();
   }, [feed, targetCommentId]);
+
+  // 피드 신고 상태 확인
+  useEffect(() => {
+    const checkReportStatus = async () => {
+      if (!feed) {
+        setFeedReported(false);
+        return;
+      }
+      try {
+        const status = await reportApi.checkFeedReportStatus(feed.id, currentUserId);
+        setFeedReported(status.reported || false);
+      } catch (error) {
+        setFeedReported(false);
+      }
+    };
+    checkReportStatus();
+  }, [feed, currentUserId]);
+
+  // 피드 신고 핸들러
+  const handleReportFeed = async () => {
+    if (!feed || feedReported) return;
+    try {
+      await reportApi.reportFeed(feed.id, currentUserId);
+      setFeedReported(true);
+      toast.success("신고가 접수되었습니다.");
+    } catch (error) {
+      toast.error("신고에 실패했습니다.");
+    }
+  };
+
+  // 댓글 신고 핸들러
+  const handleReportComment = async (commentId: number) => {
+    if (commentReported[commentId]) return;
+    try {
+      await reportApi.reportComment(commentId, currentUserId);
+      setCommentReported(prev => ({ ...prev, [commentId]: true }));
+      toast.success("신고가 접수되었습니다.");
+    } catch (error) {
+      toast.error("신고에 실패했습니다.");
+    }
+  };
 
   // targetCommentId가 있으면 해당 댓글로 스크롤
   useEffect(() => {
@@ -536,6 +581,16 @@ export default function FeedDetailDialogHome({
                       삭제
                     </button>
                   )}
+                  {/* 신고 버튼 - 다른 사람 댓글만 */}
+                  {comment.author !== currentUserName && (
+                    <button
+                      onClick={() => handleReportComment(comment.id)}
+                      disabled={commentReported[comment.id]}
+                      className={`text-xs font-semibold ${commentReported[comment.id] ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
+                    >
+                      {commentReported[comment.id] ? '신고됨' : '신고'}
+                    </button>
+                  )}
                 </div>
               </>
             )}
@@ -746,6 +801,21 @@ export default function FeedDetailDialogHome({
                         {totalCommentCount}
                       </span>
                     </button>
+
+                    {/* 신고 버튼 - 자신의 피드가 아닐 때만 표시 */}
+                    {feed.authorId !== currentUserId && (
+                      <button
+                        className="flex flex-col items-center gap-1 group"
+                        onClick={handleReportFeed}
+                        disabled={feedReported}
+                      >
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+                          <Flag
+                            className={`w-6 h-6 ${feedReported ? 'fill-red-500 text-red-500' : iconColor === 'white' ? 'text-white' : 'text-black'}`}
+                          />
+                        </div>
+                      </button>
+                    )}
                   </div>
                 </div>
               </>
@@ -824,6 +894,21 @@ export default function FeedDetailDialogHome({
                         {totalCommentCount}
                       </span>
                     </button>
+
+                    {/* 신고 버튼 - 자신의 피드가 아닐 때만 표시 */}
+                    {feed.authorId !== currentUserId && (
+                      <button
+                        className="flex flex-col items-center gap-1 group"
+                        onClick={handleReportFeed}
+                        disabled={feedReported}
+                      >
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+                          <Flag
+                            className={`w-6 h-6 ${feedReported ? 'fill-red-500 text-red-500' : iconColor === 'white' ? 'text-white' : 'text-black'}`}
+                          />
+                        </div>
+                      </button>
+                    )}
                   </div>
                 </div>
               </>

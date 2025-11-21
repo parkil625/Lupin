@@ -28,6 +28,7 @@ interface RankerData {
   rank: number;
   name: string;
   points: number;
+  monthlyLikes: number;
   avatar: string;
   profileImage?: string;
   department: string;
@@ -70,6 +71,7 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
           rank: index + 1,
           name: user.name || "이름 없음",
           points: user.points || 0,
+          monthlyLikes: user.monthlyLikes || 0,
           avatar: user.name ? user.name[0] : "?",
           profileImage: user.profileImage,
           department: user.department || "부서 미정",
@@ -84,6 +86,7 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
           rank: user.rank || 0,
           name: user.name || "이름 없음",
           points: user.points || 0,
+          monthlyLikes: user.monthlyLikes || 0,
           avatar: user.name ? user.name[0] : "?",
           profileImage: user.id === userId ? profileImage : user.profileImage,
           department: user.department || "부서 미정",
@@ -244,7 +247,7 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                         </span>
                       </div>
                       <div className="text-gray-600 font-bold text-sm">
-                        {ranker.points}점
+                        {ranker.points}점 • {ranker.monthlyLikes}❤️
                       </div>
                     </div>
                   </div>
@@ -359,7 +362,7 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                           </span>
                         </div>
                         <div className="text-gray-600 font-bold text-sm">
-                          {ranker.points}점
+                          {ranker.points}점 • {ranker.monthlyLikes}❤️
                         </div>
                       </div>
                     </div>

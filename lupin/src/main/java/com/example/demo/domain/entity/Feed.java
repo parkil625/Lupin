@@ -3,7 +3,6 @@ package com.example.demo.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,23 +21,15 @@ public class Feed extends BaseEntity {
     @Column(name = "activity_type", nullable = false, length = 50)
     private String activityType;
 
-    @Column(name = "started_at")
-    private LocalDateTime startedAt;
-
-    @Column(name = "ended_at")
-    private LocalDateTime endedAt;
-
-    @Column
-    private Integer duration; // 분 단위
-
     @Column
     private Double calories;
 
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "stats_json", columnDefinition = "TEXT")
-    private String statsJson; // JSON 형식의 통계 데이터
+    @Column(name = "earned_points")
+    @Builder.Default
+    private Long earnedPoints = 0L; // 피드 작성으로 획득한 포인트
 
     // 연관관계
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,7 +37,7 @@ public class Feed extends BaseEntity {
     private User writer;
 
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("sortOrder ASC")
+    @OrderBy("imgType ASC, id ASC")
     @Builder.Default
     private List<FeedImage> images = new ArrayList<>();
 
@@ -87,12 +78,13 @@ public class Feed extends BaseEntity {
     /**
      * 피드 수정 (변경 감지 활용)
      */
-    public void update(String content, String statsJson) {
+    public void update(String content) {
         if (content != null) {
             this.content = content;
         }
-        if (statsJson != null) {
-            this.statsJson = statsJson;
-        }
+    }
+
+    public void setEarnedPoints(Long earnedPoints) {
+        this.earnedPoints = earnedPoints;
     }
 }

@@ -1,7 +1,10 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.enums.PrizeType;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 /**
  * 상금 수령 정보 엔티티
@@ -12,47 +15,25 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class PrizeClaim extends BaseEntity {
+public class PrizeClaim {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "bank_name", nullable = false, length = 50)
-    private String bankName;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "prize_type", nullable = false, length = 20)
+    private PrizeType prizeType;
 
-    @Column(name = "account_number", nullable = false, length = 50)
-    private String accountNumber;
-
-    @Column(name = "account_holder", nullable = false, length = 50)
-    private String accountHolder;
-
-    @Column(name = "prize_amount", nullable = false, length = 50)
-    private String prizeAmount; // "100만원", "50만원"
-
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "created_at", nullable = false)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, COMPLETED
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    // 연관관계
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lottery_ticket_id", nullable = false)
-    private LotteryTicket lotteryTicket;
-
-    // 편의 메서드
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public void setLotteryTicket(LotteryTicket ticket) {
-        this.lotteryTicket = ticket;
-    }
-
-    public void markAsCompleted() {
-        this.status = "COMPLETED";
     }
 }

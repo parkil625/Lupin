@@ -18,12 +18,11 @@ public class UserProfileResponse {
     private String realName;
     private Role role;
     private String department;
-    private Long currentPoints;
-    private Long totalPoints;
+    private Long currentPoints;    // 추첨권 계산용 잔여 포인트
+    private Long monthlyPoints;    // 이번 달 누적 포인트 (랭킹용)
     private Integer feedCount;
-    private Integer totalActivityMinutes;
 
-    public static UserProfileResponse from(User user, Integer feedCount, Integer totalActivityMinutes) {
+    public static UserProfileResponse from(User user, Integer feedCount) {
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -31,9 +30,8 @@ public class UserProfileResponse {
                 .role(user.getRole())
                 .department(user.getDepartment())
                 .currentPoints(user.getCurrentPoints())
-                .totalPoints(user.getTotalPoints())
+                .monthlyPoints(user.getMonthlyPoints())
                 .feedCount(feedCount)
-                .totalActivityMinutes(totalActivityMinutes)
                 .build();
     }
 }

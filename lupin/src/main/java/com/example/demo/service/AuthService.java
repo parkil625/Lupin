@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
-import com.example.demo.domain.enums.LoginType;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.response.LoginResponse;
 import com.example.demo.exception.BusinessException;
@@ -83,18 +82,12 @@ public class AuthService {
 
             GoogleIdToken.Payload payload = idToken.getPayload();
             String email = payload.getEmail();
-            String socialId = payload.getSubject();
 
             // 2. DB에서 이메일로 사용자 조회 (직원 확인)
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-            // 3. 소셜 정보 매핑 (최초 1회 로그인 시 구글 ID 연동)
-            if (user.getSocialId() == null) {
-                user.linkSocialLogin(LoginType.GOOGLE, socialId);
-            }
-
-            // 4. JWT 토큰 생성
+            // 3. JWT 토큰 생성
             String token = jwtTokenProvider.createToken(user.getUserId(), user.getRole().name());
 
             log.info("구글 로그인 성공: userId={}, email={}", user.getUserId(), email);

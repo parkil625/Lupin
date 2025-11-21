@@ -32,8 +32,5 @@ public class PointLog extends BaseEntity {
     // 편의 메서드
     public void setUser(User user) {
         this.user = user;
-        if (!user.getPointLogs().contains(this)) {
-            user.getPointLogs().add(this);
-        }
     }
 }

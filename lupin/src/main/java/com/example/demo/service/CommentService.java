@@ -36,6 +36,7 @@ public class CommentService {
     private final FeedRepository feedRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final com.example.demo.repository.ReportRepository reportRepository;
 
     /**
      * 댓글 생성
@@ -44,6 +45,12 @@ public class CommentService {
     public CommentResponse createComment(Long feedId, Long userId, CommentCreateRequest request) {
         User user = findUserById(userId);
         Feed feed = findFeedById(feedId);
+
+        // 3일 내 신고 기록이 있는 경우 댓글 작성 불가
+        java.time.LocalDateTime threeDaysAgo = java.time.LocalDateTime.now().minusDays(3);
+        if (reportRepository.hasRecentReport(userId, threeDaysAgo)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "신고 기록으로 인해 3일간 댓글 작성이 제한됩니다.");
+        }
 
         Comment comment = Comment.builder()
                 .content(request.getContent())
@@ -162,10 +169,23 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long commentId, Long userId) {
         Comment comment = findCommentById(commentId);
+        User writer = comment.getWriter();
 
         // 작성자 확인
-        if (!comment.getWriter().getId().equals(userId)) {
+        if (!writer.getId().equals(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "댓글을 삭제할 권한이 없습니다.");
+        }
+
+        // 댓글 생성일시가 7일 이내일 경우에만 월별 좋아요 회수
+        java.time.LocalDateTime sevenDaysAgo = java.time.LocalDateTime.now().minusDays(7);
+        if (comment.getCreatedAt().isAfter(sevenDaysAgo)) {
+            int likesCount = comment.getLikes().size();
+            if (likesCount > 0) {
+                Long currentMonthlyLikes = writer.getMonthlyLikes();
+                writer.setMonthlyLikes(Math.max(0L, currentMonthlyLikes - likesCount));
+                log.info("댓글 월별 좋아요 회수 - userId: {}, 차감: {}, 잔여: {}",
+                        userId, likesCount, writer.getMonthlyLikes());
+            }
         }
 
         commentRepository.delete(comment);
@@ -196,6 +216,11 @@ public class CommentService {
         Comment comment = findCommentById(commentId);
         User user = findUserById(userId);
 
+        // 자신의 댓글에는 좋아요 불가
+        if (comment.getWriter().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "자신의 댓글에는 좋아요를 누를 수 없습니다.");
+        }
+
         // 이미 좋아요를 눌렀는지 확인
         if (commentLikeRepository.existsByUserIdAndCommentId(userId, commentId)) {
             throw new BusinessException(ErrorCode.ALREADY_LIKED, "이미 좋아요를 눌렀습니다.");
@@ -207,6 +232,9 @@ public class CommentService {
                 .build();
 
         commentLikeRepository.save(commentLike);
+
+        // 댓글 작성자의 월별 좋아요 증가
+        comment.getWriter().incrementMonthlyLikes();
 
         // 댓글 작성자에게 좋아요 알림
         notificationService.createCommentLikeNotification(
@@ -224,10 +252,14 @@ public class CommentService {
      */
     @Transactional
     public void unlikeComment(Long commentId, Long userId) {
+        Comment comment = findCommentById(commentId);
         CommentLike commentLike = commentLikeRepository.findByUserIdAndCommentId(userId, commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND, "좋아요를 누르지 않았습니다."));
 
         commentLikeRepository.delete(commentLike);
+
+        // 댓글 작성자의 월별 좋아요 감소
+        comment.getWriter().decrementMonthlyLikes();
 
         log.info("댓글 좋아요 취소 완료 - commentId: {}, userId: {}", commentId, userId);
     }

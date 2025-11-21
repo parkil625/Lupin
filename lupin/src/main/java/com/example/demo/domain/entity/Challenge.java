@@ -44,6 +44,8 @@ public class Challenge extends BaseEntity {
 
     // 비즈니스 로직
     public void open() {
+        if (this.status == ChallengeStatus.ACTIVE) return;
+
         if (LocalDateTime.now().isBefore(opensAt)) {
             throw new IllegalStateException("아직 챌린지 시작 시간이 아닙니다.");
         }

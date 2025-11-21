@@ -7,7 +7,7 @@
  * - Glassmorphism 디자인으로 구현
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -15,9 +15,25 @@ import { Card } from "../ui/card";
 import { ArrowLeft, Sparkles, Lock, User, AlertCircle } from "lucide-react";
 import { authApi } from "../../api";
 
+// Google Client ID - 실제 값으로 교체 필요
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          renderButton: (element: HTMLElement, config: any) => void;
+        };
+      };
+    };
+  }
+}
+
 interface LoginProps {
   onBack: () => void;
-  onLogin: (username: string) => void;
+  onLogin: (role: string) => void;
 }
 
 export default function Login({ onBack, onLogin }: LoginProps) {
@@ -25,6 +41,68 @@ export default function Login({ onBack, onLogin }: LoginProps) {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Google Sign-In 초기화
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleLogin,
+        });
+
+        const googleButton = document.getElementById('google-signin-button');
+        if (googleButton) {
+          window.google.accounts.id.renderButton(googleButton, {
+            theme: 'outline',
+            size: 'large',
+            width: '100%',
+            text: 'signin_with',
+            shape: 'rectangular',
+          });
+        }
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // 구글 로그인 핸들러
+  const handleGoogleLogin = async (response: any) => {
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const result = await authApi.googleLogin(response.credential);
+
+      // JWT 토큰과 사용자 정보 저장
+      localStorage.setItem('accessToken', result.accessToken);
+      localStorage.setItem('userId', result.userId.toString());
+      localStorage.setItem('userEmail', result.email);
+      localStorage.setItem('userName', result.name);
+      localStorage.setItem('userRole', result.role);
+
+      // 로그인 성공 - Role 전달
+      onLogin(result.role);
+    } catch (err: any) {
+      console.error('Google login failed:', err);
+
+      if (err.response?.status === 404) {
+        setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
+      } else {
+        setError("구글 로그인 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +119,8 @@ export default function Login({ onBack, onLogin }: LoginProps) {
       localStorage.setItem('userName', response.name);
       localStorage.setItem('userRole', response.role);
 
-      // 로그인 성공
-      onLogin(response.name);
+      // 로그인 성공 - Role 전달
+      onLogin(response.role);
     } catch (err: any) {
       // 로그인 실패 처리
       console.error('Login failed:', err);
@@ -163,6 +241,19 @@ export default function Login({ onBack, onLogin }: LoginProps) {
               )}
             </Button>
           </form>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white/40 text-gray-500">또는</span>
+            </div>
+          </div>
+
+          {/* Google Login Button */}
+          <div id="google-signin-button" className="w-full flex justify-center"></div>
 
           {/* Info Text */}
           <div className="text-center space-y-2 pt-4">

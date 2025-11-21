@@ -1,10 +1,12 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.entity.MedicalStaff;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.response.LoginResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.MedicalStaffRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -30,6 +32,7 @@ import java.util.Collections;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final MedicalStaffRepository medicalStaffRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -40,26 +43,51 @@ public class AuthService {
      * 로그인
      */
     public LoginResponse login(LoginRequest request) {
-        // 사용자 조회 (userId로 로그인)
-        User user = userRepository.findByUserId(request.getEmail())
+        // 먼저 일반 사용자 테이블에서 조회
+        var userOpt = userRepository.findByUserId(request.getEmail());
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            // 비밀번호 검증
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+            }
+
+            // JWT 토큰 생성
+            String token = jwtTokenProvider.createToken(user.getUserId(), user.getRole().name());
+
+            log.info("로그인 성공: userId={}, role={}", user.getUserId(), user.getRole());
+
+            return LoginResponse.of(
+                    token,
+                    user.getId(),
+                    user.getUserId(),
+                    user.getRealName(),
+                    user.getRole().name()
+            );
+        }
+
+        // 일반 사용자가 없으면 의료진 테이블에서 조회
+        MedicalStaff staff = medicalStaffRepository.findByUserId(request.getEmail())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 비밀번호 검증
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), staff.getPassword())) {
             throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }
 
-        // JWT 토큰 생성
-        String token = jwtTokenProvider.createToken(user.getUserId(), user.getRole().name());
+        // JWT 토큰 생성 (의료진은 DOCTOR 역할)
+        String token = jwtTokenProvider.createToken(staff.getUserId(), "DOCTOR");
 
-        log.info("로그인 성공: userId={}, role={}", user.getUserId(), user.getRole());
+        log.info("의료진 로그인 성공: userId={}", staff.getUserId());
 
         return LoginResponse.of(
                 token,
-                user.getId(),
-                user.getUserId(),
-                user.getRealName(),
-                user.getRole().name()
+                staff.getId(),
+                staff.getUserId(),
+                staff.getRealName(),
+                "DOCTOR"
         );
     }
 

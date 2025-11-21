@@ -96,5 +96,4 @@ public class Challenge extends BaseEntity {
                 && now.isBefore(closesAt)
                 && currentEntries < maxWinners;
     }
-
 }

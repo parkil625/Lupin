@@ -93,6 +93,10 @@ public class DataInitializer implements CommandLineRunner {
         List<User> users = createTestUsers();
         log.info("20명의 테스트 유저 생성 완료");
 
+        // 1-1. 의사 계정 생성
+        List<User> doctors = createDoctorUsers();
+        log.info("{}명의 의사 계정 생성 완료", doctors.size());
+
         // 2. 피드 생성 (Service 사용 - 자동으로 포인트 적립)
         List<FeedDetailResponse> feeds = createTestFeeds(users);
         log.info("테스트 피드 생성 완료 (포인트 자동 적립됨)");
@@ -193,6 +197,42 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
 
         return userRepository.save(user);
+    }
+
+    private List<User> createDoctorUsers() {
+        List<User> doctors = new ArrayList<>();
+
+        doctors.add(createDoctor("김의사", "남성", "내과", 178.0, 75.0, LocalDate.of(1980, 3, 10), "doctor01"));
+        doctors.add(createDoctor("이의사", "여성", "외과", 165.0, 55.0, LocalDate.of(1982, 7, 15), "doctor02"));
+        doctors.add(createDoctor("박의사", "남성", "정형외과", 175.0, 70.0, LocalDate.of(1978, 11, 20), "doctor03"));
+        doctors.add(createDoctor("최의사", "여성", "가정의학과", 162.0, 52.0, LocalDate.of(1985, 5, 5), "doctor04"));
+        doctors.add(createDoctor("정의사", "남성", "재활의학과", 180.0, 78.0, LocalDate.of(1979, 9, 25), "doctor05"));
+
+        return doctors;
+    }
+
+    private User createDoctor(String realName, String gender, String department,
+                              Double height, Double weight, LocalDate birthDate, String userId) {
+        if (userRepository.findByUserId(userId).isPresent()) {
+            return userRepository.findByUserId(userId).get();
+        }
+
+        User doctor = User.builder()
+                .userId(userId)
+                .email(userId + "@hospital.com")
+                .password(passwordEncoder.encode("1"))
+                .realName(realName)
+                .role(Role.DOCTOR)
+                .height(height)
+                .weight(weight)
+                .gender(gender)
+                .birthDate(birthDate)
+                .currentPoints(0L)
+                .totalPoints(0L)
+                .department(department)
+                .build();
+
+        return userRepository.save(doctor);
     }
 
     private List<FeedDetailResponse> createTestFeeds(List<User> users) {

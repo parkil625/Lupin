@@ -51,6 +51,7 @@ public class ChallengeService {
     public void joinChallenge(Long challengeId, Long userId) {
         Challenge challenge = findChallengeById(challengeId);
         User user = findUserById(userId);
+        LocalDateTime now =  LocalDateTime.now();
 
         // 이미 참가한 경우
         if (challengeEntryRepository.existsByChallengeIdAndUserId(challengeId, userId)) {

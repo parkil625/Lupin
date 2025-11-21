@@ -4,7 +4,6 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedImage;
 import com.example.demo.domain.entity.FeedLike;
 import com.example.demo.domain.entity.LotteryTicket;
-import com.example.demo.domain.entity.PointLog;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ImageType;
 import com.example.demo.dto.request.FeedCreateRequest;
@@ -16,7 +15,6 @@ import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.LotteryTicketRepository;
-import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +43,8 @@ public class FeedService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final ImageService imageService;
-    private final PointLogRepository pointLogRepository;
     private final LotteryTicketRepository lotteryTicketRepository;
+    private final com.example.demo.repository.ReportRepository reportRepository;
 
     // 추첨권 가격 (30포인트 = 1장)
     private static final long TICKET_PRICE = 30L;
@@ -63,6 +61,17 @@ public class FeedService {
             throw new BusinessException(ErrorCode.DAILY_FEED_LIMIT_EXCEEDED);
         }
 
+        // 3일 내 신고 기록이 있는 경우 피드 작성 불가
+        LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
+        if (reportRepository.hasRecentReport(userId, threeDaysAgo)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "신고 기록으로 인해 3일간 피드 작성이 제한됩니다.");
+        }
+
+        // 시작/끝 이미지 필수 검증 (최소 2장)
+        if (request.getImageUrls() == null || request.getImageUrls().size() < 2) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "시작 사진과 끝 사진은 필수입니다.");
+        }
+
         // 칼로리 계산 (request에 없으면 자동 계산)
         Double calories = request.getCalories();
         if (calories == null || calories == 0) {
@@ -72,37 +81,33 @@ public class FeedService {
         // 피드 생성
         Feed feed = Feed.builder()
                 .activityType(request.getActivityType())
-                .duration(request.getDuration())
                 .calories(calories)
                 .content(request.getContent())
-                .statsJson(request.getStatsJson())
-                .startedAt(LocalDateTime.now())
                 .build();
 
         feed.setWriter(user);
 
-        // 이미지 추가
-        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            for (int i = 0; i < request.getImageUrls().size(); i++) {
-                String imageUrl = request.getImageUrls().get(i);
-                ImageType imageType = i == 0 ? ImageType.START :
-                                    i == 1 ? ImageType.END : ImageType.OTHER;
+        // 이미지 추가 (START, END 필수)
+        for (int i = 0; i < request.getImageUrls().size(); i++) {
+            String s3Key = request.getImageUrls().get(i);
+            ImageType imageType = i == 0 ? ImageType.START :
+                                i == 1 ? ImageType.END : ImageType.OTHER;
 
-                FeedImage feedImage = FeedImage.builder()
-                        .imageUrl(imageUrl)
-                        .imgType(imageType)
-                        .sortOrder(i)
-                        .takenAt(LocalDateTime.now())
-                        .build();
+            FeedImage feedImage = FeedImage.builder()
+                    .s3Key(s3Key)
+                    .imgType(imageType)
+                    .build();
 
-                feed.addImage(feedImage);
-            }
+            feed.addImage(feedImage);
         }
+
+        // 포인트 계산 (MET × 시간 기반)
+        Long points = calculatePoints(request.getActivityType(), request.getDuration());
+        feed.setEarnedPoints(points);
 
         Feed savedFeed = feedRepository.save(feed);
 
-        // 포인트 적립 (MET × 시간 기반)
-        Long points = calculatePoints(request.getActivityType(), request.getDuration());
+        // 포인트 적립
         userService.addPoints(userId, points, "운동 인증", String.valueOf(savedFeed.getId()));
 
         log.info("피드 생성 완료 - feedId: {}, userId: {}, points: {}", savedFeed.getId(), userId, points);
@@ -145,7 +150,7 @@ public class FeedService {
         }
 
         // 변경 감지를 통한 업데이트
-        feed.update(request.getContent(), request.getStatsJson());
+        feed.update(request.getContent());
 
         log.info("피드 수정 완료 - feedId: {}, userId: {}", feedId, userId);
 
@@ -165,17 +170,23 @@ public class FeedService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED_FEED_ACCESS);
         }
 
-        // 실제 부여된 포인트 조회
-        List<PointLog> pointLogs = pointLogRepository.findByUserIdAndRefIdAndReason(
-                userId, String.valueOf(feedId), "운동 인증");
+        // 피드 생성일시가 7일 이내일 경우에만 포인트 및 좋아요 회수
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        if (feed.getCreatedAt().isAfter(sevenDaysAgo)) {
+            // 포인트 회수
+            Long pointsToReclaim = feed.getEarnedPoints();
+            if (pointsToReclaim != null && pointsToReclaim > 0) {
+                reclaimPoints(user, pointsToReclaim);
+            }
 
-        Long pointsToReclaim = pointLogs.stream()
-                .mapToLong(PointLog::getAmount)
-                .sum();
-
-        // 포인트 회수 (3단계 로직)
-        if (pointsToReclaim > 0) {
-            reclaimPoints(user, pointsToReclaim, feedId);
+            // 월별 좋아요 회수 (해당 피드의 좋아요 수만큼 차감)
+            int likesCount = feed.getLikesCount();
+            if (likesCount > 0) {
+                Long currentMonthlyLikes = user.getMonthlyLikes();
+                user.setMonthlyLikes(Math.max(0L, currentMonthlyLikes - likesCount));
+                log.info("월별 좋아요 회수 - userId: {}, 차감: {}, 잔여: {}",
+                        userId, likesCount, user.getMonthlyLikes());
+            }
         }
 
         // S3 이미지 삭제
@@ -185,70 +196,45 @@ public class FeedService {
 
         feedRepository.delete(feed);
 
-        log.info("피드 삭제 완료 - feedId: {}, userId: {}, 회수 포인트: {}, 삭제 이미지: {}개",
-                feedId, userId, pointsToReclaim, feed.getImages().size());
+        log.info("피드 삭제 완료 - feedId: {}, userId: {}, 삭제 이미지: {}개",
+                feedId, userId, feed.getImages().size());
     }
 
     /**
-     * 포인트 회수 (3단계 로직)
-     * 1. currentPoints에서 차감
-     * 2. 부족하면 추첨권 판매 (TICKET_PRICE 포인트로 환산)
-     * 3. 그래도 부족하면 totalPoints에서 차감
+     * 포인트 회수
+     * 1. 현재 점수 >= 회수할 점수: 현재 점수에서 차감
+     * 2. 현재 점수 < 회수할 점수 && 추첨권 있음: 추첨권 1장 소멸, 남는 점수는 현재 점수에 더함
+     * 3. 현재 점수 < 회수할 점수 && 추첨권 없음: 현재 점수 0
      */
-    private void reclaimPoints(User user, Long pointsToReclaim, Long feedId) {
+    private void reclaimPoints(User user, Long pointsToReclaim) {
         Long currentPoints = user.getCurrentPoints();
-        Long remainingDebt = pointsToReclaim;
 
-        // 1단계: currentPoints에서 차감
-        if (currentPoints >= remainingDebt) {
-            user.setCurrentPoints(currentPoints - remainingDebt);
-            remainingDebt = 0L;
+        // 월별 점수 차감 (0 미만이면 0)
+        user.setMonthlyPoints(Math.max(0L, user.getMonthlyPoints() - pointsToReclaim));
+
+        if (currentPoints >= pointsToReclaim) {
+            // 현재 점수가 충분한 경우
+            user.setCurrentPoints(currentPoints - pointsToReclaim);
         } else {
-            user.setCurrentPoints(0L);
-            remainingDebt -= currentPoints;
-        }
+            // 현재 점수가 부족한 경우
+            List<LotteryTicket> tickets = lotteryTicketRepository.findByUserId(user.getId());
 
-        // 2단계: 추첨권 판매로 충당 (미사용 추첨권만)
-        if (remainingDebt > 0) {
-            List<LotteryTicket> tickets = lotteryTicketRepository.findByUserIdAndIsUsed(user.getId(), "N");
-
-            for (LotteryTicket ticket : tickets) {
-                if (remainingDebt <= 0) break;
-
-                // 미사용 추첨권 삭제
-                lotteryTicketRepository.delete(ticket);
-
-                // 추첨권 가치에서 빚 차감
-                if (TICKET_PRICE >= remainingDebt) {
-                    // 거스름돈 발생
-                    Long change = TICKET_PRICE - remainingDebt;
-                    user.setCurrentPoints(user.getCurrentPoints() + change);
-                    remainingDebt = 0L;
-                } else {
-                    remainingDebt -= TICKET_PRICE;
-                }
+            if (!tickets.isEmpty()) {
+                // 추첨권 1장 소멸
+                lotteryTicketRepository.delete(tickets.get(0));
+                // 남는 점수 = 30 - 회수할 점수 + 현재 점수
+                Long remainingPoints = TICKET_PRICE - pointsToReclaim + currentPoints;
+                user.setCurrentPoints(Math.max(0L, remainingPoints));
+            } else {
+                // 추첨권도 없으면 현재 점수 0
+                user.setCurrentPoints(0L);
             }
         }
 
-        // 3단계: 그래도 부족하면 totalPoints에서 차감
-        if (remainingDebt > 0) {
-            Long totalPoints = user.getTotalPoints();
-            user.setTotalPoints(Math.max(0L, totalPoints - remainingDebt));
-        }
-
-        // 포인트 차감 로그 기록
-        PointLog deductLog = PointLog.builder()
-                .amount(-pointsToReclaim)
-                .reason("피드 삭제")
-                .refId(String.valueOf(feedId))
-                .build();
-        deductLog.setUser(user);
-        pointLogRepository.save(deductLog);
-
         userRepository.save(user);
 
-        log.info("포인트 회수 완료 - userId: {}, 회수: {}, 현재포인트: {}, 총포인트: {}",
-                user.getId(), pointsToReclaim, user.getCurrentPoints(), user.getTotalPoints());
+        log.info("포인트 회수 완료 - userId: {}, 회수: {}, 잔여포인트: {}, 월간포인트: {}",
+                user.getId(), pointsToReclaim, user.getCurrentPoints(), user.getMonthlyPoints());
     }
 
     /**
@@ -258,6 +244,11 @@ public class FeedService {
     public void likeFeed(Long feedId, Long userId) {
         Feed feed = findFeedById(feedId);
         User user = findUserById(userId);
+
+        // 자신의 피드에는 좋아요 불가
+        if (feed.getWriter().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "자신의 피드에는 좋아요를 누를 수 없습니다.");
+        }
 
         // 이미 좋아요를 누른 경우
         if (feedLikeRepository.existsByUserIdAndFeedId(userId, feedId)) {
@@ -271,14 +262,15 @@ public class FeedService {
 
         feedLikeRepository.save(feedLike);
 
-        // 피드 작성자에게 좋아요 알림 (자신의 피드가 아닌 경우)
-        if (!feed.getWriter().getId().equals(userId)) {
-            notificationService.createLikeNotification(
-                feed.getWriter().getId(),
-                userId,
-                feedId
-            );
-        }
+        // 피드 작성자의 월별 좋아요 증가
+        feed.getWriter().incrementMonthlyLikes();
+
+        // 피드 작성자에게 좋아요 알림
+        notificationService.createLikeNotification(
+            feed.getWriter().getId(),
+            userId,
+            feedId
+        );
 
         log.info("피드 좋아요 - feedId: {}, userId: {}", feedId, userId);
     }
@@ -288,10 +280,14 @@ public class FeedService {
      */
     @Transactional
     public void unlikeFeed(Long feedId, Long userId) {
+        Feed feed = findFeedById(feedId);
         FeedLike feedLike = feedLikeRepository.findByUserIdAndFeedId(userId, feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ENTITY_NOT_FOUND));
 
         feedLikeRepository.delete(feedLike);
+
+        // 피드 작성자의 월별 좋아요 감소
+        feed.getWriter().decrementMonthlyLikes();
 
         log.info("피드 좋아요 취소 - feedId: {}, userId: {}", feedId, userId);
     }

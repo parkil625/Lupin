@@ -12,5 +12,4 @@ import lombok.NoArgsConstructor;
 public class FeedUpdateRequest {
 
     private String content;
-    private String statsJson;
 }

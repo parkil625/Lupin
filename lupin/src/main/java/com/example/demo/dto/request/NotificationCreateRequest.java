@@ -27,12 +27,6 @@ public class NotificationCreateRequest {
     @NotNull(message = "수신자 ID는 필수입니다.")
     private Long userId;
 
-    // 관련 엔티티 ID (선택)
-    private Long relatedId;
-
-    // 참조 타입 (FEED, COMMENT, CHAT 등)
-    private String refType;
-
-    // 참조 ID (String)
+    // 참조 ID (feedId)
     private String refId;
 }

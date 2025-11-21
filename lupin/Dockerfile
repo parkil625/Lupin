@@ -31,4 +31,4 @@ RUN apk add --no-cache tzdata
 EXPOSE 8081
 
 # Run application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]

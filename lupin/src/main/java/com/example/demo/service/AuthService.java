@@ -34,7 +34,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Value("${google.client-id}")
+    @Value("${GOOGLE_CLIENT_ID}")
     private String googleClientId;
 
     /**

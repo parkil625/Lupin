@@ -8,4 +8,5 @@ export { userApi } from './userApi';
 export { notificationApi } from './notificationApi';
 export { lotteryApi } from './lotteryApi';
 export { chatApi } from './chatApi';
+export { reportApi } from './reportApi';
 export { default as apiClient } from './client';

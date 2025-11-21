@@ -51,6 +51,7 @@ public class ChallengeService {
     public void joinChallenge(Long challengeId, Long userId) {
         Challenge challenge = findChallengeById(challengeId);
         User user = findUserById(userId);
+        LocalDateTime now =  LocalDateTime.now();
 
         // 이미 참가한 경우
         if (challengeEntryRepository.existsByChallengeIdAndUserId(challengeId, userId)) {
@@ -58,7 +59,7 @@ public class ChallengeService {
         }
 
         // 챌린지 참가 가능 여부 확인
-        if (!challenge.canJoin()) {
+        if (!challenge.canJoin(now)) {
             throw new BusinessException(ErrorCode.CHALLENGE_NOT_ACTIVE);
         }
 
@@ -103,7 +104,7 @@ public class ChallengeService {
     @Transactional
     public void closeChallenge(Long challengeId) {
         Challenge challenge = findChallengeById(challengeId);
-        challenge.close();
+        challenge.close(LocalDateTime.now());
 
         log.info("챌린지 종료 - challengeId: {}", challengeId);
     }

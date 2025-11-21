@@ -15,7 +15,7 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
-import { TrendingUp, Users, User, Crown } from "lucide-react";
+import { TrendingUp, Users, User, Crown, Dumbbell, Heart } from "lucide-react";
 import { userApi } from "@/api";
 import { toast } from "sonner";
 
@@ -246,8 +246,15 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                           {ranker.name}
                         </span>
                       </div>
-                      <div className="text-gray-600 font-bold text-sm">
-                        {ranker.points}점 • {ranker.monthlyLikes}❤️
+                      <div className="text-gray-600 font-bold text-sm flex items-center gap-3">
+                        <span className="flex items-center gap-1">
+                          <Dumbbell className="w-4 h-4" />
+                          {ranker.points}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-4 h-4" />
+                          {ranker.monthlyLikes}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -361,8 +368,15 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                             {ranker.name}
                           </span>
                         </div>
-                        <div className="text-gray-600 font-bold text-sm">
-                          {ranker.points}점 • {ranker.monthlyLikes}❤️
+                        <div className="text-gray-600 font-bold text-sm flex items-center gap-3">
+                          <span className="flex items-center gap-1">
+                            <Dumbbell className="w-4 h-4" />
+                            {ranker.points}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-4 h-4" />
+                            {ranker.monthlyLikes}
+                          </span>
                         </div>
                       </div>
                     </div>

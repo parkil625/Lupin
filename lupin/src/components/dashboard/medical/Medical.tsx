@@ -6,11 +6,10 @@
  * - 우측: 실시간 채팅
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -35,13 +34,16 @@ export default function Medical({
   setShowAppointment,
   setSelectedPrescription,
 }: MedicalProps) {
-  // 현재 로그인한 환자 정보 (실제로는 Context나 Redux에서 가져와야 함)
-  const currentPatientId = 1; // 예시: 환자 ID
-  const currentUserId = 1; // 예시: 사용자 ID
-  const doctorId = 2; // 예시: 담당 의사 ID
+  // 현재 로그인한 환자 정보 (localStorage에서 가져오기)
+  const currentUserId = parseInt(localStorage.getItem('userId') || '1');
+  const currentPatientId = currentUserId; // 환자의 경우 userId와 patientId가 동일
+  const doctorId = 21; // doctor01의 ID (테스트용)
 
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
+
+  // 스크롤 제어용 Ref
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // WebSocket 연결
   const roomId = `${currentPatientId}:${doctorId}`;
@@ -74,6 +76,11 @@ export default function Medical({
     onMessageReceived: handleMessageReceived,
     onReadNotification: handleReadNotification,
   });
+
+  // 자동 스크롤
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // 메시지 로드
   useEffect(() => {
@@ -208,8 +215,8 @@ export default function Medical({
         <div className="h-[calc(100vh-200px)] flex gap-4">
           {/* 좌측: 예약 내역 및 처방전 */}
           <div className="w-96 flex flex-col gap-4">
-            {/* 예약 내역 */}
-            <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[calc((100vh-216px)/2)] flex flex-col overflow-hidden">
+            {/* 예약 내역 - 고정 높이 350px */}
+            <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[350px] flex flex-col overflow-hidden">
               <div className="p-4 flex-shrink-0">
                 <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-[#C93831]" />
@@ -263,8 +270,8 @@ export default function Medical({
               </div>
             </Card>
 
-            {/* 처방전 */}
-            <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[calc((100vh-216px)/2)] flex flex-col overflow-hidden">
+            {/* 처방전 - 고정 높이 350px */}
+            <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[350px] flex flex-col overflow-hidden">
               <div className="p-4 flex-shrink-0">
                 <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-[#C93831]" />
@@ -327,7 +334,7 @@ export default function Medical({
                     </div>
                   </div>
 
-                  <ScrollArea className="flex-1 mb-4">
+                  <div className="flex-1 overflow-y-auto mb-4 pr-2">
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isMine = msg.senderId === currentUserId;
@@ -379,8 +386,9 @@ export default function Medical({
                           </div>
                         );
                       })}
+                      <div ref={messagesEndRef} />
                     </div>
-                  </ScrollArea>
+                  </div>
 
                   <div className="flex gap-2">
                     <Input

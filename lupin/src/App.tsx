@@ -50,8 +50,9 @@ export default function App() {
     return () => observer.disconnect();
   }, [showLogin, isLoggedIn]);
 
-  const handleLogin = (username: string) => {
-    if (username.toLowerCase() === "doctor") {
+  const handleLogin = (username: string, role: string) => {
+    // 백엔드에서 받은 role을 기반으로 userType 설정
+    if (role === "DOCTOR") {
       setUserType("doctor");
     } else {
       setUserType("member");

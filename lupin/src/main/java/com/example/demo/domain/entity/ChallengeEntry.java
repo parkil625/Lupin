@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Table(
     name = "challenge_entry",
     uniqueConstraints = @UniqueConstraint(columnNames = {"challenge_id", "user_id"}),
-    indexes = @Index(name="idx_challenge_id", columnList = "challenge_id")
+    indexes = {@Index(name="idx_challenge_id", columnList = "challenge_id")}
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,8 +22,7 @@ public class ChallengeEntry extends BaseEntity {
     private Long id;
 
     @Column(name = "joined_at", nullable = false)
-    @Builder.Default
-    private LocalDateTime joinedAt = LocalDateTime.now();
+    private LocalDateTime joinedAt;
 
     // 연관관계
     @ManyToOne(fetch = FetchType.LAZY)
@@ -34,15 +33,18 @@ public class ChallengeEntry extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Version
+    private Long version;
+
     // 편의 메서드
-    public static ChallengeEntry of(Challenge challenge, User user) {
-        if (!challenge.canJoin()) {
-            throw new IllegalStateException("참가할 수 없는 챌린지입니다.");
-        }
+    public static ChallengeEntry of(Challenge challenge, User user, LocalDateTime now) {
+        challenge.join(now);
+
         return ChallengeEntry.builder()
                 .challenge(challenge)
                 .user(user)
-                .joinedAt(LocalDateTime.now())
+                .joinedAt(now)
                 .build();
     }
+
 }

@@ -11,7 +11,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
-import { Home, Video, Trophy, Calendar as CalendarIcon, PlusSquare, MessageCircle } from "lucide-react";
+import { Home, Video, Trophy, Calendar as CalendarIcon, PlusSquare, MessageCircle, FileText } from "lucide-react";
 import Sidebar from "./dashboard/shared/Sidebar";
 import NotificationPopup from "./dashboard/shared/NotificationPopup";
 import AnimatedBackground from "./dashboard/shared/AnimatedBackground";

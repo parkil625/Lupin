@@ -89,23 +89,31 @@ public class DataInitializer implements CommandLineRunner {
 
         log.info("=== 테스트 데이터 초기화 시작 (Service 레이어 사용 + JWT 인증) ===");
 
-        // 1. 20명의 유저 생성
+        // 1. 20명의 일반 유저 생성
         List<User> users = createTestUsers();
         log.info("20명의 테스트 유저 생성 완료");
 
-        // 2. 피드 생성 (Service 사용 - 자동으로 포인트 적립)
+        // 2. 의사 계정 생성
+        List<User> doctors = createTestDoctors();
+        log.info("{}명의 테스트 의사 계정 생성 완료", doctors.size());
+
+        // 3. 테스트 채팅 메시지 생성 (WebSocket 테스트용)
+        createTestChatMessages(users, doctors);
+        log.info("테스트 채팅 메시지 생성 완료");
+
+        // 4. 피드 생성 (Service 사용 - 자동으로 포인트 적립)
         List<FeedDetailResponse> feeds = createTestFeeds(users);
         log.info("테스트 피드 생성 완료 (포인트 자동 적립됨)");
 
-        // 3. 댓글 및 대댓글 생성 (Service 사용)
+        // 5. 댓글 및 대댓글 생성 (Service 사용)
         List<CommentResponse> comments = createTestComments(users, feeds);
         log.info("테스트 댓글 생성 완료");
 
-        // 4. 좋아요 생성 (Service 사용)
+        // 6. 좋아요 생성 (Service 사용)
         createTestLikes(users, feeds);
         log.info("테스트 좋아요 생성 완료");
 
-        // 5. 댓글 좋아요 생성 (알림 테스트용)
+        // 7. 댓글 좋아요 생성 (알림 테스트용)
         createTestCommentLikes(users, comments);
         log.info("테스트 댓글 좋아요 생성 완료");
 
@@ -115,32 +123,92 @@ public class DataInitializer implements CommandLineRunner {
     private List<User> createTestUsers() {
         List<User> users = new ArrayList<>();
 
-        users.add(createUser("김강민", "남성", "개발팀", 175.5, 72.5, LocalDate.of(1990, 3, 15), "user01"));
-        users.add(createUser("이서연", "여성", "마케팅팀", 162.3, 52.3, LocalDate.of(1992, 7, 22), "user02"));
-        users.add(createUser("박준호", "남성", "영업팀", 180.2, 78.8, LocalDate.of(1988, 11, 8), "user03"));
-        users.add(createUser("최지우", "여성", "디자인팀", 158.7, 48.5, LocalDate.of(1995, 1, 30), "user04"));
-        users.add(createUser("정민수", "남성", "인사팀", 172.8, 68.2, LocalDate.of(1991, 5, 12), "user05"));
-        users.add(createUser("강혜진", "여성", "재무팀", 165.4, 55.7, LocalDate.of(1993, 9, 25), "user06"));
-        users.add(createUser("윤태양", "남성", "법무팀", 178.1, 75.3, LocalDate.of(1989, 2, 18), "user07"));
-        users.add(createUser("한소희", "여성", "경영지원팀", 160.9, 50.8, LocalDate.of(1994, 6, 7), "user08"));
-        users.add(createUser("오성민", "남성", "연구개발팀", 183.5, 82.1, LocalDate.of(1987, 10, 3), "user09"));
-        users.add(createUser("서은주", "여성", "기획팀", 167.2, 58.4, LocalDate.of(1996, 4, 28), "user10"));
-        users.add(createUser("임동혁", "남성", "개발팀", 176.3, 70.6, LocalDate.of(1990, 8, 11), "user11"));
-        users.add(createUser("배수지", "여성", "마케팅팀", 163.8, 54.2, LocalDate.of(1992, 12, 19), "user12"));
-        users.add(createUser("신재호", "남성", "영업팀", 179.4, 77.5, LocalDate.of(1988, 3, 6), "user13"));
-        users.add(createUser("조미라", "여성", "디자인팀", 159.5, 49.8, LocalDate.of(1995, 7, 14), "user14"));
-        users.add(createUser("홍길동", "남성", "인사팀", 171.6, 67.3, LocalDate.of(1991, 11, 23), "user15"));
-        users.add(createUser("안지영", "여성", "재무팀", 164.7, 56.1, LocalDate.of(1993, 1, 9), "user16"));
-        users.add(createUser("유재석", "남성", "법무팀", 177.9, 74.8, LocalDate.of(1989, 5, 27), "user17"));
-        users.add(createUser("송혜교", "여성", "경영지원팀", 161.2, 51.5, LocalDate.of(1994, 9, 16), "user18"));
-        users.add(createUser("전지현", "여성", "연구개발팀", 182.3, 80.2, LocalDate.of(1987, 2, 4), "user19"));
-        users.add(createUser("현빈", "남성", "기획팀", 168.5, 59.7, LocalDate.of(1996, 6, 21), "user20"));
+        users.add(createUser("김강민", "남성", "개발팀", 175.5, 72.5, LocalDate.of(1990, 3, 15), "user01", Role.MEMBER));
+        users.add(createUser("이서연", "여성", "마케팅팀", 162.3, 52.3, LocalDate.of(1992, 7, 22), "user02", Role.MEMBER));
+        users.add(createUser("박준호", "남성", "영업팀", 180.2, 78.8, LocalDate.of(1988, 11, 8), "user03", Role.MEMBER));
+        users.add(createUser("최지우", "여성", "디자인팀", 158.7, 48.5, LocalDate.of(1995, 1, 30), "user04", Role.MEMBER));
+        users.add(createUser("정민수", "남성", "인사팀", 172.8, 68.2, LocalDate.of(1991, 5, 12), "user05", Role.MEMBER));
+        users.add(createUser("강혜진", "여성", "재무팀", 165.4, 55.7, LocalDate.of(1993, 9, 25), "user06", Role.MEMBER));
+        users.add(createUser("윤태양", "남성", "법무팀", 178.1, 75.3, LocalDate.of(1989, 2, 18), "user07", Role.MEMBER));
+        users.add(createUser("한소희", "여성", "경영지원팀", 160.9, 50.8, LocalDate.of(1994, 6, 7), "user08", Role.MEMBER));
+        users.add(createUser("오성민", "남성", "연구개발팀", 183.5, 82.1, LocalDate.of(1987, 10, 3), "user09", Role.MEMBER));
+        users.add(createUser("서은주", "여성", "기획팀", 167.2, 58.4, LocalDate.of(1996, 4, 28), "user10", Role.MEMBER));
+        users.add(createUser("임동혁", "남성", "개발팀", 176.3, 70.6, LocalDate.of(1990, 8, 11), "user11", Role.MEMBER));
+        users.add(createUser("배수지", "여성", "마케팅팀", 163.8, 54.2, LocalDate.of(1992, 12, 19), "user12", Role.MEMBER));
+        users.add(createUser("신재호", "남성", "영업팀", 179.4, 77.5, LocalDate.of(1988, 3, 6), "user13", Role.MEMBER));
+        users.add(createUser("조미라", "여성", "디자인팀", 159.5, 49.8, LocalDate.of(1995, 7, 14), "user14", Role.MEMBER));
+        users.add(createUser("홍길동", "남성", "인사팀", 171.6, 67.3, LocalDate.of(1991, 11, 23), "user15", Role.MEMBER));
+        users.add(createUser("안지영", "여성", "재무팀", 164.7, 56.1, LocalDate.of(1993, 1, 9), "user16", Role.MEMBER));
+        users.add(createUser("유재석", "남성", "법무팀", 177.9, 74.8, LocalDate.of(1989, 5, 27), "user17", Role.MEMBER));
+        users.add(createUser("송혜교", "여성", "경영지원팀", 161.2, 51.5, LocalDate.of(1994, 9, 16), "user18", Role.MEMBER));
+        users.add(createUser("전지현", "여성", "연구개발팀", 182.3, 80.2, LocalDate.of(1987, 2, 4), "user19", Role.MEMBER));
+        users.add(createUser("현빈", "남성", "기획팀", 168.5, 59.7, LocalDate.of(1996, 6, 21), "user20", Role.MEMBER));
 
         return users;
     }
 
+    private List<User> createTestDoctors() {
+        List<User> doctors = new ArrayList<>();
+
+        doctors.add(createUser("김민준", "남성", "내과", 175.0, 70.0, LocalDate.of(1985, 3, 15), "doctor01", Role.DOCTOR));
+        doctors.add(createUser("이수연", "여성", "소아과", 162.0, 52.0, LocalDate.of(1987, 7, 22), "doctor02", Role.DOCTOR));
+        doctors.add(createUser("박지훈", "남성", "외과", 178.0, 75.0, LocalDate.of(1983, 11, 8), "doctor03", Role.DOCTOR));
+        doctors.add(createUser("최서윤", "여성", "산부인과", 165.0, 55.0, LocalDate.of(1986, 1, 30), "doctor04", Role.DOCTOR));
+        doctors.add(createUser("정우진", "남성", "정형외과", 180.0, 78.0, LocalDate.of(1984, 5, 12), "doctor05", Role.DOCTOR));
+
+        return doctors;
+    }
+
+    private void createTestChatMessages(List<User> users, List<User> doctors) {
+        if (users.isEmpty() || doctors.isEmpty()) {
+            return;
+        }
+
+        // user01 (환자) 와 doctor01 (의사) 간의 테스트 채팅 메시지 생성
+        User patient = users.get(0);  // user01: 김강민
+        User doctor = doctors.get(0);  // doctor01: 김민준
+
+        // roomId 형식: "patientId:doctorId"
+        String roomId = ChatMessage.generateRoomId(patient.getId(), doctor.getId());
+
+        // 채팅 메시지 3개 생성 (시간 순서대로)
+        java.time.LocalDateTime baseTime = java.time.LocalDateTime.now().minusHours(2);
+
+        // 메시지 1: 환자가 먼저 인사
+        ChatMessage msg1 = ChatMessage.builder()
+                .roomId(roomId)
+                .sender(patient)
+                .content("안녕하세요 선생님, 최근 두통이 심해서 상담 요청 드립니다.")
+                .sentAt(baseTime)
+                .isRead("Y")
+                .build();
+        chatMessageRepository.save(msg1);
+
+        // 메시지 2: 의사 응답
+        ChatMessage msg2 = ChatMessage.builder()
+                .roomId(roomId)
+                .sender(doctor)
+                .content("안녕하세요 김강민님. 두통이 언제부터 시작되셨나요? 증상을 자세히 말씀해주세요.")
+                .sentAt(baseTime.plusMinutes(5))
+                .isRead("Y")
+                .build();
+        chatMessageRepository.save(msg2);
+
+        // 메시지 3: 환자 답변 (읽지 않은 메시지)
+        ChatMessage msg3 = ChatMessage.builder()
+                .roomId(roomId)
+                .sender(patient)
+                .content("3일 전부터 시작됐고, 특히 오후에 심해집니다. 눈 주변도 약간 아픈 것 같아요.")
+                .sentAt(baseTime.plusMinutes(10))
+                .isRead("N")
+                .build();
+        chatMessageRepository.save(msg3);
+
+        log.info("테스트 채팅 메시지 생성 완료: {} <-> {} (roomId: {})", patient.getRealName(), doctor.getRealName(), roomId);
+    }
+
     private User createUser(String realName, String gender, String department,
-                            Double height, Double weight, LocalDate birthDate, String userId) {
+                            Double height, Double weight, LocalDate birthDate, String userId, Role role) {
         // 이미 존재하는 userId이면 기존 사용자 반환
         if (userRepository.findByUserId(userId).isPresent()) {
             return userRepository.findByUserId(userId).get();
@@ -151,7 +219,7 @@ public class DataInitializer implements CommandLineRunner {
                 .email(userId + "@company.com")
                 .password(passwordEncoder.encode("1"))
                 .realName(realName)
-                .role(Role.MEMBER)
+                .role(role)
                 .height(height)
                 .weight(weight)
                 .gender(gender)

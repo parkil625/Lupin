@@ -40,7 +40,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 특정 사용자가 참여한 채팅방 목록 조회
      */
-    @Query("SELECT DISTINCT cm.roomId FROM ChatMessage cm WHERE cm.sender.id = :userId OR cm.roomId LIKE CONCAT('%', :userId, '%') ORDER BY cm.sentAt DESC")
+    @Query("SELECT DISTINCT cm.roomId FROM ChatMessage cm WHERE cm.sender.id = :userId OR cm.roomId LIKE CONCAT('%', :userId, '%')")
     List<String> findRoomIdsByUserId(@Param("userId") Long userId);
 
     /**

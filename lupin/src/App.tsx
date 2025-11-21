@@ -50,8 +50,8 @@ export default function App() {
     return () => observer.disconnect();
   }, [showLogin, isLoggedIn]);
 
-  const handleLogin = (username: string, role: string) => {
-    // 백엔드에서 받은 role을 기반으로 userType 설정
+  const handleLogin = (role: string) => {
+    // 서버에서 받은 Role로 유저 타입 결정
     if (role === "DOCTOR") {
       setUserType("doctor");
     } else {
@@ -110,7 +110,7 @@ export default function App() {
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <Badge className="bg-gradient-to-r from-[#C93831] to-pink-500 text-white hover:from-pink-500 hover:to-[#C93831] border-0 px-4 py-2 font-bold shadow-lg">
+              <Badge className="bg-[#C93831] text-white hover:bg-[#B02F28] border-0 px-4 py-2 font-bold shadow-lg">
                 <Sparkles className="w-4 h-4 mr-1" />
                 직원 전용 헬스케어 플랫폼
               </Badge>

@@ -9,10 +9,13 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
-import { TrendingUp, Users, User, Crown, Calendar } from "lucide-react";
+import {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from "@/components/ui/hover-card";
+import { TrendingUp, Users, User, Crown } from "lucide-react";
 import { userApi } from "@/api";
 import { toast } from "sonner";
 
@@ -142,13 +145,24 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                   <div className="flex items-center gap-4 w-full">
                     <div className="w-10 flex items-center justify-center">
                       {ranker.rank === 1 ? (
-                        <Crown className="w-8 h-8" style={{ color: '#FFD700', fill: '#FFD700' }} />
+                        <Crown
+                          className="w-8 h-8"
+                          style={{ color: "#FFD700", fill: "#FFD700" }}
+                        />
                       ) : ranker.rank === 2 ? (
-                        <Crown className="w-7 h-7" style={{ color: '#C0C0C0', fill: '#C0C0C0' }} />
+                        <Crown
+                          className="w-7 h-7"
+                          style={{ color: "#C0C0C0", fill: "#C0C0C0" }}
+                        />
                       ) : ranker.rank === 3 ? (
-                        <Crown className="w-7 h-7" style={{ color: '#CD7F32', fill: '#CD7F32' }} />
+                        <Crown
+                          className="w-7 h-7"
+                          style={{ color: "#CD7F32", fill: "#CD7F32" }}
+                        />
                       ) : (
-                        <span className="text-2xl font-black text-gray-900">{ranker.rank}</span>
+                        <span className="text-2xl font-black text-gray-900">
+                          {ranker.rank}
+                        </span>
                       )}
                     </div>
 
@@ -186,20 +200,36 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                             )}
                           </Avatar>
                           <div className="space-y-2 flex-1">
-                            <h4 className="text-base font-black text-gray-900">{ranker.name}</h4>
-                            <p className="text-sm text-gray-700 font-medium">{ranker.department}</p>
+                            <h4 className="text-base font-black text-gray-900">
+                              {ranker.name}
+                            </h4>
+                            <p className="text-sm text-gray-700 font-medium">
+                              {ranker.department}
+                            </p>
                             <div className="pt-1 space-y-1.5">
                               <div className="flex justify-between text-xs">
-                                <span className="text-gray-600 font-medium">이번 달 활동</span>
-                                <span className="text-gray-900 font-bold">{ranker.activeDays}일</span>
+                                <span className="text-gray-600 font-medium">
+                                  이번 달 활동
+                                </span>
+                                <span className="text-gray-900 font-bold">
+                                  {ranker.activeDays}일
+                                </span>
                               </div>
                               <div className="flex justify-between text-xs">
-                                <span className="text-gray-600 font-medium">평균 점수</span>
-                                <span className="text-gray-900 font-bold">{ranker.avgScore}점</span>
+                                <span className="text-gray-600 font-medium">
+                                  평균 점수
+                                </span>
+                                <span className="text-gray-900 font-bold">
+                                  {ranker.avgScore}점
+                                </span>
                               </div>
                               <div className="flex justify-between text-xs">
-                                <span className="text-gray-600 font-medium">총 점수</span>
-                                <span className="text-[#C93831] font-bold">{ranker.points}점</span>
+                                <span className="text-gray-600 font-medium">
+                                  총 점수
+                                </span>
+                                <span className="text-[#C93831] font-bold">
+                                  {ranker.points}점
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -235,89 +265,107 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
             {myRankingContext
               .filter((ranker) => ranker.rank > 10) // Top 10에 이미 표시된 사용자 제외
               .map((ranker) => (
-              <Card
-                key={ranker.rank}
-                className={`backdrop-blur-2xl border shadow-lg overflow-hidden transition-all ${
-                  ranker.isMe
-                    ? "bg-gradient-to-r from-red-50/80 to-pink-50/80 border-[#C93831]"
-                    : "bg-white/60 border-gray-200"
-                }`}
-              >
-                <div className="px-7 py-1 flex items-center w-full">
-                  <div className="flex items-center gap-4 w-full">
-                    <div className="w-10 flex items-center justify-center">
-                      <span className="text-2xl font-black text-gray-900">{ranker.rank}</span>
-                    </div>
+                <Card
+                  key={ranker.rank}
+                  className={`backdrop-blur-2xl border shadow-lg overflow-hidden transition-all ${
+                    ranker.isMe
+                      ? "bg-gradient-to-r from-red-50/80 to-pink-50/80 border-[#C93831]"
+                      : "bg-white/60 border-gray-200"
+                  }`}
+                >
+                  <div className="px-7 py-1 flex items-center w-full">
+                    <div className="flex items-center gap-4 w-full">
+                      <div className="w-10 flex items-center justify-center">
+                        <span className="text-2xl font-black text-gray-900">
+                          {ranker.rank}
+                        </span>
+                      </div>
 
-                    <HoverCard openDelay={200} closeDelay={100}>
-                      <HoverCardTrigger asChild>
-                        <div>
-                          <Avatar className="w-10 h-10 border-2 border-white shadow-lg bg-white cursor-pointer">
-                            {ranker.profileImage ? (
-                              <img
-                                src={ranker.profileImage}
-                                alt={ranker.name}
-                                className="w-full h-full object-cover rounded-full"
-                              />
-                            ) : (
-                              <AvatarFallback className="bg-white">
-                                <User className="w-5 h-5 text-gray-400" />
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                        </div>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-80 bg-white/95 backdrop-blur-xl border border-gray-200">
-                        <div className="flex gap-4">
-                          <Avatar className="w-14 h-14 border-2 border-white shadow-lg bg-white">
-                            {ranker.profileImage ? (
-                              <img
-                                src={ranker.profileImage}
-                                alt={ranker.name}
-                                className="w-full h-full object-cover rounded-full"
-                              />
-                            ) : (
-                              <AvatarFallback className="bg-white">
-                                <User className="w-7 h-7 text-gray-400" />
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div className="space-y-2 flex-1">
-                            <h4 className="text-base font-black text-gray-900">{ranker.name}</h4>
-                            <p className="text-sm text-gray-700 font-medium">{ranker.department}</p>
-                            <div className="pt-1 space-y-1.5">
-                              <div className="flex justify-between text-xs">
-                                <span className="text-gray-600 font-medium">이번 달 활동</span>
-                                <span className="text-gray-900 font-bold">{ranker.activeDays}일</span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="text-gray-600 font-medium">평균 점수</span>
-                                <span className="text-gray-900 font-bold">{ranker.avgScore}점</span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="text-gray-600 font-medium">총 점수</span>
-                                <span className="text-[#C93831] font-bold">{ranker.points}점</span>
+                      <HoverCard openDelay={200} closeDelay={100}>
+                        <HoverCardTrigger asChild>
+                          <div>
+                            <Avatar className="w-10 h-10 border-2 border-white shadow-lg bg-white cursor-pointer">
+                              {ranker.profileImage ? (
+                                <img
+                                  src={ranker.profileImage}
+                                  alt={ranker.name}
+                                  className="w-full h-full object-cover rounded-full"
+                                />
+                              ) : (
+                                <AvatarFallback className="bg-white">
+                                  <User className="w-5 h-5 text-gray-400" />
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                          </div>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80 bg-white/95 backdrop-blur-xl border border-gray-200">
+                          <div className="flex gap-4">
+                            <Avatar className="w-14 h-14 border-2 border-white shadow-lg bg-white">
+                              {ranker.profileImage ? (
+                                <img
+                                  src={ranker.profileImage}
+                                  alt={ranker.name}
+                                  className="w-full h-full object-cover rounded-full"
+                                />
+                              ) : (
+                                <AvatarFallback className="bg-white">
+                                  <User className="w-7 h-7 text-gray-400" />
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div className="space-y-2 flex-1">
+                              <h4 className="text-base font-black text-gray-900">
+                                {ranker.name}
+                              </h4>
+                              <p className="text-sm text-gray-700 font-medium">
+                                {ranker.department}
+                              </p>
+                              <div className="pt-1 space-y-1.5">
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-600 font-medium">
+                                    이번 달 활동
+                                  </span>
+                                  <span className="text-gray-900 font-bold">
+                                    {ranker.activeDays}일
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-600 font-medium">
+                                    평균 점수
+                                  </span>
+                                  <span className="text-gray-900 font-bold">
+                                    {ranker.avgScore}점
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-600 font-medium">
+                                    총 점수
+                                  </span>
+                                  <span className="text-[#C93831] font-bold">
+                                    {ranker.points}점
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
+                        </HoverCardContent>
+                      </HoverCard>
 
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-lg text-gray-900">
-                          {ranker.name}
-                        </span>
-                      </div>
-                      <div className="text-gray-600 font-bold text-sm">
-                        {ranker.points}점
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-lg text-gray-900">
+                            {ranker.name}
+                          </span>
+                        </div>
+                        <div className="text-gray-600 font-bold text-sm">
+                          {ranker.points}점
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
           </div>
 
           <div className="space-y-6">

@@ -5,7 +5,7 @@ import axios from 'axios';
  * 백엔드 API와 통신하기 위한 기본 설정
  */
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8081/api',
+  baseURL: '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

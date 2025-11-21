@@ -37,6 +37,7 @@ public class DataInitializer implements CommandLineRunner {
     private final com.example.demo.repository.ChatMessageRepository chatMessageRepository;
     private final com.example.demo.repository.PrizeClaimRepository prizeClaimRepository;
     private final com.example.demo.repository.ReportRepository reportRepository;
+    private final MedicalStaffRepository medicalStaffRepository;
     private final EntityManager entityManager;
 
     // Service 레이어 주입
@@ -73,6 +74,7 @@ public class DataInitializer implements CommandLineRunner {
             feedRepository.deleteAll();
             chatMessageRepository.deleteAll();  // chat_message가 users를 참조하므로 먼저 삭제
             userRepository.deleteAll();
+            medicalStaffRepository.deleteAll();
 
             // AUTO_INCREMENT 초기화
             entityManager.createNativeQuery("ALTER TABLE users AUTO_INCREMENT = 1").executeUpdate();
@@ -86,6 +88,7 @@ public class DataInitializer implements CommandLineRunner {
             entityManager.createNativeQuery("ALTER TABLE chat_message AUTO_INCREMENT = 1").executeUpdate();
             entityManager.createNativeQuery("ALTER TABLE prize_claim AUTO_INCREMENT = 1").executeUpdate();
             entityManager.createNativeQuery("ALTER TABLE report AUTO_INCREMENT = 1").executeUpdate();
+            entityManager.createNativeQuery("ALTER TABLE medical_staff AUTO_INCREMENT = 1").executeUpdate();
 
             log.info("기존 데이터 삭제 완료");
         }
@@ -96,9 +99,9 @@ public class DataInitializer implements CommandLineRunner {
         List<User> users = createTestUsers();
         log.info("{}명의 테스트 유저 생성 완료", users.size());
 
-        // 2. 의사 계정 생성
-        List<User> doctors = createTestDoctors();
-        log.info("{}명의 테스트 의사 계정 생성 완료", doctors.size());
+        // 2. 의료진 계정 생성 (별도 테이블)
+        List<MedicalStaff> medicalStaff = createTestMedicalStaff();
+        log.info("{}명의 테스트 의료진 계정 생성 완료", medicalStaff.size());
 
         log.info("=== 테스트 데이터 초기화 완료 (로그인만 가능) ===");
     }
@@ -136,16 +139,38 @@ public class DataInitializer implements CommandLineRunner {
         return users;
     }
 
-    private List<User> createTestDoctors() {
-        List<User> doctors = new ArrayList<>();
+    private List<MedicalStaff> createTestMedicalStaff() {
+        List<MedicalStaff> staffList = new ArrayList<>();
 
-        doctors.add(createUser("김민준", "남성", "내과", 175.0, 70.0, LocalDate.of(1985, 3, 15), "doctor01", Role.DOCTOR));
-        doctors.add(createUser("이수연", "여성", "소아과", 162.0, 52.0, LocalDate.of(1987, 7, 22), "doctor02", Role.DOCTOR));
-        doctors.add(createUser("박지훈", "남성", "외과", 178.0, 75.0, LocalDate.of(1983, 11, 8), "doctor03", Role.DOCTOR));
-        doctors.add(createUser("최서윤", "여성", "산부인과", 165.0, 55.0, LocalDate.of(1986, 1, 30), "doctor04", Role.DOCTOR));
-        doctors.add(createUser("정우진", "남성", "정형외과", 180.0, 78.0, LocalDate.of(1984, 5, 12), "doctor05", Role.DOCTOR));
+        staffList.add(createMedicalStaff("김민준", "남성", "내과", LocalDate.of(1985, 3, 15), "doctor01", "010-1111-0001", "서울시 강남구 테헤란로 123"));
+        staffList.add(createMedicalStaff("이수연", "여성", "소아과", LocalDate.of(1987, 7, 22), "doctor02", "010-1111-0002", "서울시 서초구 반포대로 456"));
+        staffList.add(createMedicalStaff("박지훈", "남성", "외과", LocalDate.of(1983, 11, 8), "doctor03", "010-1111-0003", "서울시 송파구 올림픽로 789"));
+        staffList.add(createMedicalStaff("최서윤", "여성", "산부인과", LocalDate.of(1986, 1, 30), "doctor04", "010-1111-0004", "서울시 강동구 천호대로 321"));
+        staffList.add(createMedicalStaff("정우진", "남성", "정형외과", LocalDate.of(1984, 5, 12), "doctor05", "010-1111-0005", "서울시 마포구 월드컵로 654"));
 
-        return doctors;
+        return staffList;
+    }
+
+    private MedicalStaff createMedicalStaff(String realName, String gender, String specialty,
+                                            LocalDate birthDate, String userId, String phone, String address) {
+        // 이미 존재하는 userId이면 기존 의료진 반환
+        if (medicalStaffRepository.findByUserId(userId).isPresent()) {
+            return medicalStaffRepository.findByUserId(userId).get();
+        }
+
+        MedicalStaff staff = MedicalStaff.builder()
+                .userId(userId)
+                .email(userId + "@hospital.com")
+                .password(passwordEncoder.encode("1"))
+                .realName(realName)
+                .specialty(specialty)
+                .phone(phone)
+                .birthDate(birthDate)
+                .gender(gender)
+                .address(address)
+                .build();
+
+        return medicalStaffRepository.save(staff);
     }
 
     private void createTestChatMessages(List<User> users, List<User> doctors) {

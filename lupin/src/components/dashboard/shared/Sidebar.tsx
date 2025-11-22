@@ -107,7 +107,7 @@ export default function Sidebar({
               expanded ? "opacity-100" : "opacity-0 w-0"
             }`}
           >
-            {localStorage.getItem('userName') || (userType === "doctor" ? "김의사" : "김루핀")}
+            {localStorage.getItem('userName') || (userType === "doctor" ? "의료진" : "사용자")}
           </span>
         </button>
       </div>

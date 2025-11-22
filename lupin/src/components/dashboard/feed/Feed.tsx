@@ -15,12 +15,10 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Heart,
   MessageCircle,
-  Search,
   X,
   Sparkles,
   ChevronLeft,
@@ -30,6 +28,7 @@ import {
   ArrowUpDown,
   User,
 } from "lucide-react";
+import { SearchInput } from "@/components/molecules";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
@@ -1122,49 +1121,21 @@ export default function FeedView({
         `}</style>
 
         <div className="flex flex-col items-center">
-          {/* Search Overlay */}
-          {showSearch && (
-            <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-              onClick={() => setShowSearch(false)}
-            >
-              <div
-                className="absolute top-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600" />
-                  <Input
-                    type="text"
-                    placeholder="피드 검색..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    autoFocus
-                    className="pl-12 pr-12 h-14 rounded-2xl backdrop-blur-2xl bg-white/80 border border-gray-300 font-medium shadow-2xl"
-                  />
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setShowSearch(false);
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
-                  >
-                    <X className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Search Bar */}
+          <div className="sticky top-0 z-30 w-full max-w-2xl px-4 py-3">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="작성자 이름으로 검색..."
+              suggestions={[...new Set(allFeeds.map((feed) => feed.author))]}
+            />
+          </div>
 
           {/* Feed Cards with Windowing */}
           {allFeeds
             .filter(
               (feed) =>
-                feed.content
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase()) ||
-                feed.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                feed.activity.toLowerCase().includes(searchQuery.toLowerCase())
+                feed.author.toLowerCase().includes(searchQuery.toLowerCase())
             )
             .map((feed, index, arr) => {
               const currentIndex = getFeedImageIndex(feed.id);

@@ -33,15 +33,28 @@ interface MemberProfilePageProps {
 }
 
 export default function MemberProfilePage({ onLogout, profileImage, setProfileImage }: MemberProfilePageProps) {
-  const [height, setHeight] = useState("175");
-  const [weight, setWeight] = useState("70");
-  const [phone, setPhone] = useState(localStorage.getItem("userPhone") || "");
-  const [address, setAddress] = useState("서울특별시 강남구 테헤란로 123");
-  const [birthDate, setBirthDate] = useState("1990-01-01");
-  const [gender, setGender] = useState("남성");
+  // localStorage에서 초기값 로드
+  const [height, setHeight] = useState(() => localStorage.getItem("userHeight") || "175");
+  const [weight, setWeight] = useState(() => localStorage.getItem("userWeight") || "70");
+  const [phone, setPhone] = useState(() => localStorage.getItem("userPhone") || "");
+  const [address, setAddress] = useState(() => localStorage.getItem("userAddress") || "서울특별시 강남구 테헤란로 123");
+  const [birthDate, setBirthDate] = useState(() => localStorage.getItem("userBirthDate") || "1990-01-01");
+  const [gender, setGender] = useState(() => localStorage.getItem("userGender") || "남성");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const profileImageInputRef = useRef<HTMLInputElement>(null);
+
+  // 프로필 저장 핸들러
+  const handleSaveProfile = () => {
+    localStorage.setItem("userHeight", height);
+    localStorage.setItem("userWeight", weight);
+    localStorage.setItem("userPhone", phone);
+    localStorage.setItem("userAddress", address);
+    localStorage.setItem("userBirthDate", birthDate);
+    localStorage.setItem("userGender", gender);
+    setIsEditingProfile(false);
+    toast.success("프로필이 저장되었습니다!");
+  };
 
   const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,7 +113,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
           {/* Button Group */}
           <ButtonGroup>
             <Button
-              onClick={() => setIsEditingProfile(!isEditingProfile)}
+              onClick={() => isEditingProfile ? handleSaveProfile() : setIsEditingProfile(true)}
               variant="outline"
             >
               <Edit className="w-4 h-4 mr-2" />

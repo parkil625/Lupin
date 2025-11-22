@@ -315,7 +315,7 @@ public class DataInitializer implements CommandLineRunner {
                 .activityType(activityType)
                 .duration(duration)
                 .content(content)
-                .imageUrls(Arrays.asList(activityImages.get(activityType)))
+                .images(Arrays.asList(activityImages.get(activityType)))
                 .build();
 
         return feedService.createFeed(user.getId(), request);

@@ -46,9 +46,9 @@ export const feedApi = {
   /**
    * 모든 피드 조회 (페이징)
    */
-  getAllFeeds: async (page: number = 0, size: number = 20, excludeUserId?: number) => {
+  getAllFeeds: async (page: number = 0, size: number = 20, excludeUserId?: number, excludeFeedId?: number) => {
     const response = await apiClient.get('/feeds', {
-      params: { page, size, excludeUserId },
+      params: { page, size, excludeUserId, excludeFeedId },
     });
 
     // Page 객체인 경우 content 배열을 매핑
@@ -78,8 +78,17 @@ export const feedApi = {
   /**
    * 피드 생성
    */
-  createFeed: async (feedData: Partial<Feed>) => {
-    const response = await apiClient.post('/feeds', feedData);
+  createFeed: async (feedData: {
+    activityType: string;
+    duration: number;
+    content: string;
+    images: string[];
+    calories?: number;
+  }) => {
+    const userId = localStorage.getItem('userId');
+    const response = await apiClient.post('/feeds', feedData, {
+      params: { userId }
+    });
     return response.data;
   },
 

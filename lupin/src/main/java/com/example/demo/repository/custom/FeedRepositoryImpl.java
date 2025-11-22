@@ -30,7 +30,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<FeedListResponse> searchFeeds(String keyword, String activityType, Long excludeUserId, Pageable pageable) {
+    public Page<FeedListResponse> searchFeeds(String keyword, String activityType, Long excludeUserId, Long excludeFeedId, Pageable pageable) {
         // Feed 엔티티를 이미지와 함께 조회
         List<Feed> feeds = queryFactory
                 .selectFrom(feed)
@@ -40,7 +40,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .where(
                         containsKeyword(keyword),
                         eqActivityType(activityType),
-                        excludeWriter(excludeUserId)
+                        excludeWriter(excludeUserId),
+                        excludeFeed(excludeFeedId)
                 )
                 .orderBy(getOrderSpecifier(pageable))
                 .offset(pageable.getOffset())
@@ -71,7 +72,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .where(
                         containsKeyword(keyword),
                         eqActivityType(activityType),
-                        excludeWriter(excludeUserId)
+                        excludeWriter(excludeUserId),
+                        excludeFeed(excludeFeedId)
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -205,6 +207,10 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
 
     private BooleanExpression excludeWriter(Long excludeUserId) {
         return excludeUserId != null ? feed.writer.id.ne(excludeUserId) : null;
+    }
+
+    private BooleanExpression excludeFeed(Long excludeFeedId) {
+        return excludeFeedId != null ? feed.id.ne(excludeFeedId) : null;
     }
 
     private OrderSpecifier<?> getOrderSpecifier(Pageable pageable) {

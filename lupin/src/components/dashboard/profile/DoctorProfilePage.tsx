@@ -58,7 +58,7 @@ export default function DoctorProfilePage({ onLogout }: DoctorProfilePageProps) 
                 </AspectRatio>
               </div>
               <div className="flex-1">
-                <h2 className="text-3xl font-black text-gray-900 mb-2">김의사</h2>
+                <h2 className="text-3xl font-black text-gray-900 mb-2">{localStorage.getItem('userName') || '의료진'}</h2>
                 <p className="text-gray-600 font-medium">내과 전문의</p>
               </div>
             </div>
@@ -73,7 +73,7 @@ export default function DoctorProfilePage({ onLogout }: DoctorProfilePageProps) 
                     <InputGroup className="mt-1.5">
                       <InputGroupInput
                         type="email"
-                        value="doctor@company.com"
+                        value={localStorage.getItem('userEmail') || ''}
                         disabled
                         className="rounded-xl bg-white/80 border-gray-200"
                       />
@@ -95,7 +95,7 @@ export default function DoctorProfilePage({ onLogout }: DoctorProfilePageProps) 
                     <InputGroup className="mt-1.5">
                       <InputGroupInput
                         type="tel"
-                        value="010-9876-5432"
+                        value={localStorage.getItem('userPhone') || ''}
                         disabled
                         className="rounded-xl bg-white/80 border-gray-200"
                       />

@@ -446,7 +446,7 @@ export default function DoctorChatPage() {
                           담당 의사
                         </Label>
                         <Input
-                          value="김의사"
+                          value={localStorage.getItem('userName') || '의료진'}
                           disabled
                           className="mt-1 rounded-xl bg-gray-100 text-gray-400"
                         />

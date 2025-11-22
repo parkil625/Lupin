@@ -92,6 +92,8 @@ public class SecurityConfig {
 
                 // 요청 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        // CORS preflight 요청 허용
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         // 헬스체크 엔드포인트
                         .requestMatchers("/", "/api/health").permitAll()
                         // 로그인 엔드포인트는 인증 없이 접근 가능

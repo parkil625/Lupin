@@ -14,7 +14,7 @@ import {Label} from "../ui/label";
 import {Card} from "../ui/card";
 import {ArrowLeft, Sparkles, Lock, User, AlertCircle} from "lucide-react";
 import {authApi} from "../../api";
-import {useAuth} from "../../contexts/AuthContext.tsx"; // 훅 import
+import { useAuthStore } from "../../store/useAuthStore";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
 
@@ -36,8 +36,7 @@ interface LoginProps {
 }
 
 export default function Login({onBack}: LoginProps) {
-    //Custom Hook 사용
-    const {login} = useAuth();
+    const login = useAuthStore((state) => state.login);
 
     const [employeeId, setEmployeeId] = useState("");
     const [password, setPassword] = useState("");
@@ -109,11 +108,6 @@ export default function Login({onBack}: LoginProps) {
 
         try {
             const response = await authApi.login(employeeId, password);
-
-            // Context의 login 함수 추출
-            localStorage.setItem('userId', response.userId.toString());
-            localStorage.setItem('userEmail', response.email);
-            localStorage.setItem('userName', response.name);
 
             login(response.accessToken, response.role);
 

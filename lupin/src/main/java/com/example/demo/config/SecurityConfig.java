@@ -55,7 +55,8 @@ public class SecurityConfig {
                 "https://43.202.79.166",
                 "https://lupin-eosin.vercel.app",
                 "https://lupin-care.com",
-                "https://www.lupin-care.com"
+                "https://www.lupin-care.com",
+                "https://api.lupin-care.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));

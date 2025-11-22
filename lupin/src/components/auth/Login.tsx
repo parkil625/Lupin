@@ -45,7 +45,7 @@ export default function Login({onBack}: LoginProps) {
 
     useEffect(() => {
         const script = document.createElement('script');
-        script.src = 'http://accounts.google.com/gsi/client';
+        script.src = 'https://accounts.google.com/gsi/client';
         script.async = true;
         script.defer = true;
         script.onload = () => {

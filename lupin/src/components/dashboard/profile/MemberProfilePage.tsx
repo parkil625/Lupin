@@ -35,7 +35,7 @@ interface MemberProfilePageProps {
 export default function MemberProfilePage({ onLogout, profileImage, setProfileImage }: MemberProfilePageProps) {
   const [height, setHeight] = useState("175");
   const [weight, setWeight] = useState("70");
-  const [phone, setPhone] = useState("010-1234-5678");
+  const [phone, setPhone] = useState(localStorage.getItem("userPhone") || "");
   const [address, setAddress] = useState("서울특별시 강남구 테헤란로 123");
   const [birthDate, setBirthDate] = useState("1990-01-01");
   const [gender, setGender] = useState("남성");
@@ -170,8 +170,8 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                 </AspectRatio>
               </div>
               <div className="flex-1">
-                <h2 className="text-3xl font-black text-gray-900 mb-2">{localStorage.getItem('userName') || 'user01'}</h2>
-                <p className="text-gray-600 font-medium">{localStorage.getItem('userEmail') || 'user01'}</p>
+                <h2 className="text-3xl font-black text-gray-900 mb-2">{localStorage.getItem('userName') || '사용자'}</h2>
+                <p className="text-gray-600 font-medium">{localStorage.getItem('userEmail') || ''}</p>
               </div>
             </div>
 
@@ -185,7 +185,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                     <InputGroup className="mt-1.5">
                       <InputGroupInput
                         type="email"
-                        value="lupin@company.com"
+                        value={localStorage.getItem('userEmail') || ''}
                         disabled
                         className="rounded-xl bg-white/80 border-gray-200"
                       />

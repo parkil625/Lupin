@@ -82,10 +82,11 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
     const workoutMinutes = 30; // 임시값
     const points = Math.floor(workoutMinutes / 5) * 5; // 5분당 5점
 
+    const userName = localStorage.getItem("userName") || "사용자";
     const newFeed: Feed = {
       id: Date.now(),
-      author: "김루핀",
-      avatar: "김",
+      author: userName,
+      avatar: userName.charAt(0),
       activity: workoutType,
       duration: `${workoutMinutes}분`,
       points: points,

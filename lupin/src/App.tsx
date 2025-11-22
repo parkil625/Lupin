@@ -23,19 +23,13 @@ import {
 import {Toaster} from "./components/ui/sonner";
 import Login from "./components/auth/Login";
 import Dashboard from "./components/Dashboard";
-import {AuthProvider, useAuth} from "@/contexts/AuthContext.tsx";
+import { useAuthStore } from "./store/useAuthStore.ts";
 
-/**
- * AppContent
- * - 실제 ui 로직이 들어가는 컴포넌트다.
- * - useAuth 훅을 사용하기 위해 별도 컴포넌트로 분리했다.
- * @constructor
- */
-function AppContent() {
-    // 전역 상태에서 로그인 정보 가져오기
-    const {isLoggedIn, userRole, logout} = useAuth();
+export default function App() {
+    const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+    const userRole = useAuthStore((state) => state.userRole);
+    const logout = useAuthStore((state) => state.logout);
 
-    // 로그인 모달 노출 여부는 UI 상태이므로 로컬 useState로 관리
     const [showLogin, setShowLogin] = useState(false);
 
     useEffect(() => {
@@ -479,19 +473,4 @@ function AppContent() {
       `}</style>
         </div>
     );
-}
-
-/**
- * App
- * - 최상위 컴포넌트
- * - AuthProvider로 전체 앱을 감싸서 어디서든 로그인 상태에 접근할 수 있다.
- * @constructor
- */
-export default function App() {
-
-    return (
-        <AuthProvider>
-            <AppContent/>
-        </AuthProvider>
-    )
 }

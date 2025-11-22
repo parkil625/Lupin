@@ -1,5 +1,6 @@
 package com.example.demo.dto.response;
 
+import com.example.demo.dto.LoginDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,14 +19,14 @@ public class LoginResponse {
     private String name;
     private String role;
 
-    public static LoginResponse of(String accessToken, Long userId, String email, String name, String role) {
+    public static LoginResponse from(LoginDto dto) {
         return LoginResponse.builder()
-                .accessToken(accessToken)
+                .accessToken(dto.getAccessToken())
                 .tokenType("Bearer")
-                .userId(userId)
-                .email(email)
-                .name(name)
-                .role(role)
+                .userId(dto.getId())
+                .email(dto.getEmail())
+                .name(dto.getName())
+                .role(dto.getRole())
                 .build();
     }
 }

@@ -52,7 +52,7 @@ jobs:
             docker rm lupin-backend || true
             docker run -d \
               --name lupin-backend \
-              -p 8081:8081 \
+              --network host \
               -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
               -e GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
               -e GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \

@@ -8,6 +8,7 @@
  */
 
 import React, {useState, useEffect} from "react";
+import { useNavigate } from "react-router-dom";
 import {Button} from "../ui/button";
 import {Input} from "../ui/input";
 import {Label} from "../ui/label";
@@ -31,11 +32,8 @@ declare global {
     }
 }
 
-interface LoginProps {
-    onBack: () => void;
-}
-
-export default function Login({onBack}: LoginProps) {
+export default function Login() {
+    const navigate = useNavigate();
     const login = useAuthStore((state) => state.login);
 
     const [employeeId, setEmployeeId] = useState("");
@@ -53,6 +51,7 @@ export default function Login({onBack}: LoginProps) {
                 window.google.accounts.id.initialize({
                     client_id: GOOGLE_CLIENT_ID,
                     callback: handleGoogleLogin,
+                    use_fedcm_for_prompt: false,
                 });
 
                 const googleButton = document.getElementById('google-signin-button');
@@ -141,7 +140,7 @@ export default function Login({onBack}: LoginProps) {
 
             {/* 메인으로 돌아가기 버튼 */}
             <button
-                onClick={onBack}
+                onClick={() => navigate('/')}
                 className="absolute top-8 left-8 flex items-center gap-2 px-6 py-3 rounded-full backdrop-blur-3xl bg-white/40 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:bg-white/50 group"
             >
                 <ArrowLeft className="w-5 h-5 text-gray-700 group-hover:text-[#C93831] transition-colors"/>

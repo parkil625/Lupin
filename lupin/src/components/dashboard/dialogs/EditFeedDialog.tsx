@@ -7,7 +7,7 @@
  * - 운동 시작/끝 사진 업로드
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -19,30 +19,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { X, CheckCircle, Camera, Upload, Check, ChevronsUpDown } from "lucide-react";
+import { CheckCircle, Clock, Flame, Trophy } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
+import {
+  extractImageMetadata,
+  validateWorkoutTimes,
+  calculateWorkoutMetrics,
+  type WorkoutCalculation
+} from "@/lib/imageMetadata";
 
 interface EditFeedDialogProps {
   feed: Feed | null;
@@ -50,19 +42,6 @@ interface EditFeedDialogProps {
   onOpenChange: (open: boolean) => void;
   onSave: (feedId: number, images: string[], content: string, workoutType: string, startImage: string | null, endImage: string | null) => void;
 }
-
-const WORKOUT_TYPES = [
-  { value: "running", label: "런닝" },
-  { value: "walking", label: "걷기" },
-  { value: "cycling", label: "사이클" },
-  { value: "swimming", label: "수영" },
-  { value: "weight", label: "웨이트" },
-  { value: "yoga", label: "요가" },
-  { value: "pilates", label: "필라테스" },
-  { value: "crossfit", label: "크로스핏" },
-  { value: "hiking", label: "등산" },
-  { value: "other", label: "기타" }
-];
 
 export default function EditFeedDialog({
   feed,
@@ -74,11 +53,11 @@ export default function EditFeedDialog({
   const [endImage, setEndImage] = useState<string | null>(null);
   const [otherImages, setOtherImages] = useState<string[]>([]);
   const [workoutType, setWorkoutType] = useState<string>("");
-  const [comboboxOpen, setComboboxOpen] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-
-  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
+  const [workoutMetrics, setWorkoutMetrics] = useState<WorkoutCalculation | null>(null);
   const initialDataRef = useRef<{
     startImage: string | null;
     endImage: string | null;
@@ -157,48 +136,60 @@ export default function EditFeedDialog({
     setHasChanges(changed);
   }, [startImage, endImage, otherImages, workoutType, editor]);
 
-  const handleFileSelect = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: 'start' | 'end' | 'upload'
-  ) => {
-    const files = type === 'upload' ? Array.from(e.target.files || []) : [e.target.files?.[0]].filter(Boolean) as File[];
-
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-
+  // 이미지 업로드 핸들러 (FileReader 사용)
+  const uploadImage = async (file: File, setter: (url: string) => void) => {
+    return new Promise<void>((resolve) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          const imageData = event.target.result as string;
-          if (type === 'start') setStartImage(imageData);
-          else if (type === 'end') setEndImage(imageData);
-          else setOtherImages(prev => [...prev, imageData]);
+          setter(event.target.result as string);
         }
+        resolve();
       };
       reader.readAsDataURL(file);
     });
   };
 
-  const handleDrop = (e: React.DragEvent, type: 'start' | 'end' | 'upload') => {
-    e.preventDefault();
-    e.stopPropagation();
+  // 시작 이미지 업로드 (메타데이터 추출 포함)
+  const handleStartImageUpload = async (file: File) => {
+    const metadata = await extractImageMetadata(file);
+    setStartTime(metadata.dateTime);
 
-    const files = Array.from(e.dataTransfer.files);
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
+    if (!metadata.dateTime) {
+      toast.warning("사진에서 시간 정보를 찾을 수 없습니다. 다른 사진을 시도해보세요.");
+    }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          const imageData = event.target.result as string;
-          if (type === 'start') setStartImage(imageData);
-          else if (type === 'end') setEndImage(imageData);
-          else setOtherImages(prev => [...prev, imageData]);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    await uploadImage(file, setStartImage);
   };
+
+  // 끝 이미지 업로드 (메타데이터 추출 포함)
+  const handleEndImageUpload = async (file: File) => {
+    const metadata = await extractImageMetadata(file);
+    setEndTime(metadata.dateTime);
+
+    if (!metadata.dateTime) {
+      toast.warning("사진에서 시간 정보를 찾을 수 없습니다. 다른 사진을 시도해보세요.");
+    }
+
+    await uploadImage(file, setEndImage);
+  };
+
+  const handleOtherImageUpload = (file: File) => uploadImage(file, (url) => setOtherImages(prev => [...prev, url]));
+
+  // 시작/끝 시간이 모두 있을 때 운동 지표 계산
+  useEffect(() => {
+    if (startTime && endTime) {
+      const validation = validateWorkoutTimes(startTime, endTime);
+      if (validation.valid) {
+        const metrics = calculateWorkoutMetrics(startTime, endTime, workoutType);
+        setWorkoutMetrics(metrics);
+      } else {
+        setWorkoutMetrics(null);
+      }
+    } else {
+      setWorkoutMetrics(null);
+    }
+  }, [startTime, endTime, workoutType]);
 
   const isVerified = startImage && endImage;
 
@@ -209,6 +200,15 @@ export default function EditFeedDialog({
     if (!startImage || !endImage) {
       toast.error("운동 인증을 위해 시작 사진과 끝 사진을 모두 업로드해주세요!");
       return;
+    }
+
+    // 시간 유효성 검증 (새로 업로드한 경우에만)
+    if (startTime && endTime) {
+      const validation = validateWorkoutTimes(startTime, endTime);
+      if (!validation.valid) {
+        toast.error(validation.error || "시간 정보가 올바르지 않습니다.");
+        return;
+      }
     }
 
     const images = [startImage, endImage, ...otherImages].filter(Boolean) as string[];
@@ -252,199 +252,82 @@ export default function EditFeedDialog({
             <h2 className="text-xl font-black text-gray-900 mb-4">피드 수정</h2>
 
             {/* Workout Type */}
-            <div className="mb-4">
-              <Label className="text-xs font-bold text-gray-900 mb-2 block">운동 종류</Label>
-              <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={comboboxOpen}
-                    className="w-full justify-between bg-white border-gray-300 text-sm"
-                    onClick={() => {
-                      console.log("Button clicked, current state:", comboboxOpen);
-                      setComboboxOpen(!comboboxOpen);
-                    }}
-                  >
-                    {workoutType
-                      ? WORKOUT_TYPES.find((type) => type.value === workoutType)?.label || "값 없음"
-                      : "운동 선택"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
-                  <Command>
-                    <CommandInput placeholder="운동 검색..." />
-                    <CommandList>
-                      <CommandEmpty>운동을 찾을 수 없습니다.</CommandEmpty>
-                      <CommandGroup>
-                        {WORKOUT_TYPES.map((type) => (
-                          <CommandItem
-                            key={type.value}
-                            value={type.value}
-                            onSelect={(currentValue: string) => {
-                              setWorkoutType(currentValue === workoutType ? "" : currentValue);
-                              setComboboxOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                workoutType === type.value ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {type.label}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
+            <WorkoutTypeSelect
+              value={workoutType}
+              onChange={setWorkoutType}
+              className="mb-4"
+            />
 
             {/* 2x2 Photo Grid */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              {/* Start Image */}
-              <div>
-                <Label className="text-xs font-bold text-gray-700 mb-1.5 block">시작 사진</Label>
-                <div
-                  onClick={() => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.onchange = (e) => handleFileSelect(e as any, 'start');
-                    input.click();
-                  }}
-                  onDrop={(e) => handleDrop(e, 'start')}
-                  onDragOver={(e) => e.preventDefault()}
-                  className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-[#C93831] bg-gray-50 cursor-pointer overflow-visible"
-                >
-                  {startImage ? (
-                    <>
-                      <img src={startImage} alt="Start" className="w-full h-full object-cover rounded-lg" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setStartImage(null);
-                        }}
-                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                      <Camera className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* End Image */}
-              <div>
-                <Label className="text-xs font-bold text-gray-700 mb-1.5 block">끝 사진</Label>
-                <div
-                  onClick={() => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.onchange = (e) => handleFileSelect(e as any, 'end');
-                    input.click();
-                  }}
-                  onDrop={(e) => handleDrop(e, 'end')}
-                  onDragOver={(e) => e.preventDefault()}
-                  className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-[#C93831] bg-gray-50 cursor-pointer overflow-visible"
-                >
-                  {endImage ? (
-                    <>
-                      <img src={endImage} alt="End" className="w-full h-full object-cover rounded-lg" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEndImage(null);
-                        }}
-                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                      <Camera className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Other Images */}
-              <div>
-                <Label className="text-xs font-bold text-gray-700 mb-1.5 block">기타 사진</Label>
-                <div className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 overflow-visible">
-                  {otherImages.length > 0 ? (
-                    <>
-                      <img src={otherImages[0]} alt="Other" className="w-full h-full object-cover rounded-lg" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOtherImages(otherImages.filter((_, i) => i !== 0));
-                        }}
-                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-10"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                      {otherImages.length > 1 && (
-                        <div className="absolute right-2 bottom-2 bg-[#C93831] text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-10">
-                          +{otherImages.length - 1}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs text-gray-400">없음</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Upload Cell */}
-              <div>
-                <Label className="text-xs font-bold text-gray-700 mb-1.5 block">업로드</Label>
-                <div
-                  onClick={() => uploadInputRef.current?.click()}
-                  onDrop={(e) => handleDrop(e, 'upload')}
-                  onDragOver={(e) => e.preventDefault()}
-                  className="relative aspect-square rounded-lg border-2 border-dashed border-[#C93831] bg-red-50 hover:bg-red-100 cursor-pointer flex items-center justify-center"
-                >
-                  <Upload className="w-8 h-8 text-[#C93831]" />
-                  <input
-                    ref={uploadInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => handleFileSelect(e, 'upload')}
-                    className="hidden"
-                  />
-                </div>
-              </div>
+              <ImageUploadBox
+                label="시작 사진"
+                image={startImage}
+                onImageChange={setStartImage}
+                onFileSelect={handleStartImageUpload}
+              />
+              <ImageUploadBox
+                label="끝 사진"
+                image={endImage}
+                onImageChange={setEndImage}
+                onFileSelect={handleEndImageUpload}
+              />
+              <ImageUploadBox
+                label="기타 사진"
+                image={otherImages[0] || null}
+                onImageChange={() => setOtherImages(otherImages.slice(1))}
+                onFileSelect={handleOtherImageUpload}
+                variant="display"
+                showCount={otherImages.length}
+              />
+              <ImageUploadBox
+                label="업로드"
+                image={null}
+                onImageChange={() => {}}
+                onFileSelect={handleOtherImageUpload}
+                variant="upload"
+              />
             </div>
-
-            {/* Verification Badge */}
-            {isVerified && (
-              <Badge className="bg-green-500 text-white px-3 py-1.5 font-bold border-0 mb-4 w-full justify-center text-xs">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                운동 인증 완료
-              </Badge>
-            )}
 
             {/* 작성 버튼 */}
             <Button
               onClick={handleSave}
               disabled={!isVerified}
-              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold py-2.5 rounded-lg transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isVerified ? '수정 완료' : '시작/끝 사진 필요'}
             </Button>
+
+            {/* Workout Metrics */}
+            {workoutMetrics && (
+              <div className="mb-4 p-3 bg-white/50 rounded-lg border border-gray-200">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <Clock className="w-4 h-4 mx-auto mb-1 text-blue-500" />
+                    <div className="text-xs text-gray-500">시간</div>
+                    <div className="text-sm font-bold">{workoutMetrics.durationMinutes}분</div>
+                  </div>
+                  <div>
+                    <Flame className="w-4 h-4 mx-auto mb-1 text-orange-500" />
+                    <div className="text-xs text-gray-500">칼로리</div>
+                    <div className="text-sm font-bold">{workoutMetrics.calories}kcal</div>
+                  </div>
+                  <div>
+                    <Trophy className="w-4 h-4 mx-auto mb-1 text-yellow-500" />
+                    <div className="text-xs text-gray-500">점수</div>
+                    <div className="text-sm font-bold">{workoutMetrics.score}점</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Verification Badge */}
+            {isVerified && (
+              <Badge className="bg-green-500 text-white px-3 py-1.5 font-bold border-0 w-full justify-center text-xs">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                운동 인증 완료
+              </Badge>
+            )}
           </div>
 
           {/* Right Editor */}

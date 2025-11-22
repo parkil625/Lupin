@@ -143,6 +143,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [feedPage, setFeedPage] = useState(0);
   const [hasMoreFeeds, setHasMoreFeeds] = useState(true);
   const [isLoadingFeeds, setIsLoadingFeeds] = useState(false);
+  const [pivotFeedId, setPivotFeedId] = useState<number | null>(null);
+  const [pivotFeed, setPivotFeed] = useState<Feed | null>(null);
 
   // 내 피드 로드 (전체)
   const loadMyFeeds = async () => {
@@ -188,15 +190,15 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   };
 
   // 다른 사람 피드 로드 (페이지네이션)
-  const loadFeeds = async (page: number, reset: boolean = false) => {
+  const loadFeeds = async (page: number, reset: boolean = false, excludeFeedId?: number) => {
     if (isLoadingFeeds) return;
 
     setIsLoadingFeeds(true);
     try {
-      const pageSize = 1; // 한 번에 1개씩 로드 (성능 최적화)
+      const pageSize = 10; // 한 번에 10개씩 로드
       const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-      // 백엔드에서 내 피드 제외
-      const response = await feedApi.getAllFeeds(page, pageSize, currentUserId);
+      // 백엔드에서 내 피드 제외 + excludeFeedId 제외
+      const response = await feedApi.getAllFeeds(page, pageSize, currentUserId, excludeFeedId);
       const feeds = response.content || response;
 
       if (reset) {
@@ -348,16 +350,18 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               feed.authorId === currentUserId || myFeed !== undefined;
 
             if (isMyFeed) {
-              // 내 피드면 홈으로 이동
+              // 내 피드면 홈으로 이동 + 다이얼로그
               setSelectedNav("home");
+              setSelectedFeed(feed);
+              setShowFeedDetailInHome(true);
             } else {
-              // 다른 사람 피드면 피드 페이지로
+              // 다른 사람 피드면 pivot 패턴으로 피드 페이지 이동
+              setPivotFeedId(feed.id);
+              setPivotFeed(feed);
+              // 해당 피드 제외하고 나머지 로드
+              loadFeeds(0, true, feed.id);
               setSelectedNav("feed");
             }
-
-            // 댓글/답글/댓글좋아요 알림이면 상세 다이얼로그 열기
-            setSelectedFeed(feed);
-            setShowFeedDetailInHome(true);
           }
         }
       } else if (notification.type === "chat") {
@@ -381,6 +385,18 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   };
 
   const navItems = userType === "member" ? memberNavItems : doctorNavItems;
+
+  // 네비게이션 선택 핸들러 - 피드 직접 클릭 시 pivot 초기화
+  const handleNavSelect = (navId: string) => {
+    if (navId === "feed" && pivotFeedId) {
+      // 피드 메뉴 직접 클릭 시 pivot 초기화하고 일반 피드 로드
+      setPivotFeedId(null);
+      setPivotFeed(null);
+      loadFeeds(0, true);
+    }
+    setSelectedNav(navId);
+  };
+
   const getFeedImageIndex = (feedId: number) => feedImageIndexes[feedId] || 0;
   const setFeedImageIndex = (feedId: number, index: number) =>
     setFeedImageIndexes((prev) => ({ ...prev, [feedId]: index }));
@@ -474,12 +490,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
       // API 호출로 피드 생성
       await feedApi.createFeed({
-        writerId: currentUserId,
         activityType: workoutType,
         duration: 30,
         content: content,
-        images: images,
-      } as any);
+        images,
+      });
 
       // 데이터 재로드 및 canPostToday 재확인
       setRefreshTrigger((prev) => prev + 1);
@@ -526,7 +541,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         }
         navItems={navItems}
         selectedNav={selectedNav}
-        onNavSelect={setSelectedNav}
+        onNavSelect={handleNavSelect}
         userType="member"
         profileImage={profileImage}
       >
@@ -592,7 +607,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         )}
         {selectedNav === "feed" && (
           <FeedView
-            allFeeds={allFeeds}
+            allFeeds={pivotFeed ? [pivotFeed, ...allFeeds] : allFeeds}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             showSearch={showSearch}

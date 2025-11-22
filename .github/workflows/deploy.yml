@@ -58,5 +58,6 @@ jobs:
               -e GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
               -e AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} \
               -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \
+              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
               ${{ secrets.ECR_REGISTRY }}/lupin-backend:latest
             docker image prune -af

@@ -117,6 +117,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [userId] = useState<number>(
     parseInt(localStorage.getItem("userId") || "1")
   );
+  const userName = localStorage.getItem("userName") || "사용자";
   const [showAppointment, setShowAppointment] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -385,12 +386,12 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     setFeedImageIndexes((prev) => ({ ...prev, [feedId]: index }));
   const handleLike = (feedId: number) => {
     const currentLikes = feedLikes[feedId] || [];
-    const hasLiked = currentLikes.includes("김루핀");
+    const hasLiked = currentLikes.includes(userName);
     setFeedLikes({
       ...feedLikes,
       [feedId]: hasLiked
-        ? currentLikes.filter((name) => name !== "김루핀")
-        : [...currentLikes, "김루핀"],
+        ? currentLikes.filter((name) => name !== userName)
+        : [...currentLikes, userName],
     });
     setAllFeeds(
       allFeeds.map((feed) =>
@@ -401,7 +402,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     );
   };
   const hasLiked = (feedId: number) =>
-    (feedLikes[feedId] || []).includes("김루핀");
+    (feedLikes[feedId] || []).includes(userName);
 
   const handleEditFeed = (feed: Feed) => {
     setEditingFeed(feed);
@@ -702,8 +703,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               ...medicalChatMessages,
               {
                 id: Date.now(),
-                author: "김루핀",
-                avatar: "김",
+                author: userName,
+                avatar: userName.charAt(0),
                 content: chatMessage,
                 time: new Date().toLocaleTimeString("ko-KR", {
                   hour: "2-digit",

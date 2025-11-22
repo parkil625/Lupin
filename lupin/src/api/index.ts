@@ -1,7 +1,7 @@
 /**
  * API 모듈 통합 export
  */
-export { authApi } from './authApi';
+export * from './authApi';
 export { feedApi } from './feedApi';
 export { commentApi } from './commentApi';
 export { userApi } from './userApi';

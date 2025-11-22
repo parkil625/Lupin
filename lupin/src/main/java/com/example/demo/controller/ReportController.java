@@ -20,10 +20,9 @@ public class ReportController {
     @PostMapping("/feeds/{feedId}")
     public ResponseEntity<Map<String, String>> reportFeed(
             @PathVariable Long feedId,
-            @RequestParam Long userId,
-            @RequestParam(required = false) String reason) {
+            @RequestParam Long userId) {
 
-        reportService.reportFeed(feedId, userId, reason);
+        reportService.reportFeed(feedId, userId);
         return ResponseEntity.ok(Map.of("message", "신고가 접수되었습니다."));
     }
 
@@ -33,20 +32,10 @@ public class ReportController {
     @PostMapping("/comments/{commentId}")
     public ResponseEntity<Map<String, String>> reportComment(
             @PathVariable Long commentId,
-            @RequestParam Long userId,
-            @RequestParam(required = false) String reason) {
+            @RequestParam Long userId) {
 
-        reportService.reportComment(commentId, userId, reason);
+        reportService.reportComment(commentId, userId);
         return ResponseEntity.ok(Map.of("message", "신고가 접수되었습니다."));
-    }
-
-    /**
-     * 사용자 신고 기록 확인 (3일 내)
-     */
-    @GetMapping("/check/{userId}")
-    public ResponseEntity<Map<String, Boolean>> checkUserReportStatus(@PathVariable Long userId) {
-        boolean hasRecentReport = reportService.hasRecentReport(userId);
-        return ResponseEntity.ok(Map.of("hasRecentReport", hasRecentReport));
     }
 
     /**

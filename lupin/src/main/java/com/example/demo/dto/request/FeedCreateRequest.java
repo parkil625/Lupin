@@ -26,5 +26,5 @@ public class FeedCreateRequest {
     @NotBlank(message = "내용은 필수입니다.")
     private String content;
 
-    private List<String> imageUrls; // 이미지 URL 목록
+    private List<String> images; // S3 이미지 키 목록
 }

@@ -4,18 +4,19 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.Report;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.entity.UserPenalty;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.ReportRepository;
+import com.example.demo.repository.UserPenaltyRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -27,7 +28,8 @@ public class ReportService {
     private final FeedRepository feedRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
-    private final FeedService feedService;
+    private final UserPenaltyRepository userPenaltyRepository;
+    private final FeedCommandService feedCommandService;
     private final CommentService commentService;
 
     private static final String TARGET_TYPE_FEED = "FEED";
@@ -37,7 +39,7 @@ public class ReportService {
      * 피드 신고
      */
     @Transactional
-    public void reportFeed(Long feedId, Long reporterId, String reason) {
+    public void reportFeed(Long feedId, Long reporterId) {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
         User reporter = findUserById(reporterId);
@@ -55,9 +57,7 @@ public class ReportService {
         Report report = Report.builder()
                 .targetType(TARGET_TYPE_FEED)
                 .targetId(feedId)
-                .reason(reason)
                 .reporter(reporter)
-                .reportedUser(feed.getWriter())
                 .build();
 
         reportRepository.save(report);
@@ -72,7 +72,7 @@ public class ReportService {
      * 댓글 신고
      */
     @Transactional
-    public void reportComment(Long commentId, Long reporterId, String reason) {
+    public void reportComment(Long commentId, Long reporterId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
         User reporter = findUserById(reporterId);
@@ -90,9 +90,7 @@ public class ReportService {
         Report report = Report.builder()
                 .targetType(TARGET_TYPE_COMMENT)
                 .targetId(commentId)
-                .reason(reason)
                 .reporter(reporter)
-                .reportedUser(comment.getWriter())
                 .build();
 
         reportRepository.save(report);
@@ -103,13 +101,6 @@ public class ReportService {
         checkAndDeleteComment(comment);
     }
 
-    /**
-     * 사용자가 3일 내 신고 기록이 있는지 확인
-     */
-    public boolean hasRecentReport(Long userId) {
-        LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-        return reportRepository.hasRecentReport(userId, threeDaysAgo);
-    }
 
     /**
      * 피드 자동 삭제 체크
@@ -127,7 +118,16 @@ public class ReportService {
             reportRepository.deleteByTargetTypeAndTargetId(TARGET_TYPE_FEED, feed.getId());
 
             // 피드 삭제 (기존 로직 재활용)
-            feedService.deleteFeed(feed.getId(), feed.getWriter().getId());
+            feedCommandService.deleteFeed(feed.getId(), feed.getWriter().getId());
+
+            // 패널티 생성/갱신 (UPSERT)
+            User writer = feed.getWriter();
+            UserPenalty penalty = userPenaltyRepository.findByUserIdAndPenaltyType(writer.getId(), TARGET_TYPE_FEED)
+                    .orElse(UserPenalty.builder().user(writer).penaltyType(TARGET_TYPE_FEED).build());
+            penalty.refresh();
+            userPenaltyRepository.save(penalty);
+
+            log.info("패널티 부여 - userId: {}, type: FEED", writer.getId());
         }
     }
 
@@ -148,6 +148,15 @@ public class ReportService {
 
             // 댓글 삭제 (기존 로직 재활용)
             commentService.deleteComment(comment.getId(), comment.getWriter().getId());
+
+            // 패널티 생성/갱신 (UPSERT)
+            User writer = comment.getWriter();
+            UserPenalty penalty = userPenaltyRepository.findByUserIdAndPenaltyType(writer.getId(), TARGET_TYPE_COMMENT)
+                    .orElse(UserPenalty.builder().user(writer).penaltyType(TARGET_TYPE_COMMENT).build());
+            penalty.refresh();
+            userPenaltyRepository.save(penalty);
+
+            log.info("패널티 부여 - userId: {}, type: COMMENT", writer.getId());
         }
     }
 

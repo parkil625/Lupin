@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +32,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final OutboxService outboxService;
 
     /**
      * 알림 생성
@@ -48,6 +51,21 @@ public class NotificationService {
         notification.setUser(user);
 
         Notification savedNotification = notificationRepository.save(notification);
+
+        // Outbox 이벤트 저장 (향후 푸시 알림/이메일 발송용)
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("notificationId", savedNotification.getId());
+        payload.put("userId", request.getUserId());
+        payload.put("type", request.getType());
+        payload.put("title", request.getTitle());
+        payload.put("content", request.getContent());
+
+        outboxService.saveEvent(
+            "NOTIFICATION",
+            savedNotification.getId(),
+            request.getType().toUpperCase(),
+            payload
+        );
 
         log.info("알림 생성 완료 - notificationId: {}, userId: {}, type: {}",
                 savedNotification.getId(), request.getUserId(), request.getType());

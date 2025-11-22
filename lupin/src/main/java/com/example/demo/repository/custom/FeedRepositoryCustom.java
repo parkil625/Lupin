@@ -16,7 +16,7 @@ public interface FeedRepositoryCustom {
     /**
      * 피드 목록 조회 (페이징, 검색, 정렬 포함)
      */
-    Page<FeedListResponse> searchFeeds(String keyword, String activityType, Long excludeUserId, Pageable pageable);
+    Page<FeedListResponse> searchFeeds(String keyword, String activityType, Long excludeUserId, Long excludeFeedId, Pageable pageable);
 
     /**
      * 특정 사용자의 피드 조회

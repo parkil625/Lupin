@@ -76,8 +76,9 @@ public class AuthService {
             GoogleIdToken.Payload payload = idToken.getPayload();
             String email = payload.getEmail();
 
-            // 2. DB에서 이메일로 사용자 조회
+            // 2. DB에서 이메일로 사용자 조회 (이메일 또는 userId로 조회)
             User user = userRepository.findByEmail(email)
+                    .or(() -> userRepository.findByUserId(email))
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
             // 3. 토큰 생성 및 반환

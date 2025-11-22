@@ -3,6 +3,7 @@
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import apiClient from '../api/client';
 
 type UserRole = 'member' | 'doctor' | null;
 
@@ -28,9 +29,23 @@ export const useAuthStore = create<AuthState>()(
                 });
             },
 
-            logout: () => {
-                localStorage.removeItem('accessToken');
-                set({ isLoggedIn: false, userRole: 'member' });
+            logout: async () => {
+                try {
+                    const token = localStorage.getItem('accessToken');
+                    if (token) {
+                        await apiClient.post('/auth/logout', null, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                    }
+                } catch (error) {
+                    console.error('Logout API error:', error);
+                } finally {
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('userId');
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userName');
+                    set({ isLoggedIn: false, userRole: 'member' });
+                }
             },
         }),
         {

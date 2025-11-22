@@ -66,6 +66,10 @@ app:
   seed-data:
     enabled: true
 
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET}
+
 # 서버 설정
 server:
   port: 8081

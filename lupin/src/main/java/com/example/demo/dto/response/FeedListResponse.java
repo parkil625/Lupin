@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,39 +21,51 @@ public class FeedListResponse {
 
     private Long id;
     private Long writerId;
-    private String author;        // authorName -> author (프론트엔드 매핑용)
-    private String department;    // 부서 정보 추가
-    private String activity;      // activityType -> activity (프론트엔드 매핑용)
+    private String author;
+    private String department;
+    private String activity;
     private String content;
 
-    // [핵심 수정] imageUrls -> images 로 변경
     private List<String> images;
 
-    private Integer likes;        // likesCount -> likes
-    private Integer comments;     // commentsCount -> comments
-    private Long points;          // earnedPoints -> points
+    private Integer likes;
+    private Integer comments;
+    private Long points;
     private LocalDateTime createdAt;
 
-    // 프론트엔드 'stats' 필드 대응을 위한 칼로리 정보
     private Map<String, String> stats;
 
     public static FeedListResponse from(Feed feed) {
+        // [안전장치 1] 작성자 정보가 없을 경우 대비
+        Long writerId = (feed.getWriter() != null) ? feed.getWriter().getId() : 0L;
+        String author = (feed.getWriter() != null) ? feed.getWriter().getRealName() : "알 수 없음";
+        String department = (feed.getWriter() != null) ? feed.getWriter().getDepartment() : "";
+
+        // [안전장치 2] 이미지가 null일 경우 대비
+        List<String> imgList = (feed.getImages() != null)
+                ? feed.getImages().stream()
+                .map(img -> img != null ? img.getImageUrl() : "")
+                .filter(url -> url != null && !url.isEmpty())
+                .collect(Collectors.toList())
+                : Collections.emptyList();
+
+        // [안전장치 3] 칼로리 및 포인트 null 체크
+        String calories = (feed.getCalories() != null) ? feed.getCalories() + "kcal" : "0kcal";
+        Long points = (feed.getEarnedPoints() != null) ? feed.getEarnedPoints() : 0L;
+
         return FeedListResponse.builder()
                 .id(feed.getId())
-                .writerId(feed.getWriter().getId())
-                .author(feed.getWriter().getRealName())
-                .department(feed.getWriter().getDepartment())
+                .writerId(writerId)
+                .author(author)
+                .department(department)
                 .activity(feed.getActivityType())
-                .content(feed.getContent())
-                // [수정] 이미지 리스트 매핑
-                .images(feed.getImages().stream()
-                        .map(FeedImage::getImageUrl)
-                        .collect(Collectors.toList()))
+                .content(feed.getContent() != null ? feed.getContent() : "")
+                .images(imgList)
                 .likes(feed.getLikesCount())
                 .comments(feed.getCommentsCount())
-                .points(feed.getEarnedPoints())
+                .points(points)
                 .createdAt(feed.getCreatedAt())
-                .stats(Map.of("calories", feed.getCalories() != null ? feed.getCalories() + "kcal" : "0kcal"))
+                .stats(Collections.singletonMap("calories", calories)) // Map.of 대신 호환성 좋은 singletonMap 사용
                 .build();
     }
 }

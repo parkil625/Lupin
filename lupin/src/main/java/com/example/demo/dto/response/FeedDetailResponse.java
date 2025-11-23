@@ -38,7 +38,7 @@ public class FeedDetailResponse {
                 .calories(feed.getCalories())
                 .content(feed.getContent())
                 .imageUrls(feed.getImages().stream()
-                        .map(FeedImage::getS3Key)
+                        .map(FeedImage::getImageUrl)
                         .collect(Collectors.toList()))
                 .likesCount(feed.getLikesCount())
                 .commentsCount(feed.getCommentsCount())

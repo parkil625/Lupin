@@ -1,5 +1,4 @@
 import apiClient from './client';
-import { Notification } from '../types/dashboard.types';
 
 /**
  * 알림 관련 API 요청

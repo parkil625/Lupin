@@ -10,6 +10,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -123,6 +124,36 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
 
     fetchRankingData();
   }, [userId, profileImage]);
+
+  // 로딩 중일 때 스켈레톤 렌더링
+  if (loading) {
+    return (
+      <div className="h-full overflow-auto p-8">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="mb-6">
+            <h1 className="text-5xl font-black text-gray-900 mb-2">
+              {currentMonth}월 랭킹
+            </h1>
+            <p className="text-gray-700 font-medium text-lg">
+              이번 달 TOP 운동왕은 누구?
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 flex flex-col gap-2">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="w-full rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', height: '58px' }} />
+              ))}
+            </div>
+            <div className="space-y-6">
+              <div className="rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '390px', height: '200px' }} />
+              <div className="rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '390px', height: '200px' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full overflow-auto p-8">
@@ -263,6 +294,7 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
             ))}
 
             {/* Separator */}
+            {!loading && (
             <div className="flex items-center justify-center py-3">
               <div className="flex flex-col gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
@@ -270,9 +302,10 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
               </div>
             </div>
+            )}
 
             {/* My Ranking Area */}
-            {myRankingContext
+            {!loading && myRankingContext
               .filter((ranker) => ranker.rank > 10) // Top 10에 이미 표시된 사용자 제외
               .map((ranker) => (
                 <Card
@@ -397,21 +430,33 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                     <span className="text-gray-700 font-medium">
                       이번 달 활동
                     </span>
-                    <span className="font-black text-xl text-[#C93831]">
-                      {myStats.activeDays}일
-                    </span>
+                    {loading ? (
+                      <Skeleton className="h-7 w-12" />
+                    ) : (
+                      <span className="font-black text-xl text-[#C93831]">
+                        {myStats.activeDays}일
+                      </span>
+                    )}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">총 점수</span>
-                    <span className="font-black text-xl text-[#C93831]">
-                      {myStats.avgScore}
-                    </span>
+                    {loading ? (
+                      <Skeleton className="h-7 w-12" />
+                    ) : (
+                      <span className="font-black text-xl text-[#C93831]">
+                        {myStats.avgScore}
+                      </span>
+                    )}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">연속 기록</span>
-                    <span className="font-black text-xl text-[#C93831]">
-                      {myStats.streak}일
-                    </span>
+                    {loading ? (
+                      <Skeleton className="h-7 w-12" />
+                    ) : (
+                      <span className="font-black text-xl text-[#C93831]">
+                        {myStats.streak}일
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -427,23 +472,35 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">총 참여자</span>
-                    <span className="font-black text-xl text-gray-900">
-                      {statistics.totalUsers}명
-                    </span>
+                    {loading ? (
+                      <Skeleton className="h-7 w-12" />
+                    ) : (
+                      <span className="font-black text-xl text-gray-900">
+                        {statistics.totalUsers}명
+                      </span>
+                    )}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">
                       이번 달 활동
                     </span>
-                    <span className="font-black text-xl text-gray-900">
-                      {statistics.activeUsersThisMonth}명
-                    </span>
+                    {loading ? (
+                      <Skeleton className="h-7 w-12" />
+                    ) : (
+                      <span className="font-black text-xl text-gray-900">
+                        {statistics.activeUsersThisMonth}명
+                      </span>
+                    )}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">평균 점수</span>
-                    <span className="font-black text-xl text-gray-900">
-                      {statistics.averagePoints}점
-                    </span>
+                    {loading ? (
+                      <Skeleton className="h-7 w-12" />
+                    ) : (
+                      <span className="font-black text-xl text-gray-900">
+                        {statistics.averagePoints}점
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

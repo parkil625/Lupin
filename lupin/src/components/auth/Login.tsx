@@ -101,7 +101,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       const result = await authApi.googleLogin(response.credential);
-      localStorage.setItem("userId", result.userId.toString());
+        localStorage.setItem("userId", result.id.toString());
       localStorage.setItem("userEmail", result.email);
       localStorage.setItem("userName", result.name);
       login(result.accessToken, result.role);

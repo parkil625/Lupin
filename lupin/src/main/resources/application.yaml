@@ -27,8 +27,8 @@ spring:
 
 # Naver OAuth2 설정
 naver:
-  client-id: ${NAVER_CLIENT_ID}
-  client-secret: ${NAVER_CLIENT_SECRET}
+  client-id: ${NAVER_CLIENT_ID:}
+  client-secret: ${NAVER_CLIENT_SECRET:}
 
   # JPA 설정
   jpa:

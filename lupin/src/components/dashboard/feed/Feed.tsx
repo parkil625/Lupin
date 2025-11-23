@@ -7,7 +7,7 @@
  * - 검색 및 필터링 기능
  */
 
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -61,8 +61,6 @@ interface FeedViewProps {
   allFeeds: Feed[];
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  showSearch: boolean;
-  setShowSearch: (show: boolean) => void;
   getFeedImageIndex: (feedId: number) => number;
   setFeedImageIndex: (feedId: number, index: number) => void;
   hasLiked: (feedId: number) => boolean;
@@ -80,14 +78,12 @@ function FeedCard({
   feed,
   currentIndex,
   liked,
-  getFeedImageIndex,
   setFeedImageIndex,
   handleLike,
 }: {
   feed: Feed;
   currentIndex: number;
   liked: boolean;
-  getFeedImageIndex: (feedId: number) => number;
   setFeedImageIndex: (feedId: number, index: number) => void;
   handleLike: (feedId: number) => void;
 }) {
@@ -532,14 +528,15 @@ function FeedCard({
   const hasImages = feed.images && feed.images.length > 0;
 
   return (
-    <div className="snap-start snap-always flex-shrink-0 w-full h-screen flex items-center justify-center py-4">
+    <div className="flex items-center justify-center">
       <div
-        className={`h-full max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl rounded-lg flex transition-all duration-300 ${
+        className={`h-full max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl flex transition-all duration-300 ${
           showComments
             ? "!w-[825px] !max-w-[825px]"
             : "!w-[475px] !max-w-[475px]"
         }`}
         style={{
+          borderRadius: 0,
           width: showComments ? "825px" : "475px",
           maxWidth: showComments ? "825px" : "475px",
         }}
@@ -549,11 +546,11 @@ function FeedCard({
           {hasImages ? (
             <>
               {/* Image Carousel */}
-              <div className="relative h-[545px] w-full overflow-hidden rounded-tl-lg">
+              <div className="relative h-[545px] w-full overflow-hidden">
                 <img
                   src={feed.images[currentIndex] || feed.images[0]}
                   alt={feed.activity}
-                  className="w-full h-full object-cover rounded-tl-lg"
+                  className="w-full h-full object-cover"
                   style={{ maxWidth: "475px", width: "475px", height: "545px" }}
                 />
 
@@ -825,9 +822,7 @@ function FeedCard({
 
           {/* Feed Content */}
           <div
-            className={`p-6 space-y-3 flex-1 overflow-auto bg-transparent ${
-              !showComments ? "rounded-bl-lg rounded-br-lg" : ""
-            } ${!hasImages ? "rounded-tl-lg" : ""}`}
+            className="p-6 space-y-3 flex-1 overflow-auto bg-transparent"
             style={{ width: "475px", maxWidth: "475px" }}
           >
             <style>{`
@@ -893,7 +888,7 @@ function FeedCard({
 
         {/* Comments Panel (Right - slides in) */}
         {showComments && (
-          <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col overflow-hidden rounded-tr-lg rounded-br-lg">
+          <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col overflow-hidden">
             {/* Comments Header */}
             <div className="px-6 py-4 border-b border-gray-200/30 flex items-center justify-between bg-transparent">
               <h3 className="text-lg font-bold text-gray-900">
@@ -1018,8 +1013,6 @@ export default function FeedView({
   allFeeds,
   searchQuery,
   setSearchQuery,
-  showSearch,
-  setShowSearch,
   getFeedImageIndex,
   setFeedImageIndex,
   hasLiked,
@@ -1031,98 +1024,124 @@ export default function FeedView({
   hasMoreFeeds,
   isLoadingFeeds,
 }: FeedViewProps) {
-  // 마지막 피드 감지를 위한 ref
-  const lastFeedRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // 윈도잉을 위한 현재 보이는 피드 인덱스
-  const [visibleIndex, setVisibleIndex] = useState(0);
-  const feedRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  // 필터링된 피드 목록
+  const filteredFeeds = useMemo(() =>
+    allFeeds.filter((feed) =>
+      feed.author.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+    [allFeeds, searchQuery]
+  );
 
-  // 윈도잉: 현재 보이는 피드 기준 앞뒤 1개씩만 렌더링
-  const windowSize = 1;
-
-  // 현재 보이는 피드 감지
+  // 컨테이너 크기 측정
   useEffect(() => {
-    if (!feedContainerRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const feedId = parseInt(entry.target.getAttribute('data-feed-id') || '0');
-            const index = allFeeds.findIndex(f => f.id === feedId);
-            if (index !== -1 && index !== visibleIndex) {
-              setVisibleIndex(index);
-            }
-          }
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight
         });
-      },
-      {
-        root: feedContainerRef.current,
-        threshold: 0.5
       }
-    );
+    };
 
-    feedRefs.current.forEach((el) => {
-      observer.observe(el);
-    });
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
-    return () => observer.disconnect();
-  }, [allFeeds, visibleIndex, feedContainerRef]);
+  // 그리드 설정: 한 행에 5개씩 표시
+  const COLUMNS = 5;
+  const rowCount = Math.ceil(filteredFeeds.length / COLUMNS);
 
   // 특정 피드로 스크롤
   useEffect(() => {
-    if (scrollToFeedId && feedContainerRef.current) {
-      // 피드 목록이 렌더링된 후 스크롤 실행
-      const scrollToTarget = () => {
-        const feedElement = feedContainerRef.current?.querySelector(
-          `[data-feed-id="${scrollToFeedId}"]`
-        );
-        if (feedElement) {
-          feedElement.scrollIntoView({ behavior: "smooth", block: "center" });
-          setScrollToFeedId(null); // 스크롤 후 초기화
-        }
-      };
-
-      // 약간의 딜레이를 주어 렌더링 완료 후 스크롤
-      setTimeout(scrollToTarget, 100);
+    if (scrollToFeedId && listRef.current) {
+      const feedElement = listRef.current.querySelector(`[data-feed-id="${scrollToFeedId}"]`);
+      if (feedElement) {
+        feedElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        setScrollToFeedId(null);
+      }
     }
-  }, [scrollToFeedId, feedContainerRef, setScrollToFeedId]);
+  }, [scrollToFeedId, setScrollToFeedId]);
 
-  // IntersectionObserver로 무한 스크롤 구현
-  useEffect(() => {
-    if (!lastFeedRef.current || !hasMoreFeeds || isLoadingFeeds) return;
+  // 무한 스크롤을 위한 스크롤 감지
+  const handleScroll = useCallback(() => {
+    if (!listRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+    // 하단 200px 이내에 도달하면 더 로드
+    if (scrollHeight - scrollTop - clientHeight < 200 && hasMoreFeeds && !isLoadingFeeds) {
+      loadMoreFeeds();
+    }
+  }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMoreFeeds();
-        }
-      },
-      { threshold: 0.1 }
+  // 각 행 렌더링 (5개의 카드)
+  const renderRow = (index: number) => {
+    const startIdx = index * COLUMNS;
+    const rowFeeds = filteredFeeds.slice(startIdx, startIdx + COLUMNS);
+
+    return (
+      <div key={index} className="flex justify-center gap-0">
+        {rowFeeds.map((feed) => {
+          const currentIndex = getFeedImageIndex(feed.id);
+          const liked = hasLiked(feed.id);
+
+          return (
+            <div key={feed.id} data-feed-id={feed.id} className="flex-shrink-0">
+              <FeedCard
+                feed={feed}
+                currentIndex={currentIndex}
+                liked={liked}
+                setFeedImageIndex={setFeedImageIndex}
+                handleLike={handleLike}
+              />
+            </div>
+          );
+        })}
+        {/* 마지막 행이 5개 미만일 때 빈 공간 채우기 */}
+        {rowFeeds.length < COLUMNS && Array(COLUMNS - rowFeeds.length).fill(0).map((_, i) => (
+          <div key={`empty-${i}`} style={{ width: "475px", flexShrink: 0 }} />
+        ))}
+      </div>
     );
-
-    observer.observe(lastFeedRef.current);
-
-    return () => observer.disconnect();
-  }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds, allFeeds.length]);
+  };
 
   return (
-    <div className="h-full relative flex items-center justify-center">
+    <div className="h-full relative">
       <div
-        ref={feedContainerRef}
-        className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        ref={(el) => {
+          containerRef.current = el;
+          if (feedContainerRef) {
+            (feedContainerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+          }
+        }}
+        className="h-full w-full"
       >
         <style>{`
-          .scrollbar-hide::-webkit-scrollbar {
-            display: none;
+          .feed-grid-list {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(201, 56, 49, 0.3) transparent;
+          }
+          .feed-grid-list::-webkit-scrollbar {
+            width: 6px;
+          }
+          .feed-grid-list::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .feed-grid-list::-webkit-scrollbar-thumb {
+            background: rgba(201, 56, 49, 0.3);
+            border-radius: 3px;
+          }
+          .feed-grid-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(201, 56, 49, 0.5);
           }
         `}</style>
 
-        <div className="flex flex-col items-center">
-          {/* Search Bar */}
-          <div className="sticky top-0 z-30 w-full max-w-2xl px-4 py-3">
+        {/* Search Bar - Fixed at top */}
+        <div className="sticky top-0 z-30 flex justify-center px-4 py-3 bg-gradient-to-b from-gray-50 to-transparent">
+          <div className="w-full max-w-2xl">
             <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
@@ -1130,58 +1149,24 @@ export default function FeedView({
               suggestions={[...new Set(allFeeds.map((feed) => feed.author))]}
             />
           </div>
-
-          {/* Feed Cards with Windowing */}
-          {allFeeds
-            .filter(
-              (feed) =>
-                feed.author.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-            .map((feed, index, arr) => {
-              const currentIndex = getFeedImageIndex(feed.id);
-              const liked = hasLiked(feed.id);
-              const isLast = index === arr.length - 1;
-
-              // 윈도잉: 현재 보이는 피드 기준 앞뒤 1개만 실제 렌더링
-              const isInWindow = index >= visibleIndex - windowSize && index <= visibleIndex + windowSize;
-
-              return (
-                <div
-                  key={feed.id}
-                  data-feed-id={feed.id}
-                  ref={(el) => {
-                    if (el) {
-                      feedRefs.current.set(feed.id, el);
-                    } else {
-                      feedRefs.current.delete(feed.id);
-                    }
-                    if (isLast && el) {
-                      (lastFeedRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-                    }
-                  }}
-                >
-                  {isInWindow ? (
-                    <FeedCard
-                      feed={feed}
-                      currentIndex={currentIndex}
-                      liked={liked}
-                      getFeedImageIndex={getFeedImageIndex}
-                      setFeedImageIndex={setFeedImageIndex}
-                      handleLike={handleLike}
-                    />
-                  ) : (
-                    // 윈도우 밖의 피드는 빈 공간으로 대체 (스크롤 위치 유지)
-                    <div className="snap-start snap-always flex-shrink-0 w-full h-screen" />
-                  )}
-                </div>
-              );
-            })}
-          {isLoadingFeeds && (
-            <div className="flex justify-center py-8">
-              <div className="w-8 h-8 border-4 border-gray-300 border-t-[#C93831] rounded-full animate-spin"></div>
-            </div>
-          )}
         </div>
+
+        {/* Grid Feed List */}
+        <div
+          ref={listRef}
+          className="feed-grid-list overflow-auto"
+          style={{ height: containerSize.height - 60 }}
+          onScroll={handleScroll}
+        >
+          {Array.from({ length: rowCount }, (_, i) => renderRow(i))}
+        </div>
+
+        {/* Loading indicator */}
+        {isLoadingFeeds && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+            <div className="w-8 h-8 border-4 border-gray-300 border-t-[#C93831] rounded-full animate-spin"></div>
+          </div>
+        )}
       </div>
     </div>
   );

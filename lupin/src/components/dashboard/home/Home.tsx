@@ -55,6 +55,7 @@ export default function Home({
 }: HomeProps) {
   const [showAdPopup, setShowAdPopup] = useState(false);
   const [canPostToday, setCanPostToday] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [userStats, setUserStats] = useState({
     points: 0,
     lotteryTickets: 0,
@@ -139,6 +140,8 @@ export default function Home({
         });
       } catch (error) {
         console.error("사용자 통계 로드 실패:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -238,69 +241,84 @@ export default function Home({
             </Avatar>
 
             <div className="flex-1">
-              <h1 className="text-3xl font-black text-gray-900 mb-4">
-                {userStats.name}
-              </h1>
+              {isLoading ? (
+                <div className="mb-4 rounded-lg animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '89px', height: '36px' }} />
+              ) : (
+                <h1 className="text-3xl font-black text-gray-900 mb-4">
+                  {userStats.name}
+                </h1>
+              )}
 
-              <div className="flex gap-8 mb-4">
-                <div>
-                  <span className="text-sm text-gray-600 font-bold">피드 </span>
-                  <span className="text-sm font-black text-[#C93831]">
-                    {myFeeds.length}
-                  </span>
+              {isLoading ? (
+                <div className="mb-4 rounded-lg animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '424px', height: '24px' }} />
+              ) : (
+                <div className="flex gap-8 mb-4">
+                  <div>
+                    <span className="text-sm text-gray-600 font-bold">피드 </span>
+                    <span className="text-sm font-black text-[#C93831]">
+                      {myFeeds.length}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600 font-bold">
+                      이번 달 점수{" "}
+                    </span>
+                    <span className="text-sm font-black text-[#C93831]">
+                      {userStats.points}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600 font-bold">
+                      추첨권{" "}
+                    </span>
+                    <span className="text-sm font-black text-[#C93831]">
+                      {userStats.lotteryTickets}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600 font-bold">
+                      좋아요{" "}
+                    </span>
+                    <span className="text-sm font-black text-[#C93831]">
+                      {userStats.monthlyLikes}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-600 font-bold">순위 </span>
+                    <span className="text-sm font-black text-[#C93831]">
+                      #{userStats.rank || "-"}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm text-gray-600 font-bold">
-                    이번 달 점수{" "}
-                  </span>
-                  <span className="text-sm font-black text-[#C93831]">
-                    {userStats.points}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600 font-bold">
-                    추첨권{" "}
-                  </span>
-                  <span className="text-sm font-black text-[#C93831]">
-                    {userStats.lotteryTickets}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600 font-bold">
-                    좋아요{" "}
-                  </span>
-                  <span className="text-sm font-black text-[#C93831]">
-                    {userStats.monthlyLikes}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600 font-bold">순위 </span>
-                  <span className="text-sm font-black text-[#C93831]">
-                    #{userStats.rank || "-"}
-                  </span>
-                </div>
-              </div>
+              )}
 
-              <div className="flex gap-2 flex-wrap">
-                {userStats.has7DayStreak && (
-                  <Badge className="bg-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                    <Flame className="w-3 h-3 mr-1" />
-                    7일 연속
-                  </Badge>
-                )}
-                {userStats.isTop10 && (
-                  <Badge className="bg-yellow-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                    <Award className="w-3 h-3 mr-1" />
-                    TOP 10
-                  </Badge>
-                )}
-                {!userStats.isTop10 && userStats.isTop100 && (
-                  <Badge className="bg-purple-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                    <Award className="w-3 h-3 mr-1" />
-                    TOP 100
-                  </Badge>
-                )}
-              </div>
+              {isLoading ? (
+                <div className="flex gap-2">
+                  <div className="rounded-md animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '28px' }} />
+                  <div className="rounded-md animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '28px' }} />
+                </div>
+              ) : (
+                <div className="flex gap-2 flex-wrap">
+                  {userStats.has7DayStreak && (
+                    <Badge className="bg-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                      <Flame className="w-3 h-3 mr-1" />
+                      7일 연속
+                    </Badge>
+                  )}
+                  {userStats.isTop10 && (
+                    <Badge className="bg-yellow-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                      <Award className="w-3 h-3 mr-1" />
+                      TOP 10
+                    </Badge>
+                  )}
+                  {!userStats.isTop10 && userStats.isTop100 && (
+                    <Badge className="bg-purple-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                      <Award className="w-3 h-3 mr-1" />
+                      TOP 100
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

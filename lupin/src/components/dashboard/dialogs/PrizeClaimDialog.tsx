@@ -15,14 +15,12 @@ interface PrizeClaimDialogProps {
   open: boolean;
   onClose: () => void;
   prizeAmount: string; // "100만원" or "50만원"
-  ticketId: number;
 }
 
 export default function PrizeClaimDialog({
   open,
   onClose,
   prizeAmount,
-  ticketId,
 }: PrizeClaimDialogProps) {
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");

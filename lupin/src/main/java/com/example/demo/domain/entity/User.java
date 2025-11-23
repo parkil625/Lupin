@@ -63,6 +63,9 @@ public class User {
     @Column(length = 100)
     private String department;
 
+    @Column(length = 20)
+    private String phone;  // 연락처
+
     // 연관관계
     @OneToMany(mappedBy = "writer", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

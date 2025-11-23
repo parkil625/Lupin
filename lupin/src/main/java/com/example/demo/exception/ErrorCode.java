@@ -24,6 +24,13 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
     INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, "포인트가 부족합니다."),
 
+    // OAuth
+    ALREADY_LINKED_OAUTH(HttpStatus.CONFLICT, "이미 연동된 계정입니다."),
+    OAUTH_ALREADY_USED(HttpStatus.CONFLICT, "다른 계정에 이미 연동된 OAuth 계정입니다."),
+    OAUTH_NOT_LINKED(HttpStatus.NOT_FOUND, "연동된 OAuth 계정이 없습니다."),
+    OAUTH_TOKEN_ERROR(HttpStatus.BAD_REQUEST, "OAuth 토큰 발급에 실패했습니다."),
+    OAUTH_USER_INFO_ERROR(HttpStatus.BAD_REQUEST, "OAuth 사용자 정보를 가져올 수 없습니다."),
+
     // Feed
     FEED_NOT_FOUND(HttpStatus.NOT_FOUND, "피드를 찾을 수 없습니다."),
     UNAUTHORIZED_FEED_ACCESS(HttpStatus.FORBIDDEN, "피드에 접근할 권한이 없습니다."),

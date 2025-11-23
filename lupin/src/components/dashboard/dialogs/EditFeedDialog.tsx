@@ -22,6 +22,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CheckCircle, Clock, Flame, Trophy } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { toast } from "sonner";
@@ -191,24 +197,19 @@ export default function EditFeedDialog({
     }
   }, [startTime, endTime, workoutType]);
 
-  const isVerified = startImage && endImage;
+  // 운동 인증 완료: 시작/끝 시간이 모두 있고, 끝 시간이 시작 시간보다 나중일 때만
+  const isVerified = startTime && endTime && endTime > startTime;
+
+  // 제출 가능: 시작/끝 사진만 있으면 됨
+  const canSubmit = startImage && endImage;
 
   // 저장 처리
   const handleSave = () => {
     if (!feed) return;
 
     if (!startImage || !endImage) {
-      toast.error("운동 인증을 위해 시작 사진과 끝 사진을 모두 업로드해주세요!");
+      toast.error("시작 사진과 끝 사진을 모두 업로드해주세요!");
       return;
-    }
-
-    // 시간 유효성 검증 (새로 업로드한 경우에만)
-    if (startTime && endTime) {
-      const validation = validateWorkoutTimes(startTime, endTime);
-      if (!validation.valid) {
-        toast.error(validation.error || "시간 정보가 올바르지 않습니다.");
-        return;
-      }
     }
 
     const images = [startImage, endImage, ...otherImages].filter(Boolean) as string[];
@@ -259,43 +260,81 @@ export default function EditFeedDialog({
             />
 
             {/* 2x2 Photo Grid */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <ImageUploadBox
-                label="시작 사진"
-                image={startImage}
-                onImageChange={setStartImage}
-                onFileSelect={handleStartImageUpload}
-              />
-              <ImageUploadBox
-                label="끝 사진"
-                image={endImage}
-                onImageChange={setEndImage}
-                onFileSelect={handleEndImageUpload}
-              />
-              <ImageUploadBox
-                label="기타 사진"
-                image={otherImages[0] || null}
-                onImageChange={() => setOtherImages(otherImages.slice(1))}
-                onFileSelect={handleOtherImageUpload}
-                variant="display"
-                showCount={otherImages.length}
-              />
-              <ImageUploadBox
-                label="업로드"
-                image={null}
-                onImageChange={() => {}}
-                onFileSelect={handleOtherImageUpload}
-                variant="upload"
-              />
-            </div>
+            <TooltipProvider>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <ImageUploadBox
+                        label="시작 사진"
+                        image={startImage}
+                        onImageChange={setStartImage}
+                        onFileSelect={handleStartImageUpload}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>운동 시작 시 찍은 사진을 업로드하세요.<br/>사진의 촬영 시간이 자동으로 인식됩니다.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <ImageUploadBox
+                        label="끝 사진"
+                        image={endImage}
+                        onImageChange={setEndImage}
+                        onFileSelect={handleEndImageUpload}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>운동 종료 시 찍은 사진을 업로드하세요.<br/>시작 사진보다 나중에 찍어야 인증됩니다.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <ImageUploadBox
+                        label="기타 사진"
+                        image={otherImages[0] || null}
+                        onImageChange={() => setOtherImages(otherImages.slice(1))}
+                        onFileSelect={handleOtherImageUpload}
+                        variant="display"
+                        showCount={otherImages.length}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>추가로 올리고 싶은 사진이 있다면<br/>여기에 업로드하세요. (선택사항)</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <ImageUploadBox
+                        label="업로드"
+                        image={null}
+                        onImageChange={() => {}}
+                        onFileSelect={handleOtherImageUpload}
+                        variant="upload"
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>클릭해서 추가 사진을 업로드하세요.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
 
             {/* 작성 버튼 */}
             <Button
               onClick={handleSave}
-              disabled={!isVerified}
+              disabled={!canSubmit}
               className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold py-2.5 rounded-lg transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isVerified ? '수정 완료' : '시작/끝 사진 필요'}
+              {canSubmit ? '수정 완료' : '시작/끝 사진 필요'}
             </Button>
 
             {/* Workout Metrics */}

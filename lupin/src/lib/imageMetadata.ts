@@ -98,52 +98,49 @@ export function calculateWorkoutMetrics(
   const durationMs = endTime.getTime() - startTime.getTime();
   const durationMinutes = Math.round(durationMs / (1000 * 60));
 
-  // 운동 종류별 MET (Metabolic Equivalent of Task) 값
-  const metValues: Record<string, number> = {
-    running: 9.8,
-    walking: 3.5,
-    cycling: 7.5,
-    swimming: 8.0,
-    weight: 6.0,
-    yoga: 3.0,
-    pilates: 3.5,
-    crossfit: 8.0,
-    hiking: 6.0,
-    other: 5.0,
+  // 운동 종류별 강도 값
+  const intensityValues: Record<string, number> = {
+    "산책": 0.5,
+    "요가": 0.5,
+    "스트레칭": 0.6,
+    "필라테스": 0.6,
+    "골프": 0.7,
+    "빠른 걷기": 0.8,
+    "헬스": 0.8,
+    "배드민턴": 0.9,
+    "탁구": 0.9,
+    "자전거 타기": 1.0,
+    "수영": 1.0,
+    "등산": 1.0,
+    "테니스": 1.1,
+    "조깅": 1.2,
+    "축구": 1.4,
+    "농구": 1.4,
+    "달리기": 1.5,
+    "복싱": 1.5,
+    "수영(빠르게)": 1.7,
+    "자전거(빠르게)": 1.7,
+    "HIIT": 1.7,
+    "크로스핏": 1.7,
+    "줄넘기": 1.8,
   };
 
-  const met = metValues[workoutType] || 5.0;
+  const intensity = intensityValues[workoutType] || 0.8;
 
-  // 칼로리 계산: MET * 체중(kg) * 시간(hours)
-  // 평균 체중 65kg 가정
+  // 칼로리 계산: 강도 * 체중(kg) * 시간(hours) * 기본 MET 계수
   const weightKg = 65;
   const durationHours = durationMinutes / 60;
-  const calories = Math.round(met * weightKg * durationHours);
+  const baseMET = intensity * 8; // 강도를 MET로 변환
+  const calories = Math.round(baseMET * weightKg * durationHours);
 
-  // 운동 점수 계산 (0-100)
-  // 기본 점수 + 시간 보너스 + 강도 보너스
-  let score = 0;
-
-  // 기본 점수 (최소 30분 운동 시 50점)
-  if (durationMinutes >= 30) {
-    score += 50;
-  } else {
-    score += Math.round((durationMinutes / 30) * 50);
-  }
-
-  // 시간 보너스 (30분 초과 시 분당 0.5점, 최대 30점)
-  if (durationMinutes > 30) {
-    const extraMinutes = durationMinutes - 30;
-    score += Math.min(30, Math.round(extraMinutes * 0.5));
-  }
-
-  // 강도 보너스 (MET 기반, 최대 20점)
-  score += Math.min(20, Math.round((met / 10) * 20));
+  // 점수 계산: 시간(분) * 강도, 최대 30점
+  const rawScore = durationMinutes * intensity;
+  const score = Math.min(30, Math.round(rawScore));
 
   return {
     durationMinutes,
     calories,
-    score: Math.min(100, score),
+    score,
   };
 }
 

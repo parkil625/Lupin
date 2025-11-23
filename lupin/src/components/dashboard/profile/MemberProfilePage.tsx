@@ -7,7 +7,7 @@
  * - 신체 정보 관리
  */
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -22,9 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit, Camera, User, LogOut, X } from "lucide-react";
+import { Edit, Camera, User, LogOut, X, Link2, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import { imageApi } from "@/api/imageApi";
+import { oauthApi, OAuthConnection } from "@/api/oauthApi";
 
 interface MemberProfilePageProps {
   onLogout: () => void;
@@ -43,6 +44,67 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const profileImageInputRef = useRef<HTMLInputElement>(null);
+
+  // OAuth 연동 관련 상태
+  const [oauthConnections, setOauthConnections] = useState<OAuthConnection[]>([]);
+  const [isLoadingOAuth, setIsLoadingOAuth] = useState(false);
+
+  // OAuth 연동 목록 로드
+  useEffect(() => {
+    const loadConnections = async () => {
+      try {
+        const connections = await oauthApi.getConnections();
+        setOauthConnections(connections);
+      } catch (error) {
+        console.error("OAuth 연동 목록 로드 실패:", error);
+      }
+    };
+    loadConnections();
+  }, []);
+
+  // 네이버 계정 연동
+  const handleLinkNaver = () => {
+    const state = Math.random().toString(36).substring(7);
+    sessionStorage.setItem('naver_oauth_state', state);
+    sessionStorage.setItem('naver_oauth_mode', 'link');
+
+    const redirectUri = `${window.location.origin}/oauth/naver/callback`;
+    const naverAuthUrl = oauthApi.getNaverAuthUrl(redirectUri, state);
+    window.location.href = naverAuthUrl;
+  };
+
+  // 카카오 계정 연동
+  const handleLinkKakao = () => {
+    const state = Math.random().toString(36).substring(7);
+    sessionStorage.setItem('kakao_oauth_state', state);
+    sessionStorage.setItem('kakao_oauth_mode', 'link');
+
+    const redirectUri = `${window.location.origin}/oauth/kakao/callback`;
+    const kakaoAuthUrl = oauthApi.getKakaoAuthUrl(redirectUri, state);
+    window.location.href = kakaoAuthUrl;
+  };
+
+  // OAuth 연동 해제
+  const handleUnlinkOAuth = async (provider: string) => {
+    if (!window.confirm(`${provider} 계정 연동을 해제하시겠습니까?`)) return;
+
+    setIsLoadingOAuth(true);
+    try {
+      await oauthApi.unlinkOAuth(provider);
+      setOauthConnections(prev => prev.filter(c => c.provider !== provider));
+      toast.success(`${provider} 계정 연동이 해제되었습니다.`);
+    } catch (error) {
+      console.error("OAuth 연동 해제 실패:", error);
+      toast.error("연동 해제에 실패했습니다.");
+    } finally {
+      setIsLoadingOAuth(false);
+    }
+  };
+
+  // 연동 여부 확인
+  const isLinked = (provider: string) => {
+    return oauthConnections.some(c => c.provider === provider);
+  };
 
   // 프로필 저장 핸들러
   const handleSaveProfile = () => {
@@ -293,6 +355,138 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                         className="rounded-xl bg-white/80 border-gray-200"
                       />
                     </InputGroup>
+                  </div>
+                </div>
+              </div>
+
+              {/* OAuth 연동 관리 */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">계정 연동</h3>
+                <div className="space-y-3">
+                  {/* 구글 연동 */}
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/80 border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">구글</p>
+                        {isLinked('GOOGLE') && (
+                          <p className="text-sm text-gray-500">
+                            {oauthConnections.find(c => c.provider === 'GOOGLE')?.providerEmail || '연동됨'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {isLinked('GOOGLE') ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnlinkOAuth('GOOGLE')}
+                        disabled={isLoadingOAuth}
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        <Unlink className="w-4 h-4 mr-1" />
+                        연동 해제
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isLoadingOAuth}
+                        className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                      >
+                        <Link2 className="w-4 h-4 mr-1" />
+                        연동하기
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* 네이버 연동 */}
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/80 border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-[#03C75A] flex items-center justify-center">
+                        <img src="/naver-logo.svg" alt="Naver" className="w-5 h-5 rounded" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">네이버</p>
+                        {isLinked('NAVER') && (
+                          <p className="text-sm text-gray-500">
+                            {oauthConnections.find(c => c.provider === 'NAVER')?.providerEmail || '연동됨'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {isLinked('NAVER') ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnlinkOAuth('NAVER')}
+                        disabled={isLoadingOAuth}
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        <Unlink className="w-4 h-4 mr-1" />
+                        연동 해제
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLinkNaver}
+                        disabled={isLoadingOAuth}
+                        className="text-[#03C75A] border-[#03C75A] hover:bg-green-50"
+                      >
+                        <Link2 className="w-4 h-4 mr-1" />
+                        연동하기
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* 카카오 연동 */}
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/80 border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-[#FEE500] flex items-center justify-center">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M12 4C7.02944 4 3 7.16467 3 11.04C3 13.4227 4.5584 15.5272 6.93 16.7L6.3 19.5C6.26 19.68 6.36 19.8 6.52 19.8C6.6 19.8 6.68 19.76 6.74 19.7L10.08 17.58C10.7 17.66 11.34 17.7 12 17.7C16.9706 17.7 21 14.5353 21 10.66C21 7.16467 16.9706 4 12 4Z" fill="#3C1E1E"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">카카오</p>
+                        {isLinked('KAKAO') && (
+                          <p className="text-sm text-gray-500">
+                            {oauthConnections.find(c => c.provider === 'KAKAO')?.providerEmail || '연동됨'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {isLinked('KAKAO') ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUnlinkOAuth('KAKAO')}
+                        disabled={isLoadingOAuth}
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        <Unlink className="w-4 h-4 mr-1" />
+                        연동 해제
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLinkKakao}
+                        disabled={isLoadingOAuth}
+                        className="text-[#3C1E1E] border-[#FEE500] hover:bg-yellow-50"
+                      >
+                        <Link2 className="w-4 h-4 mr-1" />
+                        연동하기
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

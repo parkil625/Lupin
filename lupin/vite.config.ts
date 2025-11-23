@@ -11,6 +11,12 @@
     define: {
       global: 'globalThis',
     },
+    optimizeDeps: {
+      include: ['react-window'],
+      esbuildOptions: {
+        mainFields: ['module', 'main'],
+      },
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
@@ -58,6 +64,9 @@
     build: {
       target: 'esnext',
       outDir: 'dist',
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
     },
     server: {
       port: 3000,

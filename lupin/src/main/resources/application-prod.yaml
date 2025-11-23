@@ -24,4 +24,4 @@ logging:
 
 app:
   seed-data:
-    enabled: true
+    enabled: false

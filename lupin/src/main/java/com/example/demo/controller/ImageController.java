@@ -26,7 +26,7 @@ public class ImageController {
 
     private final S3Template s3Template;
 
-    @Value("${spring.cloud.aws.s3.bucket}")
+    @Value("${spring.cloud.aws.s3.bucket:lupin-images}")
     private String bucketName;
 
     /**

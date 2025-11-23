@@ -2,7 +2,6 @@ spring:
   application:
     name: lupin
 
-  # MySQL 데이터베이스 설정
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/lupin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
@@ -13,7 +12,6 @@ spring:
       minimum-idle: 5
       connection-timeout: 30000
 
-  # Google OAuth2 설정
   security:
     oauth2:
       client:
@@ -25,7 +23,6 @@ spring:
               - email
               - profile
 
-  # [수정] JPA 설정 (spring 밑으로 이동)
   jpa:
     hibernate:
       ddl-auto: update
@@ -35,47 +32,41 @@ spring:
         show_sql: true
         use_sql_comments: true
         dialect: org.hibernate.dialect.MySQLDialect
+        default_batch_fetch_size: 100  # [추가] 컬렉션 조회 시 100개씩 묶어서 가져옴 (성능 최적화 & 에러 방지)
     open-in-view: false
 
-  # [수정] 파일 업로드 설정 (spring 밑으로 이동)
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
 
-  # [수정] AWS S3 설정 (spring 밑으로 이동 - Spring Cloud AWS 3.x 표준)
   cloud:
     aws:
       credentials:
         access-key: ${AWS_ACCESS_KEY}
         secret-key: ${AWS_SECRET_KEY}
       s3:
-        bucket: "lupin-storage" # 버킷명 확인 (S3 콘솔과 일치해야 함)
+        bucket: "lupin-storage"
       region:
         static: ap-northeast-2
 
-# Naver OAuth2 설정 (spring 밖으로 빼냄 - 독립 설정)
 naver:
   client-id: ${NAVER_CLIENT_ID:}
   client-secret: ${NAVER_CLIENT_SECRET:}
 
-# 로깅 설정
 logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.BasicBinder: trace
     com.example.demo: debug
 
-# 앱 설정
 app:
   seed-data:
-    enabled: false # 데이터 유지 모드
+    enabled: false
 
-# JWT 설정
 jwt:
   secret: ${JWT_SECRET}
 
-# 서버 설정
 server:
   port: 8081
   servlet:

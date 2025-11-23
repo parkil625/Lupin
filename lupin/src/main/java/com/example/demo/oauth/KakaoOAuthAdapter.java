@@ -22,7 +22,7 @@ public class KakaoOAuthAdapter implements OAuthProvider {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${KAKAO_CLIENT_ID}")
+    @Value("${KAKAO_CLIENT_ID:}")
     private String clientId;
 
     @Override

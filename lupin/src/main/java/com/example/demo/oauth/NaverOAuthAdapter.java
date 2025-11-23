@@ -22,10 +22,10 @@ public class NaverOAuthAdapter implements OAuthProvider {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${naver.client-id}")
+    @Value("${naver.client-id:}")
     private String clientId;
 
-    @Value("${naver.client-secret}")
+    @Value("${naver.client-secret:}")
     private String clientSecret;
 
     @Override

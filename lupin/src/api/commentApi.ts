@@ -1,5 +1,4 @@
 import apiClient from './client';
-import { Comment } from '../types/dashboard.types';
 
 /**
  * 댓글 관련 API 요청

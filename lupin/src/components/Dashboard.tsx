@@ -9,6 +9,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
+import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -96,9 +97,21 @@ const availableTimes = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 const bookedTimes = ["10:00", "15:00"];
 
 export default function Dashboard({ onLogout, userType }: DashboardProps) {
-  const [selectedNav, setSelectedNav] = useState(
-    userType === "doctor" ? "chat" : "home"
-  );
+  const { page } = useParams<{ page: string }>();
+  const navigate = useNavigate();
+
+  // URL에서 현재 페이지 결정 (기본값: home/chat)
+  const defaultPage = userType === "doctor" ? "chat" : "home";
+  const validPages = userType === "doctor"
+    ? ["chat", "profile"]
+    : ["home", "feed", "ranking", "medical", "create", "profile"];
+  const selectedNav = validPages.includes(page || "") ? page! : defaultPage;
+
+  // 네비게이션 함수 (URL 변경)
+  const setSelectedNav = (navId: string) => {
+    navigate(`/dashboard/${navId}`);
+  };
+
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -396,6 +409,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     }
     setSelectedNav(navId);
   };
+
+  // /dashboard 접근 시 기본 페이지로 리다이렉트 (모든 hooks 이후에 위치)
+  if (!page) {
+    return <Navigate to={`/dashboard/${defaultPage}`} replace />;
+  }
 
   const getFeedImageIndex = (feedId: number) => feedImageIndexes[feedId] || 0;
   const setFeedImageIndex = (feedId: number, index: number) =>

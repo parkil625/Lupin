@@ -109,31 +109,31 @@ public class DataInitializer implements CommandLineRunner {
     private List<User> createTestUsers() {
         List<User> users = new ArrayList<>();
 
-        users.add(createUser("김강민", "남성", "개발팀", 175.5, 72.5, LocalDate.of(1990, 3, 15), "user01", Role.MEMBER));
-        users.add(createUser("이서연", "여성", "마케팅팀", 162.3, 52.3, LocalDate.of(1992, 7, 22), "user02", Role.MEMBER));
-        users.add(createUser("박준호", "남성", "영업팀", 180.2, 78.8, LocalDate.of(1988, 11, 8), "user03", Role.MEMBER));
-        users.add(createUser("최지우", "여성", "디자인팀", 158.7, 48.5, LocalDate.of(1995, 1, 30), "user04", Role.MEMBER));
-        users.add(createUser("정민수", "남성", "인사팀", 172.8, 68.2, LocalDate.of(1991, 5, 12), "user05", Role.MEMBER));
-        users.add(createUser("강혜진", "여성", "재무팀", 165.4, 55.7, LocalDate.of(1993, 9, 25), "user06", Role.MEMBER));
-        users.add(createUser("윤태양", "남성", "법무팀", 178.1, 75.3, LocalDate.of(1989, 2, 18), "user07", Role.MEMBER));
-        users.add(createUser("한소희", "여성", "경영지원팀", 160.9, 50.8, LocalDate.of(1994, 6, 7), "user08", Role.MEMBER));
-        users.add(createUser("오성민", "남성", "연구개발팀", 183.5, 82.1, LocalDate.of(1987, 10, 3), "user09", Role.MEMBER));
-        users.add(createUser("서은주", "여성", "기획팀", 167.2, 58.4, LocalDate.of(1996, 4, 28), "user10", Role.MEMBER));
-        users.add(createUser("임동혁", "남성", "개발팀", 176.3, 70.6, LocalDate.of(1990, 8, 11), "user11", Role.MEMBER));
-        users.add(createUser("배수지", "여성", "마케팅팀", 163.8, 54.2, LocalDate.of(1992, 12, 19), "user12", Role.MEMBER));
-        users.add(createUser("신재호", "남성", "영업팀", 179.4, 77.5, LocalDate.of(1988, 3, 6), "user13", Role.MEMBER));
-        users.add(createUser("조미라", "여성", "디자인팀", 159.5, 49.8, LocalDate.of(1995, 7, 14), "user14", Role.MEMBER));
-        users.add(createUser("홍길동", "남성", "인사팀", 171.6, 67.3, LocalDate.of(1991, 11, 23), "user15", Role.MEMBER));
-        users.add(createUser("안지영", "여성", "재무팀", 164.7, 56.1, LocalDate.of(1993, 1, 9), "user16", Role.MEMBER));
-        users.add(createUser("유재석", "남성", "법무팀", 177.9, 74.8, LocalDate.of(1989, 5, 27), "user17", Role.MEMBER));
-        users.add(createUser("송혜교", "여성", "경영지원팀", 161.2, 51.5, LocalDate.of(1994, 9, 16), "user18", Role.MEMBER));
-        users.add(createUser("전지현", "여성", "연구개발팀", 182.3, 80.2, LocalDate.of(1987, 2, 4), "user19", Role.MEMBER));
-        users.add(createUser("현빈", "남성", "기획팀", 168.5, 59.7, LocalDate.of(1996, 6, 21), "user20", Role.MEMBER));
+        users.add(createUser("김강민", "남성", "개발팀", 175.5, 72.5, LocalDate.of(1990, 3, 15), "user01", Role.MEMBER, "010-1234-5001"));
+        users.add(createUser("이서연", "여성", "마케팅팀", 162.3, 52.3, LocalDate.of(1992, 7, 22), "user02", Role.MEMBER, "010-2345-5002"));
+        users.add(createUser("박준호", "남성", "영업팀", 180.2, 78.8, LocalDate.of(1988, 11, 8), "user03", Role.MEMBER, "010-3456-5003"));
+        users.add(createUser("최지우", "여성", "디자인팀", 158.7, 48.5, LocalDate.of(1995, 1, 30), "user04", Role.MEMBER, "010-4567-5004"));
+        users.add(createUser("정민수", "남성", "인사팀", 172.8, 68.2, LocalDate.of(1991, 5, 12), "user05", Role.MEMBER, "010-5678-5005"));
+        users.add(createUser("강혜진", "여성", "재무팀", 165.4, 55.7, LocalDate.of(1993, 9, 25), "user06", Role.MEMBER, "010-6789-5006"));
+        users.add(createUser("윤태양", "남성", "법무팀", 178.1, 75.3, LocalDate.of(1989, 2, 18), "user07", Role.MEMBER, "010-7890-5007"));
+        users.add(createUser("한소희", "여성", "경영지원팀", 160.9, 50.8, LocalDate.of(1994, 6, 7), "user08", Role.MEMBER, "010-8901-5008"));
+        users.add(createUser("오성민", "남성", "연구개발팀", 183.5, 82.1, LocalDate.of(1987, 10, 3), "user09", Role.MEMBER, "010-9012-5009"));
+        users.add(createUser("서은주", "여성", "기획팀", 167.2, 58.4, LocalDate.of(1996, 4, 28), "user10", Role.MEMBER, "010-1357-5010"));
+        users.add(createUser("임동혁", "남성", "개발팀", 176.3, 70.6, LocalDate.of(1990, 8, 11), "user11", Role.MEMBER, "010-2468-5011"));
+        users.add(createUser("배수지", "여성", "마케팅팀", 163.8, 54.2, LocalDate.of(1992, 12, 19), "user12", Role.MEMBER, "010-3579-5012"));
+        users.add(createUser("신재호", "남성", "영업팀", 179.4, 77.5, LocalDate.of(1988, 3, 6), "user13", Role.MEMBER, "010-4680-5013"));
+        users.add(createUser("조미라", "여성", "디자인팀", 159.5, 49.8, LocalDate.of(1995, 7, 14), "user14", Role.MEMBER, "010-5791-5014"));
+        users.add(createUser("홍길동", "남성", "인사팀", 171.6, 67.3, LocalDate.of(1991, 11, 23), "user15", Role.MEMBER, "010-6802-5015"));
+        users.add(createUser("안지영", "여성", "재무팀", 164.7, 56.1, LocalDate.of(1993, 1, 9), "user16", Role.MEMBER, "010-7913-5016"));
+        users.add(createUser("유재석", "남성", "법무팀", 177.9, 74.8, LocalDate.of(1989, 5, 27), "user17", Role.MEMBER, "010-8024-5017"));
+        users.add(createUser("송혜교", "여성", "경영지원팀", 161.2, 51.5, LocalDate.of(1994, 9, 16), "user18", Role.MEMBER, "010-9135-5018"));
+        users.add(createUser("전지현", "여성", "연구개발팀", 182.3, 80.2, LocalDate.of(1987, 2, 4), "user19", Role.MEMBER, "010-1246-5019"));
+        users.add(createUser("현빈", "남성", "기획팀", 168.5, 59.7, LocalDate.of(1996, 6, 21), "user20", Role.MEMBER, "010-2357-5020"));
 
         // 구글 로그인 테스트용 유저
-        users.add(createUserWithEmail("박선일", "남성", "개발팀", 175.0, 70.0, LocalDate.of(1994, 6, 25), "parkil625", "parkil625@gmail.com"));
-        users.add(createUserWithEmail("홍세민", "남성", "개발팀", 175.0, 70.0, LocalDate.of(2000, 11, 28), "pfielskdh46", "pfielskdh46@gmail.com"));
-        users.add(createUserWithEmail("최재홍", "남성", "개발팀", 175.0, 70.0, LocalDate.of(2003, 5, 15), "chdjehong2", "chdjehong2@gmail.com"));
+        users.add(createUserWithEmail("박선일", "남성", "개발팀", 175.0, 70.0, LocalDate.of(1994, 6, 25), "parkil625", "parkil625@gmail.com", "010-3468-6001"));
+        users.add(createUserWithEmail("홍세민", "남성", "개발팀", 175.0, 70.0, LocalDate.of(2000, 11, 28), "pfielskdh46", "pfielskdh46@gmail.com", "010-4579-6002"));
+        users.add(createUserWithEmail("최재홍", "남성", "개발팀", 175.0, 70.0, LocalDate.of(2003, 5, 15), "chdjehong2", "chdjehong2@gmail.com", "010-5680-6003"));
 
 
         return users;
@@ -222,7 +222,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private User createUser(String realName, String gender, String department,
-                            Double height, Double weight, LocalDate birthDate, String userId, Role role) {
+                            Double height, Double weight, LocalDate birthDate, String userId, Role role, String phone) {
         // 이미 존재하는 userId이면 기존 사용자 반환
         if (userRepository.findByUserId(userId).isPresent()) {
             return userRepository.findByUserId(userId).get();
@@ -241,13 +241,14 @@ public class DataInitializer implements CommandLineRunner {
                 .currentPoints(0L)
                 .monthlyPoints(0L)
                 .department(department)
+                .phone(phone)
                 .build();
 
         return userRepository.save(user);
     }
 
     private User createUserWithEmail(String realName, String gender, String department,
-                            Double height, Double weight, LocalDate birthDate, String userId, String email) {
+                            Double height, Double weight, LocalDate birthDate, String userId, String email, String phone) {
         // 이미 존재하는 userId이면 기존 사용자 반환
         if (userRepository.findByUserId(userId).isPresent()) {
             return userRepository.findByUserId(userId).get();
@@ -266,6 +267,7 @@ public class DataInitializer implements CommandLineRunner {
                 .currentPoints(0L)
                 .monthlyPoints(0L)
                 .department(department)
+                .phone(phone)
                 .build();
 
         return userRepository.save(user);

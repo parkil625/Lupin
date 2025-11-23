@@ -23,7 +23,7 @@ public class FeedDetailResponse {
     private String activityType;
     private Double calories;
     private String content;
-    private List<String> imageUrls;
+    private List<String> images;
     private Integer likesCount;
     private Integer commentsCount;
     private LocalDateTime createdAt;
@@ -37,7 +37,7 @@ public class FeedDetailResponse {
                 .activityType(feed.getActivityType())
                 .calories(feed.getCalories())
                 .content(feed.getContent())
-                .imageUrls(feed.getImages().stream()
+                .images(feed.getImages().stream()
                         .map(FeedImage::getImageUrl)
                         .collect(Collectors.toList()))
                 .likesCount(feed.getLikesCount())

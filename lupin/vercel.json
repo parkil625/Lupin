@@ -7,6 +7,10 @@
     {
       "source": "/ws/:path*",
       "destination": "http://43.202.79.166/ws/:path*"
+    },
+    {
+      "source": "/((?!api|ws|_next|static|[\\w-]+\\.\\w+).*)",
+      "destination": "/index.html"
     }
   ]
 }

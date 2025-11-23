@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -18,8 +19,8 @@ public class FeedCreateRequest {
     @NotBlank(message = "활동 타입은 필수입니다.")
     private String activityType;
 
-    @NotNull(message = "운동 시간은 필수입니다.")
-    private Integer duration; // 분 단위 (이미지 메타데이터에서 계산)
+    private LocalDateTime startedAt;
+    private LocalDateTime endedAt;
 
     private Double calories;
 

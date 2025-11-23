@@ -1,10 +1,8 @@
 package com.example.demo.repository.custom;
 
 import com.example.demo.domain.entity.Feed;
-import com.example.demo.domain.entity.FeedImage;
 import com.example.demo.dto.response.FeedListResponse;
 import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -48,22 +46,9 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        // Feed 엔티티를 FeedListResponse DTO로 변환
+        // [수정] FeedListResponse.from() 메서드를 사용하여 DTO 변환 (변수명 불일치 해결)
         List<FeedListResponse> content = feeds.stream()
-                .map(f -> FeedListResponse.builder()
-                        .id(f.getId())
-                        .writerId(f.getWriter().getId())
-                        .authorName(f.getWriter().getRealName())
-                        .activityType(f.getActivityType())
-                        .calories(f.getCalories())
-                        .content(f.getContent())
-                        .createdAt(f.getCreatedAt())
-                        .likesCount(f.getLikesCount())
-                        .commentsCount(f.getCommentsCount())
-                        .images(f.getImages().stream()
-                                .map(FeedImage::getImageUrl)
-                                .collect(Collectors.toList()))
-                        .build())
+                .map(FeedListResponse::from)
                 .collect(Collectors.toList());
 
         JPAQuery<Long> countQuery = queryFactory
@@ -93,22 +78,9 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        // Feed 엔티티를 FeedListResponse DTO로 변환
+        // [수정] FeedListResponse.from() 메서드를 사용하여 DTO 변환
         List<FeedListResponse> content = feeds.stream()
-                .map(f -> FeedListResponse.builder()
-                        .id(f.getId())
-                        .writerId(f.getWriter().getId())
-                        .authorName(f.getWriter().getRealName())
-                        .activityType(f.getActivityType())
-                        .calories(f.getCalories())
-                        .content(f.getContent())
-                        .createdAt(f.getCreatedAt())
-                        .likesCount(f.getLikesCount())
-                        .commentsCount(f.getCommentsCount())
-                        .images(f.getImages().stream()
-                                .map(FeedImage::getImageUrl)
-                                .collect(Collectors.toList()))
-                        .build())
+                .map(FeedListResponse::from)
                 .collect(Collectors.toList());
 
         JPAQuery<Long> countQuery = queryFactory
@@ -152,12 +124,10 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
 
     @Override
     public Integer countUserActiveDaysInCurrentMonth(Long userId) {
-        // 이번 달의 시작일과 마지막일 계산
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime endOfMonth = now.withDayOfMonth(now.toLocalDate().lengthOfMonth()).withHour(23).withMinute(59).withSecond(59).withNano(999999999);
 
-        // 해당 기간 동안의 피드 조회
         List<Feed> feeds = queryFactory
                 .selectFrom(feed)
                 .where(
@@ -166,7 +136,6 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 )
                 .fetch();
 
-        // 중복되지 않는 날짜 수 계산 (Java Stream 사용)
         long distinctDays = feeds.stream()
                 .map(f -> f.getCreatedAt().toLocalDate())
                 .distinct()
@@ -177,12 +146,10 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
 
     @Override
     public boolean hasUserPostedToday(Long userId) {
-        // 오늘의 시작과 끝 시간 계산
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfDay = now.withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime endOfDay = now.withHour(23).withMinute(59).withSecond(59).withNano(999999999);
 
-        // 오늘 작성된 피드 개수 조회
         Long count = queryFactory
                 .select(feed.count())
                 .from(feed)
@@ -215,7 +182,6 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
 
     private OrderSpecifier<?> getOrderSpecifier(Pageable pageable) {
         if (!pageable.getSort().isEmpty()) {
-            // Pageable의 정렬 정보 사용
             return pageable.getSort().stream()
                     .findFirst()
                     .<OrderSpecifier<?>>map(order -> {
@@ -224,8 +190,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                         }
                         return feed.id.desc();
                     })
-                    .orElse(feed.id.desc()); // 기본은 ID 내림차순
+                    .orElse(feed.id.desc());
         }
-        return feed.id.desc(); // ID 내림차순 정렬
+        return feed.id.desc();
     }
 }

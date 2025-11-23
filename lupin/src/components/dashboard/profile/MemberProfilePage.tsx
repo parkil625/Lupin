@@ -431,10 +431,11 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-4">계정 연동</h3>
                                 <div className="space-y-3">
-                                    {/* 구글 연동 */}
+                                    {/* 구글 연동 (수정됨: 테두리 제거) */}
                                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/80 border border-gray-200">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border border-gray-100">
+                                            {/* border-gray-100 클래스 제거 */}
+                                            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
                                                 <img src="/google-logo.png" alt="Google" className="w-6 h-6 object-contain" />
                                             </div>
                                             <div>
@@ -481,11 +482,12 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                         )}
                                     </div>
 
-                                    {/* 네이버 연동 */}
+                                    {/* 네이버 연동 (수정됨: 배경 흰색, 필터 제거) */}
                                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/80 border border-gray-200">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-[#03C75A] flex items-center justify-center">
-                                                <img src="/naver-logo.png" alt="Naver" className="w-5 h-5 object-contain brightness-0 invert" />
+                                            {/* 배경을 초록색에서 흰색으로 변경하고 필터 제거 */}
+                                            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
+                                                <img src="/naver-logo.png" alt="Naver" className="w-5 h-5 object-contain" />
                                             </div>
                                             <div>
                                                 <p className="font-medium text-gray-900">네이버</p>

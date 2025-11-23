@@ -25,15 +25,10 @@ spring:
               - email
               - profile
 
-# Naver OAuth2 설정
-naver:
-  client-id: ${NAVER_CLIENT_ID:}
-  client-secret: ${NAVER_CLIENT_SECRET:}
-
-  # JPA 설정
+  # [수정] JPA 설정 (spring 밑으로 이동)
   jpa:
     hibernate:
-      ddl-auto: update # 개발: update, 운영: validate
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -42,22 +37,27 @@ naver:
         dialect: org.hibernate.dialect.MySQLDialect
     open-in-view: false
 
-  # 파일 업로드 용량 제한
+  # [수정] 파일 업로드 설정 (spring 밑으로 이동)
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
 
-  # AWS S3 설정 (Spring Cloud AWS 3.x)
+  # [수정] AWS S3 설정 (spring 밑으로 이동 - Spring Cloud AWS 3.x 표준)
   cloud:
     aws:
       credentials:
         access-key: ${AWS_ACCESS_KEY}
         secret-key: ${AWS_SECRET_KEY}
       s3:
-        bucket: "lupin-storage"
+        bucket: "lupin-storage" # 버킷명 확인 (S3 콘솔과 일치해야 함)
       region:
         static: ap-northeast-2
+
+# Naver OAuth2 설정 (spring 밖으로 빼냄 - 독립 설정)
+naver:
+  client-id: ${NAVER_CLIENT_ID:}
+  client-secret: ${NAVER_CLIENT_SECRET:}
 
 # 로깅 설정
 logging:
@@ -69,7 +69,7 @@ logging:
 # 앱 설정
 app:
   seed-data:
-    enabled: false
+    enabled: false # 데이터 유지 모드
 
 # JWT 설정
 jwt:

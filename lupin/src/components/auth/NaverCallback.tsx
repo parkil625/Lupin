@@ -10,12 +10,26 @@ import { oauthApi } from "../../api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Card } from "../ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogAction,
+} from "@/components/ui/alert-dialog"; // 경로 확인 필요 (혹은 "../ui/alert-dialog")
 
 export default function NaverCallback() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const login = useAuthStore((state) => state.login);
+
+    // 에러 메시지 표시용 State
     const [error, setError] = useState("");
+
+    // [수정 1] 모달 표시 여부를 제어하는 State 추가
+    const [showLinkError, setShowLinkError] = useState(false);
 
     useEffect(() => {
         const handleCallback = async () => {
@@ -50,8 +64,8 @@ export default function NaverCallback() {
                     // 로그인 모드
                     const result = await oauthApi.naverLogin(code, state);
 
-                    // 사용자 정보 저장
-                    localStorage.setItem('userId', result.userId.toString());
+                    // 사용자 정보 저장 (백엔드 DTO 수정 여부에 따라 result.id 또는 result.userId 확인)
+                    localStorage.setItem('userId', result.id.toString());
                     localStorage.setItem('userEmail', result.email);
                     localStorage.setItem('userName', result.name);
 
@@ -65,6 +79,18 @@ export default function NaverCallback() {
                     navigate("/dashboard", { replace: true });
                 }
             } catch (err: any) {
+
+                // alert() 대신 State를 true로 변경하여 모달 띄우기
+                if (err.response?.status === 404 && err.response?.data?.errorCode === 'OAUTH_NOT_LINKED') {
+                    // 세션 정리
+                    sessionStorage.removeItem("naver_oauth_state");
+                    sessionStorage.removeItem("naver_oauth_mode");
+
+                    // 여기서 바로 이동하지 않고 모달을 띄움!
+                    setShowLinkError(true);
+                    return;
+                }
+
                 console.error("Naver OAuth failed:", err);
 
                 sessionStorage.removeItem("naver_oauth_state");
@@ -83,6 +109,13 @@ export default function NaverCallback() {
         handleCallback();
     }, [searchParams, login, navigate]);
 
+    // 모달 확인 버튼 클릭 시 실행될 함수 추가
+    const handleConfirmLinkError = () => {
+        setShowLinkError(false);
+        navigate("/login", { replace: true });
+    };
+
+    // 일반 에러 화면 (연동 에러 아닐 때)
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -102,6 +135,7 @@ export default function NaverCallback() {
         );
     }
 
+    // 로딩 화면 + 연동 안내 모달
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <Card className="p-8 max-w-md w-full">
@@ -110,6 +144,24 @@ export default function NaverCallback() {
                     <p className="text-center text-gray-700">네이버 로그인 처리 중...</p>
                 </div>
             </Card>
+
+            {/* 연동 필요 안내 모달 (shadcn) */}
+            <AlertDialog open={showLinkError} onOpenChange={setShowLinkError}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>계정 연동 필요</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            연동된 계정이 없습니다.<br />
+                            먼저 사내 아이디로 로그인 후 <strong>[마이페이지 &gt; 계정 연동]</strong>을 진행해주세요.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={handleConfirmLinkError} className="bg-[#C93831] hover:bg-[#B02F28]">
+                            로그인하러 가기
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

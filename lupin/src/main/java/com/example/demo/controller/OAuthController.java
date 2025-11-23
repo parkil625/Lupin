@@ -75,6 +75,18 @@ public class OAuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/google/link")
+    public ResponseEntity<OAuthConnectionResponse> linkGoogleAccount(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> request) {
+
+        String loginId = getLoginIdFromToken(token);
+        String googleToken = request.get("token"); // 프론트에서 { token: "..." } 로 보냄
+
+        OAuthConnectionResponse response = oAuthService.linkGoogleAccount(loginId, googleToken);
+        return ResponseEntity.ok(response);
+    }
+
     /**
      * OAuth 연동 목록 조회
      */

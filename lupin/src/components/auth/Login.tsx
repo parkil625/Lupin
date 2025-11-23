@@ -100,18 +100,24 @@ export default function Login() {
     setError("");
     setIsLoading(true);
     try {
-      const result = await authApi.googleLogin(response.credential);
-        localStorage.setItem("userId", result.id.toString());
-      localStorage.setItem("userEmail", result.email);
-      localStorage.setItem("userName", result.name);
-      login(result.accessToken, result.role);
+        const result = await authApi.googleLogin(response.credential);
+
+        const safeId = result.id || result.userId;
+        if (safeId) {
+            localStorage.setItem("userId", safeId.toString());
+        }
+
+        if (result.email) localStorage.setItem("userEmail", result.email);
+        if (result.name) localStorage.setItem("userName", result.name);
+
+        login(result.accessToken, result.role);
     } catch (err: any) {
-      console.error("Google login failed:", err);
-      if (err.response?.status === 404) {
-        setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
-      } else {
-        setError("구글 로그인 중 오류가 발생했습니다.");
-      }
+        console.error("Google login failed:", err);
+        if (err.response?.status === 404) {
+            setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
+        } else {
+            setError("구글 로그인 중 오류가 발생했습니다.");
+        }
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +129,15 @@ export default function Login() {
     setIsLoading(true);
     try {
       const response = await authApi.login(employeeId, password);
-      login(response.accessToken, response.role);
+        const safeId = response.id || response.userId;
+        if (safeId) {
+            localStorage.setItem("userId", safeId.toString());
+        }
+
+        localStorage.setItem("userEmail", response.email);
+        localStorage.setItem("userName", response.name);
+
+        login(response.accessToken, response.role);
     } catch (err: any) {
       console.error("Login failed:", err);
       if (err.response?.status === 401) {

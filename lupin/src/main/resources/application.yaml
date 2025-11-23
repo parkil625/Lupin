@@ -69,7 +69,7 @@ logging:
 # 앱 설정
 app:
   seed-data:
-    enabled: true
+    enabled: false
 
 # JWT 설정
 jwt:

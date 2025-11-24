@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Challenge extends BaseEntity {
+public class Challenge{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

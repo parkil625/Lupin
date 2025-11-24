@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class ChallengeEntry extends BaseEntity {
+public class ChallengeEntry{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

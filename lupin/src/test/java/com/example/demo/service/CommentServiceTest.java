@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.CommentCreateRequest;
 import com.example.demo.dto.response.CommentResponse;
@@ -87,7 +88,6 @@ class CommentServiceTest {
                 .build();
         comment.setFeed(feed);
         ReflectionTestUtils.setField(comment, "createdAt", LocalDateTime.now());
-        ReflectionTestUtils.setField(comment, "likes", new ArrayList<>());
         ReflectionTestUtils.setField(comment, "replies", new ArrayList<>());
     }
 
@@ -105,13 +105,12 @@ class CommentServiceTest {
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
             given(feedRepository.findById(1L)).willReturn(Optional.of(feed));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("COMMENT"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.COMMENT), any(LocalDateTime.class)))
                     .willReturn(false);
             given(commentRepository.save(any(Comment.class))).willAnswer(invocation -> {
                 Comment saved = invocation.getArgument(0);
                 ReflectionTestUtils.setField(saved, "id", 10L);
                 ReflectionTestUtils.setField(saved, "createdAt", LocalDateTime.now());
-                ReflectionTestUtils.setField(saved, "likes", new ArrayList<>());
                 ReflectionTestUtils.setField(saved, "replies", new ArrayList<>());
                 return saved;
             });
@@ -134,7 +133,7 @@ class CommentServiceTest {
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
             given(feedRepository.findById(1L)).willReturn(Optional.of(feed));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("COMMENT"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.COMMENT), any(LocalDateTime.class)))
                     .willReturn(true);
 
             // when & then

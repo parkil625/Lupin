@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -20,6 +21,8 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.example.demo.config.TestRedisConfig;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -35,6 +38,7 @@ import static org.assertj.core.api.Assertions.*;
  * 주의: Docker가 실행 중이어야 합니다.
  */
 @SpringBootTest
+@Import(TestRedisConfig.class)
 @Testcontainers(disabledWithoutDocker = true)
 @ActiveProfiles("test")
 @DisplayName("Chaos Engineering - DB 복원력 테스트")

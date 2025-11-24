@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedLike;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.FeedCreateRequest;
 import com.example.demo.dto.request.FeedUpdateRequest;
@@ -107,7 +108,7 @@ class FeedCommandServiceTest {
                     .build();
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("FEED"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.FEED), any(LocalDateTime.class)))
                     .willReturn(false);
             given(feedRepository.hasUserPostedToday(1L)).willReturn(false);
             given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> {
@@ -135,7 +136,7 @@ class FeedCommandServiceTest {
                     .build();
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("FEED"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.FEED), any(LocalDateTime.class)))
                     .willReturn(true);
 
             // when & then
@@ -155,7 +156,7 @@ class FeedCommandServiceTest {
                     .build();
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("FEED"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.FEED), any(LocalDateTime.class)))
                     .willReturn(false);
             given(feedRepository.hasUserPostedToday(1L)).willReturn(true);
 
@@ -175,7 +176,7 @@ class FeedCommandServiceTest {
                     .build();
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("FEED"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.FEED), any(LocalDateTime.class)))
                     .willReturn(false);
             given(feedRepository.hasUserPostedToday(1L)).willReturn(false);
 

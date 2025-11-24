@@ -1,5 +1,6 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.domain.enums.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,12 +28,12 @@ class UserPenaltyTest {
         // when
         UserPenalty penalty = UserPenalty.builder()
                 .id(1L)
-                .penaltyType("FEED")
+                .penaltyType(PenaltyType.FEED)
                 .user(user)
                 .build();
 
         // then
-        assertThat(penalty.getPenaltyType()).isEqualTo("FEED");
+        assertThat(penalty.getPenaltyType()).isEqualTo(PenaltyType.FEED);
         assertThat(penalty.getUser()).isEqualTo(user);
         assertThat(penalty.getCreatedAt()).isNotNull();
     }
@@ -53,12 +54,12 @@ class UserPenaltyTest {
         // when
         UserPenalty penalty = UserPenalty.builder()
                 .id(2L)
-                .penaltyType("COMMENT")
+                .penaltyType(PenaltyType.COMMENT)
                 .user(user)
                 .build();
 
         // then
-        assertThat(penalty.getPenaltyType()).isEqualTo("COMMENT");
+        assertThat(penalty.getPenaltyType()).isEqualTo(PenaltyType.COMMENT);
     }
 
     @Test
@@ -68,7 +69,7 @@ class UserPenaltyTest {
         LocalDateTime beforeRefresh = LocalDateTime.now().minusSeconds(1);
         UserPenalty penalty = UserPenalty.builder()
                 .id(1L)
-                .penaltyType("FEED")
+                .penaltyType(PenaltyType.FEED)
                 .createdAt(beforeRefresh)
                 .build();
 
@@ -86,7 +87,7 @@ class UserPenaltyTest {
         // given & when
         UserPenalty penalty = UserPenalty.builder()
                 .id(1L)
-                .penaltyType("FEED")
+                .penaltyType(PenaltyType.FEED)
                 .build();
 
         // then

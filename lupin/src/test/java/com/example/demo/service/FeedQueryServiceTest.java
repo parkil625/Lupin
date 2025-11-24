@@ -62,7 +62,6 @@ class FeedQueryServiceTest {
         feed.setWriter(user);
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now());
         ReflectionTestUtils.setField(feed, "images", new ArrayList<>());
-        ReflectionTestUtils.setField(feed, "likes", new ArrayList<>());
         ReflectionTestUtils.setField(feed, "earnedPoints", 10L);
     }
 

@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -39,6 +40,10 @@ class LotteryServiceTest {
     private LotteryTicketRepository lotteryTicketRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private DistributedLockService lockService;
+    @Mock
+    private RedisLuaService redisLuaService;
 
     private User user;
 
@@ -51,6 +56,16 @@ class LotteryServiceTest {
                 .role(Role.MEMBER)
                 .currentPoints(100L)
                 .build();
+
+        // lockService mock이 supplier를 바로 실행하도록 설정
+        lenient().when(lockService.withTicketIssueLock(anyLong(), any()))
+                .thenAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(1);
+                    return supplier.get();
+                });
+
+        // redisLuaService mock이 성공을 반환하도록 설정
+        lenient().when(redisLuaService.issueTicketAtomic(anyLong())).thenReturn(true);
     }
 
     @Nested

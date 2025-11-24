@@ -27,14 +27,14 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 특정 채팅방의 읽지 않은 메시지 수 조회
      */
-    @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.roomId = :roomId AND cm.isRead = 'N' AND cm.sender.id != :userId")
+    @Query("SELECT COUNT(cm) FROM ChatMessage cm WHERE cm.roomId = :roomId AND cm.isRead = false AND cm.sender.id != :userId")
     Long countUnreadMessagesByRoomId(@Param("roomId") String roomId, @Param("userId") Long userId);
 
     /**
      * 특정 채팅방의 메시지 전체 읽음 처리
      */
     @Modifying
-    @Query("UPDATE ChatMessage cm SET cm.isRead = 'Y' WHERE cm.roomId = :roomId AND cm.sender.id != :userId AND cm.isRead = 'N'")
+    @Query("UPDATE ChatMessage cm SET cm.isRead = true WHERE cm.roomId = :roomId AND cm.sender.id != :userId AND cm.isRead = false")
     void markAllAsReadByRoomId(@Param("roomId") String roomId, @Param("userId") Long userId);
 
     /**

@@ -5,6 +5,8 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.Report;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.entity.UserPenalty;
+import com.example.demo.domain.enums.PenaltyType;
+import com.example.demo.domain.enums.ReportTargetType;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentRepository;
@@ -32,8 +34,10 @@ public class ReportService {
     private final FeedCommandService feedCommandService;
     private final CommentService commentService;
 
-    private static final String TARGET_TYPE_FEED = "FEED";
-    private static final String TARGET_TYPE_COMMENT = "COMMENT";
+    private static final ReportTargetType TARGET_TYPE_FEED = ReportTargetType.FEED;
+    private static final ReportTargetType TARGET_TYPE_COMMENT = ReportTargetType.COMMENT;
+    private static final PenaltyType PENALTY_TYPE_FEED = PenaltyType.FEED;
+    private static final PenaltyType PENALTY_TYPE_COMMENT = PenaltyType.COMMENT;
 
     /**
      * 피드 신고
@@ -122,8 +126,8 @@ public class ReportService {
 
             // 패널티 생성/갱신 (UPSERT)
             User writer = feed.getWriter();
-            UserPenalty penalty = userPenaltyRepository.findByUserIdAndPenaltyType(writer.getId(), TARGET_TYPE_FEED)
-                    .orElse(UserPenalty.builder().user(writer).penaltyType(TARGET_TYPE_FEED).build());
+            UserPenalty penalty = userPenaltyRepository.findByUserIdAndPenaltyType(writer.getId(), PENALTY_TYPE_FEED)
+                    .orElse(UserPenalty.builder().user(writer).penaltyType(PENALTY_TYPE_FEED).build());
             penalty.refresh();
             userPenaltyRepository.save(penalty);
 
@@ -151,8 +155,8 @@ public class ReportService {
 
             // 패널티 생성/갱신 (UPSERT)
             User writer = comment.getWriter();
-            UserPenalty penalty = userPenaltyRepository.findByUserIdAndPenaltyType(writer.getId(), TARGET_TYPE_COMMENT)
-                    .orElse(UserPenalty.builder().user(writer).penaltyType(TARGET_TYPE_COMMENT).build());
+            UserPenalty penalty = userPenaltyRepository.findByUserIdAndPenaltyType(writer.getId(), PENALTY_TYPE_COMMENT)
+                    .orElse(UserPenalty.builder().user(writer).penaltyType(PENALTY_TYPE_COMMENT).build());
             penalty.refresh();
             userPenaltyRepository.save(penalty);
 

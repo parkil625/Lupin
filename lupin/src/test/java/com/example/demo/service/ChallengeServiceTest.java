@@ -22,6 +22,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,6 +46,19 @@ class ChallengeServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private DistributedLockService lockService;
+
+    @BeforeEach
+    void setUp() {
+        // lockService mock이 supplier를 바로 실행하도록 설정
+        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
+                .willAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(2);
+                    return supplier.get();
+                });
+    }
 
     @Test
     @DisplayName("활성화된 챌린지 목록 조회")

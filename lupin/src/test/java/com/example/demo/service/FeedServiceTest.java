@@ -90,7 +90,6 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now());
         ReflectionTestUtils.setField(feed, "earnedPoints", 10L);
         ReflectionTestUtils.setField(feed, "images", new ArrayList<>());
-        ReflectionTestUtils.setField(feed, "likes", new ArrayList<>());
     }
 
     @Nested
@@ -134,7 +133,6 @@ class FeedServiceTest {
             Feed myFeed = Feed.builder().id(1L).content("원본").build();
             myFeed.setWriter(user);
             ReflectionTestUtils.setField(myFeed, "images", new ArrayList<>());
-            ReflectionTestUtils.setField(myFeed, "likes", new ArrayList<>());
             ReflectionTestUtils.setField(myFeed, "createdAt", LocalDateTime.now());
 
             FeedUpdateRequest request = new FeedUpdateRequest("수정된 내용");

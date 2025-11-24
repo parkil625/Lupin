@@ -69,7 +69,6 @@ class CommentQueryServiceTest {
                 .build();
         comment.setFeed(feed);
         ReflectionTestUtils.setField(comment, "createdAt", LocalDateTime.now());
-        ReflectionTestUtils.setField(comment, "likes", new ArrayList<>());
         ReflectionTestUtils.setField(comment, "replies", new ArrayList<>());
     }
 
@@ -135,8 +134,6 @@ class CommentQueryServiceTest {
             reply2.setFeed(feed);
             ReflectionTestUtils.setField(reply1, "createdAt", LocalDateTime.now());
             ReflectionTestUtils.setField(reply2, "createdAt", LocalDateTime.now());
-            ReflectionTestUtils.setField(reply1, "likes", new ArrayList<>());
-            ReflectionTestUtils.setField(reply2, "likes", new ArrayList<>());
             ReflectionTestUtils.setField(reply1, "replies", new ArrayList<>());
             ReflectionTestUtils.setField(reply2, "replies", new ArrayList<>());
 

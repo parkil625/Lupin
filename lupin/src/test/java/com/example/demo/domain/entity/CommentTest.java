@@ -9,43 +9,33 @@ import static org.assertj.core.api.Assertions.*;
 class CommentTest {
 
     @Test
-    @DisplayName("댓글에 대댓글 추가")
-    void addReply_Success() {
-        // given
-        Comment parent = Comment.builder()
+    @DisplayName("댓글 생성 - 기본값 확인")
+    void create_DefaultValues() {
+        // given & when
+        Comment comment = Comment.builder()
                 .id(1L)
-                .content("부모 댓글")
+                .writerId(1L)
+                .feedId(1L)
+                .content("테스트")
                 .build();
-
-        Comment reply = Comment.builder()
-                .id(2L)
-                .content("대댓글")
-                .build();
-
-        // when
-        parent.addReply(reply);
 
         // then
-        assertThat(parent.getReplies()).hasSize(1);
-        assertThat(parent.getReplies().get(0)).isEqualTo(reply);
-        assertThat(reply.getParent()).isEqualTo(parent);
+        assertThat(comment.getLikesCount()).isEqualTo(0);
+        assertThat(comment.getRepliesCount()).isEqualTo(0);
+        assertThat(comment.getParentId()).isNull();
     }
 
     @Test
     @DisplayName("대댓글 여부 확인 - true")
     void isReply_True() {
         // given
-        Comment parent = Comment.builder()
-                .id(1L)
-                .content("부모 댓글")
-                .build();
-
         Comment reply = Comment.builder()
                 .id(2L)
+                .writerId(1L)
+                .feedId(1L)
+                .parentId(1L)
                 .content("대댓글")
                 .build();
-
-        parent.addReply(reply);
 
         // when & then
         assertThat(reply.isReply()).isTrue();
@@ -57,6 +47,8 @@ class CommentTest {
         // given
         Comment comment = Comment.builder()
                 .id(1L)
+                .writerId(1L)
+                .feedId(1L)
                 .content("일반 댓글")
                 .build();
 
@@ -70,6 +62,8 @@ class CommentTest {
         // given
         Comment comment = Comment.builder()
                 .id(1L)
+                .writerId(1L)
+                .feedId(1L)
                 .content("원본 내용")
                 .build();
 
@@ -81,17 +75,114 @@ class CommentTest {
     }
 
     @Test
-    @DisplayName("댓글 생성 - 기본값 확인")
-    void create_DefaultValues() {
-        // given & when
+    @DisplayName("좋아요 수 증가")
+    void incrementLikesCount_Success() {
+        // given
         Comment comment = Comment.builder()
                 .id(1L)
+                .writerId(1L)
+                .feedId(1L)
                 .content("테스트")
                 .build();
 
+        // when
+        comment.incrementLikesCount();
+
         // then
-        assertThat(comment.getReplies()).isEmpty();
-        assertThat(comment.getLikes()).isEmpty();
-        assertThat(comment.getParent()).isNull();
+        assertThat(comment.getLikesCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("좋아요 수 감소")
+    void decrementLikesCount_Success() {
+        // given
+        Comment comment = Comment.builder()
+                .id(1L)
+                .writerId(1L)
+                .feedId(1L)
+                .content("테스트")
+                .likesCount(5)
+                .build();
+
+        // when
+        comment.decrementLikesCount();
+
+        // then
+        assertThat(comment.getLikesCount()).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("좋아요 수 감소 - 0 미만으로 내려가지 않음")
+    void decrementLikesCount_NotBelowZero() {
+        // given
+        Comment comment = Comment.builder()
+                .id(1L)
+                .writerId(1L)
+                .feedId(1L)
+                .content("테스트")
+                .likesCount(0)
+                .build();
+
+        // when
+        comment.decrementLikesCount();
+
+        // then
+        assertThat(comment.getLikesCount()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("대댓글 수 증가")
+    void incrementRepliesCount_Success() {
+        // given
+        Comment comment = Comment.builder()
+                .id(1L)
+                .writerId(1L)
+                .feedId(1L)
+                .content("테스트")
+                .build();
+
+        // when
+        comment.incrementRepliesCount();
+
+        // then
+        assertThat(comment.getRepliesCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("대댓글 수 감소")
+    void decrementRepliesCount_Success() {
+        // given
+        Comment comment = Comment.builder()
+                .id(1L)
+                .writerId(1L)
+                .feedId(1L)
+                .content("테스트")
+                .repliesCount(3)
+                .build();
+
+        // when
+        comment.decrementRepliesCount();
+
+        // then
+        assertThat(comment.getRepliesCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("대댓글 수 감소 - 0 미만으로 내려가지 않음")
+    void decrementRepliesCount_NotBelowZero() {
+        // given
+        Comment comment = Comment.builder()
+                .id(1L)
+                .writerId(1L)
+                .feedId(1L)
+                .content("테스트")
+                .repliesCount(0)
+                .build();
+
+        // when
+        comment.decrementRepliesCount();
+
+        // then
+        assertThat(comment.getRepliesCount()).isEqualTo(0);
     }
 }

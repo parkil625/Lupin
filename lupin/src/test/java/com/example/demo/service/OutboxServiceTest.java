@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.Outbox;
+import com.example.demo.domain.enums.OutboxStatus;
 import com.example.demo.repository.OutboxRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -123,7 +124,7 @@ class OutboxServiceTest {
             outboxService.markProcessed(outbox);
 
             // then
-            assertThat(outbox.getStatus()).isEqualTo("PROCESSED");
+            assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.PROCESSED);
             then(outboxRepository).should().save(outbox);
         }
     }
@@ -139,7 +140,7 @@ class OutboxServiceTest {
             outboxService.markFailed(outbox, "Connection timeout");
 
             // then
-            assertThat(outbox.getStatus()).isEqualTo("FAILED");
+            assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.FAILED);
             then(outboxRepository).should().save(outbox);
         }
     }

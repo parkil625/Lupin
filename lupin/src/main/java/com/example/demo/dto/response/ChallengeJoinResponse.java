@@ -22,8 +22,8 @@ public class ChallengeJoinResponse {
 
     public static ChallengeJoinResponse from(ChallengeEntry entry) {
         return ChallengeJoinResponse.builder()
-                .challengeId(entry.getChallenge().getId())
-                .userId(entry.getUser().getId())
+                .challengeId(entry.getChallengeId())
+                .userId(entry.getUserId())
                 .joinedAt(entry.getJoinedAt())
                 .joined(true)
                 .message("참여한 사용자입니다.")

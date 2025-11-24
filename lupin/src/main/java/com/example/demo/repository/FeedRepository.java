@@ -3,6 +3,7 @@ package com.example.demo.repository;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.repository.custom.FeedRepositoryCustom;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,12 +14,16 @@ import java.util.List;
 public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositoryCustom {
 
     // 사용자의 피드 목록 조회
-    @Query("SELECT f FROM Feed f " +
-           "LEFT JOIN FETCH f.writer " +
-           "WHERE f.writer.id = :userId " +
-           "ORDER BY f.createdAt DESC")
+    @Query("SELECT f FROM Feed f WHERE f.writerId = :userId ORDER BY f.createdAt DESC")
     List<Feed> findByUserId(@Param("userId") Long userId);
 
     // 특정 활동 타입의 피드 조회
     List<Feed> findByActivityTypeOrderByCreatedAtDesc(String activityType);
+
+    // 카운터 업데이트 (Redis 동기화용)
+    @Modifying
+    @Query("UPDATE Feed f SET f.likesCount = :likes, f.commentsCount = :comments WHERE f.id = :id")
+    void updateCounters(@Param("id") Long id, @Param("likes") int likes, @Param("comments") int comments);
+
+    List<Feed> findByWriterId(Long writerId);
 }

@@ -8,7 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "prescription")
+@Table(name = "prescriptions", indexes = {
+    @Index(name = "idx_prescription_patient", columnList = "patientId"),
+    @Index(name = "idx_prescription_doctor", columnList = "doctorId"),
+    @Index(name = "idx_prescription_date", columnList = "prescribedDate DESC")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,6 +22,24 @@ public class Prescription extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, insertable = false, updatable = false)
+    private Long patientId;
+
+    @Column(nullable = false, insertable = false, updatable = false)
+    private Long doctorId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patientId", nullable = false)
+    private User patient;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "doctorId", nullable = false)
+    private User doctor;
+
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<PrescriptionMed> medicines = new ArrayList<>();
 
     @Column(name = "prescription_name", length = 255)
     private String prescriptionName;
@@ -31,22 +53,8 @@ public class Prescription extends BaseEntity {
     @Column(name = "prescribed_date", nullable = false)
     private LocalDate prescribedDate;
 
-    // 연관관계
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id", nullable = false)
-    private User patient;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctor_id", nullable = false)
-    private User doctor;
-
-    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<PrescriptionMed> medicines = new ArrayList<>();
-
-    // 편의 메서드
     public void addMedicine(PrescriptionMed medicine) {
-        this.medicines.add(medicine);
+        medicines.add(medicine);
         medicine.setPrescription(this);
     }
 }

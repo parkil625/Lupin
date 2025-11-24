@@ -1,27 +1,40 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.enums.DrawResult;
 import jakarta.persistence.*;
-
-import java.time.LocalDateTime;
+import lombok.*;
 
 @Entity
+@Table(name = "draws", indexes = {
+    @Index(name = "idx_draw_user", columnList = "userId")
+})
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class Draw {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
+    @Column(nullable = false)
+    private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Challenge challenge;
+    @Column(nullable = false)
+    private Long challengeId;
 
-    private boolean used;
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private DrawResult result = DrawResult.UNUSED;
 
-    private LocalDateTime issuedAt;
+    private Long prizeId;
 
-    public void use() {
-        if (this.used) throw new IllegalStateException("이미 사용한 티켓입니다.");
-        this.used = true;
+    @Version
+    private Long version;
+
+    public void use(DrawResult result, Long prizeId) {
+        this.result = result;
+        this.prizeId = prizeId;
     }
 }

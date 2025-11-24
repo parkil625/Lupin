@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.dto.request.CommentCreateRequest;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -45,7 +46,7 @@ public class CommentCommandService {
 
         // 패널티 확인
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-        if (userPenaltyRepository.hasActivePenalty(userId, "COMMENT", threeDaysAgo)) {
+        if (userPenaltyRepository.hasActivePenalty(userId, PenaltyType.COMMENT, threeDaysAgo)) {
             throw new BusinessException(ErrorCode.PENALTY_ACTIVE, "신고로 인해 3일간 댓글 작성이 제한됩니다.");
         }
 

@@ -3,7 +3,7 @@ package com.example.demo.domain.entity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import com.example.demo.domain.enums.OutboxStatus;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -22,7 +22,7 @@ class OutboxTest {
                 .build();
 
         // then
-        assertThat(outbox.getStatus()).isEqualTo("PENDING");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.PENDING);
         assertThat(outbox.getRetryCount()).isEqualTo(0);
         assertThat(outbox.getCreatedAt()).isNotNull();
         assertThat(outbox.getProcessedAt()).isNull();
@@ -42,7 +42,7 @@ class OutboxTest {
         outbox.markProcessed();
 
         // then
-        assertThat(outbox.getStatus()).isEqualTo("PROCESSED");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.PROCESSED);
         assertThat(outbox.getProcessedAt()).isNotNull();
     }
 
@@ -60,7 +60,7 @@ class OutboxTest {
         outbox.markFailed("Connection timeout");
 
         // then
-        assertThat(outbox.getStatus()).isEqualTo("FAILED");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.FAILED);
         assertThat(outbox.getRetryCount()).isEqualTo(1);
         assertThat(outbox.getErrorMessage()).isEqualTo("Connection timeout");
     }
@@ -100,7 +100,7 @@ class OutboxTest {
         outbox.markPending();
 
         // then
-        assertThat(outbox.getStatus()).isEqualTo("PENDING");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.PENDING);
     }
 
     @Test
@@ -113,13 +113,13 @@ class OutboxTest {
                 .eventType("LIKE")
                 .build();
 
-        assertThat(outbox.getStatus()).isEqualTo("PENDING");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.PENDING);
 
         // when
         outbox.markProcessed();
 
         // then
-        assertThat(outbox.getStatus()).isEqualTo("PROCESSED");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.PROCESSED);
     }
 
     @Test
@@ -134,12 +134,12 @@ class OutboxTest {
 
         // when & then
         outbox.markFailed("Network error");
-        assertThat(outbox.getStatus()).isEqualTo("FAILED");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.FAILED);
 
         outbox.markPending();
-        assertThat(outbox.getStatus()).isEqualTo("PENDING");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.PENDING);
 
         outbox.markProcessed();
-        assertThat(outbox.getStatus()).isEqualTo("PROCESSED");
+        assertThat(outbox.getStatus()).isEqualTo(OutboxStatus.PROCESSED);
     }
 }

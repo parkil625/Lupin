@@ -25,7 +25,7 @@ class ChatMessageTest {
         assertThat(message.getId()).isEqualTo(1L);
         assertThat(message.getRoomId()).isEqualTo("1:2");
         assertThat(message.getContent()).isEqualTo("안녕하세요");
-        assertThat(message.getIsRead()).isEqualTo("N");
+        assertThat(message.getIsRead()).isFalse();
         assertThat(message.getSentAt()).isNotNull();
     }
 
@@ -43,7 +43,7 @@ class ChatMessageTest {
         message.markAsRead();
 
         // then
-        assertThat(message.getIsRead()).isEqualTo("Y");
+        assertThat(message.getIsRead()).isTrue();
     }
 
     @Test

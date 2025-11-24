@@ -62,9 +62,12 @@ public enum ErrorCode {
     APPOINTMENT_ALREADY_CANCELLED(HttpStatus.BAD_REQUEST, "이미 취소된 예약입니다."),
     APPOINTMENT_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "이미 완료된 예약입니다."),
 
-    // Lottery
+    // Lottery / Draw
     LOTTERY_TICKET_NOT_FOUND(HttpStatus.NOT_FOUND, "추첨권을 찾을 수 없습니다."),
     LOTTERY_TICKET_ALREADY_USED(HttpStatus.BAD_REQUEST, "이미 사용된 추첨권입니다."),
+    ALREADY_DRAWN(HttpStatus.CONFLICT, "이미 추첨에 참여했습니다."),
+    DRAW_PRIZE_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
+    PRIZE_OUT_OF_STOCK(HttpStatus.BAD_REQUEST, "상품 재고가 소진되었습니다."),
 
     // File
     INVALID_FILE(HttpStatus.BAD_REQUEST, "파일이 비어있습니다."),

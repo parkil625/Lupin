@@ -9,11 +9,15 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.example.demo.config.TestRedisConfig;
 
 import java.time.LocalDateTime;
 
 @SpringBootTest
+@Import(TestRedisConfig.class)
 @Transactional
 class ChallengeRepositoryTest {
     @Autowired
@@ -29,7 +33,7 @@ class ChallengeRepositoryTest {
     private EntityManager em;
 
     @Test
-    void findByOpensAtBetweenOrderByOpensAtAsc() {
+    void findByOpenTimeBetweenOrderByOpenTimeAsc() {
 
         LocalDateTime now = LocalDateTime.of(2025, 1, 1, 9, 0);
 
@@ -46,20 +50,14 @@ class ChallengeRepositoryTest {
         // 2.테스트용 챌린지 9시에 시작, 9시 30분 종료, 타입: 예정
         Challenge challenge = Challenge.builder()
                 .title("맛있는 루팡빵")
-                .opensAt(now)
-                .closesAt(now.plusMinutes(30))
-                .maxWinners(100)
+                .openTime(now)
+                .endTime(now.plusMinutes(30))
                 .status(ChallengeStatus.SCHEDULED)
-                .currentEntries(0)
                 .build();
         challengeRepository.save(challenge);
 
         //3. 테스트용 챌린지 성공 리스트
-        ChallengeEntry challengeEntry = ChallengeEntry.builder()
-                .joinedAt(now.plusMinutes(15))
-                .challenge(challenge)
-                .user(user)
-                .build();
+        ChallengeEntry challengeEntry = ChallengeEntry.of(challenge, user, now.plusMinutes(15));
 
         challengeEntryRepository.save(challengeEntry);
 

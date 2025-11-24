@@ -6,6 +6,7 @@ import com.example.demo.domain.entity.FeedLike;
 import com.example.demo.domain.entity.LotteryTicket;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ImageType;
+import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.dto.request.FeedCreateRequest;
 import com.example.demo.dto.request.FeedUpdateRequest;
 import com.example.demo.dto.response.FeedDetailResponse;
@@ -54,7 +55,7 @@ public class FeedService {
 
         // ... (검증 로직 생략) ...
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-        if (userPenaltyRepository.hasActivePenalty(userId, "FEED", threeDaysAgo)) {
+        if (userPenaltyRepository.hasActivePenalty(userId, PenaltyType.FEED, threeDaysAgo)) {
             throw new BusinessException(ErrorCode.PENALTY_ACTIVE, "신고로 인해 3일간 피드 작성이 제한됩니다.");
         }
         if (feedRepository.hasUserPostedToday(userId)) {

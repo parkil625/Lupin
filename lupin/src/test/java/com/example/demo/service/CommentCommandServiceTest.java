@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.*;
+import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.dto.request.CommentCreateRequest;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -92,7 +93,7 @@ class CommentCommandServiceTest {
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
             given(feedRepository.findById(1L)).willReturn(Optional.of(feed));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("COMMENT"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.COMMENT), any(LocalDateTime.class)))
                     .willReturn(false);
             given(commentRepository.save(any(Comment.class))).willAnswer(invocation -> {
                 Comment saved = invocation.getArgument(0);
@@ -122,7 +123,7 @@ class CommentCommandServiceTest {
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
             given(feedRepository.findById(1L)).willReturn(Optional.of(feed));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("COMMENT"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.COMMENT), any(LocalDateTime.class)))
                     .willReturn(true);
 
             // when & then
@@ -149,7 +150,7 @@ class CommentCommandServiceTest {
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
             given(feedRepository.findById(1L)).willReturn(Optional.of(feed));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("COMMENT"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.COMMENT), any(LocalDateTime.class)))
                     .willReturn(false);
             given(commentRepository.findById(5L)).willReturn(Optional.of(parentComment));
             given(commentRepository.save(any(Comment.class))).willAnswer(invocation -> {
@@ -187,7 +188,7 @@ class CommentCommandServiceTest {
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
             given(feedRepository.findById(1L)).willReturn(Optional.of(feed));
-            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq("COMMENT"), any(LocalDateTime.class)))
+            given(userPenaltyRepository.hasActivePenalty(eq(1L), eq(PenaltyType.COMMENT), any(LocalDateTime.class)))
                     .willReturn(false);
             given(commentRepository.findById(5L)).willReturn(Optional.of(parentComment));
 

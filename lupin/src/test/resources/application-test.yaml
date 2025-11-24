@@ -13,12 +13,42 @@ spring:
     redis:
       host: localhost
       port: 6379
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-google-client-id
+            client-secret: test-google-client-secret
+            scope:
+              - email
+              - profile
+  cloud:
+    aws:
+      credentials:
+        access-key: test-access-key
+        secret-key: test-secret-key
+      s3:
+        bucket: test-bucket
+      region:
+        static: ap-northeast-2
+
+naver:
+  client-id: test-naver-client-id
+  client-secret: test-naver-client-secret
 
 app:
   seed-data:
     enabled: false
 
 jwt:
-  secret: test-secret-key-for-testing-purposes-only-12345678901234567890
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==
   access-token-expiration: 3600000
   refresh-token-expiration: 86400000
+
+# Environment variables used by @Value annotations
+GOOGLE_CLIENT_ID: test-google-client-id
+GOOGLE_CLIENT_SECRET: test-google-client-secret
+AWS_ACCESS_KEY: test-access-key
+AWS_SECRET_KEY: test-secret-key
+JWT_SECRET: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==

@@ -66,6 +66,7 @@ dependencies {
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testRuntimeOnly 'com.h2database:h2'
 
 	// Testcontainers
 	testImplementation 'org.testcontainers:testcontainers:1.19.3'
@@ -98,7 +99,7 @@ jacocoTestCoverageVerification {
 	violationRules {
 		rule {
 			limit {
-				minimum = 0.30 // 30% 최소 커버리지 (점진적으로 올리기)
+				minimum = 0.30 // 30% 최소 커버리지
 			}
 		}
 	}

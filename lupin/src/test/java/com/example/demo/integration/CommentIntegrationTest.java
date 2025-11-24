@@ -100,7 +100,7 @@ class CommentIntegrationTest {
         feed = feedRepository.save(Feed.builder()
                 .content("테스트 피드")
                 .activityType("러닝")
-                .calories(200)
+                .calories(200.0)
                 .writer(feedWriter)
                 .build());
     }

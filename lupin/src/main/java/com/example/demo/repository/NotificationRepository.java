@@ -28,20 +28,20 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     /**
      * 특정 사용자의 읽지 않은 알림 조회
      */
-    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.isRead = 'N' ORDER BY n.createdAt DESC")
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.isRead = false ORDER BY n.createdAt DESC")
     List<Notification> findUnreadNotificationsByUserId(@Param("userId") Long userId);
 
     /**
      * 특정 사용자의 읽지 않은 알림 수 조회
      */
-    @Query("SELECT COUNT(n) FROM Notification n WHERE n.user.id = :userId AND n.isRead = 'N'")
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.user.id = :userId AND n.isRead = false")
     Long countUnreadByUserId(@Param("userId") Long userId);
 
     /**
      * 특정 사용자의 알림 전체 읽음 처리
      */
     @Modifying
-    @Query("UPDATE Notification n SET n.isRead = 'Y' WHERE n.user.id = :userId AND n.isRead = 'N'")
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.user.id = :userId AND n.isRead = false")
     void markAllAsReadByUserId(@Param("userId") Long userId);
 
     /**
@@ -54,7 +54,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
      * 특정 사용자의 오래된 읽은 알림 삭제 (특정 날짜 이전)
      */
     @Modifying
-    @Query("DELETE FROM Notification n WHERE n.user.id = :userId AND n.isRead = 'Y' AND n.createdAt < :beforeDate")
+    @Query("DELETE FROM Notification n WHERE n.user.id = :userId AND n.isRead = true AND n.createdAt < :beforeDate")
     void deleteOldReadNotificationsByUserId(@Param("userId") Long userId, @Param("beforeDate") LocalDateTime beforeDate);
 
     /**

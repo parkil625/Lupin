@@ -6,6 +6,7 @@ import com.example.demo.domain.entity.FeedLike;
 import com.example.demo.domain.entity.LotteryTicket;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ImageType;
+import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.dto.request.FeedCreateRequest;
 import com.example.demo.dto.request.FeedUpdateRequest;
 import com.example.demo.exception.BusinessException;
@@ -15,7 +16,7 @@ import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.LotteryTicketRepository;
 import com.example.demo.repository.UserPenaltyRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.util.MetCalculator; // [추가]
+import com.example.demo.util.MetCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 @Slf4j
 @Service
@@ -40,6 +43,8 @@ public class FeedCommandService {
     private final NotificationService notificationService;
     private final ImageService imageService;
     private final LotteryTicketRepository lotteryTicketRepository;
+    private final DistributedLockService lockService;
+    private final RedisLuaService redisLuaService;
 
     private static final long TICKET_PRICE = 30L;
 
@@ -48,7 +53,7 @@ public class FeedCommandService {
 
         // ... (패널티, 하루제한, 이미지 검증 로직은 기존과 동일하여 생략) ...
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-        if (userPenaltyRepository.hasActivePenalty(userId, "FEED", threeDaysAgo)) {
+        if (userPenaltyRepository.hasActivePenalty(userId, PenaltyType.FEED, threeDaysAgo)) {
             throw new BusinessException(ErrorCode.PENALTY_ACTIVE, "신고로 인해 3일간 피드 작성이 제한됩니다.");
         }
         if (feedRepository.hasUserPostedToday(userId)) {
@@ -144,6 +149,76 @@ public class FeedCommandService {
         feed.getImages().forEach(image -> imageService.deleteImage(image.getImageUrl()));
         feedRepository.delete(feed);
         log.info("피드 삭제 완료 - feedId: {}, userId: {}", feedId, userId);
+    }
+
+    /**
+     * 피드 좋아요 토글 (분산 락 + Lua Script 원자적 처리)
+     */
+    @CircuitBreaker(name = "redis", fallbackMethod = "toggleFeedLikeFallback")
+    public void toggleFeedLike(Long feedId, Long userId) {
+        lockService.withFeedLikeLock(feedId, userId, () -> {
+            Feed feed = findFeedById(feedId);
+            User user = findUserById(userId);
+
+            if (feed.getWriter().getId().equals(userId)) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "자신의 피드에는 좋아요를 누를 수 없습니다.");
+            }
+
+            // Redis Lua Script로 원자적 토글
+            Long result = redisLuaService.toggleFeedLike(feedId, userId);
+
+            if (result == 1) {
+                // 좋아요 추가
+                if (!feedLikeRepository.existsByUserIdAndFeedId(userId, feedId)) {
+                    FeedLike feedLike = FeedLike.builder().user(user).feed(feed).build();
+                    feedLikeRepository.save(feedLike);
+                    feed.getWriter().incrementMonthlyLikes();
+                    notificationService.createLikeNotification(feed.getWriter().getId(), userId, feedId);
+                }
+                log.info("피드 좋아요 - feedId: {}, userId: {}", feedId, userId);
+            } else {
+                // 좋아요 취소
+                feedLikeRepository.findByUserIdAndFeedId(userId, feedId)
+                        .ifPresent(feedLike -> {
+                            feedLikeRepository.delete(feedLike);
+                            feed.getWriter().decrementMonthlyLikes();
+                        });
+                log.info("피드 좋아요 취소 - feedId: {}, userId: {}", feedId, userId);
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Redis 장애 시 폴백
+     */
+    public void toggleFeedLikeFallback(Long feedId, Long userId, Throwable t) {
+        log.warn("Redis 장애, DB 폴백 처리 - feedId: {}, userId: {}, error: {}",
+                feedId, userId, t.getMessage());
+
+        Feed feed = findFeedById(feedId);
+        User user = findUserById(userId);
+
+        if (feed.getWriter().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "자신의 피드에는 좋아요를 누를 수 없습니다.");
+        }
+
+        if (feedLikeRepository.existsByUserIdAndFeedId(userId, feedId)) {
+            // 이미 좋아요 -> 취소
+            feedLikeRepository.findByUserIdAndFeedId(userId, feedId)
+                    .ifPresent(feedLike -> {
+                        feedLikeRepository.delete(feedLike);
+                        feed.getWriter().decrementMonthlyLikes();
+                    });
+            log.info("피드 좋아요 취소 (폴백) - feedId: {}, userId: {}", feedId, userId);
+        } else {
+            // 좋아요 추가
+            FeedLike feedLike = FeedLike.builder().user(user).feed(feed).build();
+            feedLikeRepository.save(feedLike);
+            feed.getWriter().incrementMonthlyLikes();
+            notificationService.createLikeNotification(feed.getWriter().getId(), userId, feedId);
+            log.info("피드 좋아요 (폴백) - feedId: {}, userId: {}", feedId, userId);
+        }
     }
 
     public void likeFeed(Long feedId, Long userId) {

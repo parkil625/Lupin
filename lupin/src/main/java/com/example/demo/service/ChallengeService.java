@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 /**
  * 챌린지 관련 비즈니스 로직을 처리하는 서비스
  */
@@ -30,6 +32,8 @@ public class ChallengeService {
     private final ChallengeRepository challengeRepository;
     private final ChallengeEntryRepository challengeEntryRepository;
     private final UserRepository userRepository;
+    private final DistributedLockService lockService;
+    private final RedisLuaService redisLuaService;
 
     /**
      * 활성화된 챌린지 목록 조회
@@ -46,20 +50,49 @@ public class ChallengeService {
     }
 
     /**
-     * 챌린지 참가
+     * 챌린지 참가 (분산 락 + Lua Script 원자적 처리)
      */
     @Transactional
+    @CircuitBreaker(name = "redis", fallbackMethod = "joinChallengeFallback")
     public void joinChallenge(Long challengeId, Long userId) {
+        lockService.withChallengeJoinLock(challengeId, userId, () -> {
+            Challenge challenge = findChallengeById(challengeId);
+            User user = findUserById(userId);
+
+            // 챌린지 참가 가능 여부 확인
+            if (!challenge.canJoin(LocalDateTime.now())) {
+                throw new BusinessException(ErrorCode.CHALLENGE_NOT_ACTIVE);
+            }
+
+            // Redis Lua Script로 원자적 참가 처리
+            boolean joined = redisLuaService.joinChallengeAtomic(challengeId, userId);
+            if (!joined) {
+                throw new BusinessException(ErrorCode.ALREADY_JOINED_CHALLENGE);
+            }
+
+            // DB에도 저장 (영속성 보장)
+            ChallengeEntry entry = ChallengeEntry.of(challenge, user, LocalDateTime.now());
+            challengeEntryRepository.save(entry);
+
+            log.info("챌린지 참가 완료 - challengeId: {}, userId: {}", challengeId, userId);
+            return null;
+        });
+    }
+
+    /**
+     * Redis 장애 시 폴백 (DB만 사용)
+     */
+    public void joinChallengeFallback(Long challengeId, Long userId, Throwable t) {
+        log.warn("Redis 장애, DB 폴백 처리 - challengeId: {}, userId: {}, error: {}",
+                challengeId, userId, t.getMessage());
+
         Challenge challenge = findChallengeById(challengeId);
         User user = findUserById(userId);
-        LocalDateTime now =  LocalDateTime.now();
 
-        // 이미 참가한 경우
         if (challengeEntryRepository.existsByChallengeIdAndUserId(challengeId, userId)) {
             throw new BusinessException(ErrorCode.ALREADY_JOINED_CHALLENGE);
         }
 
-        // 챌린지 참가 가능 여부 확인
         if (!challenge.canJoin(LocalDateTime.now())) {
             throw new BusinessException(ErrorCode.CHALLENGE_NOT_ACTIVE);
         }
@@ -67,7 +100,7 @@ public class ChallengeService {
         ChallengeEntry entry = ChallengeEntry.of(challenge, user, LocalDateTime.now());
         challengeEntryRepository.save(entry);
 
-        log.info("챌린지 참가 완료 - challengeId: {}, userId: {}", challengeId, userId);
+        log.info("챌린지 참가 완료 (폴백) - challengeId: {}, userId: {}", challengeId, userId);
     }
 
     /**

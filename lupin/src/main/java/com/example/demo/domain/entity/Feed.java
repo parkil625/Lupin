@@ -3,11 +3,12 @@ package com.example.demo.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
-@Table(name = "feed")
+@Table(name = "feeds", indexes = {
+    @Index(name = "idx_feed_writer", columnList = "writerId"),
+    @Index(name = "idx_feed_created", columnList = "createdAt DESC"),
+    @Index(name = "idx_feed_activity", columnList = "activityType")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,6 +19,14 @@ public class Feed extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // writerId는 인덱스/쿼리용으로 유지하고, writer 관계도 추가
+    @Column(nullable = false, insertable = false, updatable = false)
+    private Long writerId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "writerId", nullable = false)
+    private User writer;
+
     @Column(name = "activity_type", nullable = false, length = 50)
     private String activityType;
 
@@ -27,57 +36,38 @@ public class Feed extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "earned_points")
+    @Column(name = "earned_points", nullable = false)
     @Builder.Default
-    private Long earnedPoints = 0L; // 피드 작성으로 획득한 포인트
+    private Long earnedPoints = 0L;
 
-    // 연관관계
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User writer;
-
-    @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("imgType ASC, id ASC")
+    // 카운터 캐싱 - 조회 성능 최적화
+    @Column(name = "likes_count", nullable = false)
     @Builder.Default
-    private List<FeedImage> images = new ArrayList<>();
+    private Integer likesCount = 0;
 
-    @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Column(name = "comments_count", nullable = false)
     @Builder.Default
-    private List<Comment> comments = new ArrayList<>();
+    private Integer commentsCount = 0;
 
+    // 이미지 목록
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<FeedLike> likes = new ArrayList<>();
+    private java.util.List<FeedImage> images = new java.util.ArrayList<>();
 
-    // 편의 메서드
-    public void setWriter(User user) {
-        this.writer = user;
-        if (!user.getFeeds().contains(this)) {
-            user.getFeeds().add(this);
-        }
+    // 동시성 제어 - 카운터 업데이트 경쟁 방지
+    @Version
+    private Long version;
+
+    // 비즈니스 로직
+    public void setWriter(User writer) {
+        this.writer = writer;
     }
 
     public void addImage(FeedImage image) {
-        this.images.add(image);
+        images.add(image);
         image.setFeed(this);
     }
 
-    public void addComment(Comment comment) {
-        this.comments.add(comment);
-        comment.setFeed(this);
-    }
-
-    public int getLikesCount() {
-        return likes != null ? likes.size() : 0;
-    }
-
-    public int getCommentsCount() {
-        return comments != null ? comments.size() : 0;
-    }
-
-    /**
-     * 피드 수정 (변경 감지 활용)
-     */
     public void update(String content) {
         if (content != null) {
             this.content = content;
@@ -86,5 +76,25 @@ public class Feed extends BaseEntity {
 
     public void setEarnedPoints(Long earnedPoints) {
         this.earnedPoints = earnedPoints;
+    }
+
+    public void incrementLikesCount() {
+        this.likesCount++;
+    }
+
+    public void decrementLikesCount() {
+        if (this.likesCount > 0) {
+            this.likesCount--;
+        }
+    }
+
+    public void incrementCommentsCount() {
+        this.commentsCount++;
+    }
+
+    public void decrementCommentsCount() {
+        if (this.commentsCount > 0) {
+            this.commentsCount--;
+        }
     }
 }

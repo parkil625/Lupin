@@ -1,4 +1,6 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
@@ -11,8 +13,8 @@ spring:
     show-sql: false
   data:
     redis:
-      host: localhost
-      port: 6379
+      repositories:
+        enabled: false
   security:
     oauth2:
       client:
@@ -52,3 +54,27 @@ GOOGLE_CLIENT_SECRET: test-google-client-secret
 AWS_ACCESS_KEY: test-access-key
 AWS_SECRET_KEY: test-secret-key
 JWT_SECRET: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==
+
+# Resilience4j 테스트 설정
+resilience4j:
+  circuitbreaker:
+    instances:
+      redis:
+        registerHealthIndicator: false
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 2
+        failureRateThreshold: 50
+        waitDurationInOpenState: 1s
+        permittedNumberOfCallsInHalfOpenState: 1
+        slidingWindowType: COUNT_BASED
+      database:
+        registerHealthIndicator: false
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 2
+        failureRateThreshold: 50
+        waitDurationInOpenState: 1s
+  retry:
+    instances:
+      redis:
+        maxAttempts: 1
+        waitDuration: 100ms

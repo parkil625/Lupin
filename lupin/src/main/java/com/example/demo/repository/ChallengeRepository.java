@@ -14,30 +14,29 @@ import java.util.Optional;
 public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
 
     // 활성화된 챌린지 목록
-    List<Challenge> findByStatusOrderByOpensAtDesc(ChallengeStatus status);
+    List<Challenge> findByStatusOrderByOpenTimeDesc(ChallengeStatus status);
 
     // 현재 진행 중인 챌린지 조회
     @Query("SELECT c FROM Challenge c " +
-           "WHERE c.status = 'ACTIVE' " +
-           "AND c.opensAt <= :now " +
-           "AND c.closesAt > :now " +
-           "ORDER BY c.closesAt ASC")
+           "WHERE c.status = 'OPEN' " +
+           "AND c.openTime <= :now " +
+           "AND c.endTime > :now " +
+           "ORDER BY c.endTime ASC")
     List<Challenge> findActiveChallenges(LocalDateTime now);
 
     // 특정 기간에 시작하는 챌린지
-    List<Challenge> findByOpensAtBetweenOrderByOpensAtAsc(LocalDateTime start, LocalDateTime end);
+    List<Challenge> findByOpenTimeBetweenOrderByOpenTimeAsc(LocalDateTime start, LocalDateTime end);
 
     // 활성화 시간이 된 이벤트 조회 메소드
     @Query("SELECT c FROM Challenge c " +
            "WHERE c.status = 'SCHEDULED' " +
-           "AND c.opensAt <= :now "
+           "AND c.openTime <= :now "
     )
     List<Challenge> findScheduledChallengesToOpen(LocalDateTime now);
 
     @Query("SELECT c FROM Challenge c " +
-           "WHERE c.status = 'ACTIVE' "+
-           "AND c.closesAt <= :now")
-
+           "WHERE c.status = 'OPEN' "+
+           "AND c.endTime <= :now")
     List<Challenge> findActiveChallengesToClose(LocalDateTime now);
 
 

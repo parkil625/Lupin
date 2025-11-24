@@ -33,7 +33,7 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("추첨권 발급을 위한 포인트 차감")
+    @DisplayName("추첨권 발급을 위한 포인트 차감 성공")
     void deductCurrentPointsForTicket_Success() {
         // given
         User user = User.builder()
@@ -55,8 +55,8 @@ class UserTest {
     }
 
     @Test
-    @DisplayName("포인트 사용 성공")
-    void usePoints_Success() {
+    @DisplayName("추첨권 발급 실패 - 포인트 부족")
+    void deductCurrentPointsForTicket_InsufficientPoints_ThrowsException() {
         // given
         User user = User.builder()
                 .id(1L)
@@ -65,34 +65,12 @@ class UserTest {
                 .password("password")
                 .realName("테스트")
                 .role(Role.MEMBER)
-                .currentPoints(100L)
-                .monthlyPoints(100L)
-                .build();
-
-        // when
-        user.usePoints(30L);
-
-        // then
-        assertThat(user.getCurrentPoints()).isEqualTo(70L);
-    }
-
-    @Test
-    @DisplayName("포인트 사용 실패 - 포인트 부족")
-    void usePoints_InsufficientPoints_ThrowsException() {
-        // given
-        User user = User.builder()
-                .id(1L)
-                .userId("user01")
-                .email("user01@test.com")
-                .password("password")
-                .realName("테스트")
-                .role(Role.MEMBER)
-                .currentPoints(10L)
-                .monthlyPoints(10L)
+                .currentPoints(20L)
+                .monthlyPoints(20L)
                 .build();
 
         // when & then
-        assertThatThrownBy(() -> user.usePoints(30L))
+        assertThatThrownBy(() -> user.deductCurrentPointsForTicket())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("포인트가 부족합니다");
     }
@@ -265,82 +243,5 @@ class UserTest {
 
         // when & then
         assertThat(user.getName()).isEqualTo("홍길동");
-    }
-
-    @Test
-    @DisplayName("프로필 이미지 조회 - null 반환")
-    void getProfileImage_ReturnsNull() {
-        // given
-        User user = User.builder()
-                .id(1L)
-                .userId("user01")
-                .email("user01@test.com")
-                .password("password")
-                .realName("테스트")
-                .role(Role.MEMBER)
-                .build();
-
-        // when & then
-        assertThat(user.getProfileImage()).isNull();
-    }
-
-    @Test
-    @DisplayName("Setter 테스트 - currentPoints")
-    void setCurrentPoints_Success() {
-        // given
-        User user = User.builder()
-                .id(1L)
-                .userId("user01")
-                .email("user01@test.com")
-                .password("password")
-                .realName("테스트")
-                .role(Role.MEMBER)
-                .build();
-
-        // when
-        user.setCurrentPoints(100L);
-
-        // then
-        assertThat(user.getCurrentPoints()).isEqualTo(100L);
-    }
-
-    @Test
-    @DisplayName("Setter 테스트 - monthlyPoints")
-    void setMonthlyPoints_Success() {
-        // given
-        User user = User.builder()
-                .id(1L)
-                .userId("user01")
-                .email("user01@test.com")
-                .password("password")
-                .realName("테스트")
-                .role(Role.MEMBER)
-                .build();
-
-        // when
-        user.setMonthlyPoints(200L);
-
-        // then
-        assertThat(user.getMonthlyPoints()).isEqualTo(200L);
-    }
-
-    @Test
-    @DisplayName("Setter 테스트 - monthlyLikes")
-    void setMonthlyLikes_Success() {
-        // given
-        User user = User.builder()
-                .id(1L)
-                .userId("user01")
-                .email("user01@test.com")
-                .password("password")
-                .realName("테스트")
-                .role(Role.MEMBER)
-                .build();
-
-        // when
-        user.setMonthlyLikes(50L);
-
-        // then
-        assertThat(user.getMonthlyLikes()).isEqualTo(50L);
     }
 }

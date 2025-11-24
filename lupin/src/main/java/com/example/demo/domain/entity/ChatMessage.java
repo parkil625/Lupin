@@ -6,19 +6,31 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "chat_message")
+@Table(name = "chat_messages", indexes = {
+    @Index(name = "idx_chat_room", columnList = "roomId"),
+    @Index(name = "idx_chat_room_sent", columnList = "roomId, sentAt DESC"),
+    @Index(name = "idx_chat_sender", columnList = "senderId"),
+    @Index(name = "idx_chat_unread", columnList = "roomId, isRead")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class ChatMessage extends BaseEntity {
+public class ChatMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "room_id", nullable = false, length = 100)
-    private String roomId; // "patient_id:doctor_id" 형식
+    private String roomId;
+
+    @Column(nullable = false, insertable = false, updatable = false)
+    private Long senderId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "senderId", nullable = false)
+    private User sender;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -27,18 +39,12 @@ public class ChatMessage extends BaseEntity {
     @Builder.Default
     private LocalDateTime sentAt = LocalDateTime.now();
 
-    @Column(name = "is_read", nullable = false, length = 1)
+    @Column(name = "is_read", nullable = false)
     @Builder.Default
-    private String isRead = "N"; // Y/N
+    private Boolean isRead = false;
 
-    // 연관관계
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
-    private User sender;
-
-    // 비즈니스 로직
     public void markAsRead() {
-        this.isRead = "Y";
+        this.isRead = true;
     }
 
     public static String generateRoomId(Long patientId, Long doctorId) {

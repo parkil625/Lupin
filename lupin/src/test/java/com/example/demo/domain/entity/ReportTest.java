@@ -1,5 +1,6 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.enums.ReportTargetType;
 import com.example.demo.domain.enums.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,14 +26,14 @@ class ReportTest {
         // when
         Report report = Report.builder()
                 .id(1L)
-                .targetType("FEED")
+                .targetType(ReportTargetType.FEED)
                 .targetId(100L)
                 .reporter(reporter)
                 .build();
 
         // then
         assertThat(report.getId()).isEqualTo(1L);
-        assertThat(report.getTargetType()).isEqualTo("FEED");
+        assertThat(report.getTargetType()).isEqualTo(ReportTargetType.FEED);
         assertThat(report.getTargetId()).isEqualTo(100L);
         assertThat(report.getReporter()).isEqualTo(reporter);
     }
@@ -53,13 +54,13 @@ class ReportTest {
         // when
         Report report = Report.builder()
                 .id(2L)
-                .targetType("COMMENT")
+                .targetType(ReportTargetType.COMMENT)
                 .targetId(200L)
                 .reporter(reporter)
                 .build();
 
         // then
-        assertThat(report.getTargetType()).isEqualTo("COMMENT");
+        assertThat(report.getTargetType()).isEqualTo(ReportTargetType.COMMENT);
         assertThat(report.getTargetId()).isEqualTo(200L);
     }
 }

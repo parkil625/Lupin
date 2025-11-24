@@ -6,7 +6,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notification")
+@Table(name = "notifications", indexes = {
+    @Index(name = "idx_notification_user", columnList = "userId"),
+    @Index(name = "idx_notification_user_read", columnList = "userId, isRead"),
+    @Index(name = "idx_notification_created", columnList = "createdAt DESC"),
+    @Index(name = "idx_notification_type", columnList = "type")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -17,8 +22,15 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, insertable = false, updatable = false)
+    private Long userId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userId", nullable = false)
+    private User user;
+
     @Column(nullable = false, length = 50)
-    private String type; // like, comment, reply, comment_like
+    private String type;
 
     @Column(nullable = false, length = 255)
     private String title;
@@ -26,31 +38,22 @@ public class Notification {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "is_read", nullable = false, length = 1)
+    @Column(name = "is_read", nullable = false)
     @Builder.Default
-    private String isRead = "N"; // Y/N
+    private Boolean isRead = false;
 
     @Column(name = "ref_id")
-    private String refId; // 관련 엔티티 ID (feedId 또는 commentId)
+    private String refId;
 
     @Column(name = "created_at", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // 연관관계
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    // 비즈니스 로직
     public void markAsRead() {
-        this.isRead = "Y";
+        this.isRead = true;
     }
 
     public void setUser(User user) {
         this.user = user;
-        if (!user.getNotifications().contains(this)) {
-            user.getNotifications().add(this);
-        }
     }
 }

@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.Report;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.ReportTargetType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.repository.CommentRepository;
@@ -78,7 +79,6 @@ class ReportServiceTest {
                 .build();
         feed.setWriter(feedWriter);
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now());
-        ReflectionTestUtils.setField(feed, "likes", new ArrayList<>());
 
         comment = Comment.builder()
                 .id(1L)
@@ -86,7 +86,6 @@ class ReportServiceTest {
                 .build();
         ReflectionTestUtils.setField(comment, "writer", feedWriter);
         ReflectionTestUtils.setField(comment, "feed", feed);
-        ReflectionTestUtils.setField(comment, "likes", new ArrayList<>());
     }
 
     @Nested
@@ -99,9 +98,9 @@ class ReportServiceTest {
             // given
             given(feedRepository.findById(1L)).willReturn(Optional.of(feed));
             given(userRepository.findById(1L)).willReturn(Optional.of(reporter));
-            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, "FEED", 1L))
+            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, ReportTargetType.FEED, 1L))
                     .willReturn(Optional.empty());
-            given(reportRepository.countByTargetTypeAndTargetId("FEED", 1L)).willReturn(0L);
+            given(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.FEED, 1L)).willReturn(0L);
 
             // when
             reportService.reportFeed(1L, 1L);
@@ -147,9 +146,9 @@ class ReportServiceTest {
             // given
             given(commentRepository.findById(1L)).willReturn(Optional.of(comment));
             given(userRepository.findById(1L)).willReturn(Optional.of(reporter));
-            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, "COMMENT", 1L))
+            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, ReportTargetType.COMMENT, 1L))
                     .willReturn(Optional.empty());
-            given(reportRepository.countByTargetTypeAndTargetId("COMMENT", 1L)).willReturn(0L);
+            given(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.COMMENT, 1L)).willReturn(0L);
 
             // when
             reportService.reportComment(1L, 1L);
@@ -182,7 +181,7 @@ class ReportServiceTest {
         @DisplayName("피드 신고 수 조회 성공")
         void getFeedReportCount_Success() {
             // given
-            given(reportRepository.countByTargetTypeAndTargetId("FEED", 1L)).willReturn(3L);
+            given(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.FEED, 1L)).willReturn(3L);
 
             // when
             Long result = reportService.getFeedReportCount(1L);
@@ -195,7 +194,7 @@ class ReportServiceTest {
         @DisplayName("댓글 신고 수 조회 성공")
         void getCommentReportCount_Success() {
             // given
-            given(reportRepository.countByTargetTypeAndTargetId("COMMENT", 1L)).willReturn(2L);
+            given(reportRepository.countByTargetTypeAndTargetId(ReportTargetType.COMMENT, 1L)).willReturn(2L);
 
             // when
             Long result = reportService.getCommentReportCount(1L);
@@ -214,7 +213,7 @@ class ReportServiceTest {
         void hasUserReportedFeed_True() {
             // given
             Report report = Report.builder().id(1L).build();
-            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, "FEED", 1L))
+            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, ReportTargetType.FEED, 1L))
                     .willReturn(Optional.of(report));
 
             // when
@@ -228,7 +227,7 @@ class ReportServiceTest {
         @DisplayName("피드 신고 여부 확인 - 신고 안함")
         void hasUserReportedFeed_False() {
             // given
-            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, "FEED", 1L))
+            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, ReportTargetType.FEED, 1L))
                     .willReturn(Optional.empty());
 
             // when
@@ -243,7 +242,7 @@ class ReportServiceTest {
         void hasUserReportedComment_True() {
             // given
             Report report = Report.builder().id(1L).build();
-            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, "COMMENT", 1L))
+            given(reportRepository.findByReporterIdAndTargetTypeAndTargetId(1L, ReportTargetType.COMMENT, 1L))
                     .willReturn(Optional.of(report));
 
             // when

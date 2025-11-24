@@ -9,10 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.example.demo.config.TestRedisConfig;
 import com.example.demo.domain.enums.ChallengeStatus;
 
 import java.time.LocalDateTime;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
+@Import(TestRedisConfig.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @WithMockUser
@@ -45,9 +48,9 @@ class ChallengeControllerTest {
         // given
         Challenge challenge = Challenge.builder()
                 .title("테스트 챌린지")
-                .maxWinners(100)
-                .opensAt(LocalDateTime.now().minusDays(1))
-                .closesAt(LocalDateTime.now().plusDays(30))
+                .openTime(LocalDateTime.now().minusDays(1))
+                .endTime(LocalDateTime.now().plusDays(30))
+                .status(ChallengeStatus.OPEN)
                 .build();
 
         when(challengeService.getActiveChallenges()).thenReturn(List.of(challenge));
@@ -80,9 +83,9 @@ class ChallengeControllerTest {
         // given
         Challenge challenge = Challenge.builder()
                 .title("상세 챌린지")
-                .maxWinners(50)
-                .opensAt(LocalDateTime.now())
-                .closesAt(LocalDateTime.now().plusDays(14))
+                .openTime(LocalDateTime.now())
+                .endTime(LocalDateTime.now().plusDays(14))
+                .status(ChallengeStatus.OPEN)
                 .build();
 
         when(challengeService.getChallengeDetail(1L)).thenReturn(challenge);
@@ -90,8 +93,7 @@ class ChallengeControllerTest {
         // when & then
         mockMvc.perform(get("/api/challenges/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("상세 챌린지"))
-                .andExpect(jsonPath("$.maxWinners").value(50));
+                .andExpect(jsonPath("$.title").value("상세 챌린지"));
 
         verify(challengeService).getChallengeDetail(1L);
     }
@@ -184,16 +186,16 @@ class ChallengeControllerTest {
         // given
         Challenge challenge1 = Challenge.builder()
                 .title("챌린지1")
-                .maxWinners(100)
-                .opensAt(LocalDateTime.now())
-                .closesAt(LocalDateTime.now().plusDays(7))
+                .openTime(LocalDateTime.now())
+                .endTime(LocalDateTime.now().plusDays(7))
+                .status(ChallengeStatus.OPEN)
                 .build();
 
         Challenge challenge2 = Challenge.builder()
                 .title("챌린지2")
-                .maxWinners(200)
-                .opensAt(LocalDateTime.now())
-                .closesAt(LocalDateTime.now().plusDays(14))
+                .openTime(LocalDateTime.now())
+                .endTime(LocalDateTime.now().plusDays(14))
+                .status(ChallengeStatus.OPEN)
                 .build();
 
         when(challengeService.getActiveChallenges()).thenReturn(Arrays.asList(challenge1, challenge2));

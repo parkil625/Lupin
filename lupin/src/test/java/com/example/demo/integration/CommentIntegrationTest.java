@@ -13,17 +13,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.example.demo.config.TestRedisConfig;
+
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@Import(TestRedisConfig.class)
 @Testcontainers
 @DisplayName("댓글 통합 테스트")
 @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named = "TESTCONTAINERS_ENABLED", matches = "true")

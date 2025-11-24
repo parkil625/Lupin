@@ -88,6 +88,15 @@ dependencies {
 	// Redis 추가: 고송 토큰 저장소
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	// Redisson - 분산 락
+	implementation 'org.redisson:redisson-spring-boot-starter:3.25.0'
+
+	// Resilience4j - Circuit Breaker, Retry, Rate Limiter
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+	implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+	implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.2.0'
+	implementation 'io.github.resilience4j:resilience4j-retry:2.2.0'
+
 	// Spring REST Docs
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
 }

@@ -5,12 +5,15 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_user_email", columnList = "email"),
+    @Index(name = "idx_user_monthly_points", columnList = "monthlyPoints DESC"),
+    @Index(name = "idx_user_monthly_likes", columnList = "monthlyLikes DESC")
+})
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -21,7 +24,7 @@ public class User {
     private Long id;
 
     @Column(name = "user_id", nullable = false, unique = true, length = 50)
-    private String userId;  // 로그인용 ID (user01, user02 등)
+    private String userId;
 
     @Column(nullable = false, unique = true, length = 255)
     private String email;
@@ -48,36 +51,30 @@ public class User {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-    @Column(name = "current_points")
+    @Column(name = "current_points", nullable = false)
     @Builder.Default
-    private Long currentPoints = 0L;  // 추첨권 계산용 잔여 포인트 (0~29)
+    private Long currentPoints = 0L;
 
-    @Column(name = "monthly_points")
+    @Column(name = "monthly_points", nullable = false)
     @Builder.Default
-    private Long monthlyPoints = 0L;  // 이번 달 누적 포인트 (랭킹용, 매월 초기화)
+    private Long monthlyPoints = 0L;
 
-    @Column(name = "monthly_likes")
+    @Column(name = "monthly_likes", nullable = false)
     @Builder.Default
-    private Long monthlyLikes = 0L;  // 이번 달 받은 좋아요 수 (랭킹용, 매월 초기화)
+    private Long monthlyLikes = 0L;
 
     @Column(length = 100)
     private String department;
 
     @Column(length = 20)
-    private String phone;  // 연락처
+    private String phone;
 
-    // 연관관계
-    @OneToMany(mappedBy = "writer", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Feed> feeds = new ArrayList<>();
+    @Column(name = "profile_image", length = 500)
+    private String profileImage;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<Notification> notifications = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<LotteryTicket> lotteryTickets = new ArrayList<>();
+    // 동시성 제어 - 포인트 경쟁 상태 방지
+    @Version
+    private Long version;
 
     // 비즈니스 로직
     public void addPoints(Long amount) {
@@ -85,11 +82,16 @@ public class User {
         this.monthlyPoints += amount;
     }
 
-    /**
-     * 추첨권 발급 후 currentPoints 차감
-     */
     public void deductCurrentPointsForTicket() {
+        if (this.currentPoints < 30) {
+            throw new IllegalStateException("추첨권 발급에 필요한 포인트가 부족합니다.");
+        }
         this.currentPoints -= 30;
+    }
+
+    public void revokePoints(Long amount) {
+        this.currentPoints = Math.max(0, this.currentPoints - amount);
+        this.monthlyPoints = Math.max(0, this.monthlyPoints - amount);
     }
 
     public void usePoints(Long amount) {
@@ -99,57 +101,23 @@ public class User {
         this.currentPoints -= amount;
     }
 
-    public void revokePoints(Long amount) {
-        // currentPoints 차감 (0 미만으로 내려가지 않음)
-        this.currentPoints = Math.max(0, this.currentPoints - amount);
-        // monthlyPoints도 차감
-        this.monthlyPoints = Math.max(0, this.monthlyPoints - amount);
-    }
-
-    public void setCurrentPoints(Long currentPoints) {
-        this.currentPoints = currentPoints;
-    }
-
-    public void setMonthlyPoints(Long monthlyPoints) {
-        this.monthlyPoints = monthlyPoints;
-    }
-
-    public void setMonthlyLikes(Long monthlyLikes) {
-        this.monthlyLikes = monthlyLikes;
-    }
-
-    /**
-     * 월초 리셋
-     */
     public void resetMonthlyData() {
         this.monthlyPoints = 0L;
         this.currentPoints = 0L;
         this.monthlyLikes = 0L;
     }
 
-    /**
-     * 월별 좋아요 증가
-     */
     public void incrementMonthlyLikes() {
         this.monthlyLikes++;
     }
 
-    /**
-     * 월별 좋아요 감소
-     */
     public void decrementMonthlyLikes() {
         if (this.monthlyLikes > 0) {
             this.monthlyLikes--;
         }
     }
 
-    // 편의 메서드
     public String getName() {
-        return this.realName; // 실제 이름 반환
-    }
-
-    public String getProfileImage() {
-        // 추후 구현 - 현재는 null 반환
-        return null;
+        return this.realName;
     }
 }

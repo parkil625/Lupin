@@ -78,7 +78,7 @@ class CommentIntegrationTest {
                 .height(175.0)
                 .weight(70.0)
                 .currentPoints(0L)
-                .totalPoints(0L)
+                .monthlyPoints(0L)
                 .monthlyLikes(0L)
                 .build());
 
@@ -93,14 +93,13 @@ class CommentIntegrationTest {
                 .height(180.0)
                 .weight(75.0)
                 .currentPoints(0L)
-                .totalPoints(0L)
+                .monthlyPoints(0L)
                 .monthlyLikes(0L)
                 .build());
 
         feed = feedRepository.save(Feed.builder()
                 .content("테스트 피드")
                 .activityType("러닝")
-                .duration(30)
                 .calories(200)
                 .writer(feedWriter)
                 .build());

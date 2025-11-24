@@ -39,4 +39,9 @@ public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
            "AND c.closesAt <= :now")
 
     List<Challenge> findActiveChallengesToClose(LocalDateTime now);
+
+
+
+
+
 }

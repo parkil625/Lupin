@@ -2,9 +2,12 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.entity.Challenge;
 import com.example.demo.domain.entity.ChallengeEntry;
+import com.example.demo.domain.entity.User;
+import com.example.demo.dto.response.ChallengeJoinResponse;
 import com.example.demo.service.ChallengeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -85,4 +88,14 @@ public class ChallengeController {
         challengeService.closeChallenge(challengeId);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{challengeId}/me")
+    public ChallengeJoinResponse getMyJoinResult(
+            @PathVariable Long challengeId,
+            @AuthenticationPrincipal User user
+    ) {
+        return challengeService.checkChallengeByUserId(challengeId, user.getId());
+    }
+
+
 }

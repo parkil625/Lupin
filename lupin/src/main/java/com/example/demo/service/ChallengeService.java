@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Challenge;
 import com.example.demo.domain.entity.ChallengeEntry;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ChallengeStatus;
+import com.example.demo.dto.response.ChallengeJoinResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.ChallengeEntryRepository;
@@ -124,5 +125,11 @@ public class ChallengeService {
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public ChallengeJoinResponse checkChallengeByUserId(Long challengeId, Long userId) {
+        return challengeEntryRepository.findByChallengeIdAndUserId(challengeId, userId)
+                .map(entry -> ChallengeJoinResponse.from(entry))
+                .orElse(ChallengeJoinResponse.notJoined());
     }
 }

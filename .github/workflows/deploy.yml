@@ -40,7 +40,9 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: lupin
-        run: ./gradlew test jacocoTestReport
+        run: ./gradlew test -Dspring.profiles.active=test jacocoTestReport
+        env:
+          SPRING_PROFILES_ACTIVE: test
 
       - name: Check coverage threshold
         working-directory: lupin

@@ -84,7 +84,7 @@ public class OAuthService {
 
         UserOAuth userOAuth = UserOAuth.builder()
                 .user(user)
-                .provider(provider.getProviderName())
+                .provider(com.example.demo.domain.enums.OAuthProvider.valueOf(provider.getProviderName()))
                 .providerId(userInfo.getId())
                 .providerEmail(userInfo.getEmail())
                 .build();
@@ -171,7 +171,7 @@ public class OAuthService {
 
             UserOAuth userOAuth = UserOAuth.builder()
                     .user(user)
-                    .provider("GOOGLE")
+                    .provider(com.example.demo.domain.enums.OAuthProvider.GOOGLE)
                     .providerId(googleId)
                     .providerEmail(email)
                     .build();

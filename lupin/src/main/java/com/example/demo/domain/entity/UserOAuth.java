@@ -1,5 +1,6 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.enums.OAuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,8 +22,9 @@ public class UserOAuth extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String provider;  // GOOGLE, NAVER, KAKAO
+    private OAuthProvider provider;  // GOOGLE, NAVER, KAKAO
 
     @Column(name = "provider_id", nullable = false, length = 255)
     private String providerId;  // OAuth 제공자의 고유 ID

@@ -22,7 +22,7 @@ public class OAuthConnectionResponse {
     public static OAuthConnectionResponse from(UserOAuth userOAuth) {
         return OAuthConnectionResponse.builder()
                 .id(userOAuth.getId())
-                .provider(userOAuth.getProvider())
+                .provider(userOAuth.getProvider().name())
                 .providerEmail(userOAuth.getProviderEmail())
                 .connectedAt(userOAuth.getCreatedAt())
                 .build();

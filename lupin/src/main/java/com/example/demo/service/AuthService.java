@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.entity.UserOAuth;
+import com.example.demo.domain.enums.OAuthProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.exception.BusinessException;
@@ -83,10 +84,10 @@ public class AuthService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
             // [추가] 구글 연동 정보 저장 로직
-            if (!userOAuthRepository.existsByUserIdAndProvider(user.getId(), "GOOGLE")) {
+            if (!userOAuthRepository.existsByUserIdAndProvider(user.getId(), OAuthProvider.GOOGLE.name())) {
                 UserOAuth oauth = UserOAuth.builder()
                         .user(user)
-                        .provider("GOOGLE")
+                        .provider(OAuthProvider.GOOGLE)
                         .providerId(providerId) // 위에서 정의한 변수 사용
                         .providerEmail(email)
                         .build();

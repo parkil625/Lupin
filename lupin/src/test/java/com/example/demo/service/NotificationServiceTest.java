@@ -223,7 +223,7 @@ class NotificationServiceTest {
             notificationService.markAsRead(1L, 1L);
 
             // then
-            assertThat(notification.getIsRead()).isEqualTo("Y");
+            assertThat(notification.getIsRead()).isTrue();
         }
 
         @Test

@@ -19,6 +19,7 @@ import {
   Calendar as CalendarIcon,
   PlusSquare,
   MessageCircle,
+  Gavel,
 } from "lucide-react";
 import Sidebar from "./dashboard/shared/Sidebar";
 import NotificationPopup from "./dashboard/shared/NotificationPopup";
@@ -27,6 +28,7 @@ import HomeView from "./dashboard/home/Home";
 import FeedView from "./dashboard/feed/Feed";
 import RankingView from "./dashboard/ranking/Ranking";
 import MedicalView from "./dashboard/medical/Medical";
+import AuctionView from "./dashboard/auction/Auction";
 import PrescriptionModal from "./dashboard/dialogs/PrescriptionModal";
 import FeedDetailDialogHome from "./dashboard/dialogs/FeedDetailDialogHome";
 import AppointmentDialog from "./dashboard/dialogs/AppointmentDialog";
@@ -78,6 +80,7 @@ const memberNavItems = [
   { id: "home", icon: Home, label: "홈" },
   { id: "feed", icon: Video, label: "피드" },
   { id: "ranking", icon: Trophy, label: "랭킹" },
+  { id: "auction", icon: Gavel, label: "경매" },
   { id: "medical", icon: CalendarIcon, label: "진료" },
 ];
 
@@ -104,7 +107,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const defaultPage = userType === "doctor" ? "chat" : "home";
   const validPages = userType === "doctor"
     ? ["chat", "profile"]
-    : ["home", "feed", "ranking", "medical", "create", "profile"];
+    : ["home", "feed", "ranking", "auction", "medical", "create", "profile"];
   const selectedNav = validPages.includes(page || "") ? page! : defaultPage;
 
   // 네비게이션 함수 (URL 변경)
@@ -645,6 +648,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         {selectedNav === "ranking" && (
           <RankingView userId={userId} profileImage={profileImage} />
         )}
+        {selectedNav === "auction" && <AuctionView />}
         {selectedNav === "medical" && (
           <MedicalView
             setShowAppointment={setShowAppointment}

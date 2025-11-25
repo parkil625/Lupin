@@ -27,7 +27,6 @@ public class RedisSyncScheduler {
     private final FeedRepository feedRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
-    private final DrawPrizeRepository drawPrizeRepository;
 
     /**
      * 피드 카운터 동기화 (5분마다)
@@ -125,34 +124,6 @@ public class RedisSyncScheduler {
     }
 
     /**
-     * 상품 재고 동기화 (1분마다)
-     * - 재고는 중요하므로 더 자주 동기화
-     */
-    @Scheduled(fixedRate = 60000)
-    @Transactional
-    public void syncPrizeStock() {
-        log.debug("상품 재고 동기화 시작");
-
-        List<DrawPrize> prizes = drawPrizeRepository.findAll();
-        int updated = 0;
-
-        for (DrawPrize prize : prizes) {
-            Long redisStock = redisCounterService.getPrizeStock(prize.getId());
-
-            if (redisStock != null && redisStock >= 0) {
-                if (!redisStock.equals((long) prize.getRemainingQuantity())) {
-                    drawPrizeRepository.updateRemainingQuantity(prize.getId(), redisStock.intValue());
-                    updated++;
-                }
-            }
-        }
-
-        if (updated > 0) {
-            log.info("상품 재고 동기화 완료: {}개 업데이트", updated);
-        }
-    }
-
-    /**
      * 랭킹 동기화 (30분마다)
      */
     @Scheduled(fixedRate = 1800000)
@@ -196,13 +167,7 @@ public class RedisSyncScheduler {
             redisCounterService.updateLikesRanking(user.getId(), user.getMonthlyLikes());
         }
 
-        // 상품 재고 로드
-        List<DrawPrize> prizes = drawPrizeRepository.findAll();
-        for (DrawPrize prize : prizes) {
-            redisCounterService.setPrizeStock(prize.getId(), (long) prize.getRemainingQuantity());
-        }
-
-        log.info("Redis 캐시 워밍업 완료 - Feed: {}, User: {}, Prize: {}",
-            feeds.size(), users.size(), prizes.size());
+        log.info("Redis 캐시 워밍업 완료 - Feed: {}, User: {}",
+            feeds.size(), users.size());
     }
 }

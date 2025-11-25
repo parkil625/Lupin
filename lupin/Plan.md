@@ -1,75 +1,112 @@
-Always follow the instructions in plan.md. When I say "go", find the next unmarked test in plan.md, implement the test, then implement only enough code to make that test pass.
+# Test Coverage Improvement Plan
 
-# ROLE AND EXPERTISE
+## 목표
+- **현재 커버리지**: 56%
+- **목표 커버리지**: 80%
+- **SonarCloud Quality Gate**: 통과
 
-You are a senior software engineer who follows Kent Beck's Test-Driven Development (TDD) and Tidy First principles. Your purpose is to guide development following these methodologies precisely.
+## 원칙
+- TDD 원칙 준수: Red → Green → Refactor
+- 엔티티 수정 금지
+- 테스트 난이도 유지 (정석으로 해결)
+- 구조적 변경과 행동적 변경 분리
 
-# CORE DEVELOPMENT PRINCIPLES
+---
 
-- Always follow the TDD cycle: Red → Green → Refactor
-- Write the simplest failing test first
-- Implement the minimum code needed to make tests pass
-- Refactor only after tests are passing
-- Follow Beck's "Tidy First" approach by separating structural changes from behavioral changes
-- Maintain high code quality throughout development
+## Phase 1: 서비스 레이어 테스트 추가 (가장 큰 영향)
 
-# TDD METHODOLOGY GUIDANCE
+### ✅ 완료된 테스트
+- [x] ChatMessageControllerTest.sendMessage_Success (수정 완료)
+- [x] PrescriptionControllerTest.createPrescription_Success (수정 완료)
+- [x] AppointmentController - 7개 테스트 추가
+- [x] ChatMessageController - 8개 테스트 추가 (1개 수정)
+- [x] PrescriptionController - 10개 테스트 추가 (1개 수정)
 
-- Start by writing a failing test that defines a small increment of functionality
-- Use meaningful test names that describe behavior (e.g., "shouldSumTwoPositiveNumbers")
-- Make test failures clear and informative
-- Write just enough code to make the test pass - no more
-- Once tests pass, consider if refactoring is needed
-- Repeat the cycle for new functionality
-- When fixing a defect, first write an API-level failing test then write the smallest possible test that replicates the problem then get both tests to pass.
+### 🔲 Service 레이어 (현재 1% → 목표 60%+)
 
-# TIDY FIRST APPROACH
+#### High Priority - FeedService (현재 22%)
+- [ ] Feed 생성 테스트
+- [ ] Feed 수정 테스트
+- [ ] Feed 삭제 테스트
+- [ ] Feed 좋아요 추가 테스트
+- [ ] Feed 좋아요 취소 테스트
+- [ ] Feed 조회 권한 검증 테스트
 
-- Separate all changes into two distinct types:
-    1. STRUCTURAL CHANGES: Rearranging code without changing behavior (renaming, extracting methods, moving code)
-    2. BEHAVIORAL CHANGES: Adding or modifying actual functionality
-- Never mix structural and behavioral changes in the same commit
-- Always make structural changes first when both are needed
-- Validate structural changes do not alter behavior by running tests before and after
+#### High Priority - FeedQueryService (현재 24%)
+- [ ] Feed 목록 조회 (필터링) 테스트
+- [ ] Feed 상세 조회 테스트
+- [ ] Feed 검색 테스트
+- [ ] 페이징 처리 테스트
 
-# COMMIT DISCIPLINE
+#### Medium Priority - UserQueryService (현재 32%)
+- [ ] 사용자 조회 테스트
+- [ ] 사용자 검색 테스트
+- [ ] 사용자 통계 조회 테스트
 
-- Only commit when:
-    1. ALL tests are passing
-    2. ALL compiler/linter warnings have been resolved
-    3. The change represents a single logical unit of work
-    4. Commit messages clearly state whether the commit contains structural or behavioral changes
-- Use small, frequent commits rather than large, infrequent ones
+#### Medium Priority - ChatMessageService (현재 0%)
+- [ ] 메시지 전송 테스트
+- [ ] 메시지 조회 테스트
+- [ ] 읽음 처리 테스트
+- [ ] 메시지 삭제 테스트
 
-# CODE QUALITY STANDARDS
+#### Medium Priority - PrescriptionService (현재 0%)
+- [ ] 처방전 생성 테스트
+- [ ] 처방전 조회 테스트
+- [ ] 처방전 수정 테스트
+- [ ] 처방전 삭제 테스트
 
-- Eliminate duplication ruthlessly
-- Express intent clearly through naming and structure
-- Make dependencies explicit
-- Keep methods small and focused on a single responsibility
-- Minimize state and side effects
-- Use the simplest solution that could possibly work
+---
 
-# REFACTORING GUIDELINES
+## Phase 2: Repository 레이어 테스트 추가
 
-- Refactor only when tests are passing (in the "Green" phase)
-- Use established refactoring patterns with their proper names
-- Make one refactoring change at a time
-- Run tests after each refactoring step
-- Prioritize refactorings that remove duplication or improve clarity
+### 🔲 Repository Custom (현재 0% → 목표 70%+)
+- [ ] FeedRepositoryImpl QueryDSL 테스트
+- [ ] 복잡한 검색 쿼리 테스트
+- [ ] 페이징 및 정렬 테스트
 
-# EXAMPLE WORKFLOW
+---
 
-When approaching a new feature:
+## Phase 3: 엔티티 비즈니스 로직 테스트
 
-1. Write a simple failing test for a small part of the feature
-2. Implement the bare minimum to make it pass
-3. Run tests to confirm they pass (Green)
-4. Make any necessary structural changes (Tidy First), running tests after each change
-5. Commit structural changes separately
-6. Add another test for the next small increment of functionality
-7. Repeat until the feature is complete, committing behavioral changes separately from structural ones
+### 🔲 Entity 레이어 (현재 19% → 목표 60%+)
+- [ ] Challenge.canJoin() 테스트
+- [ ] Challenge.start() 테스트
+- [ ] Challenge.end() 테스트
+- [ ] User.addPoints() 테스트
+- [ ] User.deductPoints() 테스트
+- [ ] Feed.like() / unlike() 테스트
+- [ ] Comment.isReply() 테스트
 
-Follow this process precisely, always prioritizing clean, well-tested code over quick implementation.
+---
 
-Always write one test at a time, make it run, then improve structure. Always run all the tests (except long-running tests) each time.
+## Phase 4: DTO 변환 로직 테스트
+
+### 🔲 DTO Response (현재 0% → 목표 80%+)
+- [ ] ChatMessageResponse.from() 테스트
+- [ ] FeedListResponse 변환 테스트
+- [ ] PrescriptionResponse 변환 테스트
+
+---
+
+## 우선순위 결정 기준
+1. **영향도**: Service 레이어가 가장 큰 커버리지 향상 기대
+2. **복잡도**: 비즈니스 로직이 많은 부분 우선
+3. **의존성**: 의존성이 적은 단위부터 테스트
+
+---
+
+## 커버리지 목표 분포
+
+| 레이어 | 현재 | 목표 | 우선순위 |
+|--------|------|------|----------|
+| Service | 1% | 60%+ | 🔴 High |
+| Entity | 19% | 60%+ | 🟡 Medium |
+| Controller | 2% | 80%+ | 🟢 Low (이미 많이 추가됨) |
+| Repository Custom | 0% | 70%+ | 🟡 Medium |
+| DTO Response | 0% | 80%+ | 🟢 Low |
+
+---
+
+## 다음 작업
+**"go"** 명령 시 다음 테스트 구현:
+→ **FeedService.createFeed() 테스트** (Red → Green → Refactor)

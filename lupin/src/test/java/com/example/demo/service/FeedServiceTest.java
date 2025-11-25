@@ -9,7 +9,6 @@ import com.example.demo.dto.response.FeedDetailResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
-import com.example.demo.repository.LotteryTicketRepository;
 import com.example.demo.repository.UserPenaltyRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,8 +52,6 @@ class FeedServiceTest {
     private NotificationService notificationService;
     @Mock
     private ImageService imageService;
-    @Mock
-    private LotteryTicketRepository lotteryTicketRepository;
 
     private User user;
     private User feedWriter;

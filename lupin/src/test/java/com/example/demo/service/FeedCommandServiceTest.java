@@ -49,8 +49,6 @@ class FeedCommandServiceTest {
     private NotificationService notificationService;
     @Mock
     private ImageService imageService;
-    @Mock
-    private LotteryTicketRepository lotteryTicketRepository;
 
     private User user;
     private User feedWriter;

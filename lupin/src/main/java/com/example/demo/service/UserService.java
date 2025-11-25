@@ -1,12 +1,10 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.entity.LotteryTicket;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.response.UserProfileResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedRepository;
-import com.example.demo.repository.LotteryTicketRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +25,6 @@ public class UserService {
 
     private final FeedRepository feedRepository;
     private final UserRepository userRepository;
-    private final LotteryTicketRepository lotteryTicketRepository;
-
-    private static final Long POINTS_PER_TICKET = 30L; // 30점마다 추첨권 1장
 
     /**
      * 사용자 프로필 조회
@@ -43,7 +38,8 @@ public class UserService {
     }
 
     /**
-     * 포인트 적립
+     * 포인트 적립 (경매 재화로 사용)
+     * 추첨권 자동 변환 없이 포인트만 계속 쌓임
      */
     @Transactional
     public void addPoints(Long userId, Long amount, String reason, String refId) {
@@ -52,19 +48,8 @@ public class UserService {
         // 포인트 적립 (currentPoints + monthlyPoints 둘 다 증가)
         user.addPoints(amount);
 
-        // 추첨권 생성 (currentPoints가 30 이상이면 추첨권 발급)
-        int ticketsCreated = 0;
-        while (user.getCurrentPoints() >= POINTS_PER_TICKET) {
-            LotteryTicket ticket = LotteryTicket.builder().build();
-            ticket.setUser(user);
-            lotteryTicketRepository.save(ticket);
-            user.deductCurrentPointsForTicket();  // currentPoints -= 30
-            ticketsCreated++;
-            log.info("추첨권 생성 - userId: {}, 잔여 포인트: {}", userId, user.getCurrentPoints());
-        }
-
-        log.info("포인트 적립 완료 - userId: {}, amount: {}, reason: {}, refId: {}, 추첨권 {}장 생성, 잔여 포인트: {}",
-                userId, amount, reason, refId, ticketsCreated, user.getCurrentPoints());
+        log.info("포인트 적립 완료 - userId: {}, amount: {}, reason: {}, refId: {}, 현재 포인트: {}, 월별 포인트: {}",
+                userId, amount, reason, refId, user.getCurrentPoints(), user.getMonthlyPoints());
     }
 
     /**

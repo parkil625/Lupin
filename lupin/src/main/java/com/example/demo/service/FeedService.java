@@ -3,7 +3,6 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedImage;
 import com.example.demo.domain.entity.FeedLike;
-import com.example.demo.domain.entity.LotteryTicket;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.enums.PenaltyType;
@@ -15,7 +14,6 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
-import com.example.demo.repository.LotteryTicketRepository;
 import com.example.demo.repository.UserPenaltyRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.util.MetCalculator; // [추가]
@@ -44,9 +42,6 @@ public class FeedService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final ImageService imageService;
-    private final LotteryTicketRepository lotteryTicketRepository;
-
-    private static final long TICKET_PRICE = 30L;
 
     @Transactional
     public FeedDetailResponse createFeed(Long userId, FeedCreateRequest request) {
@@ -203,18 +198,7 @@ public class FeedService {
     private void reclaimPoints(User user, Long pointsToReclaim) {
         Long currentPoints = user.getCurrentPoints();
         user.setMonthlyPoints(Math.max(0L, user.getMonthlyPoints() - pointsToReclaim));
-        if (currentPoints >= pointsToReclaim) {
-            user.setCurrentPoints(currentPoints - pointsToReclaim);
-        } else {
-            List<LotteryTicket> tickets = lotteryTicketRepository.findByUserId(user.getId());
-            if (!tickets.isEmpty()) {
-                lotteryTicketRepository.delete(tickets.get(0));
-                Long remainingPoints = TICKET_PRICE - pointsToReclaim + currentPoints;
-                user.setCurrentPoints(Math.max(0L, remainingPoints));
-            } else {
-                user.setCurrentPoints(0L);
-            }
-        }
+        user.setCurrentPoints(Math.max(0L, currentPoints - pointsToReclaim));
         userRepository.save(user);
     }
 

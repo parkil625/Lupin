@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.QFeed;
-import com.example.demo.domain.entity.QFeedImage;
 import com.example.demo.domain.entity.QFeedLike;
 import com.example.demo.domain.entity.QUser;
 import com.example.demo.dto.response.FeedDetailResponse;
@@ -11,7 +10,7 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
-import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,38 +45,31 @@ public class FeedQueryService {
     private final QFeedLike feedLike = QFeedLike.feedLike;
 
     /**
-     * 피드 목록 조회 (최적화된 DTO 직접 조회)
+     * 피드 목록 조회
+     * Pageable의 Sort를 존중하여 동적 정렬 적용
      */
     public Page<FeedListResponse> getFeeds(String keyword, String activityType,
                                            Long excludeUserId, Long excludeFeedId,
                                            Pageable pageable) {
 
-        List<FeedListResponse> content = queryFactory
-                .select(Projections.constructor(FeedListResponse.class,
-                        feed.id,
-                        feed.activityType,
-                        feed.calories,
-                        feed.content,
-                        feed.earnedPoints,
-                        feed.createdAt,
-                        user.id,
-                        user.realName,
-                        feedLike.count().intValue()
-                ))
-                .from(feed)
-                .join(feed.writer, user)
-                .leftJoin(feedLike).on(feedLike.feed.eq(feed))
+        List<Feed> feeds = queryFactory
+                .selectFrom(feed)
+                .distinct()
+                .leftJoin(feed.writer, user).fetchJoin()
                 .where(
                         keywordContains(keyword),
                         activityTypeEquals(activityType),
                         userIdNotEquals(excludeUserId),
                         feedIdNotEquals(excludeFeedId)
                 )
-                .groupBy(feed.id)
-                .orderBy(feed.createdAt.desc())
+                .orderBy(getOrderSpecifiers(pageable))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
+
+        List<FeedListResponse> content = feeds.stream()
+                .map(FeedListResponse::from)
+                .collect(java.util.stream.Collectors.toList());
 
         Long total = queryFactory
                 .select(feed.count())
@@ -93,29 +87,22 @@ public class FeedQueryService {
 
     /**
      * 특정 사용자의 피드 조회
+     * Pageable의 Sort를 존중하여 동적 정렬 적용
      */
     public Page<FeedListResponse> getFeedsByUserId(Long userId, Pageable pageable) {
-        List<FeedListResponse> content = queryFactory
-                .select(Projections.constructor(FeedListResponse.class,
-                        feed.id,
-                        feed.activityType,
-                        feed.calories,
-                        feed.content,
-                        feed.earnedPoints,
-                        feed.createdAt,
-                        user.id,
-                        user.realName,
-                        feedLike.count().intValue()
-                ))
-                .from(feed)
-                .join(feed.writer, user)
-                .leftJoin(feedLike).on(feedLike.feed.eq(feed))
+        List<Feed> feeds = queryFactory
+                .selectFrom(feed)
+                .distinct()
+                .leftJoin(feed.writer, user).fetchJoin()
                 .where(user.id.eq(userId))
-                .groupBy(feed.id)
-                .orderBy(feed.createdAt.desc())
+                .orderBy(getOrderSpecifiers(pageable))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
+
+        List<FeedListResponse> content = feeds.stream()
+                .map(FeedListResponse::from)
+                .collect(java.util.stream.Collectors.toList());
 
         Long total = queryFactory
                 .select(feed.count())
@@ -173,5 +160,46 @@ public class FeedQueryService {
 
     private BooleanExpression feedIdNotEquals(Long excludeFeedId) {
         return excludeFeedId != null ? feed.id.ne(excludeFeedId) : null;
+    }
+
+    /**
+     * Pageable의 Sort를 QueryDSL OrderSpecifier로 변환
+     * 기본 정렬: createdAt DESC
+     *
+     * 지원되는 정렬 필드: id, createdAt, calories, earnedPoints
+     */
+    private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable) {
+        List<OrderSpecifier<?>> orders = new ArrayList<>();
+
+        if (pageable.getSort().isSorted()) {
+            for (Sort.Order order : pageable.getSort()) {
+                String property = order.getProperty();
+                boolean isAscending = order.isAscending();
+
+                switch (property) {
+                    case "id":
+                        orders.add(isAscending ? feed.id.asc() : feed.id.desc());
+                        break;
+                    case "createdAt":
+                        orders.add(isAscending ? feed.createdAt.asc() : feed.createdAt.desc());
+                        break;
+                    case "calories":
+                        orders.add(isAscending ? feed.calories.asc() : feed.calories.desc());
+                        break;
+                    case "earnedPoints":
+                        orders.add(isAscending ? feed.earnedPoints.asc() : feed.earnedPoints.desc());
+                        break;
+                    default:
+                        // 기본 정렬
+                        orders.add(feed.createdAt.desc());
+                        break;
+                }
+            }
+        } else {
+            // Sort 미지정 시 기본 정렬
+            orders.add(feed.createdAt.desc());
+        }
+
+        return orders.toArray(new OrderSpecifier[0]);
     }
 }

@@ -92,6 +92,7 @@ public class FeedController {
 
     /**
      * 피드 목록 조회 (검색, 페이징)
+     * 피드 메뉴에서 사용 - ID 오름차순으로 정렬 (가장 오래된 피드부터)
      */
     @GetMapping
     public ResponseEntity<Page<FeedListResponse>> getFeeds(
@@ -99,7 +100,7 @@ public class FeedController {
             @RequestParam(required = false) String activityType,
             @RequestParam(required = false) Long excludeUserId,
             @RequestParam(required = false) Long excludeFeedId,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         Page<FeedListResponse> feeds = feedQueryService.getFeeds(keyword, activityType, excludeUserId, excludeFeedId, pageable);
         return ResponseEntity.ok(feeds);
     }

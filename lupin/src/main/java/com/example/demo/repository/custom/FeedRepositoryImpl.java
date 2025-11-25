@@ -180,6 +180,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                     .<OrderSpecifier<?>>map(order -> {
                         if (order.getProperty().equals("createdAt")) {
                             return order.isAscending() ? feed.createdAt.asc() : feed.createdAt.desc();
+                        } else if (order.getProperty().equals("id")) {
+                            return order.isAscending() ? feed.id.asc() : feed.id.desc();
                         }
                         return feed.id.desc();
                     })

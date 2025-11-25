@@ -1,12 +1,10 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.entity.LotteryTicket;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.response.UserProfileResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.repository.FeedRepository;
-import com.example.demo.repository.LotteryTicketRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,8 +33,6 @@ class UserServiceTest {
     private FeedRepository feedRepository;
     @Mock
     private UserRepository userRepository;
-    @Mock
-    private LotteryTicketRepository lotteryTicketRepository;
 
     private User user;
 
@@ -94,8 +90,8 @@ class UserServiceTest {
     class AddPoints {
 
         @Test
-        @DisplayName("포인트 적립 성공 - 추첨권 미생성")
-        void addPoints_Success_NoTicket() {
+        @DisplayName("포인트 적립 성공")
+        void addPoints_Success() {
             // given
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
 
@@ -104,20 +100,6 @@ class UserServiceTest {
 
             // then
             assertThat(user.getCurrentPoints()).isEqualTo(25L);
-            then(lotteryTicketRepository).should(never()).save(any(LotteryTicket.class));
-        }
-
-        @Test
-        @DisplayName("포인트 적립 성공 - 추첨권 생성")
-        void addPoints_Success_WithTicket() {
-            // given
-            given(userRepository.findById(1L)).willReturn(Optional.of(user));
-
-            // when
-            userService.addPoints(1L, 15L, "운동", "feed-1");
-
-            // then
-            then(lotteryTicketRepository).should().save(any(LotteryTicket.class));
         }
 
         @Test

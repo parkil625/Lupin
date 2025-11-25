@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react';
+import '../src/fonts.css'; // NanumSquare Font
 import '../src/index.css'; // Tailwind CSS import
 
 const preview: Preview = {

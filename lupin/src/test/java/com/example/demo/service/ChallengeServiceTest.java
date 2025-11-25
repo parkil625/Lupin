@@ -50,15 +50,8 @@ class ChallengeServiceTest {
     @Mock
     private DistributedLockService lockService;
 
-    @BeforeEach
-    void setUp() {
-        // lockService mock이 supplier를 바로 실행하도록 설정
-        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
-                .willAnswer(invocation -> {
-                    Supplier<?> supplier = invocation.getArgument(2);
-                    return supplier.get();
-                });
-    }
+    @Mock
+    private RedisLuaService redisLuaService;
 
     @Test
     @DisplayName("활성화된 챌린지 목록 조회")
@@ -111,16 +104,24 @@ class ChallengeServiceTest {
         Challenge challenge = mock(Challenge.class);
         User user = User.builder().id(1L).userId("user01").build();
 
+        // lockService mock
+        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
+                .willAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(2);
+                    return supplier.get();
+                });
+
         given(challengeRepository.findById(1L)).willReturn(Optional.of(challenge));
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(challengeEntryRepository.existsByChallengeIdAndUserId(1L, 1L)).willReturn(false);
         given(challenge.canJoin(any(LocalDateTime.class))).willReturn(true);
+        given(redisLuaService.joinChallengeAtomic(1L, 1L)).willReturn(true);
 
         // when
         challengeService.joinChallenge(1L, 1L);
 
         // then
         then(challengeEntryRepository).should().save(any(ChallengeEntry.class));
+        then(redisLuaService).should().joinChallengeAtomic(1L, 1L);
     }
 
     @Test
@@ -130,9 +131,17 @@ class ChallengeServiceTest {
         Challenge challenge = mock(Challenge.class);
         User user = User.builder().id(1L).userId("user01").build();
 
+        // lockService mock
+        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
+                .willAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(2);
+                    return supplier.get();
+                });
+
         given(challengeRepository.findById(1L)).willReturn(Optional.of(challenge));
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(challengeEntryRepository.existsByChallengeIdAndUserId(1L, 1L)).willReturn(true);
+        given(challenge.canJoin(any(LocalDateTime.class))).willReturn(true);
+        given(redisLuaService.joinChallengeAtomic(1L, 1L)).willReturn(false); // 이미 참가
 
         // when & then
         assertThatThrownBy(() -> challengeService.joinChallenge(1L, 1L))
@@ -146,9 +155,15 @@ class ChallengeServiceTest {
         Challenge challenge = mock(Challenge.class);
         User user = User.builder().id(1L).userId("user01").build();
 
+        // lockService mock
+        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
+                .willAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(2);
+                    return supplier.get();
+                });
+
         given(challengeRepository.findById(1L)).willReturn(Optional.of(challenge));
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(challengeEntryRepository.existsByChallengeIdAndUserId(1L, 1L)).willReturn(false);
         given(challenge.canJoin(any(LocalDateTime.class))).willReturn(false);
 
         // when & then
@@ -237,6 +252,14 @@ class ChallengeServiceTest {
         AtomicInteger successCount = new AtomicInteger(0);
 
         Challenge challenge = mock(Challenge.class);
+
+        // lockService mock
+        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
+                .willAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(2);
+                    return supplier.get();
+                });
+
         given(challengeRepository.findById(1L)).willReturn(Optional.of(challenge));
         given(challenge.canJoin(any(LocalDateTime.class))).willReturn(true);
 
@@ -245,7 +268,7 @@ class ChallengeServiceTest {
             long userId = i;
             User user = User.builder().id(userId).userId("user" + userId).build();
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
-            given(challengeEntryRepository.existsByChallengeIdAndUserId(1L, userId)).willReturn(false);
+            given(redisLuaService.joinChallengeAtomic(1L, userId)).willReturn(true);
         }
 
         // when
@@ -285,13 +308,20 @@ class ChallengeServiceTest {
         Challenge challenge = mock(Challenge.class);
         User user = User.builder().id(1L).userId("user01").build();
 
+        // lockService mock
+        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
+                .willAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(2);
+                    return supplier.get();
+                });
+
         given(challengeRepository.findById(1L)).willReturn(Optional.of(challenge));
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
         given(challenge.canJoin(any(LocalDateTime.class))).willReturn(true);
 
-        // 첫 번째 호출은 false(참가 안 함), 이후는 true(이미 참가)
-        given(challengeEntryRepository.existsByChallengeIdAndUserId(1L, 1L))
-                .willAnswer(invocation -> callCount.getAndIncrement() > 0);
+        // 첫 번째 호출만 true(성공), 이후는 false(이미 참가)
+        given(redisLuaService.joinChallengeAtomic(1L, 1L))
+                .willAnswer(invocation -> callCount.getAndIncrement() == 0);
 
         // when
         for (int i = 0; i < threadCount; i++) {
@@ -320,6 +350,14 @@ class ChallengeServiceTest {
     void joinChallenge_UserNotFound() {
         // given
         Challenge challenge = mock(Challenge.class);
+
+        // lockService mock
+        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
+                .willAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(2);
+                    return supplier.get();
+                });
+
         given(challengeRepository.findById(1L)).willReturn(Optional.of(challenge));
         given(userRepository.findById(1L)).willReturn(Optional.empty());
 
@@ -332,6 +370,13 @@ class ChallengeServiceTest {
     @DisplayName("챌린지 참가 실패 - 챌린지 없음")
     void joinChallenge_ChallengeNotFound() {
         // given
+        // lockService mock
+        given(lockService.withChallengeJoinLock(anyLong(), anyLong(), any()))
+                .willAnswer(invocation -> {
+                    Supplier<?> supplier = invocation.getArgument(2);
+                    return supplier.get();
+                });
+
         given(challengeRepository.findById(1L)).willReturn(Optional.empty());
 
         // when & then

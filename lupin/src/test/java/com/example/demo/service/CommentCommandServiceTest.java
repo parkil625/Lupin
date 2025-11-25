@@ -178,7 +178,7 @@ class CommentCommandServiceTest {
                     .id(5L)
                     .content("부모 댓글")
                     .writer(feedWriter)
-                    .parent(comment) // 이미 답글인 댓글
+                    .parentId(1L) // 이미 답글인 댓글 (parentId 명시적 설정)
                     .build();
 
             CommentCreateRequest request = CommentCreateRequest.builder()

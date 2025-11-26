@@ -6,15 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "feed_likes",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_feed_like_user_feed", columnNames = {"userId", "feedId"})
-    },
-    indexes = {
-        @Index(name = "idx_feed_like_feed", columnList = "feedId"),
-        @Index(name = "idx_feed_like_user", columnList = "userId")
-    }
-)
+@Table(name = "feed_likes")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -25,21 +17,21 @@ public class FeedLike {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, insertable = false, updatable = false)
+    @Column(name = "user_id", nullable = false, insertable = false, updatable = false)
     private Long userId;
 
-    @Column(nullable = false, insertable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "feed_id", nullable = false, insertable = false, updatable = false)
     private Long feedId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", nullable = false)
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "feedId", nullable = false)
+    @JoinColumn(name = "feed_id", nullable = false)
     private Feed feed;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

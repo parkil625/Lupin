@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Table(name = "auctions", indexes = {
     @Index(name = "idx_auction_status", columnList = "status"),
     @Index(name = "idx_auction_start_time", columnList = "startTime"),
-    @Index(name = "idx_auction_end_time", columnList = "endTime")
+    @Index(name = "idx_auction_end_time", columnList = "regularEndTime")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -31,6 +31,9 @@ public class Auction {
 
     @Column(length = 1000)
     private String description;
+
+    @Column(length = 500)
+    private String itemImage;
 
     /**
      * 현재가 (항상 0P부터 시작, 1P 단위로 입찰 가능)

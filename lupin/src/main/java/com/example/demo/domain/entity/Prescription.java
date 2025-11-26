@@ -11,7 +11,7 @@ import java.util.List;
 @Table(name = "prescriptions", indexes = {
     @Index(name = "idx_prescription_patient", columnList = "patientId"),
     @Index(name = "idx_prescription_doctor", columnList = "doctorId"),
-    @Index(name = "idx_prescription_date", columnList = "prescribedDate DESC")
+    @Index(name = "idx_prescription_date", columnList = "date DESC")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -41,8 +41,8 @@ public class Prescription extends BaseEntity {
     @Builder.Default
     private List<PrescriptionMed> medicines = new ArrayList<>();
 
-    @Column(name = "prescription_name", length = 255)
-    private String prescriptionName;
+    @Column(name = "name", length = 255)
+    private String name;
 
     @Column(columnDefinition = "TEXT")
     private String diagnosis;
@@ -50,8 +50,8 @@ public class Prescription extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String instructions;
 
-    @Column(name = "prescribed_date", nullable = false)
-    private LocalDate prescribedDate;
+    @Column(name = "date", nullable = false)
+    private LocalDate date;
 
     public void addMedicine(PrescriptionMed medicine) {
         medicines.add(medicine);

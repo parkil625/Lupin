@@ -6,12 +6,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "point_logs")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Notification {
+public class PointLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,21 +24,8 @@ public class Notification {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 50)
-    private String type;
-
-    @Column(nullable = false, length = 255)
-    private String title;
-
-    @Column(columnDefinition = "TEXT")
-    private String content;
-
-    @Column(name = "is_read", nullable = false)
-    @Builder.Default
-    private Boolean isRead = false;
-
-    @Column(name = "ref_id")
-    private String refId;
+    @Column(nullable = false)
+    private Long points;
 
     @Column(name = "created_at", nullable = false)
     @Builder.Default

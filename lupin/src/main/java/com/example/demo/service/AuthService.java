@@ -1,13 +1,10 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
-import com.example.demo.domain.entity.UserOAuth;
-import com.example.demo.domain.enums.OAuthProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
-import com.example.demo.repository.UserOAuthRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -33,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final UserOAuthRepository userOAuthRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String, String> redisTemplate;
@@ -76,24 +72,9 @@ public class AuthService {
             GoogleIdToken.Payload payload = idToken.getPayload();
             String email = payload.getEmail();
 
-            // [추가] 여기가 빠져 있어서 에러가 났습니다. providerId 정의
-            String providerId = payload.getSubject();
-
             User user = userRepository.findByEmail(email)
                     .or(() -> userRepository.findByUserId(email))
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-            // [추가] 구글 연동 정보 저장 로직
-            if (!userOAuthRepository.existsByUserIdAndProvider(user.getId(), OAuthProvider.GOOGLE.name())) {
-                UserOAuth oauth = UserOAuth.builder()
-                        .user(user)
-                        .provider(OAuthProvider.GOOGLE)
-                        .providerId(providerId) // 위에서 정의한 변수 사용
-                        .providerEmail(email)
-                        .build();
-                userOAuthRepository.save(oauth);
-                log.info("구글 계정 자동 연동 완료 - user: {}, email: {}", user.getId(), email);
-            }
 
             return generateTokens(user);
 
@@ -173,7 +154,7 @@ public class AuthService {
                 // 기존 코드에서 .email()을 두 번 호출하던 오류 수정
                 .userId(user.getUserId())  // 로그인 아이디 (예: user01)
                 .email(user.getEmail())    // 실제 이메일 (예: test@test.com)
-                .name(user.getRealName())
+                .name(user.getName())
                 .role(user.getRole().name())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)

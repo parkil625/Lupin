@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "chat_messages", indexes = {
     @Index(name = "idx_chat_room", columnList = "roomId"),
-    @Index(name = "idx_chat_room_sent", columnList = "roomId, sentAt DESC"),
+    @Index(name = "idx_chat_room_sent", columnList = "roomId, time DESC"),
     @Index(name = "idx_chat_sender", columnList = "senderId"),
     @Index(name = "idx_chat_unread", columnList = "roomId, isRead")
 })
@@ -35,9 +35,9 @@ public class ChatMessage {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "sent_at", nullable = false)
+    @Column(name = "time", nullable = false)
     @Builder.Default
-    private LocalDateTime sentAt = LocalDateTime.now();
+    private LocalDateTime time = LocalDateTime.now();
 
     @Column(name = "is_read", nullable = false)
     @Builder.Default

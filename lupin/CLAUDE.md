@@ -73,3 +73,42 @@ When approaching a new feature:
 Follow this process precisely, always prioritizing clean, well-tested code over quick implementation.
 
 Always write one test at a time, make it run, then improve structure. Always run all the tests (except long-running tests) each time.
+
+# ENTITY OWNERSHIP RULES
+
+- **Allowed Entities**: `Comment`, `CommentLike`, `Feed`, `FeedImage`, `FeedLike`, `Notification`, `PointLog`, `Report`, `User`, `UserPenalty`.
+- **Restricted Entities**: Do NOT modify or implement features for `Appointment`, `Auction`, `AuctionBid`, `ChatMessage`, `Prescription`, `PrescriptionMed`. These are managed by other team members.
+
+# ⚠️ ENTITY SCHEMA FREEZE - DO NOT MODIFY
+
+The following entity column structures are **FINAL and FROZEN**. Do NOT add, remove, or modify any columns:
+
+### User
+`id`, `userId`, `password`, `name`, `role`, `height`, `weight`, `gender`, `birthDate`, `department`, `avatar`, `provider`, `providerId`, `providerEmail`
+
+### Feed
+`id`, `writerId`, `activity`, `calories`, `content`, `points`, `feedImageId`
+
+### FeedImage
+`id`, `feedId`, `s3Key`, `imgType`, `sortOrder`
+
+### FeedLike
+`id`, `userId`, `feedId`, `createdAt`
+
+### Comment
+`id`, `writerId`, `feedId`, `parentId`, `content`
+
+### CommentLike
+`id`, `userId`, `commentId`, `createdAt`
+
+### Notification
+`id`, `userId`, `type`, `title`, `content`, `isRead`, `refId`, `createdAt`
+
+### Report
+`id`, `targetType`, `targetId`, `reporterId`
+
+### UserPenalty
+`id`, `userId`, `penaltyType`, `createdAt`
+
+### PointLog
+`id`, `userId`, `points`, `createdAt`

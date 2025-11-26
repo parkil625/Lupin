@@ -72,7 +72,7 @@ public class AuthService {
             GoogleIdToken.Payload payload = idToken.getPayload();
             String email = payload.getEmail();
 
-            User user = userRepository.findByEmail(email)
+            User user = userRepository.findByProviderEmail(email)
                     .or(() -> userRepository.findByUserId(email))
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -150,10 +150,8 @@ public class AuthService {
 
         return LoginDto.builder()
                 .id(user.getId())
-                // [수정] LoginDto에 userId 필드가 있다면 userId() 메서드를 사용해야 합니다.
-                // 기존 코드에서 .email()을 두 번 호출하던 오류 수정
-                .userId(user.getUserId())  // 로그인 아이디 (예: user01)
-                .email(user.getEmail())    // 실제 이메일 (예: test@test.com)
+                .userId(user.getUserId())
+                .email(user.getProviderEmail())
                 .name(user.getName())
                 .role(user.getRole().name())
                 .accessToken(accessToken)

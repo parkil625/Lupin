@@ -18,9 +18,6 @@ public class Feed {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "writer_id", nullable = false, insertable = false, updatable = false)
-    private Long writerId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "writer_id", nullable = false)
     private User writer;

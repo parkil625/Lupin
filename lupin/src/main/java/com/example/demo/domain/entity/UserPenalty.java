@@ -7,15 +7,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_penalties",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_user_penalty", columnNames = {"userId", "penaltyType"})
-    },
-    indexes = {
-        @Index(name = "idx_penalty_user", columnList = "userId"),
-        @Index(name = "idx_penalty_expires", columnList = "expiresAt")
-    }
-)
+@Table(name = "user_penalties")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -26,11 +18,11 @@ public class UserPenalty {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, insertable = false, updatable = false)
+    @Column(name = "user_id", nullable = false, insertable = false, updatable = false)
     private Long userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userId", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Enumerated(EnumType.STRING)
@@ -40,29 +32,4 @@ public class UserPenalty {
     @Column(name = "created_at", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
-
-    @Column(name = "expires_at", nullable = false)
-    private LocalDateTime expiresAt;
-
-    @Column(name = "penalty_count", nullable = false)
-    @Builder.Default
-    private Integer penaltyCount = 1;
-
-    public void refresh() {
-        this.createdAt = LocalDateTime.now();
-        this.expiresAt = LocalDateTime.now().plusDays(3);
-        this.penaltyCount++;
-    }
-
-    public boolean isActive() {
-        return LocalDateTime.now().isBefore(this.expiresAt);
-    }
-
-    public static UserPenalty create(Long userId, PenaltyType penaltyType) {
-        return UserPenalty.builder()
-                .userId(userId)
-                .penaltyType(penaltyType)
-                .expiresAt(LocalDateTime.now().plusDays(3))
-                .build();
-    }
 }

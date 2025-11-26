@@ -5,9 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "feed_images", indexes = {
-    @Index(name = "idx_feed_image_feed", columnList = "feedId")
-})
+@Table(name = "feed_images")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,12 +16,11 @@ public class FeedImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, insertable = false, updatable = false)
+    @Column(name = "feed_id", nullable = false, insertable = false, updatable = false)
     private Long feedId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "feedId", nullable = false)
-    @Setter
+    @JoinColumn(name = "feed_id", nullable = false)
     private Feed feed;
 
     @Column(name = "s3_key", nullable = false, columnDefinition = "TEXT")
@@ -36,8 +33,4 @@ public class FeedImage {
     @Column(name = "sort_order", nullable = false)
     @Builder.Default
     private Integer sortOrder = 0;
-
-    public String getImageUrl() {
-        return this.s3Key;
-    }
 }

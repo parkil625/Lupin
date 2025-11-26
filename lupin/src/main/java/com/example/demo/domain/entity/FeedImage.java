@@ -16,9 +16,6 @@ public class FeedImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "feed_id", nullable = false, insertable = false, updatable = false)
-    private Long feedId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "feed_id", nullable = false)
     private Feed feed;

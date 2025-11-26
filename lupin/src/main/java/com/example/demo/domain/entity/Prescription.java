@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Prescription extends BaseEntity {
+public class Prescription {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

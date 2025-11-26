@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Table(name = "appointments", indexes = {
     @Index(name = "idx_appointment_patient", columnList = "patientId"),
     @Index(name = "idx_appointment_doctor", columnList = "doctorId"),
-    @Index(name = "idx_appointment_date", columnList = "apptDate"),
+    @Index(name = "idx_appointment_date", columnList = "date"),
     @Index(name = "idx_appointment_status", columnList = "status")
 })
 @Getter
@@ -37,8 +37,8 @@ public class Appointment extends BaseEntity {
     @JoinColumn(name = "doctorId", nullable = false)
     private User doctor;
 
-    @Column(name = "appt_date", nullable = false)
-    private LocalDateTime apptDate;
+    @Column(name = "date", nullable = false)
+    private LocalDateTime date;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

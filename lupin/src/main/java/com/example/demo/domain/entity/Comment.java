@@ -34,10 +34,6 @@ public class Comment {
     @Builder.Default
     private List<Comment> replies = new ArrayList<>();
 
-    @OneToMany(mappedBy = "comment")
-    @Builder.Default
-    private List<CommentLike> commentLikes = new ArrayList<>();
-
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 }

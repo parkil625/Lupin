@@ -71,8 +71,9 @@ public class Auction {
     @Builder.Default
     private AuctionStatus status = AuctionStatus.SCHEDULED;
 
-    @Column(name = "winner_id")
-    private Long winnerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "winner_id")
+    private User winner;
 
     @Column(name = "winning_bid")
     private Long winningBid;

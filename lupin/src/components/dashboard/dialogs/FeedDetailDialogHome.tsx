@@ -34,7 +34,7 @@ import {
   Flame,
   Zap,
   User,
-  Flag,
+  AlertTriangle,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { commentApi, reportApi } from "@/api";
@@ -801,21 +801,6 @@ export default function FeedDetailDialogHome({
                         {totalCommentCount}
                       </span>
                     </button>
-
-                    {/* 신고 버튼 - 자신의 피드가 아닐 때만 표시 */}
-                    {feed.authorId !== currentUserId && (
-                      <button
-                        className="flex flex-col items-center gap-1 group"
-                        onClick={handleReportFeed}
-                        disabled={feedReported}
-                      >
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                          <Flag
-                            className={`w-6 h-6 ${feedReported ? 'fill-red-500 text-red-500' : iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                          />
-                        </div>
-                      </button>
-                    )}
                   </div>
                 </div>
               </>
@@ -894,21 +879,6 @@ export default function FeedDetailDialogHome({
                         {totalCommentCount}
                       </span>
                     </button>
-
-                    {/* 신고 버튼 - 자신의 피드가 아닐 때만 표시 */}
-                    {feed.authorId !== currentUserId && (
-                      <button
-                        className="flex flex-col items-center gap-1 group"
-                        onClick={handleReportFeed}
-                        disabled={feedReported}
-                      >
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                          <Flag
-                            className={`w-6 h-6 ${feedReported ? 'fill-red-500 text-red-500' : iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                          />
-                        </div>
-                      </button>
-                    )}
                   </div>
                 </div>
               </>

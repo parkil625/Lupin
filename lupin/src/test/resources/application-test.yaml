@@ -1,80 +1,22 @@
 spring:
-  main:
-    allow-bean-definition-overriding: true
   datasource:
     url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
   jpa:
     hibernate:
       ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.H2Dialect
-    show-sql: false
-  data:
-    redis:
-      repositories:
-        enabled: false
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: test-google-client-id
-            client-secret: test-google-client-secret
-            scope:
-              - email
-              - profile
-  cloud:
-    aws:
-      credentials:
-        access-key: test-access-key
-        secret-key: test-secret-key
-      s3:
-        bucket: test-bucket
-      region:
-        static: ap-northeast-2
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+        # H2 예약어 문제 방지 (User 테이블 등)
+        auto_quote_keyword: true
 
-naver:
-  client-id: test-naver-client-id
-  client-secret: test-naver-client-secret
-
-app:
-  seed-data:
-    enabled: false
-
-jwt:
-  secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==
-  access-token-expiration: 3600000
-  refresh-token-expiration: 86400000
-
-# Environment variables used by @Value annotations
-GOOGLE_CLIENT_ID: test-google-client-id
-GOOGLE_CLIENT_SECRET: test-google-client-secret
-AWS_ACCESS_KEY: test-access-key
-AWS_SECRET_KEY: test-secret-key
-JWT_SECRET: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHktMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==
-
-# Resilience4j 테스트 설정
-resilience4j:
-  circuitbreaker:
-    instances:
-      redis:
-        registerHealthIndicator: false
-        slidingWindowSize: 5
-        minimumNumberOfCalls: 2
-        failureRateThreshold: 50
-        waitDurationInOpenState: 1s
-        permittedNumberOfCallsInHalfOpenState: 1
-        slidingWindowType: COUNT_BASED
-      database:
-        registerHealthIndicator: false
-        slidingWindowSize: 5
-        minimumNumberOfCalls: 2
-        failureRateThreshold: 50
-        waitDurationInOpenState: 1s
-  retry:
-    instances:
-      redis:
-        maxAttempts: 1
-        waitDuration: 100ms
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql.BasicBinder: trace

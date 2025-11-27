@@ -1,9 +1,15 @@
+/**
+ * ChatDialog.tsx
+ *
+ * 채팅 다이얼로그 컴포넌트
+ * - 회원-의사 간 실시간 채팅
+ */
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  // DialogTitle, // 커스텀 헤더를 쓸 거라 기존 Title, Description은 지우거나 안 씁니다
-  // DialogDescription,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -31,38 +37,13 @@ export default function ChatDialog({
 }: ChatDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-red-500 w-full !max-w-4xl h-[600px] flex flex-col p-0">
-        {/* 헤더 부분 수정 시작 */}
-        <DialogHeader className="px-6 py-4 border-b">
-          <div className="flex items-center gap-4">
-            {/* 1. 의사 프로필 아바타 */}
-            <Avatar className="w-10 h-10 bg-blue-100">
-              <AvatarFallback className="bg-blue-500 text-white font-bold">
-                김
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex flex-col">
-              {/* 2. 이름과 상태 표시줄 */}
-              {/* 여기 gap-3을 gap-6 등으로 늘리면 사이 간격이 더 넓어집니다 */}
-              <div className="flex items-center gap-6">
-                <span className="text-lg font-bold text-gray-900">김의사</span>
-
-                {/* 진료 중 상태 배지 */}
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm font-medium text-gray-600">
-                    진료 중
-                  </span>
-                </div>
-              </div>
-
-              {/* 3. 온라인 상태 텍스트 */}
-              <span className="text-xs text-gray-400 mt-0.5">온라인</span>
-            </div>
-          </div>
+      <DialogContent className="max-w-2xl h-[600px] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="text-2xl font-black">진료 채팅</DialogTitle>
+          <DialogDescription>
+            의료진과 실시간으로 채팅할 수 있습니다.
+          </DialogDescription>
         </DialogHeader>
-        {/* 헤더 부분 수정 끝 */}
 
         <ScrollArea className="flex-1 px-6">
           <div className="space-y-4 py-4">

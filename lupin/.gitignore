@@ -41,6 +41,8 @@ node_modules/
 
 ### Claude Code ###
 .claude/
+CLAUDE.md
+plan.md
 nul
 
 ### Environment Variables ###
@@ -50,3 +52,15 @@ nul
 
 *storybook.log
 storybook-static
+
+### Temporary API Files (Claude generated) ###
+src/api/chatApi.ts
+src/api/commentApi.ts
+src/api/feedApi.ts
+src/api/imageApi.ts
+src/api/lotteryApi.ts
+src/api/notificationApi.ts
+src/api/reportApi.ts
+src/api/userApi.ts
+src/components/dashboard/dialogs/AdPopupDialog.tsx
+

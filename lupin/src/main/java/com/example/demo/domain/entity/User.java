@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -20,10 +18,6 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @OneToMany(mappedBy = "user")
-    @Builder.Default
-    private List<AuctionBid> auctionBids = new ArrayList<>();
 
     @Column(name = "user_id", nullable = false, unique = true, length = 50)
     private String userId;

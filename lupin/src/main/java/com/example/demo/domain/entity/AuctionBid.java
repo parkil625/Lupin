@@ -50,4 +50,45 @@ public class AuctionBid {
     @Builder.Default
     private BidStatus status = BidStatus.ACTIVE;
 
+    public boolean isActive() {
+        return status == BidStatus.ACTIVE;
+    }
+    public boolean isOutBid() {
+        return status == BidStatus.OUTBID;
+    }
+
+    public boolean isWinning() {
+        return status == BidStatus.WINNING;
+    }
+
+    public boolean isLost() {
+        return status  == BidStatus.LOST;
+    }
+
+    public boolean isRefunded() {
+        return status == BidStatus.REFUNDED;
+    }
+
+    public void activateBid() {
+        status = BidStatus.ACTIVE;
+    }
+    public void outbid() {
+        status = BidStatus.OUTBID;
+    }
+
+    public void winBid() {
+        if (isActive()) {
+            throw new IllegalStateException("최고가만 낙찰 가능합니다");
+        }
+        status = BidStatus.WINNING;
+    }
+
+    public void lostBid() {
+        if (isActive()) {
+            throw new IllegalStateException("활성화 상태에서만 Lost가 가능합니다");
+        }
+        status = BidStatus.LOST;
+    }
+
+
 }

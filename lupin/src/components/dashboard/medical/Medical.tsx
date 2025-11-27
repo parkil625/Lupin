@@ -3,7 +3,7 @@
  *
  * 진료 관리 페이지 컴포넌트 (2단 레이아웃)
  * - 좌측: 예약 내역 및 처방전 조회
- * - 우측: 실시간 채팅
+ * - 우측: 실시간 채팅 또는 진료 예약
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -11,10 +11,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label"; // Label import 추가
+import { Textarea } from "@/components/ui/textarea"; // Textarea import 추가
 import {
   Select,
   SelectContent,
@@ -22,18 +22,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, FileText, XCircle, Send } from "lucide-react";
+import { Clock, FileText, XCircle, Send } from "lucide-react"; // CalendarIcon 대신 Calendar 사용
 import { Prescription } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { toast } from "sonner";
 
 interface MedicalProps {
+  setShowAppointment: (show: boolean) => void;
   setShowChat: (show: boolean) => void;
   setSelectedPrescription: (prescription: Prescription | null) => void;
 }
 
-export default function Medical({ setSelectedPrescription }: MedicalProps) {
+export default function Medical({
+  setSelectedPrescription,
+}: // 원격의 props는 제거 (로컬의 인라인 예약 기능으로 대체)
+MedicalProps) {
   // 현재 로그인한 환자 정보 (localStorage에서 가져오기)
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
   const currentPatientId = currentUserId; // 환자의 경우 userId와 patientId가 동일
@@ -41,6 +45,11 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
+
+  // -------------------------------------------------------------------------
+  // [HEAD] 예약 관련 상태 및 로직 (인라인 예약 기능을 위해 복구)
+  // -------------------------------------------------------------------------
+
   const [activeAppointment, setActiveAppointment] = useState<{
     id: number;
     doctorId: number;
@@ -148,13 +157,53 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   ];
   const bookedTimes = ["10:00", "15:00"]; // 이미 예약된 시간 (예시)
 
+  // 채팅방이 활성화되어야 하는지 확인
+  const hasActiveChat = activeAppointment !== null && !isChatEnded;
+
+  // 예약 확인 핸들러
+  const handleConfirmAppointment = () => {
+    if (!selectedDepartment || !selectedDate || !selectedTime) return;
+
+    const departmentNames: Record<string, string> = {
+      internal: "내과",
+      surgery: "외과",
+      psychiatry: "신경정신과",
+      dermatology: "피부과",
+    };
+
+    setActiveAppointment({
+      id: Date.now(),
+      doctorId: 21,
+      doctorName: "김민준",
+      type: `${departmentNames[selectedDepartment]} 상담`,
+    });
+    setIsChatEnded(false);
+    setShowAppointmentView(false);
+
+    toast.success(
+      `${selectedDate.toLocaleDateString(
+        "ko-KR"
+      )} ${selectedTime} 예약이 완료되었습니다`
+    );
+
+    // 상태 초기화
+    setSelectedDepartment("");
+    setSelectedDate(undefined);
+    setSelectedTime("");
+    setSymptomDescription("");
+  };
+
+  // -------------------------------------------------------------------------
+  // [공통] 웹소켓 및 메시지 로직
+  // -------------------------------------------------------------------------
+
   // 스크롤 제어용 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // WebSocket 연결
   const roomId = `${currentPatientId}:${doctorId}`;
 
-  // 메시지 수신 콜백 (useCallback으로 메모이제이션)
+  // 메시지 수신 콜백 (HEAD의 로직 유지: 본인이 보낸 메시지는 알림 표시 안함)
   const handleMessageReceived = useCallback(
     (message: ChatMessageResponse) => {
       setMessages((prev) => [...prev, message]);
@@ -166,7 +215,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     [currentUserId]
   );
 
-  // 읽음 알림 콜백 (useCallback으로 메모이제이션)
+  // 읽음 알림 콜백
   const handleReadNotification = useCallback(
     (notification: { userId: number; roomId: string }) => {
       // 본인의 읽음 알림은 무시 (상대방이 읽었을 때만 처리)
@@ -174,20 +223,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         return;
       }
       console.log("상대방이 메시지를 읽었습니다:", notification);
-    },
-    [currentUserId]
-  );
-
-  // 진료 종료 알림 콜백
-  const handleConsultationEnded = useCallback(
-    (notification: { roomId: string; endedBy: number }) => {
-      console.log("진료가 종료되었습니다:", notification);
-      setIsChatEnded(true);
-      setActiveAppointment(null);
-      // 본인이 종료한 경우 알림 표시 안함 (환자 측에서만 알림)
-      if (notification.endedBy !== currentUserId) {
-        toast.info("의사가 진료를 종료했습니다.");
-      }
     },
     [currentUserId]
   );
@@ -201,7 +236,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
     onReadNotification: handleReadNotification,
-    onConsultationEnded: handleConsultationEnded,
   });
 
   // 자동 스크롤
@@ -243,6 +277,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     setChatMessage("");
   };
 
+  // -------------------------------------------------------------------------
+  // [공통] 목업 데이터
+  // -------------------------------------------------------------------------
+
   const prescriptions: Prescription[] = [
     {
       id: 1,
@@ -260,7 +298,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       date: "10월 28일",
       doctor: "최의사",
       medicines: ["소화제", "제산제"],
-
       diagnosis: "소화불량",
       instructions: "하루 2회, 식후에 복용하세요.",
     },
@@ -323,41 +360,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     },
   ];
 
-  // 채팅방이 활성화되어야 하는지 확인
-  const hasActiveChat = activeAppointment !== null && !isChatEnded;
-
-  // 예약 확인 핸들러
-  const handleConfirmAppointment = () => {
-    if (!selectedDepartment || !selectedDate || !selectedTime) return;
-
-    const departmentNames: Record<string, string> = {
-      internal: "내과",
-      surgery: "외과",
-      psychiatry: "신경정신과",
-      dermatology: "피부과",
-    };
-
-    setActiveAppointment({
-      id: Date.now(),
-      doctorId: 21,
-      doctorName: "김민준",
-      type: `${departmentNames[selectedDepartment]} 상담`,
-    });
-    setIsChatEnded(false);
-    setShowAppointmentView(false);
-
-    toast.success(
-      `${selectedDate.toLocaleDateString(
-        "ko-KR"
-      )} ${selectedTime} 예약이 완료되었습니다`
-    );
-
-    // 상태 초기화
-    setSelectedDepartment("");
-    setSelectedDate(undefined);
-    setSelectedTime("");
-    setSymptomDescription("");
-  };
+  // -------------------------------------------------------------------------
+  // [렌더링]
+  // -------------------------------------------------------------------------
 
   return (
     <div className="h-full overflow-auto p-8">
@@ -371,7 +376,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           </p>
         </div>
 
-        <div className="h-[calc(100vh-200px)] flex gap-4 justify-center">
+        <div className="h-[calc(100vh-200px)] flex gap-4">
           {/* 좌측: 예약 내역 및 처방전 */}
           <div className="w-96 flex flex-col gap-4">
             {/* 예약 내역 - 고정 높이 350px */}
@@ -468,11 +473,11 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
             </Card>
           </div>
 
-          {/* 우측: 채팅 또는 예약 */}
-          <Card className="w-[750px] backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl">
-            <div className="h-full flex flex-col p-4">
+          {/* 우측: 채팅 / 예약 화면 */}
+          <Card className="flex-1 backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl">
+            <div className="h-full flex flex-col p-6">
+              {/* [HEAD]의 인라인 예약/채팅 로직을 유지 */}
               {hasActiveChat ? (
-                // 채팅 화면
                 <>
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
                     <div className="flex items-center gap-3">
@@ -556,7 +561,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                       className="rounded-xl"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
-                      onKeyDown={(e) => {
+                      onKeyPress={(e) => {
                         if (e.key === "Enter") {
                           handleSendMessage();
                         }
@@ -571,7 +576,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                   </div>
                 </>
               ) : (
-                // 인라인 예약 화면
+                // 인라인 예약 화면 (HEAD의 로직 유지)
                 <div className="h-full overflow-y-auto">
                   <h2 className="text-2xl font-black text-gray-900 mb-4">
                     진료 예약
@@ -681,7 +686,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12"
                         onClick={handleConfirmAppointment}
                       >
-                        예약 확인
+                        예약하기
                       </Button>
                     </div>
                   </div>

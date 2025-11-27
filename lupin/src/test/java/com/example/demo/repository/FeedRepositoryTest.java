@@ -30,7 +30,7 @@ class FeedRepositoryTest {
         // given
         User me = createAndSaveUser("me");
 
-        Feed feed = createFeed(me, "running");
+        Feed feed = createAndSaveFeed(me, "running");
 
         // when
         Slice<Feed> feeds = feedRepository.findByWriterOrderByIdDesc(me, PageRequest.of(0, 15));

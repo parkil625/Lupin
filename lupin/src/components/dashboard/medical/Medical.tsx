@@ -15,13 +15,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Clock,
-  FileText,
-  XCircle,
-  Send,
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Clock, FileText, XCircle, Send } from "lucide-react";
 import { Prescription } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
@@ -32,11 +33,9 @@ interface MedicalProps {
   setSelectedPrescription: (prescription: Prescription | null) => void;
 }
 
-export default function Medical({
-  setSelectedPrescription,
-}: MedicalProps) {
+export default function Medical({ setSelectedPrescription }: MedicalProps) {
   // 현재 로그인한 환자 정보 (localStorage에서 가져오기)
-  const currentUserId = parseInt(localStorage.getItem('userId') || '1');
+  const currentUserId = parseInt(localStorage.getItem("userId") || "1");
   const currentPatientId = currentUserId; // 환자의 경우 userId와 patientId가 동일
   const doctorId = 21; // doctor01의 ID (테스트용)
 
@@ -59,36 +58,36 @@ export default function Medical({
 
   // 한국 공휴일 (2024년 기준)
   const holidays = [
-    new Date(2024, 0, 1),   // 신정
-    new Date(2024, 1, 9),   // 설날 연휴
-    new Date(2024, 1, 10),  // 설날
-    new Date(2024, 1, 11),  // 설날 연휴
-    new Date(2024, 2, 1),   // 삼일절
-    new Date(2024, 4, 5),   // 어린이날
-    new Date(2024, 4, 15),  // 부처님 오신 날
-    new Date(2024, 5, 6),   // 현충일
-    new Date(2024, 7, 15),  // 광복절
-    new Date(2024, 8, 16),  // 추석 연휴
-    new Date(2024, 8, 17),  // 추석
-    new Date(2024, 8, 18),  // 추석 연휴
-    new Date(2024, 9, 3),   // 개천절
-    new Date(2024, 9, 9),   // 한글날
+    new Date(2024, 0, 1), // 신정
+    new Date(2024, 1, 9), // 설날 연휴
+    new Date(2024, 1, 10), // 설날
+    new Date(2024, 1, 11), // 설날 연휴
+    new Date(2024, 2, 1), // 삼일절
+    new Date(2024, 4, 5), // 어린이날
+    new Date(2024, 4, 15), // 부처님 오신 날
+    new Date(2024, 5, 6), // 현충일
+    new Date(2024, 7, 15), // 광복절
+    new Date(2024, 8, 16), // 추석 연휴
+    new Date(2024, 8, 17), // 추석
+    new Date(2024, 8, 18), // 추석 연휴
+    new Date(2024, 9, 3), // 개천절
+    new Date(2024, 9, 9), // 한글날
     new Date(2024, 11, 25), // 크리스마스
     // 2025년
-    new Date(2025, 0, 1),   // 신정
-    new Date(2025, 0, 28),  // 설날 연휴
-    new Date(2025, 0, 29),  // 설날
-    new Date(2025, 0, 30),  // 설날 연휴
-    new Date(2025, 2, 1),   // 삼일절
-    new Date(2025, 4, 5),   // 어린이날
-    new Date(2025, 4, 5),   // 부처님 오신 날
-    new Date(2025, 5, 6),   // 현충일
-    new Date(2025, 7, 15),  // 광복절
-    new Date(2025, 9, 3),   // 개천절
-    new Date(2025, 9, 5),   // 추석 연휴
-    new Date(2025, 9, 6),   // 추석
-    new Date(2025, 9, 7),   // 추석 연휴
-    new Date(2025, 9, 9),   // 한글날
+    new Date(2025, 0, 1), // 신정
+    new Date(2025, 0, 28), // 설날 연휴
+    new Date(2025, 0, 29), // 설날
+    new Date(2025, 0, 30), // 설날 연휴
+    new Date(2025, 2, 1), // 삼일절
+    new Date(2025, 4, 5), // 어린이날
+    new Date(2025, 4, 5), // 부처님 오신 날
+    new Date(2025, 5, 6), // 현충일
+    new Date(2025, 7, 15), // 광복절
+    new Date(2025, 9, 3), // 개천절
+    new Date(2025, 9, 5), // 추석 연휴
+    new Date(2025, 9, 6), // 추석
+    new Date(2025, 9, 7), // 추석 연휴
+    new Date(2025, 9, 9), // 한글날
     new Date(2025, 11, 25), // 크리스마스
   ];
 
@@ -107,29 +106,46 @@ export default function Medical({
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const isPastDate = (date: Date) => {
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dateOnly = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
     return dateOnly < today;
   };
 
   // 오늘인지 확인
   const isToday = (date: Date | undefined) => {
     if (!date) return false;
-    return date.getFullYear() === now.getFullYear() &&
-           date.getMonth() === now.getMonth() &&
-           date.getDate() === now.getDate();
+    return (
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate()
+    );
   };
 
   // 시간이 지났는지 확인 (오늘인 경우만)
   const isPastTime = (time: string) => {
     if (!selectedDate || !isToday(selectedDate)) return false;
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hours, minutes] = time.split(":").map(Number);
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
-    return hours < currentHours || (hours === currentHours && minutes <= currentMinutes);
+    return (
+      hours < currentHours ||
+      (hours === currentHours && minutes <= currentMinutes)
+    );
   };
 
   // 예약 가능 시간
-  const availableTimes = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
+  const availableTimes = [
+    "09:00",
+    "10:00",
+    "11:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+  ];
   const bookedTimes = ["10:00", "15:00"]; // 이미 예약된 시간 (예시)
 
   // 스크롤 제어용 Ref
@@ -139,13 +155,16 @@ export default function Medical({
   const roomId = `${currentPatientId}:${doctorId}`;
 
   // 메시지 수신 콜백 (useCallback으로 메모이제이션)
-  const handleMessageReceived = useCallback((message: ChatMessageResponse) => {
-    setMessages((prev) => [...prev, message]);
-    // 본인이 보낸 메시지는 알림 표시 안함
-    if (message.senderId !== currentUserId) {
-      toast.success("새 메시지가 도착했습니다");
-    }
-  }, [currentUserId]);
+  const handleMessageReceived = useCallback(
+    (message: ChatMessageResponse) => {
+      setMessages((prev) => [...prev, message]);
+      // 본인이 보낸 메시지는 알림 표시 안함
+      if (message.senderId !== currentUserId) {
+        toast.success("새 메시지가 도착했습니다");
+      }
+    },
+    [currentUserId]
+  );
 
   // 읽음 알림 콜백 (useCallback으로 메모이제이션)
   const handleReadNotification = useCallback(
@@ -241,6 +260,7 @@ export default function Medical({
       date: "10월 28일",
       doctor: "최의사",
       medicines: ["소화제", "제산제"],
+
       diagnosis: "소화불량",
       instructions: "하루 2회, 식후에 복용하세요.",
     },
@@ -327,7 +347,9 @@ export default function Medical({
     setShowAppointmentView(false);
 
     toast.success(
-      `${selectedDate.toLocaleDateString("ko-KR")} ${selectedTime} 예약이 완료되었습니다`
+      `${selectedDate.toLocaleDateString(
+        "ko-KR"
+      )} ${selectedTime} 예약이 완료되었습니다`
     );
 
     // 상태 초기화
@@ -551,12 +573,19 @@ export default function Medical({
               ) : (
                 // 인라인 예약 화면
                 <div className="h-full overflow-y-auto">
-                  <h2 className="text-2xl font-black text-gray-900 mb-4">진료 예약</h2>
+                  <h2 className="text-2xl font-black text-gray-900 mb-4">
+                    진료 예약
+                  </h2>
 
                   {/* 진료과 선택 - 상단 */}
                   <div className="mb-4">
-                    <Label className="text-base font-black mb-2 block">진료과 선택</Label>
-                    <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                    <Label className="text-base font-black mb-2 block">
+                      진료과 선택
+                    </Label>
+                    <Select
+                      value={selectedDepartment}
+                      onValueChange={setSelectedDepartment}
+                    >
                       <SelectTrigger className="rounded-xl">
                         <SelectValue placeholder="진료과를 선택하세요" />
                       </SelectTrigger>
@@ -574,29 +603,37 @@ export default function Medical({
                     <div className="flex-1 space-y-4">
                       {/* 날짜 선택 */}
                       <div>
-                        <Label className="text-base font-black mb-2 block">날짜 선택</Label>
+                        <Label className="text-base font-black mb-2 block">
+                          날짜 선택
+                        </Label>
                         <Calendar
                           mode="single"
                           selected={selectedDate}
                           onSelect={setSelectedDate}
-                          disabled={(date) => isPastDate(date) || isHoliday(date)}
+                          disabled={(date) =>
+                            isPastDate(date) || isHoliday(date)
+                          }
                           modifiers={{
-                            holiday: holidays
+                            holiday: holidays,
                           }}
                           modifiersStyles={{
                             holiday: {
-                              color: '#C93831'
-                            }
+                              color: "#C93831",
+                            },
                           }}
                           className="rounded-xl border"
                         />
-                        <p className="text-xs text-gray-600 mt-2">* 빨간색 날짜는 공휴일입니다 (선택 불가)</p>
+                        <p className="text-xs text-gray-600 mt-2">
+                          * 빨간색 날짜는 공휴일입니다 (선택 불가)
+                        </p>
                       </div>
 
                       {/* 시간 선택 */}
                       {selectedDate && (
                         <div>
-                          <Label className="text-base font-black mb-2 block">시간 선택</Label>
+                          <Label className="text-base font-black mb-2 block">
+                            시간 선택
+                          </Label>
                           <div className="grid grid-cols-4 gap-2">
                             {availableTimes.map((time) => {
                               const isBooked = bookedTimes.includes(time);
@@ -609,7 +646,11 @@ export default function Medical({
                                   variant={isSelected ? "default" : "outline"}
                                   disabled={isDisabled}
                                   onClick={() => setSelectedTime(time)}
-                                  className={`rounded-xl ${isSelected ? 'bg-[#C93831] hover:bg-[#B02F28]' : ''} ${isDisabled ? 'opacity-50' : ''}`}
+                                  className={`rounded-xl ${
+                                    isSelected
+                                      ? "bg-[#C93831] hover:bg-[#B02F28]"
+                                      : ""
+                                  } ${isDisabled ? "opacity-50" : ""}`}
                                 >
                                   {time}
                                   {isBooked && " (예약됨)"}
@@ -624,7 +665,9 @@ export default function Medical({
 
                     {/* 우측: 예약 상세 */}
                     <div className="w-64 flex flex-col">
-                      <Label className="text-base font-black mb-2 block">예약 상세</Label>
+                      <Label className="text-base font-black mb-2 block">
+                        예약 상세
+                      </Label>
                       <Textarea
                         placeholder="병명이나 진단 사항을 적어주세요"
                         value={symptomDescription}
@@ -632,7 +675,9 @@ export default function Medical({
                         className="rounded-xl flex-1 resize-none mb-4"
                       />
                       <Button
-                        disabled={!selectedDepartment || !selectedDate || !selectedTime}
+                        disabled={
+                          !selectedDepartment || !selectedDate || !selectedTime
+                        }
                         className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12"
                         onClick={handleConfirmAppointment}
                       >

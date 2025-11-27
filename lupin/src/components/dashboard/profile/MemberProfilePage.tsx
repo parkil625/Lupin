@@ -324,35 +324,12 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                 <h3 className="text-lg font-bold text-gray-900 mb-4">기본 정보</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label className="text-sm text-gray-600 font-medium">이메일</Label>
-                                        <InputGroup className="mt-1.5">
-                                            <InputGroupInput
-                                                type="email"
-                                                value={localStorage.getItem('userEmail') || ''}
-                                                disabled
-                                                className="rounded-xl bg-white/80 border-gray-200"
-                                            />
-                                        </InputGroup>
-                                    </div>
-                                    <div>
                                         <Label className="text-sm text-gray-600 font-medium">부서</Label>
                                         <InputGroup className="mt-1.5">
                                             <InputGroupInput
                                                 type="text"
                                                 value="개발팀"
                                                 disabled
-                                                className="rounded-xl bg-white/80 border-gray-200"
-                                            />
-                                        </InputGroup>
-                                    </div>
-                                    <div>
-                                        <Label className="text-sm text-gray-600 font-medium">연락처</Label>
-                                        <InputGroup className="mt-1.5">
-                                            <InputGroupInput
-                                                type="tel"
-                                                value={phone}
-                                                onChange={(e) => setPhone(e.target.value)}
-                                                disabled={!isEditingProfile}
                                                 className="rounded-xl bg-white/80 border-gray-200"
                                             />
                                         </InputGroup>
@@ -380,18 +357,6 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                                 <SelectItem value="여성">여성</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                    </div>
-                                    <div>
-                                        <Label className="text-sm text-gray-600 font-medium">주소</Label>
-                                        <InputGroup className="mt-1.5">
-                                            <InputGroupInput
-                                                type="text"
-                                                value={address}
-                                                onChange={(e) => setAddress(e.target.value)}
-                                                disabled={!isEditingProfile}
-                                                className="rounded-xl bg-white/80 border-gray-200"
-                                            />
-                                        </InputGroup>
                                     </div>
                                 </div>
                             </div>
@@ -427,141 +392,94 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                 </div>
                             </div>
 
-                            {/* OAuth 연동 관리 */}
+                            {/* OAuth 연동 관리 - 통합 버튼 */}
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-4">계정 연동</h3>
-                                <div className="space-y-3">
-                                    {/* 구글 연동 (수정됨: 테두리 제거) */}
-                                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/80 border border-gray-200">
-                                        <div className="flex items-center gap-3">
-                                            {/* border-gray-100 클래스 제거 */}
-                                            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
-                                                <img src="/google-logo.png" alt="Google" className="w-6 h-6 object-contain" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">구글</p>
-                                                {isLinked('GOOGLE') && (
-                                                    <p className="text-sm text-gray-500">
-                                                        {oauthConnections.find(c => c.provider === 'GOOGLE')?.providerEmail || '연동됨'}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {isLinked('GOOGLE') ? (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleUnlinkOAuth('GOOGLE')}
-                                                disabled={isLoadingOAuth}
-                                                className="text-red-600 border-red-300 hover:bg-red-50"
-                                            >
-                                                <Unlink className="w-4 h-4 mr-1" />
-                                                연동 해제
-                                            </Button>
-                                        ) : (
-                                            <>
-                                                {/* 실제 클릭되는 버튼: 숨겨진 GSI 버튼을 트리거함 */}
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        // 1. 숨겨진 진짜 구글 로그인 버튼을 찾아서 대신 클릭해줌
-                                                        const btn = document.querySelector('#google-link-hidden-btn div[role="button"]') as HTMLElement;
-                                                        if(btn) btn.click();
-                                                    }}
-                                                    disabled={isLoadingOAuth}
-                                                    className="text-gray-600 border-gray-300 hover:bg-gray-50"
-                                                >
-                                                    <Link2 className="w-4 h-4 mr-1" />
-                                                    연동하기
-                                                </Button>
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">소셜 계정 연동</h3>
+                                <div className="p-4 rounded-xl bg-white/80 border border-gray-200">
+                                    {(() => {
+                                        // 연동된 계정 찾기 (하나만 연동 가능)
+                                        const linkedAccount = oauthConnections[0];
 
-                                                {/* 2. 구글 라이브러리가 그려놓을 숨겨진 버튼 공간 (필수) */}
-                                                <div id="google-link-hidden-btn" className="hidden" style={{ display: 'none' }}></div>
-                                            </>
-                                        )}
-                                    </div>
+                                        if (linkedAccount) {
+                                            // 연동된 계정이 있으면 해당 계정 정보 표시
+                                            const providerInfo: Record<string, { name: string; logo: string; bgColor: string }> = {
+                                                'GOOGLE': { name: '구글', logo: '/google-logo.png', bgColor: 'bg-white' },
+                                                'NAVER': { name: '네이버', logo: '/naver-logo.png', bgColor: 'bg-white' },
+                                                'KAKAO': { name: '카카오', logo: '/kakao-logo.png', bgColor: 'bg-[#FEE500]' },
+                                            };
+                                            const info = providerInfo[linkedAccount.provider] || providerInfo['GOOGLE'];
 
-                                    {/* 네이버 연동 (수정됨: 배경 흰색, 필터 제거) */}
-                                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/80 border border-gray-200">
-                                        <div className="flex items-center gap-3">
-                                            {/* 배경을 초록색에서 흰색으로 변경하고 필터 제거 */}
-                                            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
-                                                <img src="/naver-logo.png" alt="Naver" className="w-5 h-5 object-contain" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">네이버</p>
-                                                {isLinked('NAVER') && (
-                                                    <p className="text-sm text-gray-500">
-                                                        {oauthConnections.find(c => c.provider === 'NAVER')?.providerEmail || '연동됨'}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {isLinked('NAVER') ? (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleUnlinkOAuth('NAVER')}
-                                                disabled={isLoadingOAuth}
-                                                className="text-red-600 border-red-300 hover:bg-red-50"
-                                            >
-                                                <Unlink className="w-4 h-4 mr-1" />
-                                                연동 해제
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleLinkNaver}
-                                                disabled={isLoadingOAuth}
-                                                className="text-[#03C75A] border-[#03C75A] hover:bg-green-50"
-                                            >
-                                                <Link2 className="w-4 h-4 mr-1" />
-                                                연동하기
-                                            </Button>
-                                        )}
-                                    </div>
+                                            return (
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-10 h-10 rounded-lg ${info.bgColor} flex items-center justify-center`}>
+                                                            <img src={info.logo} alt={info.name} className="w-6 h-6 object-contain" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-medium text-gray-900">{info.name} 계정 연동됨</p>
+                                                            <p className="text-sm text-gray-500">{linkedAccount.providerEmail}</p>
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleUnlinkOAuth(linkedAccount.provider)}
+                                                        disabled={isLoadingOAuth}
+                                                        className="text-red-600 border-red-300 hover:bg-red-50"
+                                                    >
+                                                        <Unlink className="w-4 h-4 mr-1" />
+                                                        연동 해제
+                                                    </Button>
+                                                </div>
+                                            );
+                                        } else {
+                                            // 연동된 계정이 없으면 연동 버튼들 표시
+                                            return (
+                                                <div className="space-y-3">
+                                                    <p className="text-sm text-gray-600 mb-4">소셜 계정을 연동하면 간편하게 로그인할 수 있습니다.</p>
+                                                    <div className="flex gap-3">
+                                                        {/* 구글 연동 */}
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={() => {
+                                                                const btn = document.querySelector('#google-link-hidden-btn div[role="button"]') as HTMLElement;
+                                                                if(btn) btn.click();
+                                                            }}
+                                                            disabled={isLoadingOAuth}
+                                                            className="flex-1 h-12"
+                                                        >
+                                                            <img src="/google-logo.png" alt="Google" className="w-5 h-5 mr-2" />
+                                                            구글 연동
+                                                        </Button>
 
-                                    {/* 카카오 연동 */}
-                                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/80 border border-gray-200">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-[#FEE500] flex items-center justify-center">
-                                                <img src="/kakao-logo.png" alt="Kakao" className="w-6 h-6 object-contain" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">카카오</p>
-                                                {isLinked('KAKAO') && (
-                                                    <p className="text-sm text-gray-500">
-                                                        {oauthConnections.find(c => c.provider === 'KAKAO')?.providerEmail || '연동됨'}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {isLinked('KAKAO') ? (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleUnlinkOAuth('KAKAO')}
-                                                disabled={isLoadingOAuth}
-                                                className="text-red-600 border-red-300 hover:bg-red-50"
-                                            >
-                                                <Unlink className="w-4 h-4 mr-1" />
-                                                연동 해제
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleLinkKakao}
-                                                disabled={isLoadingOAuth}
-                                                className="text-[#3C1E1E] border-[#FEE500] hover:bg-yellow-50"
-                                            >
-                                                <Link2 className="w-4 h-4 mr-1" />
-                                                연동하기
-                                            </Button>
-                                        )}
-                                    </div>
+                                                        {/* 네이버 연동 */}
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={handleLinkNaver}
+                                                            disabled={isLoadingOAuth}
+                                                            className="flex-1 h-12 border-[#03C75A] text-[#03C75A] hover:bg-green-50"
+                                                        >
+                                                            <img src="/naver-logo.png" alt="Naver" className="w-5 h-5 mr-2" />
+                                                            네이버 연동
+                                                        </Button>
+
+                                                        {/* 카카오 연동 */}
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={handleLinkKakao}
+                                                            disabled={isLoadingOAuth}
+                                                            className="flex-1 h-12 border-[#FEE500] bg-[#FEE500] text-[#3C1E1E] hover:bg-[#F5DC00]"
+                                                        >
+                                                            <img src="/kakao-logo.png" alt="Kakao" className="w-5 h-5 mr-2" />
+                                                            카카오 연동
+                                                        </Button>
+                                                    </div>
+                                                    {/* 숨겨진 구글 GSI 버튼 */}
+                                                    <div id="google-link-hidden-btn" className="hidden" style={{ display: 'none' }}></div>
+                                                </div>
+                                            );
+                                        }
+                                    })()}
                                 </div>
                             </div>
                         </div>

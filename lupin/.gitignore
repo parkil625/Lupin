@@ -43,7 +43,6 @@ node_modules/
 .claude/
 CLAUDE.md
 plan.md
-nul
 
 ### Environment Variables ###
 .env

@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react';
+import { MemoryRouter } from 'react-router-dom';
 import '../src/fonts.css'; // NanumSquare Font
 import '../src/index.css'; // Tailwind CSS import
 
@@ -30,9 +31,9 @@ const preview: Preview = {
   // 전역 데코레이터: 모든 스토리에 적용
   decorators: [
     (Story) => (
-      <div style={{ padding: '3rem' }}>
+      <MemoryRouter>
         <Story />
-      </div>
+      </MemoryRouter>
     ),
   ],
 };

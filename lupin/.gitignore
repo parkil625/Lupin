@@ -41,7 +41,8 @@ node_modules/
 
 ### Claude Code ###
 .claude/
-nul
+CLAUDE.md
+plan.md
 
 ### Environment Variables ###
 .env

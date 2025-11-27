@@ -46,7 +46,4 @@ public class Feed {
     @Column(nullable = false)
     @Builder.Default
     private Long points = 0L;
-
-    @Column(name = "feed_image_id")
-    private Long feedImageId;
 }

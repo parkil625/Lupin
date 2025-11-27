@@ -35,14 +35,8 @@ public class Prescription {
     @Builder.Default
     private List<PrescriptionMed> medicines = new ArrayList<>();
 
-    @Column(name = "name", length = 255)
-    private String name;
-
     @Column(columnDefinition = "TEXT")
     private String diagnosis;
-
-    @Column(columnDefinition = "TEXT")
-    private String instructions;
 
     @Column(name = "date", nullable = false)
     private LocalDate date;

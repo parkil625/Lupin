@@ -21,22 +21,6 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(mappedBy = "writer")
-    @Builder.Default
-    private List<Feed> feeds = new ArrayList<>();
-
-    @OneToMany(mappedBy = "writer")
-    @Builder.Default
-    private List<Comment> comments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user")
-    @Builder.Default
-    private List<FeedLike> feedLikes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user")
-    @Builder.Default
-    private List<CommentLike> commentLikes = new ArrayList<>();
-
     @OneToMany(mappedBy = "user")
     @Builder.Default
     private List<AuctionBid> auctionBids = new ArrayList<>();

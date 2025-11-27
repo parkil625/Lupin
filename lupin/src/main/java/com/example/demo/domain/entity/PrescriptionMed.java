@@ -5,7 +5,7 @@ import lombok.*;
 
 @Entity
 @Table(name = "prescription_meds", indexes = {
-    @Index(name = "idx_prescription_med_prescription", columnList = "prescriptionId")
+    @Index(name = "idx_prescription_med_prescription", columnList = "prescription_id")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -17,11 +17,8 @@ public class PrescriptionMed {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, insertable = false, updatable = false)
-    private Long prescriptionId;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prescriptionId", nullable = false)
+    @JoinColumn(name = "prescription_id", nullable = false)
     @Setter
     private Prescription prescription;
 

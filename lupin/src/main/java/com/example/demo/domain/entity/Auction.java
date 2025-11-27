@@ -85,4 +85,83 @@ public class Auction {
     @OneToOne(mappedBy = "auction", fetch = FetchType.LAZY)
     private AuctionItem auctionItem;
 
+
+
+    /*
+    * 편의 메소드
+    *
+    * */
+
+    public boolean isScheduled() {
+        return status == AuctionStatus.SCHEDULED;
+    }
+
+    public boolean isActive() {
+        return status == AuctionStatus.ACTIVE;
+    }
+
+    public boolean isEnded() {
+        return status == AuctionStatus.ACTIVE;
+    }
+
+    public boolean isCancelled() {
+        return status == AuctionStatus.SCHEDULED;
+    }
+
+    /*
+    * 상태 전환 메소드
+    * */
+
+    public void activate(LocalDateTime now) {
+        if (!isScheduled()) {
+            throw new IllegalStateException("Scheduled 상태에서만 활성화가 가능합니다");
+        }
+        if (now.isBefore(startTime)) {
+            throw new IllegalStateException("시작시간 전에는 활성화할 수 없습니다.");
+        }
+        if (now.isAfter(regularEndTime)) {
+            throw new IllegalStateException("정규 종료 시간이 지난 경매는 활성화할 수 없습니다.");
+        }
+        this.status = AuctionStatus.ACTIVE;
+    }
+    public void deactivate() {
+
+        if (!isActive()) {
+            throw new IllegalStateException("Active 상태에서만 종료할 수 있습니다");
+        }
+        this.overtimeStarted = false;
+        this.status = AuctionStatus.ENDED;
+    }
+
+    public void cancel() {
+        this.status = AuctionStatus.CANCELLED;
+    }
+
+    /*경매 입찰 확인 메소드*/
+
+    public void validateTime(LocalDateTime bidTime) {
+        if(!isActive()) {
+            throw new IllegalStateException("정해진 시간에만 경매가 가능합니다");
+        }
+        if(bidTime.isBefore(startTime) || bidTime.isAfter(regularEndTime)) {
+            throw new IllegalStateException("정해진 시간 내에서만 가능합니다");
+        }
+        if (overtimeStarted && bidTime.isAfter(overtimeEndTime)) {
+            throw new IllegalStateException("초읽기 시간이 끝났습니다.");
+        }
+
+    }
+
+    public void validateBid(Long bidAmount) {
+        if(bidAmount == null || bidAmount <= currentPrice) {
+            throw new IllegalStateException("현재가 보다 높아야 입찰 가능합니다");
+        }
+
+    }
+
+
+
+
+
+
 }

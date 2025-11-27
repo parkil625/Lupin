@@ -1,0 +1,361 @@
+
+> Health Management Platform@0.1.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v6.3.5[39m  [2mready in [0m[1m1557[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3000[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "../dialogs/AdPopupDialog" from "src/components/dashboard/home/Home.tsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/home/Home.tsx[39m:29:26
+[33m  32 |  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+  33 |  import { Heart, MessageCircle, Sparkles, Flame, Award, User, Plus } from "lucide-react";
+  34 |  import AdPopupDialog from "../dialogs/AdPopupDialog";
+     |                                   ^
+  35 |  import { userApi, feedApi, lotteryApi } from "@/api";
+  36 |  const AD_POPUP_KEY = "adPopupHiddenUntil";[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "@/api/chatApi" from "src/components/dashboard/medical/Medical.tsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/medical/Medical.tsx[39m:28:45
+[33m  38 |  import { Clock, FileText, XCircle, Send } from "lucide-react"; // CalendarIcon 대신 Calendar 사용
+  39 |  import { useWebSocket } from "@/hooks/useWebSocket";
+  40 |  import { chatApi } from "@/api/chatApi";
+     |                                 ^
+  41 |  import { toast } from "sonner";
+  42 |  export default function Medical({ setSelectedPrescription }) {[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "@/api/imageApi" from "src/components/dashboard/dialogs/CreateFeedDialog.tsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/dialogs/CreateFeedDialog.tsx[39m:37:25
+[33m  40 |  import { BlockNoteView } from "@blocknote/mantine";
+  41 |  import "@blocknote/mantine/style.css";
+  42 |  import { imageApi } from "@/api/imageApi";
+     |                                   ^
+  43 |  import { extractImageMetadata, validateWorkoutTimes, calculateWorkoutMetrics } from "@/lib/imageMetadata";
+  44 |  const DRAFT_STORAGE_KEY = "createFeedDraft";[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "@/api/chatApi" from "src/components/dashboard/chat/DoctorChatPage.tsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/chat/DoctorChatPage.tsx[39m:28:63
+[33m  38 |  import { toast } from "sonner";
+  39 |  import { useWebSocket } from "@/hooks/useWebSocket";
+  40 |  import { chatApi } from "@/api/chatApi";
+     |                                 ^
+  41 |  export default function DoctorChatPage() {
+  42 |      _s();[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "@/api/imageApi" from "src/components/dashboard/profile/MemberProfilePage.tsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/profile/MemberProfilePage.tsx[39m:28:25
+[33m  39 |  import { Edit, Camera, User, LogOut, X, Link2, Unlink } from "lucide-react";
+  40 |  import { toast } from "sonner";
+  41 |  import { imageApi } from "@/api/imageApi";
+     |                                    ^
+  42 |  import { oauthApi } from "@/api/oauthApi";
+  43 |  export default function MemberProfilePage({ onLogout, profileImage, setProfileImage }) {[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@/api/chatApi" from "src/components/dashboard/medical/Medical.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/medical/Medical.tsx[39m:28:45
+[33m  38 |  import { Clock, FileText, XCircle, Send } from "lucide-react"; // CalendarIcon 대신 Calendar 사용
+  39 |  import { useWebSocket } from "@/hooks/useWebSocket";
+  40 |  import { chatApi } from "@/api/chatApi";
+     |                                 ^
+  41 |  import { toast } from "sonner";
+  42 |  export default function Medical({ setSelectedPrescription }) {[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 15)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../dialogs/AdPopupDialog" from "src/components/dashboard/home/Home.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/home/Home.tsx[39m:29:26
+[33m  32 |  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+  33 |  import { Heart, MessageCircle, Sparkles, Flame, Award, User, Plus } from "lucide-react";
+  34 |  import AdPopupDialog from "../dialogs/AdPopupDialog";
+     |                                   ^
+  35 |  import { userApi, feedApi, lotteryApi } from "@/api";
+  36 |  const AD_POPUP_KEY = "adPopupHiddenUntil";[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 9)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@/api/imageApi" from "src/components/dashboard/dialogs/CreateFeedDialog.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/dialogs/CreateFeedDialog.tsx[39m:37:25
+[33m  40 |  import { BlockNoteView } from "@blocknote/mantine";
+  41 |  import "@blocknote/mantine/style.css";
+  42 |  import { imageApi } from "@/api/imageApi";
+     |                                   ^
+  43 |  import { extractImageMetadata, validateWorkoutTimes, calculateWorkoutMetrics } from "@/lib/imageMetadata";
+  44 |  const DRAFT_STORAGE_KEY = "createFeedDraft";[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 16)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@/api/chatApi" from "src/components/dashboard/chat/DoctorChatPage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/chat/DoctorChatPage.tsx[39m:28:63
+[33m  38 |  import { toast } from "sonner";
+  39 |  import { useWebSocket } from "@/hooks/useWebSocket";
+  40 |  import { chatApi } from "@/api/chatApi";
+     |                                 ^
+  41 |  export default function DoctorChatPage() {
+  42 |      _s();[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 15)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:31[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@/api/imageApi" from "src/components/dashboard/profile/MemberProfilePage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/profile/MemberProfilePage.tsx[39m:28:25
+[33m  39 |  import { Edit, Camera, User, LogOut, X, Link2, Unlink } from "lucide-react";
+  40 |  import { toast } from "sonner";
+  41 |  import { imageApi } from "@/api/imageApi";
+     |                                    ^
+  42 |  import { oauthApi } from "@/api/oauthApi";
+  43 |  export default function MemberProfilePage({ onLogout, profileImage, setProfileImage }) {[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 14)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+info Using tsconfig paths for react-docgen
+[2m오후 4:26:34[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:34[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@/api/imageApi" from "src/components/dashboard/profile/MemberProfilePage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/profile/MemberProfilePage.tsx[39m:28:25
+[33m  39 |  import { Edit, Camera, User, LogOut, X, Link2, Unlink } from "lucide-react";
+  40 |  import { toast } from "sonner";
+  41 |  import { imageApi } from "@/api/imageApi";
+     |                                    ^
+  42 |  import { oauthApi } from "@/api/oauthApi";
+  43 |  export default function MemberProfilePage({ onLogout, profileImage, setProfileImage }) {[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 14)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:34[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "../dialogs/AdPopupDialog" from "src/components/dashboard/home/Home.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/home/Home.tsx[39m:29:26
+[33m  32 |  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+  33 |  import { Heart, MessageCircle, Sparkles, Flame, Award, User, Plus } from "lucide-react";
+  34 |  import AdPopupDialog from "../dialogs/AdPopupDialog";
+     |                                   ^
+  35 |  import { userApi, feedApi, lotteryApi } from "@/api";
+  36 |  const AD_POPUP_KEY = "adPopupHiddenUntil";[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 9)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:34[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@/api/chatApi" from "src/components/dashboard/medical/Medical.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/medical/Medical.tsx[39m:28:45
+[33m  38 |  import { Clock, FileText, XCircle, Send } from "lucide-react"; // CalendarIcon 대신 Calendar 사용
+  39 |  import { useWebSocket } from "@/hooks/useWebSocket";
+  40 |  import { chatApi } from "@/api/chatApi";
+     |                                 ^
+  41 |  import { toast } from "sonner";
+  42 |  export default function Medical({ setSelectedPrescription }) {[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 15)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:34[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "./feedApi" from "src/api/index.ts". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/api/index.ts[39m:5:24
+[33m  2  |   * API 모듈 통합 export
+  3  |   */ export * from './authApi';
+  4  |  export { feedApi } from './feedApi';
+     |                             ^
+  5  |  export { commentApi } from './commentApi';
+  6  |  export { userApi } from './userApi';[39m
+[2m오후 4:26:34[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@/api/imageApi" from "src/components/dashboard/dialogs/CreateFeedDialog.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/dialogs/CreateFeedDialog.tsx[39m:37:25
+[33m  40 |  import { BlockNoteView } from "@blocknote/mantine";
+  41 |  import "@blocknote/mantine/style.css";
+  42 |  import { imageApi } from "@/api/imageApi";
+     |                                   ^
+  43 |  import { extractImageMetadata, validateWorkoutTimes, calculateWorkoutMetrics } from "@/lib/imageMetadata";
+  44 |  const DRAFT_STORAGE_KEY = "createFeedDraft";[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 16)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)
+[2m오후 4:26:34[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@/api/chatApi" from "src/components/dashboard/chat/DoctorChatPage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Lupin/lupin/src/components/dashboard/chat/DoctorChatPage.tsx[39m:28:63
+[33m  38 |  import { toast } from "sonner";
+  39 |  import { useWebSocket } from "@/hooks/useWebSocket";
+  40 |  import { chatApi } from "@/api/chatApi";
+     |                                 ^
+  41 |  export default function DoctorChatPage() {
+  42 |      _s();[39m
+      at TransformPluginContext._formatLog (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42499:41)
+      at TransformPluginContext.error (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42496:16)
+      at normalizeUrl (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40475:23)
+      at async file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40594:37
+      at async Promise.all (index 15)
+      at async TransformPluginContext.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:40521:7)
+      at async EnvironmentPluginContainer.transform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:42294:18)
+      at async loadAndTransform (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:35735:27)
+      at async viteTransformMiddleware (file:///C:/Lupin/lupin/node_modules/vite/dist/node/chunks/dep-DBxKXgDP.js:37250:24)

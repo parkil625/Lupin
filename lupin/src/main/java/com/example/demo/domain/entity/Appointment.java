@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "appointments", indexes = {
-    @Index(name = "idx_appointment_patient", columnList = "patientId"),
-    @Index(name = "idx_appointment_doctor", columnList = "doctorId"),
+    @Index(name = "idx_appointment_patient", columnList = "patient_id"),
+    @Index(name = "idx_appointment_doctor", columnList = "doctor_id"),
     @Index(name = "idx_appointment_date", columnList = "date"),
     @Index(name = "idx_appointment_status", columnList = "status")
 })
@@ -23,18 +23,12 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, insertable = false, updatable = false)
-    private Long patientId;
-
-    @Column(nullable = false, insertable = false, updatable = false)
-    private Long doctorId;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patientId", nullable = false)
+    @JoinColumn(name = "patient_id", nullable = false)
     private User patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctorId", nullable = false)
+    @JoinColumn(name = "doctor_id", nullable = false)
     private User doctor;
 
     @Column(name = "date", nullable = false)
@@ -44,12 +38,6 @@ public class Appointment {
     @Column(nullable = false, length = 20)
     @Builder.Default
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
-
-    @Column(columnDefinition = "TEXT")
-    private String reason;
-
-    @Version
-    private Long version;
 
     public void complete() {
         if (this.status == AppointmentStatus.CANCELLED) {

@@ -9,8 +9,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "prescriptions", indexes = {
-    @Index(name = "idx_prescription_patient", columnList = "patientId"),
-    @Index(name = "idx_prescription_doctor", columnList = "doctorId"),
+    @Index(name = "idx_prescription_patient", columnList = "patient_id"),
+    @Index(name = "idx_prescription_doctor", columnList = "doctor_id"),
     @Index(name = "idx_prescription_date", columnList = "date DESC")
 })
 @Getter
@@ -23,18 +23,12 @@ public class Prescription {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, insertable = false, updatable = false)
-    private Long patientId;
-
-    @Column(nullable = false, insertable = false, updatable = false)
-    private Long doctorId;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patientId", nullable = false)
+    @JoinColumn(name = "patient_id", nullable = false)
     private User patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctorId", nullable = false)
+    @JoinColumn(name = "doctor_id", nullable = false)
     private User doctor;
 
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)

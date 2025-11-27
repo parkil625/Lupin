@@ -11,12 +11,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Calendar as CalendarIcon,
   Clock,
   FileText,
   XCircle,
@@ -28,11 +25,13 @@ import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { toast } from "sonner";
 
 interface MedicalProps {
+  setShowAppointment: (show: boolean) => void;
   setShowChat: (show: boolean) => void;
   setSelectedPrescription: (prescription: Prescription | null) => void;
 }
 
 export default function Medical({
+  setShowAppointment,
   setSelectedPrescription,
 }: MedicalProps) {
   // 현재 로그인한 환자 정보 (localStorage에서 가져오기)
@@ -42,95 +41,6 @@ export default function Medical({
 
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
-  const [activeAppointment, setActiveAppointment] = useState<{
-    id: number;
-    doctorId: number;
-    doctorName: string;
-    type: string;
-  } | null>(null);
-  const [isChatEnded, setIsChatEnded] = useState(false);
-
-  // 예약 화면 상태 (채팅이 없으면 기본으로 예약 화면 표시)
-  const [, setShowAppointmentView] = useState(true);
-  const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState("");
-  const [symptomDescription, setSymptomDescription] = useState("");
-
-  // 한국 공휴일 (2024년 기준)
-  const holidays = [
-    new Date(2024, 0, 1),   // 신정
-    new Date(2024, 1, 9),   // 설날 연휴
-    new Date(2024, 1, 10),  // 설날
-    new Date(2024, 1, 11),  // 설날 연휴
-    new Date(2024, 2, 1),   // 삼일절
-    new Date(2024, 4, 5),   // 어린이날
-    new Date(2024, 4, 15),  // 부처님 오신 날
-    new Date(2024, 5, 6),   // 현충일
-    new Date(2024, 7, 15),  // 광복절
-    new Date(2024, 8, 16),  // 추석 연휴
-    new Date(2024, 8, 17),  // 추석
-    new Date(2024, 8, 18),  // 추석 연휴
-    new Date(2024, 9, 3),   // 개천절
-    new Date(2024, 9, 9),   // 한글날
-    new Date(2024, 11, 25), // 크리스마스
-    // 2025년
-    new Date(2025, 0, 1),   // 신정
-    new Date(2025, 0, 28),  // 설날 연휴
-    new Date(2025, 0, 29),  // 설날
-    new Date(2025, 0, 30),  // 설날 연휴
-    new Date(2025, 2, 1),   // 삼일절
-    new Date(2025, 4, 5),   // 어린이날
-    new Date(2025, 4, 5),   // 부처님 오신 날
-    new Date(2025, 5, 6),   // 현충일
-    new Date(2025, 7, 15),  // 광복절
-    new Date(2025, 9, 3),   // 개천절
-    new Date(2025, 9, 5),   // 추석 연휴
-    new Date(2025, 9, 6),   // 추석
-    new Date(2025, 9, 7),   // 추석 연휴
-    new Date(2025, 9, 9),   // 한글날
-    new Date(2025, 11, 25), // 크리스마스
-  ];
-
-  // 공휴일인지 확인
-  const isHoliday = (date: Date) => {
-    return holidays.some(
-      (holiday) =>
-        holiday.getFullYear() === date.getFullYear() &&
-        holiday.getMonth() === date.getMonth() &&
-        holiday.getDate() === date.getDate()
-    );
-  };
-
-  // 지난 날짜인지 확인
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const isPastDate = (date: Date) => {
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    return dateOnly < today;
-  };
-
-  // 오늘인지 확인
-  const isToday = (date: Date | undefined) => {
-    if (!date) return false;
-    return date.getFullYear() === now.getFullYear() &&
-           date.getMonth() === now.getMonth() &&
-           date.getDate() === now.getDate();
-  };
-
-  // 시간이 지났는지 확인 (오늘인 경우만)
-  const isPastTime = (time: string) => {
-    if (!selectedDate || !isToday(selectedDate)) return false;
-    const [hours, minutes] = time.split(':').map(Number);
-    const currentHours = now.getHours();
-    const currentMinutes = now.getMinutes();
-    return hours < currentHours || (hours === currentHours && minutes <= currentMinutes);
-  };
-
-  // 예약 가능 시간
-  const availableTimes = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
-  const bookedTimes = ["10:00", "15:00"]; // 이미 예약된 시간 (예시)
 
   // 스크롤 제어용 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -141,11 +51,8 @@ export default function Medical({
   // 메시지 수신 콜백 (useCallback으로 메모이제이션)
   const handleMessageReceived = useCallback((message: ChatMessageResponse) => {
     setMessages((prev) => [...prev, message]);
-    // 본인이 보낸 메시지는 알림 표시 안함
-    if (message.senderId !== currentUserId) {
-      toast.success("새 메시지가 도착했습니다");
-    }
-  }, [currentUserId]);
+    toast.success("새 메시지가 도착했습니다");
+  }, []);
 
   // 읽음 알림 콜백 (useCallback으로 메모이제이션)
   const handleReadNotification = useCallback(
@@ -159,20 +66,6 @@ export default function Medical({
     [currentUserId]
   );
 
-  // 진료 종료 알림 콜백
-  const handleConsultationEnded = useCallback(
-    (notification: { roomId: string; endedBy: number }) => {
-      console.log("진료가 종료되었습니다:", notification);
-      setIsChatEnded(true);
-      setActiveAppointment(null);
-      // 본인이 종료한 경우 알림 표시 안함 (환자 측에서만 알림)
-      if (notification.endedBy !== currentUserId) {
-        toast.info("의사가 진료를 종료했습니다.");
-      }
-    },
-    [currentUserId]
-  );
-
   const {
     isConnected,
     sendMessage: sendWebSocketMessage,
@@ -182,7 +75,6 @@ export default function Medical({
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
     onReadNotification: handleReadNotification,
-    onConsultationEnded: handleConsultationEnded,
   });
 
   // 자동 스크롤
@@ -303,39 +195,10 @@ export default function Medical({
     },
   ];
 
-  // 채팅방이 활성화되어야 하는지 확인
-  const hasActiveChat = activeAppointment !== null && !isChatEnded;
-
-  // 예약 확인 핸들러
-  const handleConfirmAppointment = () => {
-    if (!selectedDepartment || !selectedDate || !selectedTime) return;
-
-    const departmentNames: Record<string, string> = {
-      internal: "내과",
-      surgery: "외과",
-      psychiatry: "신경정신과",
-      dermatology: "피부과",
-    };
-
-    setActiveAppointment({
-      id: Date.now(),
-      doctorId: 21,
-      doctorName: "김민준",
-      type: `${departmentNames[selectedDepartment]} 상담`,
-    });
-    setIsChatEnded(false);
-    setShowAppointmentView(false);
-
-    toast.success(
-      `${selectedDate.toLocaleDateString("ko-KR")} ${selectedTime} 예약이 완료되었습니다`
-    );
-
-    // 상태 초기화
-    setSelectedDepartment("");
-    setSelectedDate(undefined);
-    setSelectedTime("");
-    setSymptomDescription("");
-  };
+  // 예정된 예약이 있는지 확인
+  const hasActiveAppointment = appointments.some(
+    (apt) => apt.status === "예정"
+  );
 
   return (
     <div className="h-full overflow-auto p-8">
@@ -349,7 +212,7 @@ export default function Medical({
           </p>
         </div>
 
-        <div className="h-[calc(100vh-200px)] flex gap-4 justify-center">
+        <div className="h-[calc(100vh-200px)] flex gap-4">
           {/* 좌측: 예약 내역 및 처방전 */}
           <div className="w-96 flex flex-col gap-4">
             {/* 예약 내역 - 고정 높이 350px */}
@@ -446,11 +309,10 @@ export default function Medical({
             </Card>
           </div>
 
-          {/* 우측: 채팅 또는 예약 */}
-          <Card className="w-[750px] backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl">
-            <div className="h-full flex flex-col p-4">
-              {hasActiveChat ? (
-                // 채팅 화면
+          {/* 우측: 채팅 */}
+          <Card className="flex-1 backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl">
+            <div className="h-full flex flex-col p-6">
+              {hasActiveAppointment ? (
                 <>
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
                     <div className="flex items-center gap-3">
@@ -534,7 +396,7 @@ export default function Medical({
                       className="rounded-xl"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
-                      onKeyDown={(e) => {
+                      onKeyPress={(e) => {
                         if (e.key === "Enter") {
                           handleSendMessage();
                         }
@@ -549,97 +411,26 @@ export default function Medical({
                   </div>
                 </>
               ) : (
-                // 인라인 예약 화면
-                <div className="h-full overflow-y-auto">
-                  <h2 className="text-2xl font-black text-gray-900 mb-4">진료 예약</h2>
-
-                  {/* 진료과 선택 - 상단 */}
-                  <div className="mb-4">
-                    <Label className="text-base font-black mb-2 block">진료과 선택</Label>
-                    <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue placeholder="진료과를 선택하세요" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="internal">내과</SelectItem>
-                        <SelectItem value="surgery">외과</SelectItem>
-                        <SelectItem value="psychiatry">신경정신과</SelectItem>
-                        <SelectItem value="dermatology">피부과</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex gap-4">
-                    {/* 좌측: 달력, 시간 선택 */}
-                    <div className="flex-1 space-y-4">
-                      {/* 날짜 선택 */}
-                      <div>
-                        <Label className="text-base font-black mb-2 block">날짜 선택</Label>
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={(date) => isPastDate(date) || isHoliday(date)}
-                          modifiers={{
-                            holiday: holidays
-                          }}
-                          modifiersStyles={{
-                            holiday: {
-                              color: '#C93831'
-                            }
-                          }}
-                          className="rounded-xl border"
-                        />
-                        <p className="text-xs text-gray-600 mt-2">* 빨간색 날짜는 공휴일입니다 (선택 불가)</p>
+                <div className="flex items-center justify-center h-full">
+                  <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl hover:shadow-2xl transition-all max-w-md">
+                    <div className="p-8 text-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-[#C93831] to-[#B02F28] rounded-3xl flex items-center justify-center shadow-xl mx-auto mb-6">
+                        <CalendarIcon className="w-10 h-10 text-white" />
                       </div>
-
-                      {/* 시간 선택 */}
-                      {selectedDate && (
-                        <div>
-                          <Label className="text-base font-black mb-2 block">시간 선택</Label>
-                          <div className="grid grid-cols-4 gap-2">
-                            {availableTimes.map((time) => {
-                              const isBooked = bookedTimes.includes(time);
-                              const isPast = isPastTime(time);
-                              const isDisabled = isBooked || isPast;
-                              const isSelected = selectedTime === time;
-                              return (
-                                <Button
-                                  key={time}
-                                  variant={isSelected ? "default" : "outline"}
-                                  disabled={isDisabled}
-                                  onClick={() => setSelectedTime(time)}
-                                  className={`rounded-xl ${isSelected ? 'bg-[#C93831] hover:bg-[#B02F28]' : ''} ${isDisabled ? 'opacity-50' : ''}`}
-                                >
-                                  {time}
-                                  {isBooked && " (예약됨)"}
-                                  {isPast && !isBooked && " (마감)"}
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 우측: 예약 상세 */}
-                    <div className="w-64 flex flex-col">
-                      <Label className="text-base font-black mb-2 block">예약 상세</Label>
-                      <Textarea
-                        placeholder="병명이나 진단 사항을 적어주세요"
-                        value={symptomDescription}
-                        onChange={(e) => setSymptomDescription(e.target.value)}
-                        className="rounded-xl flex-1 resize-none mb-4"
-                      />
+                      <h3 className="text-2xl font-black text-gray-900 mb-3">
+                        새 진료 예약
+                      </h3>
+                      <p className="text-gray-600 font-medium mb-6">
+                        의료진과 비대면 상담을 시작하세요
+                      </p>
                       <Button
-                        disabled={!selectedDepartment || !selectedDate || !selectedTime}
-                        className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12"
-                        onClick={handleConfirmAppointment}
+                        onClick={() => setShowAppointment(true)}
+                        className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold px-8 py-3 rounded-2xl w-full"
                       >
-                        예약 확인
+                        예약하기
                       </Button>
                     </div>
-                  </div>
+                  </Card>
                 </div>
               )}
             </div>

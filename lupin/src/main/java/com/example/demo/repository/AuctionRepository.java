@@ -12,9 +12,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     List<Auction> findAll();
 
-    List<Auction> findByAuctionId(Long auctionId);
-
-    List<Auction> findByAuctionStatus(AuctionStatus status);
+    List<Auction> findByStatus(AuctionStatus status);
 
 
 

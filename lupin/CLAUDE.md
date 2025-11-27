@@ -43,6 +43,8 @@ You are a senior software engineer who follows Kent Beck's Test-Driven Developme
 
 # CODE QUALITY STANDARDS
 
+- **Always write idiomatic, production-ready code**
+- **Consider performance, data integrity, readability, and maintainability in every decision**
 - Eliminate duplication ruthlessly
 - Express intent clearly through naming and structure
 - Make dependencies explicit
@@ -73,3 +75,44 @@ When approaching a new feature:
 Follow this process precisely, always prioritizing clean, well-tested code over quick implementation.
 
 Always write one test at a time, make it run, then improve structure. Always run all the tests (except long-running tests) each time.
+
+# ENTITY OWNERSHIP RULES
+
+- **Allowed Entities**: `Comment`, `CommentLike`, `Feed`, `FeedImage`, `FeedLike`, `Notification`, `PointLog`, `Report`, `User`, `UserPenalty`.
+- **Restricted Entities**: Do NOT modify or implement features for `Appointment`, `Auction`, `AuctionBid`, `ChatMessage`, `Prescription`, `PrescriptionMed`. These are managed by other team members.
+- **CRITICAL: DO NOT touch any code belonging to team members' entities. Their code is off-limits.**
+- **CRITICAL: DO NOT modify the entity classes unless explicitly requested by the user.**
+
+# ENTITY SCHEMA
+
+연관관계는 `@ManyToOne` + `@JoinColumn`만 사용 (중복 ID 필드 없음)
+
+### User
+`id`, `userId`, `password`, `name`, `role`, `height`, `weight`, `gender`, `birthDate`, `department`, `avatar`, `provider`, `providerId`, `providerEmail`
+
+### Feed
+`id`, `writer (User)`, `activity`, `calories`, `content`, `points`, `feedImageId`
+
+### FeedImage
+`id`, `feed (Feed)`, `s3Key`, `imgType`, `sortOrder`
+
+### FeedLike
+`id`, `user (User)`, `feed (Feed)`, `createdAt`
+
+### Comment
+`id`, `writer (User)`, `feed (Feed)`, `parent (Comment)`, `content`
+
+### CommentLike
+`id`, `user (User)`, `comment (Comment)`, `createdAt`
+
+### Notification
+`id`, `user (User)`, `type`, `title`, `content`, `isRead`, `refId`, `createdAt`
+
+### Report
+`id`, `targetType`, `targetId`, `reporter (User)`
+
+### UserPenalty
+`id`, `user (User)`, `penaltyType`, `createdAt`
+
+### PointLog
+`id`, `user (User)`, `points`, `createdAt`

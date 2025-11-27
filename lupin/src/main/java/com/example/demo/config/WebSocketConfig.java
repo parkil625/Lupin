@@ -21,8 +21,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOrigins(
                         "http://localhost:3000",            // 로컬 개발용
-                        "http://localhost:5173",            // Vite 개발 서버
-                        "http://localhost:5174",            // Vite 대체 포트
                         "https://lupin-eosin.vercel.app",   // 현재 Vercel 도메인
                         "https://lupin-care.com",           // [추가됨] 나중에 쓸 실제 도메인 (슬래시 없음!)
                         "https://www.lupin-care.com"        // [추가됨] www 붙은 버전도 혹시 모르니 추가

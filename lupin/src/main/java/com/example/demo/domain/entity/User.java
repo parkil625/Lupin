@@ -37,6 +37,10 @@ public class User {
     @Builder.Default
     private List<CommentLike> commentLikes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user")
+    @Builder.Default
+    private List<AuctionBid> auctionBids = new ArrayList<>();
+
     @Column(name = "user_id", nullable = false, unique = true, length = 50)
     private String userId;
 

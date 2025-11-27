@@ -83,15 +83,13 @@ Always write one test at a time, make it run, then improve structure. Always run
 - **CRITICAL: DO NOT touch any code belonging to team members' entities. Their code is off-limits.**
 - **CRITICAL: DO NOT modify the entity classes unless explicitly requested by the user.**
 
-# ENTITY SCHEMA
-
-연관관계는 `@ManyToOne` + `@JoinColumn`만 사용 (중복 ID 필드 없음)
+# ⚠️ ENTITY SCHEMA FREEZE - DO NOT MODIFY
 
 ### User
 `id`, `userId`, `password`, `name`, `role`, `height`, `weight`, `gender`, `birthDate`, `department`, `avatar`, `provider`, `providerId`, `providerEmail`
 
 ### Feed
-`id`, `writer (User)`, `activity`, `calories`, `content`, `points`, `feedImageId`
+`id`, `writer (User)`, `activity`, `calories`, `content`, `points`
 
 ### FeedImage
 `id`, `feed (Feed)`, `s3Key`, `imgType`, `sortOrder`

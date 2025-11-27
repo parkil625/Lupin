@@ -141,18 +141,18 @@ export default function Auction() {
             const activeAuctions: AuctionItem[] = [
                 {
                     id: 1,
-                    itemName: "프리미엄 건강 검진권",
-                    description: "종합 건강 검진 패키지 (100만원 상당)",
+                    itemName: "Apple Watch Series 9 (45mm)",
+                    description: "애플워치 시리즈9 GPS 45mm 미드나이트 알루미늄 케이스 (정가 599,000원)",
                     imageUrl:
-                        "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=500&h=500&fit=crop",
-                    currentPrice: 15000,
+                        "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop",
+                    currentPrice: 45,
                     startTime: todayStart.toISOString(),
                     regularEndTime: new Date(Date.now() + 1 * 60 * 1000).toISOString(), // 테스트용: 2분 후
                     overtimeStarted: false,
                     overtimeSeconds: 30,
                     status: "ACTIVE",
-                    totalBids: 12,
-                    viewers: 24,
+                    totalBids: 8,
+                    viewers: 15,
                 },
             ];
 
@@ -198,10 +198,10 @@ export default function Auction() {
             const scheduled: AuctionItem[] = [
                 {
                     id: 2,
-                    itemName: "애플워치 SE",
-                    description: "최신형 애플워치 (50만원 상당)",
+                    itemName: "LG 스탠바이미 Go (27인치)",
+                    description: "LG 스탠바이미 Go 포터블 터치스크린 TV (정가 1,090,000원)",
                     imageUrl:
-                        "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop",
+                        "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=500&h=500&fit=crop",
                     currentPrice: 0,
                     startTime: tomorrowStart.toISOString(),
                     regularEndTime: tomorrowEnd.toISOString(),
@@ -213,10 +213,10 @@ export default function Auction() {
                 },
                 {
                     id: 3,
-                    itemName: "갤럭시 버즈 프로",
-                    description: "무선 이어폰 (30만원 상당)",
+                    itemName: "Apple AirPods Max",
+                    description: "애플 에어팟 맥스 무선 헤드폰 스페이스 그레이 (정가 769,000원)",
                     imageUrl:
-                        "https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=500&h=500&fit=crop",
+                        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop",
                     currentPrice: 0,
                     startTime: dayAfterStart.toISOString(),
                     regularEndTime: dayAfterEnd.toISOString(),
@@ -228,10 +228,10 @@ export default function Auction() {
                 },
                 {
                     id: 4,
-                    itemName: "다이슨 에어랩",
-                    description: "프리미엄 헤어 스타일러 (70만원 상당)",
+                    itemName: "Dyson 에어랩 컴플리트 롱",
+                    description: "다이슨 에어랩 멀티 스타일러 컴플리트 롱 (정가 790,000원)",
                     imageUrl:
-                        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&h=500&fit=crop",
+                        "https://images.unsplash.com/photo-1522338140262-f46f5913618a?w=500&h=500&fit=crop",
                     currentPrice: 0,
                     startTime: new Date(
                         dayAfterTomorrow.getFullYear(),
@@ -275,7 +275,7 @@ export default function Auction() {
     const fetchUserPoints = async () => {
         try {
             // TODO: API 연동
-            setUserPoints(50000);
+            setUserPoints(120);
         } catch (error) {
             console.error("사용자 포인트 조회 실패:", error);
         }
@@ -290,7 +290,7 @@ export default function Auction() {
                     id: 1,
                     userId: 2,
                     userName: "김건강",
-                    bidAmount: 15000,
+                    bidAmount: 45,
                     bidTime: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
                     status: "ACTIVE",
                 },
@@ -298,7 +298,7 @@ export default function Auction() {
                     id: 2,
                     userId: 3,
                     userName: "이웰빙",
-                    bidAmount: 14000,
+                    bidAmount: 42,
                     bidTime: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
                     status: "OUTBID",
                 },
@@ -306,7 +306,7 @@ export default function Auction() {
                     id: 3,
                     userId: 4,
                     userName: "박헬스",
-                    bidAmount: 13000,
+                    bidAmount: 38,
                     bidTime: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
                     status: "OUTBID",
                 },

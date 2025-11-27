@@ -26,7 +26,6 @@ import {
   Plus,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
-import AdPopupDialog from "../dialogs/AdPopupDialog";
 import { userApi, feedApi, lotteryApi } from "@/api";
 
 interface HomeProps {
@@ -41,8 +40,6 @@ interface HomeProps {
   refreshTrigger?: number;
 }
 
-const AD_POPUP_KEY = "adPopupHiddenUntil";
-
 export default function Home({
   handleJoinChallenge,
   profileImage,
@@ -53,7 +50,6 @@ export default function Home({
   onCreateClick,
   refreshTrigger,
 }: HomeProps) {
-  const [showAdPopup, setShowAdPopup] = useState(false);
   const [canPostToday, setCanPostToday] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [userStats, setUserStats] = useState({
@@ -162,63 +158,6 @@ export default function Home({
 
     checkCanPost();
   }, [myFeeds, refreshTrigger]); // myFeeds가 변경되거나 refreshTrigger가 변경되면 다시 확인
-
-  useEffect(() => {
-    // 개발/테스트 모드: URL에 ?showAd=true가 있으면 강제로 표시
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceShowAd = urlParams.get("showAd") === "true";
-
-    if (forceShowAd) {
-      console.log("광고 팝업 강제 표시 (테스트 모드)");
-      localStorage.removeItem(AD_POPUP_KEY);
-      const timer = setTimeout(() => {
-        setShowAdPopup(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-
-    // 페이지 로드 시 광고 팝업 표시 여부 확인
-    const hiddenUntil = localStorage.getItem(AD_POPUP_KEY);
-    if (hiddenUntil) {
-      const hiddenTime = parseInt(hiddenUntil);
-      if (Date.now() < hiddenTime) {
-        // 아직 숨김 시간이 유효함
-        console.log(
-          "광고 팝업 숨김 중 (남은 시간:",
-          Math.floor((hiddenTime - Date.now()) / 1000 / 60),
-          "분)"
-        );
-        console.log(
-          "테스트하려면 URL에 ?showAd=true를 추가하거나 콘솔에서 localStorage.removeItem('adPopupHiddenUntil')을 실행하세요"
-        );
-        return;
-      } else {
-        // 숨김 시간이 만료됨, localStorage에서 제거
-        localStorage.removeItem(AD_POPUP_KEY);
-      }
-    }
-    // 1초 후 광고 팝업 표시
-    const timer = setTimeout(() => {
-      console.log("광고 팝업 표시");
-      setShowAdPopup(true);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleCloseAdPopup = () => {
-    setShowAdPopup(false);
-  };
-
-  const handleDontShowFor24Hours = () => {
-    const hideUntil = Date.now() + 24 * 60 * 60 * 1000; // 24시간 후
-    localStorage.setItem(AD_POPUP_KEY, hideUntil.toString());
-    setShowAdPopup(false);
-  };
-
-  const handleJoinChallengeFromPopup = () => {
-    handleJoinChallenge();
-    setShowAdPopup(false);
-  };
 
   return (
     <div className="h-full overflow-auto p-8">
@@ -411,14 +350,6 @@ export default function Home({
           </div>
         </div>
       </div>
-
-      {/* 광고 팝업 */}
-      <AdPopupDialog
-        open={showAdPopup}
-        onClose={handleCloseAdPopup}
-        onDontShowFor24Hours={handleDontShowFor24Hours}
-        onJoinChallenge={handleJoinChallengeFromPopup}
-      />
     </div>
   );
 }

@@ -24,14 +24,6 @@ public class Feed {
 
     @OneToMany(mappedBy = "feed")
     @Builder.Default
-    private List<Comment> comments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "feed")
-    @Builder.Default
-    private List<FeedLike> feedLikes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "feed")
-    @Builder.Default
     private List<FeedImage> images = new ArrayList<>();
 
     @Column(nullable = false, length = 50)

@@ -7,10 +7,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "chat_messages", indexes = {
-    @Index(name = "idx_chat_room", columnList = "roomId"),
-    @Index(name = "idx_chat_room_sent", columnList = "roomId, time DESC"),
-    @Index(name = "idx_chat_sender", columnList = "senderId"),
-    @Index(name = "idx_chat_unread", columnList = "roomId, isRead")
+    @Index(name = "idx_chat_room", columnList = "room_id"),
+    @Index(name = "idx_chat_room_sent", columnList = "room_id, time DESC"),
+    @Index(name = "idx_chat_sender", columnList = "sender_id"),
+    @Index(name = "idx_chat_unread", columnList = "room_id, is_read")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -25,11 +25,8 @@ public class ChatMessage {
     @Column(name = "room_id", nullable = false, length = 100)
     private String roomId;
 
-    @Column(nullable = false, insertable = false, updatable = false)
-    private Long senderId;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "senderId", nullable = false)
+    @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
     @Column(nullable = false, columnDefinition = "TEXT")

@@ -1,27 +1,23 @@
 package com.example.demo.domain.entity;
 
-import com.example.demo.domain.enums.ReportTargetType;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "reports")
+@Table(name = "feed_reports")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Report {
+public class FeedReport {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "target_type", nullable = false, length = 20)
-    private ReportTargetType targetType;
-
-    @Column(name = "target_id", nullable = false)
-    private Long targetId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "feed_id", nullable = false)
+    private Feed feed;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reporter_id", nullable = false)

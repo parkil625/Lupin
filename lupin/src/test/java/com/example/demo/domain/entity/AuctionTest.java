@@ -22,7 +22,7 @@ class AuctionTest {
             .startTime(LocalDateTime.of(2025, 11, 26, 0, 0, 0))
             .overtimeStarted(false)
             .regularEndTime(
-                    LocalDateTime.of(2025, 11, 28, 0, 0, 0)
+                    LocalDateTime.of(2026, 11, 28, 0, 0, 0)
             )
             .build();
 
@@ -87,6 +87,13 @@ class AuctionTest {
 
         assertDoesNotThrow(() -> auction1.activate(now));
         assertEquals(AuctionStatus.ACTIVE, auction1.getStatus());
+    }
+    @Test
+    void 경매시간이_아닐때의_경매active하기(){
+        LocalDateTime now = auction1.getStartTime().minusMinutes(1);
+
+        assertThrows(IllegalStateException.class,() -> auction1.activate(now));
+        assertNotEquals(AuctionStatus.ACTIVE, auction1.getStatus());
     }
 
     @Test
@@ -176,8 +183,6 @@ class AuctionTest {
         auction1.placeBid(user,100L,LocalDateTime.of(2025, 1, 1, 1, 0, 0));
         auction1.placeBid(user,200L,LocalDateTime.of(2025, 1, 1, 1, 3, 0));
 
-
-
     }
 
     @Test
@@ -245,16 +250,9 @@ class AuctionTest {
                 .winner(winner1)
                 .build();
 
-
-
-
-
         AuctionBid winnerBid = AuctionBid.builder().user(winner1).auction(auction2).bidAmount(10000L).build();
 
-
-
         AuctionBid otherBid = AuctionBid.builder().user(loser).auction(auction2).bidAmount(1000L).status(BidStatus.ACTIVE).build();
-
 
         List<AuctionBid> bids = List.of(winnerBid, otherBid);
 
@@ -270,6 +268,56 @@ class AuctionTest {
 
     }
 
+    @Test
+    void 입찰금액에_이상한값(){
+        //given
+        User user = User.builder()
+                .name("홍길동")
+                .role(Role.MEMBER)
+                .height(170.1)
+                .weight(100.0)
+                .gender("남")
+                .birthDate(LocalDate.of(2003,12,1))
+                .department("영업")
+                .build();
+
+        Auction auction2 = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .startTime(LocalDateTime.of(2025, 1, 1, 0, 0, 0))
+                .overtimeStarted(false)
+                .regularEndTime(LocalDateTime.of(2026, 1, 1, 0, 10, 0))
+                .build();
+
+        //when
+        AuctionBid winnerBid =AuctionBid.builder().user(user).auction(auction2).bidAmount(null).build();
+
+         assertThrows(IllegalStateException.class,()->auction2.placeBid(user, winnerBid.getBidAmount(), winnerBid.getBidTime()));
+    }
+
+    @Test
+    void 입찰생성_하기(){
+        User user = User.builder()
+                .name("홍길동")
+                .role(Role.MEMBER)
+                .height(170.1)
+                .weight(100.0)
+                .gender("남")
+                .birthDate(LocalDate.of(2003,12,1))
+                .department("영업")
+                .build();
+
+        Auction auction2 = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .startTime(LocalDateTime.of(2025, 1, 1, 0, 0, 0))
+                .overtimeStarted(false)
+                .regularEndTime(LocalDateTime.of(2026, 1, 1, 0, 10, 0))
+                .build();
 
 
+        Long bidAmount = 1000L;
+        LocalDateTime bidTime =  LocalDateTime.of(2025, 1, 1, 0, 0, 0);
+        auction2.createBid(user, bidAmount, bidTime);
+
+    }
+    
 }

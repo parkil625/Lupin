@@ -50,6 +50,17 @@ public class AuctionBid {
     @Builder.Default
     private BidStatus status = BidStatus.ACTIVE;
 
+    public static AuctionBid of(Auction auction, User user, Long amount, LocalDateTime time) {
+        return AuctionBid.builder()
+                .auction(auction)
+                .user(user)
+                .bidAmount(amount)
+                .bidTime(time)
+                .status(BidStatus.ACTIVE)
+                .build();
+    }
+
+
     public boolean isActive() {
         return status == BidStatus.ACTIVE;
     }
@@ -94,6 +105,5 @@ public class AuctionBid {
         }
         status = BidStatus.LOST;
     }
-
 
 }

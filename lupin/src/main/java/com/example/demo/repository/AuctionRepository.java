@@ -16,5 +16,4 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     AuctionBid findById(long id);
 
 
-
 }

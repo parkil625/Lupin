@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Auction;
+import com.example.demo.domain.entity.AuctionBid;
 import com.example.demo.domain.enums.AuctionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory;
@@ -12,7 +13,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     List<Auction> findAll();
 
-    List<Auction> findByStatus(AuctionStatus status);
+    AuctionBid findById(long id);
 
 
 

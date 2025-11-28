@@ -1,19 +1,17 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Feed;
-import com.example.demo.domain.entity.FeedLike;
+import com.example.demo.domain.entity.FeedReport;
 import com.example.demo.domain.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface FeedLikeRepository extends JpaRepository<FeedLike, Long> {
-
-    boolean existsByUserAndFeed(User user, Feed feed);
-
-    void deleteByUserAndFeed(User user, Feed feed);
-
-    void deleteByFeed(Feed feed);
+public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
 
     long countByFeed(Feed feed);
+
+    boolean existsByReporterAndFeed(User reporter, Feed feed);
+
+    void deleteByFeed(Feed feed);
 }

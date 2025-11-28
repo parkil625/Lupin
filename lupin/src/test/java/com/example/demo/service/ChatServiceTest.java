@@ -11,9 +11,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -135,7 +132,7 @@ class ChatServiceTest {
 
         // Then
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getContent()).isEqualTo("안녕하세요");
+        assertThat(result.get(0).getContent()).isEqualTo("안녕하세요, 마음이 아파서 왔습니다.");
 
         verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId);
     }

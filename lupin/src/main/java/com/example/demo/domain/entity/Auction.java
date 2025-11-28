@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 경매 엔티티
@@ -101,11 +102,11 @@ public class Auction {
     }
 
     public boolean isEnded() {
-        return status == AuctionStatus.ACTIVE;
+        return status == AuctionStatus.ENDED;
     }
 
     public boolean isCancelled() {
-        return status == AuctionStatus.SCHEDULED;
+        return status == AuctionStatus.CANCELLED;
     }
 
     /*
@@ -124,11 +125,24 @@ public class Auction {
         }
         this.status = AuctionStatus.ACTIVE;
     }
-    public void deactivate() {
+    public void deactivate(List<AuctionBid> bids) {
 
         if (!isActive()) {
             throw new IllegalStateException("Active 상태에서만 종료할 수 있습니다");
         }
+
+        for (AuctionBid bid : bids) {
+            if (bid.getUser().equals(this.winner)) {
+                bid.winBid();
+            } else {
+                bid.lostBid();
+            }
+        }
+
+        if (this.winner == null) {
+            throw new IllegalStateException("winner가 없는 경매는 종료할 수 없습니다.");
+        }
+
         this.overtimeStarted = false;
         this.status = AuctionStatus.ENDED;
     }
@@ -140,17 +154,27 @@ public class Auction {
     /*경매 입찰 확인 메소드*/
 
     public void validateTime(LocalDateTime bidTime) {
-        if(!isActive()) {
-            throw new IllegalStateException("정해진 시간에만 경매가 가능합니다");
-        }
-        if(bidTime.isBefore(startTime) || bidTime.isAfter(regularEndTime)) {
-            throw new IllegalStateException("정해진 시간 내에서만 가능합니다");
-        }
-        if (overtimeStarted && bidTime.isAfter(overtimeEndTime)) {
-            throw new IllegalStateException("초읽기 시간이 끝났습니다.");
+
+        if (!isActive()) {
+            throw new IllegalStateException("경매가 활성 상태가 아닙니다.");
         }
 
+        // 1) 정규시간 동안
+        if (!overtimeStarted) {
+            if (bidTime.isBefore(startTime) || bidTime.isAfter(regularEndTime)) {
+                throw new IllegalStateException("정규 경매 시간에만 입찰할 수 있습니다.");
+            }
+            return;
+        }
+
+        // 2) 초읽기 모드
+        if (overtimeStarted) {
+            if (bidTime.isAfter(overtimeEndTime)) {
+                throw new IllegalStateException("초읽기 시간이 종료되었습니다.");
+            }
+        }
     }
+
 
     public void validateBid(Long bidAmount) {
         if(bidAmount == null || bidAmount <= currentPrice) {
@@ -159,9 +183,28 @@ public class Auction {
 
     }
 
+    public void placeBid(User user,Long bidAmount,LocalDateTime bidTime ) {
 
+        validateTime(bidTime);
+        validateBid(bidAmount);
 
+        currentPrice = bidAmount;
+        winner = user;
 
+        if (overtimeStarted) {
+            this.overtimeEndTime = bidTime.plusSeconds(overtimeSeconds); // 반드시 bidTime 기준이어야 한다
+        }
+    }
 
-
+    // 경매 시간 상태 바꾸는 메소드
+    public void startOvertime(LocalDateTime now) {
+        if (overtimeStarted) {
+            throw new IllegalStateException("이미 초읽기가 시작된 상태입니다.");
+        }
+        if (now.isBefore(regularEndTime)) {
+            throw new IllegalStateException("정규 시간이 종료되야 초읽기 모드가 가능합니다.");
+        }
+        overtimeStarted = true;
+        overtimeEndTime = now.plusSeconds(overtimeSeconds);
+    }
 }

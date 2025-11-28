@@ -72,20 +72,25 @@ public class AuctionBid {
     public void activateBid() {
         status = BidStatus.ACTIVE;
     }
-    public void outbid() {
-        status = BidStatus.OUTBID;
-    }
+
 
     public void winBid() {
-        if (isActive()) {
+        if (!isActive()) {
             throw new IllegalStateException("최고가만 낙찰 가능합니다");
         }
         status = BidStatus.WINNING;
     }
 
+    public void outBid(){
+        if (!isActive()) {
+            throw new IllegalStateException("활성화 상태에서만 outbid가 됩니다.");
+        }
+        status = BidStatus.OUTBID;
+    }
+
     public void lostBid() {
-        if (isActive()) {
-            throw new IllegalStateException("활성화 상태에서만 Lost가 가능합니다");
+        if (status != BidStatus.OUTBID) {
+            throw new IllegalStateException("OUTBID 상태에서만 Lost가 가능합니다");
         }
         status = BidStatus.LOST;
     }

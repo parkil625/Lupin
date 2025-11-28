@@ -43,10 +43,6 @@ public class ChatService {
         return chatRepository.findByRoomIdOrderByTimeAsc(roomId);
     }
 
-    public Slice<ChatMessage> getChatPageHistory(String roomId){
-        return chatRepository.findByRoomIdOrderByTimeDesc(roomId, Pageable.unpaged());
-    }
-
     public List<ChatMessage> getUnreadHistory(String roomId, Long userId) {
         return chatRepository.findUnreadMessages(roomId, userId);
     }

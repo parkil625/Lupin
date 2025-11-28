@@ -13,4 +13,6 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     Slice<Feed> findByWriterOrderByIdDesc(User writer, Pageable pageable);
 
     Slice<Feed> findByWriterNotOrderByIdDesc(User writer, Pageable pageable);
+
+    Slice<Feed> findByWriterNameContainingOrderByIdDesc(String name, Pageable pageable);
 }

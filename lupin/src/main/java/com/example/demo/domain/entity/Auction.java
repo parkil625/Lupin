@@ -88,6 +88,8 @@ public class Auction {
 
 
 
+
+
     /*
     * 편의 메소드
     *
@@ -183,6 +185,7 @@ public class Auction {
 
     }
 
+    //입찰시 확인 최고 낙찰자 교체(근데 원래 있던 사람 상태는 못바꿔줌)
     public void placeBid(User user,Long bidAmount,LocalDateTime bidTime ) {
 
         validateTime(bidTime);
@@ -206,5 +209,14 @@ public class Auction {
         }
         overtimeStarted = true;
         overtimeEndTime = now.plusSeconds(overtimeSeconds);
+    }
+
+    //경매 입찰 생성 구문
+    public AuctionBid createBid(User user,Long bidAmount, LocalDateTime bidTime ) {
+        validateBid(bidAmount);            // 금액 검증
+        placeBid(user,bidAmount,bidTime);
+
+        AuctionBid bid = AuctionBid.of(this, user, bidAmount, bidTime);
+        return bid;
     }
 }

@@ -72,4 +72,13 @@ export const commentApi = {
       return { success: true };
     }
   },
+
+  reportComment: async (commentId: number) => {
+    try {
+      const response = await apiClient.post(`/comments/${commentId}/report`);
+      return response.data;
+    } catch {
+      return { success: true };
+    }
+  },
 };

@@ -48,28 +48,7 @@ import {
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
-
-// 상대적 시간 표시 함수
-function getRelativeTime(date: Date | string): string {
-  const now = new Date();
-  const targetDate = typeof date === 'string' ? new Date(date) : date;
-  const diffMs = now.getTime() - targetDate.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-  const diffYears = Math.floor(diffDays / 365);
-
-  if (diffSeconds < 60) return "방금 전";
-  if (diffMinutes < 60) return `${diffMinutes}분 전`;
-  if (diffHours < 24) return `${diffHours}시간 전`;
-  if (diffDays < 7) return `${diffDays}일 전`;
-  if (diffWeeks < 4) return `${diffWeeks}주 전`;
-  if (diffMonths < 12) return `${diffMonths}개월 전`;
-  return `${diffYears}년 전`;
-}
+import { getRelativeTime } from "@/lib/utils";
 
 interface FeedDetailDialogHomeProps {
   feed: Feed | null;
@@ -538,7 +517,7 @@ export default function FeedDetailDialogHome({
                   <span className="font-bold text-sm text-gray-900">
                     {comment.author}
                   </span>
-                  <span className="text-xs text-gray-900">{comment.time}</span>
+                  <span className="text-xs text-gray-500">{comment.time}</span>
                 </div>
                 <p className="text-sm text-gray-900 break-words mb-2">
                   {comment.content}
@@ -548,7 +527,7 @@ export default function FeedDetailDialogHome({
                 <div className="flex items-center gap-4 mb-2">
                   <button
                     onClick={() => toggleCommentLike(comment.id)}
-                    className="flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
                   >
                     <Heart
                       className={`w-4 h-4 ${
@@ -567,7 +546,7 @@ export default function FeedDetailDialogHome({
                   {depth === 0 && (
                     <button
                       onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                      className="text-xs text-gray-600 hover:text-[#C93831] font-semibold"
+                      className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
                     >
                       답글
                     </button>
@@ -576,7 +555,7 @@ export default function FeedDetailDialogHome({
                   {comment.author === currentUserName && (
                     <button
                       onClick={() => handleDeleteComment(comment.id)}
-                      className="text-xs text-gray-600 hover:text-red-500 font-semibold"
+                      className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
                     >
                       삭제
                     </button>
@@ -586,7 +565,7 @@ export default function FeedDetailDialogHome({
                     <button
                       onClick={() => handleReportComment(comment.id)}
                       disabled={commentReported[comment.id]}
-                      className={`text-xs font-semibold ${commentReported[comment.id] ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
+                      className={`text-xs font-semibold cursor-pointer ${commentReported[comment.id] ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
                     >
                       {commentReported[comment.id] ? '신고됨' : '신고'}
                     </button>
@@ -626,14 +605,14 @@ export default function FeedDetailDialogHome({
                       setReplyingTo(null);
                       setReplyCommentText("");
                     }}
-                    className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900"
+                    className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 cursor-pointer"
                   >
                     취소
                   </button>
                   <button
                     onClick={handleSendReply}
                     disabled={!replyCommentText.trim()}
-                    className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer"
                   >
                     답글
                   </button>
@@ -645,7 +624,7 @@ export default function FeedDetailDialogHome({
             {hasReplies && (
               <button
                 onClick={() => toggleCollapse(comment.id)}
-                className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2"
+                className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2 cursor-pointer"
               >
                 {isCollapsed ? "▶" : "▼"} 답글 {comment.replies!.length}개
               </button>
@@ -928,14 +907,9 @@ export default function FeedDetailDialogHome({
                       <Badge className="bg-white text-blue-700 px-3 py-1 font-bold text-xs border-0">
                         {feed.activity}
                       </Badge>
-                      {feed.stats.calories && (
+                      {feed.calories && (
                         <Badge className="bg-white text-orange-700 px-3 py-1 font-bold text-xs border-0">
-                          {feed.stats.calories}
-                        </Badge>
-                      )}
-                      {feed.streak && (
-                        <Badge className="bg-white text-red-700 px-3 py-1 font-bold text-xs border-0">
-                          {feed.streak}일 연속
+                          {feed.calories}kcal
                         </Badge>
                       )}
                     </div>
@@ -943,7 +917,7 @@ export default function FeedDetailDialogHome({
                     {/* Right: Time & Edited */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <Badge className="bg-white text-gray-700 px-3 py-1 font-bold text-xs flex items-center gap-1 border-0">
-                        {feed.edited && <Pencil className="w-3 h-3" />}
+                        {feed.updatedAt && <Pencil className="w-3 h-3" />}
                         {feed.time}
                       </Badge>
                     </div>
@@ -963,16 +937,16 @@ export default function FeedDetailDialogHome({
 
           {/* Comments Panel (Right - slides in) */}
           {showComments && (
-            <div className="flex-1 bg-transparent border-l border-gray-200/30 flex flex-col overflow-hidden">
+            <div className="flex-1 bg-white/80 backdrop-blur-md border-l border-gray-200/50 flex flex-col overflow-hidden">
               {/* Comments Header */}
-              <div className="px-6 py-4 border-b border-gray-200/30 flex items-center justify-between bg-transparent">
+              <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900">
                   댓글 {totalCommentCount}개
                 </h3>
                 <div className="relative">
                   <button
                     onClick={() => setShowSortMenu(!showSortMenu)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     <ArrowUpDown className="w-4 h-4 text-gray-900" />
                     <span className="text-sm font-semibold text-gray-900">
@@ -980,15 +954,15 @@ export default function FeedDetailDialogHome({
                     </span>
                   </button>
                   {showSortMenu && (
-                    <div className="absolute right-0 top-full mt-1 bg-white/70 backdrop-blur-md border border-gray-200/50 rounded-lg shadow-lg overflow-hidden z-50">
+                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
                       <button
                         onClick={() => {
                           setSortOrder("latest");
                           setShowSortMenu(false);
                         }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
                           sortOrder === "latest"
-                            ? "bg-white/15 font-semibold text-[#C93831]"
+                            ? "bg-gray-50 font-semibold text-[#C93831]"
                             : "text-gray-900"
                         }`}
                       >
@@ -999,9 +973,9 @@ export default function FeedDetailDialogHome({
                           setSortOrder("popular");
                           setShowSortMenu(false);
                         }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
                           sortOrder === "popular"
-                            ? "bg-white/15 font-semibold text-[#C93831]"
+                            ? "bg-gray-50 font-semibold text-[#C93831]"
                             : "text-gray-900"
                         }`}
                       >
@@ -1028,7 +1002,7 @@ export default function FeedDetailDialogHome({
               </div>
 
               {/* Comment Input - 일반 댓글 작성용 (항상 표시) */}
-              <div className="p-4 border-t border-gray-200/30 bg-transparent">
+              <div className="p-4 border-t border-gray-200/50">
                 <div className="flex gap-2 items-center">
                   <div className="relative flex-1">
                     <input
@@ -1062,7 +1036,7 @@ export default function FeedDetailDialogHome({
                     {commentText && (
                       <button
                         onClick={() => setCommentText("")}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors cursor-pointer"
                       >
                         <X className="w-3 h-3 text-gray-600" />
                       </button>
@@ -1071,7 +1045,7 @@ export default function FeedDetailDialogHome({
                   <button
                     onClick={handleSendComment}
                     disabled={!commentText.trim()}
-                    className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                    className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
                   >
                     <Send className="w-4 h-4" />
                   </button>

@@ -5,26 +5,22 @@ export interface DashboardProps {
 
 export interface Feed {
   id: number;
-  authorId?: number;
-  author: string;
-  avatar: string;
+  writerId: number;
+  writerName: string;
+  writerAvatar?: string;
   activity: string;
-  duration: string;
   points: number;
   content: string;
   images: string[];
   likes: number;
   comments: number;
-  time: string;
-  stats: { [key: string]: string };
+  calories?: number;
+  createdAt: string;
+  updatedAt?: string;
+  // 프론트엔드 전용 (API 응답에서 계산)
+  time?: string;
+  author?: string; // writerName alias (하위호환)
   isMine?: boolean;
-  currentImageIndex?: number;
-  likedBy?: string[];
-  edited?: boolean;
-  streak?: number;
-  department?: string;
-  activeDays?: number;
-  avgScore?: number;
 }
 
 export interface Comment {

@@ -113,57 +113,45 @@ const mockFeedComments: Record<number, Comment[]> = {
 const mockFeeds: Feed[] = [
   {
     id: 1,
-    authorId: 1,
+    writerId: 1,
+    writerName: '김운동',
     author: '김운동',
-    avatar: '김',
-    profileImage: mockAvatars['김운동'],
     activity: '러닝',
-    duration: '30분',
     points: 30,
     content: '오늘 아침 공원에서 러닝했어요! 날씨가 좋아서 기분이 상쾌합니다.',
     images: ['https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=75'],
     likes: 15,
     comments: 3,
     time: '2시간 전',
-    stats: {},
-    likedBy: [],
-    commentList: mockFeedComments[1],
+    createdAt: new Date().toISOString(),
   },
   {
     id: 2,
-    authorId: 2,
+    writerId: 2,
+    writerName: '이헬스',
     author: '이헬스',
-    avatar: '이',
-    profileImage: mockAvatars['이헬스'],
     activity: '웨이트',
-    duration: '45분',
     points: 30,
     content: '오늘 상체 운동 완료!',
     images: ['https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=75'],
     likes: 22,
     comments: 5,
     time: '4시간 전',
-    stats: {},
-    likedBy: [],
-    commentList: mockFeedComments[2],
+    createdAt: new Date().toISOString(),
   },
   {
     id: 3,
-    authorId: 3,
+    writerId: 3,
+    writerName: '박피트',
     author: '박피트',
-    avatar: '박',
-    profileImage: mockAvatars['박피트'],
     activity: '수영',
-    duration: '60분',
     points: 30,
     content: '수영장에서 1km 완주!',
     images: ['https://images.unsplash.com/photo-1530549387789-4c1017266635?w=400&q=75'],
     likes: 18,
     comments: 2,
     time: '어제',
-    stats: {},
-    likedBy: [],
-    commentList: mockFeedComments[3],
+    createdAt: new Date().toISOString(),
   },
 ];
 
@@ -172,16 +160,14 @@ const mockComments: Comment[] = [
   {
     id: 1,
     author: '최건강',
-    avatar: '최',
-    profileImage: mockAvatars['최건강'],
+    avatar: mockAvatars['최건강'],
     content: '오늘도 열심히 하셨네요! 대단해요 👏',
     time: '30분 전',
     replies: [
       {
         id: 11,
         author: '김운동',
-        avatar: '김',
-        profileImage: mockAvatars['김운동'],
+        avatar: mockAvatars['김운동'],
         content: '감사합니다! 화이팅!',
         time: '25분 전',
         replies: [],
@@ -191,16 +177,14 @@ const mockComments: Comment[] = [
   {
     id: 2,
     author: '정활력',
-    avatar: '정',
-    profileImage: mockAvatars['정활력'],
+    avatar: mockAvatars['정활력'],
     content: '저도 같이 뛰고 싶어요!',
     time: '1시간 전',
     replies: [
       {
         id: 21,
         author: '김운동',
-        avatar: '김',
-        profileImage: mockAvatars['김운동'],
+        avatar: mockAvatars['김운동'],
         content: '다음에 같이 뛰어요! 🏃‍♂️',
         time: '50분 전',
         replies: [],
@@ -208,8 +192,7 @@ const mockComments: Comment[] = [
       {
         id: 22,
         author: '이헬스',
-        avatar: '이',
-        profileImage: mockAvatars['이헬스'],
+        avatar: mockAvatars['이헬스'],
         content: '저도 끼워주세요~',
         time: '45분 전',
         replies: [],
@@ -219,8 +202,7 @@ const mockComments: Comment[] = [
   {
     id: 3,
     author: '한체력',
-    avatar: '한',
-    profileImage: mockAvatars['한체력'],
+    avatar: mockAvatars['한체력'],
     content: '꾸준함이 중요하죠! 응원합니다!',
     time: '2시간 전',
     replies: [],
@@ -436,8 +418,8 @@ export const FeedPage: Story = {
                         {/* 아바타 */}
                         <div className="absolute top-4 left-4">
                           <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
-                            {feed.profileImage ? (
-                              <img src={feed.profileImage} alt={feed.author} className="w-full h-full object-cover rounded-full" />
+                            {mockAvatars[feed.author || ''] ? (
+                              <img src={mockAvatars[feed.author || '']} alt={feed.author} className="w-full h-full object-cover rounded-full" />
                             ) : (
                               <AvatarFallback className="bg-white"><User className="w-5 h-5 text-gray-400" /></AvatarFallback>
                             )}

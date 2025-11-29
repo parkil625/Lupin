@@ -113,8 +113,36 @@ class AuctionServiceTest {
     }
 
     @Test
-    void 없는_유저로_입찰하면_예외가_발생한다(){}
+    void 없는_유저로_입찰하면_예외가_발생한다() {
+        // given
+        Auction auction = createActiveAuction(100L);
+        Long auctionId = 100L;
+        Long id = 10L;
+        Long bidAmount = 200L;
+        LocalDateTime bidTime = LocalDateTime.of(2025,1,1,0,0);
 
+        given(auctionRepository.findByIdForUpdate(auctionId))
+                .willReturn(Optional.of(auction));
+        given(userRepository.findById(id)).willReturn(Optional.empty());
+
+        // when & then
+        assertThrows(IllegalArgumentException.class,
+                () -> auctionService.placeBid(auctionId, id, bidAmount, bidTime));
+
+        verify(auctionBidRepository, never()).save(any());
+    }
+
+    @Test
+    void 현재가_이하로_입찰하면_예외가_발생한다() {
+
+        //given
+        Auction auction = createActiveAuction(100L);
+        User user = createUser(10L,"홍길동");
+
+        given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
+        given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
+
+    }
 
 
 

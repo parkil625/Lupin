@@ -35,6 +35,29 @@ abstract class BaseRepositoryTest {
         return userRepository.save(user);
     }
 
+    protected User createAndSaveUserWithProviderEmail(String userId, String providerEmail) {
+        User user = User.builder()
+                .userId(userId)
+                .password("testPassword")
+                .name("testName")
+                .role(Role.MEMBER)
+                .providerEmail(providerEmail)
+                .build();
+        return userRepository.save(user);
+    }
+
+    protected User createAndSaveUserWithProvider(String userId, String provider, String providerId) {
+        User user = User.builder()
+                .userId(userId)
+                .password("testPassword")
+                .name("testName")
+                .role(Role.MEMBER)
+                .provider(provider)
+                .providerId(providerId)
+                .build();
+        return userRepository.save(user);
+    }
+
     protected Feed createAndSaveFeed(User writer, String activity) {
         Feed feed = Feed.builder()
                 .writer(writer)

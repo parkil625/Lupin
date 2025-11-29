@@ -96,12 +96,4 @@ class CommentLikeRepositoryTest extends BaseRepositoryTest {
         // then
         assertThat(commentLikeRepository.countByComment(comment)).isZero();
     }
-
-    private CommentLike createAndSaveCommentLike(User user, Comment comment) {
-        CommentLike commentLike = CommentLike.builder()
-                .user(user)
-                .comment(comment)
-                .build();
-        return commentLikeRepository.save(commentLike);
-    }
 }

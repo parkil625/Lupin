@@ -83,21 +83,21 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
     const points = Math.floor(workoutMinutes / 5) * 5; // 5분당 5점
 
     const userName = localStorage.getItem("userName") || "사용자";
+    const userId = Number(localStorage.getItem("userId")) || 0;
     const newFeed: Feed = {
       id: Date.now(),
+      writerId: userId,
+      writerName: userName,
       author: userName,
-      avatar: userName.charAt(0),
       activity: workoutType,
-      duration: `${workoutMinutes}분`,
       points: points,
       content: contentJson,
       images: images,
       likes: 0,
       comments: 0,
       time: "방금 전",
-      stats: { workout: `+${points}` },
+      createdAt: new Date().toISOString(),
       isMine: true,
-      likedBy: []
     };
 
     onCreatePost(newFeed);

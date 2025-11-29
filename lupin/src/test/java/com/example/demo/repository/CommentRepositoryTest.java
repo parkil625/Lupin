@@ -142,12 +142,4 @@ class CommentRepositoryTest extends BaseRepositoryTest {
                 .build();
         return commentRepository.save(reply);
     }
-
-    private CommentLike createAndSaveCommentLike(User user, Comment comment) {
-        CommentLike commentLike = CommentLike.builder()
-                .user(user)
-                .comment(comment)
-                .build();
-        return commentLikeRepository.save(commentLike);
-    }
 }

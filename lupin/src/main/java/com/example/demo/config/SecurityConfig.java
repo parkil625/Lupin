@@ -102,6 +102,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/oauth/*/login").permitAll()
                         // WebSocket 엔드포인트 (SockJS 관련 경로 포함)
                         .requestMatchers("/ws/**").permitAll()
+                        // Swagger UI
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )

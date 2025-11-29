@@ -213,10 +213,7 @@ public class Auction {
 
     //경매 입찰 생성 구문
     public AuctionBid createBid(User user,Long bidAmount, LocalDateTime bidTime ) {
-        validateBid(bidAmount);            // 금액 검증
-        placeBid(user,bidAmount,bidTime);
 
-        AuctionBid bid = AuctionBid.of(this, user, bidAmount, bidTime);
-        return bid;
+        return AuctionBid.of(this, user, bidAmount, bidTime);
     }
 }

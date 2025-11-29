@@ -77,7 +77,7 @@ app:
     enabled: false
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:bHVwaW5EZXZTZWNyZXRLZXlGb3JKd3RUb2tlbkdlbmVyYXRpb24yNTZiaXRz}
 
 server:
   port: 8081

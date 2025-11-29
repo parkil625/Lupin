@@ -23,12 +23,12 @@ public class AuctionService {
     private final AuctionBidRepository auctionBidRepository;
 
     @Transactional
-    public void placeBid(Long auctionId, Long userId, Long bidAmount, LocalDateTime bidTime) {
+    public void placeBid(Long auctionId, Long Id, Long bidAmount, LocalDateTime bidTime) {
         Auction auction = auctionRepository.findByIdForUpdate(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다. id=" + auctionId));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. id=" + userId));
+        User user = userRepository.findById(Id)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. id=" + Id));
 
         // 도메인 로직 위임 (현재가/우승자/시간 검증 등)
         auction.placeBid(user, bidAmount, bidTime);

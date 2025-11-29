@@ -138,10 +138,16 @@ class AuctionServiceTest {
         //given
         Auction auction = createActiveAuction(100L);
         User user = createUser(10L,"홍길동");
+        Long bidAmount = 50L; // 현재가(100L)보다 낮은 금액
 
         given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
 
+        // when & then
+        assertThrows(IllegalStateException.class,
+                () -> auctionService.placeBid(1L, user.getId(), bidAmount, LocalDateTime.now()));
+
+        verify(auctionBidRepository, never()).save(any());
     }
 
 

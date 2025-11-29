@@ -58,4 +58,10 @@ public class User {
 
     @Column(name = "provider_email", length = 255)
     private String providerEmail;
+
+    public void updateProfile(String name, Double height, Double weight) {
+        this.name = name;
+        this.height = height;
+        this.weight = weight;
+    }
 }

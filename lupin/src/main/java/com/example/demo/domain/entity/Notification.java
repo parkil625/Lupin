@@ -40,4 +40,8 @@ public class Notification {
     @Column(name = "created_at", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    public void markAsRead() {
+        this.isRead = true;
+    }
 }

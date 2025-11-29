@@ -23,7 +23,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Edit, Camera, User, LogOut, X, Link2, Unlink } from "lucide-react";
+import { Edit, Camera, User, LogOut, X, Link2, Unlink, ChevronDown, LinkIcon } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { imageApi } from "@/api/imageApi";
 import { oauthApi, OAuthConnection } from "@/api/oauthApi";
@@ -313,8 +319,9 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                 </AspectRatio>
                             </div>
                             <div className="flex-1">
-                                <h2 className="text-3xl font-black text-gray-900 mb-2">{localStorage.getItem('userName') || '사용자'}</h2>
-                                <p className="text-gray-600 font-medium">{localStorage.getItem('userEmail') || ''}</p>
+                                <h2 className="text-3xl font-black text-gray-900 mb-1">{localStorage.getItem('userName') || '사용자'}</h2>
+                                <p className="text-gray-500 font-medium text-sm mb-1">개발팀</p>
+                                <p className="text-gray-400 text-sm">{localStorage.getItem('userEmail') || ''}</p>
                             </div>
                         </div>
 
@@ -323,17 +330,6 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-4">기본 정보</h3>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label className="text-sm text-gray-600 font-medium">부서</Label>
-                                        <InputGroup className="mt-1.5">
-                                            <InputGroupInput
-                                                type="text"
-                                                value="개발팀"
-                                                disabled
-                                                className="rounded-xl bg-white/80 border-gray-200"
-                                            />
-                                        </InputGroup>
-                                    </div>
                                     <div>
                                         <Label className="text-sm text-gray-600 font-medium">생년월일</Label>
                                         <InputGroup className="mt-1.5">
@@ -392,32 +388,36 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                 </div>
                             </div>
 
-                            {/* OAuth 연동 관리 - 통합 버튼 */}
+                            {/* OAuth 연동 관리 */}
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-4">소셜 계정 연동</h3>
-                                <div className="p-4 rounded-xl bg-white/80 border border-gray-200">
+                                <div className="p-5 rounded-xl bg-white/80 border border-gray-200">
                                     {(() => {
                                         // 연동된 계정 찾기 (하나만 연동 가능)
                                         const linkedAccount = oauthConnections[0];
 
+                                        const providerInfo: Record<string, { name: string; logo: string; bgColor: string; borderColor: string }> = {
+                                            'GOOGLE': { name: 'Google', logo: '/google-logo.png', bgColor: 'bg-white', borderColor: 'border-gray-300' },
+                                            'NAVER': { name: 'Naver', logo: '/naver-logo.png', bgColor: 'bg-[#03C75A]', borderColor: 'border-[#03C75A]' },
+                                            'KAKAO': { name: 'Kakao', logo: '/kakao-logo.png', bgColor: 'bg-[#FEE500]', borderColor: 'border-[#FEE500]' },
+                                        };
+
                                         if (linkedAccount) {
                                             // 연동된 계정이 있으면 해당 계정 정보 표시
-                                            const providerInfo: Record<string, { name: string; logo: string; bgColor: string }> = {
-                                                'GOOGLE': { name: '구글', logo: '/google-logo.png', bgColor: 'bg-white' },
-                                                'NAVER': { name: '네이버', logo: '/naver-logo.png', bgColor: 'bg-white' },
-                                                'KAKAO': { name: '카카오', logo: '/kakao-logo.png', bgColor: 'bg-[#FEE500]' },
-                                            };
                                             const info = providerInfo[linkedAccount.provider] || providerInfo['GOOGLE'];
 
                                             return (
                                                 <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-10 h-10 rounded-lg ${info.bgColor} flex items-center justify-center`}>
-                                                            <img src={info.logo} alt={info.name} className="w-6 h-6 object-contain" />
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-12 h-12 rounded-xl ${info.bgColor} border ${info.borderColor} flex items-center justify-center shadow-sm`}>
+                                                            <img src={info.logo} alt={info.name} className="w-7 h-7 object-contain" />
                                                         </div>
                                                         <div>
-                                                            <p className="font-medium text-gray-900">{info.name} 계정 연동됨</p>
-                                                            <p className="text-sm text-gray-500">{linkedAccount.providerEmail}</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-semibold text-gray-900">{info.name}</span>
+                                                                <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">연결됨</span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-500 mt-0.5">{linkedAccount.providerEmail}</p>
                                                         </div>
                                                     </div>
                                                     <Button
@@ -425,55 +425,65 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                                         size="sm"
                                                         onClick={() => handleUnlinkOAuth(linkedAccount.provider)}
                                                         disabled={isLoadingOAuth}
-                                                        className="text-red-600 border-red-300 hover:bg-red-50"
+                                                        className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
                                                     >
-                                                        <Unlink className="w-4 h-4 mr-1" />
-                                                        연동 해제
+                                                        <Unlink className="w-4 h-4 mr-1.5" />
+                                                        연결 끊기
                                                     </Button>
                                                 </div>
                                             );
                                         } else {
-                                            // 연동된 계정이 없으면 연동 버튼들 표시
+                                            // 연동된 계정이 없으면 연결 안 된 상태 표시
                                             return (
-                                                <div className="space-y-3">
-                                                    <p className="text-sm text-gray-600 mb-4">소셜 계정을 연동하면 간편하게 로그인할 수 있습니다.</p>
-                                                    <div className="flex gap-3">
-                                                        {/* 구글 연동 */}
-                                                        <Button
-                                                            variant="outline"
-                                                            onClick={() => {
-                                                                const btn = document.querySelector('#google-link-hidden-btn div[role="button"]') as HTMLElement;
-                                                                if(btn) btn.click();
-                                                            }}
-                                                            disabled={isLoadingOAuth}
-                                                            className="flex-1 h-12"
-                                                        >
-                                                            <img src="/google-logo.png" alt="Google" className="w-5 h-5 mr-2" />
-                                                            구글 연동
-                                                        </Button>
-
-                                                        {/* 네이버 연동 */}
-                                                        <Button
-                                                            variant="outline"
-                                                            onClick={handleLinkNaver}
-                                                            disabled={isLoadingOAuth}
-                                                            className="flex-1 h-12 border-[#03C75A] text-[#03C75A] hover:bg-green-50"
-                                                        >
-                                                            <img src="/naver-logo.png" alt="Naver" className="w-5 h-5 mr-2" />
-                                                            네이버 연동
-                                                        </Button>
-
-                                                        {/* 카카오 연동 */}
-                                                        <Button
-                                                            variant="outline"
-                                                            onClick={handleLinkKakao}
-                                                            disabled={isLoadingOAuth}
-                                                            className="flex-1 h-12 border-[#FEE500] bg-[#FEE500] text-[#3C1E1E] hover:bg-[#F5DC00]"
-                                                        >
-                                                            <img src="/kakao-logo.png" alt="Kakao" className="w-5 h-5 mr-2" />
-                                                            카카오 연동
-                                                        </Button>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-xl bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center">
+                                                            <LinkIcon className="w-6 h-6 text-gray-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-medium text-gray-500">연결된 계정 없음</p>
+                                                            <p className="text-sm text-gray-400 mt-0.5">소셜 계정을 연동하여 간편하게 로그인하세요</p>
+                                                        </div>
                                                     </div>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                disabled={isLoadingOAuth}
+                                                                className="border-[#C93831] text-[#C93831] hover:bg-red-50"
+                                                            >
+                                                                <Link2 className="w-4 h-4 mr-1.5" />
+                                                                연결
+                                                                <ChevronDown className="w-4 h-4 ml-1" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-48">
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    const btn = document.querySelector('#google-link-hidden-btn div[role="button"]') as HTMLElement;
+                                                                    if(btn) btn.click();
+                                                                }}
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <img src="/google-logo.png" alt="Google" className="w-5 h-5 mr-3" />
+                                                                Google로 연결
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={handleLinkNaver}
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <img src="/naver-logo.png" alt="Naver" className="w-5 h-5 mr-3" />
+                                                                Naver로 연결
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={handleLinkKakao}
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <img src="/kakao-logo.png" alt="Kakao" className="w-5 h-5 mr-3" />
+                                                                Kakao로 연결
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                     {/* 숨겨진 구글 GSI 버튼 */}
                                                     <div id="google-link-hidden-btn" className="hidden" style={{ display: 'none' }}></div>
                                                 </div>

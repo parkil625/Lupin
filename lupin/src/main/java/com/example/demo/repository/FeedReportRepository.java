@@ -13,5 +13,7 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
 
     boolean existsByReporterAndFeed(User reporter, Feed feed);
 
+    void deleteByReporterAndFeed(User reporter, Feed feed);
+
     void deleteByFeed(Feed feed);
 }

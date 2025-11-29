@@ -13,5 +13,7 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
 
     boolean existsByReporterAndComment(User reporter, Comment comment);
 
+    void deleteByReporterAndComment(User reporter, Comment comment);
+
     void deleteByComment(Comment comment);
 }

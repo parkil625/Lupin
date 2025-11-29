@@ -38,22 +38,22 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    @DisplayName("읽지 않은 알림 수를 조회한다")
-    void countByUserAndIsReadFalseTest() {
+    @DisplayName("읽지 않은 알림이 있는지 확인한다")
+    void existsByUserAndIsReadFalseTest() {
         // given
         User user = createAndSaveUser("user1");
-        User otherUser = createAndSaveUser("user2");
+        User allReadUser = createAndSaveUser("user2");
 
-        createAndSaveNotification(user, "LIKE", "읽지 않은 알림 1");
-        createAndSaveNotification(user, "COMMENT", "읽지 않은 알림 2");
-        createAndSaveNotification(user, "LIKE", "읽은 알림", true);
-        createAndSaveNotification(otherUser, "LIKE", "다른 사용자 알림");
+        createAndSaveNotification(user, "LIKE", "읽지 않은 알림");
+        createAndSaveNotification(allReadUser, "LIKE", "읽은 알림", true);
 
         // when
-        long count = notificationRepository.countByUserAndIsReadFalse(user);
+        boolean hasUnread = notificationRepository.existsByUserAndIsReadFalse(user);
+        boolean noUnread = notificationRepository.existsByUserAndIsReadFalse(allReadUser);
 
         // then
-        assertThat(count).isEqualTo(2);
+        assertThat(hasUnread).isTrue();
+        assertThat(noUnread).isFalse();
     }
 
     private Notification createAndSaveNotification(User user, String type, String title) {

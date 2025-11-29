@@ -1,18 +1,15 @@
 import apiClient from './client';
 
 export const reportApi = {
-  createReport: async (data: { targetType: string; targetId: number; reason: string }) => {
-    const response = await apiClient.post('/reports', data);
+  // 피드 신고 토글
+  reportFeed: async (feedId: number) => {
+    const response = await apiClient.post(`/feeds/${feedId}/report`);
     return response.data;
   },
 
-  getReports: async () => {
-    const response = await apiClient.get('/reports');
-    return response.data;
-  },
-
-  getReportById: async (reportId: number) => {
-    const response = await apiClient.get(`/reports/${reportId}`);
+  // 댓글 신고 토글
+  reportComment: async (commentId: number) => {
+    const response = await apiClient.post(`/comments/${commentId}/report`);
     return response.data;
   },
 };

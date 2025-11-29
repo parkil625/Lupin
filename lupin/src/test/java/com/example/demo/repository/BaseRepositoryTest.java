@@ -1,15 +1,19 @@
 package com.example.demo.repository;
 
+import com.example.demo.config.JpaConfig;
 import com.example.demo.domain.entity.Comment;
+import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 @DataJpaTest
 @ActiveProfiles("test")
+@Import(JpaConfig.class)
 abstract class BaseRepositoryTest {
 
     @Autowired
@@ -20,6 +24,9 @@ abstract class BaseRepositoryTest {
 
     @Autowired
     protected CommentRepository commentRepository;
+
+    @Autowired
+    protected CommentLikeRepository commentLikeRepository;
 
     protected User createAndSaveUser(String userId) {
         return createAndSaveUser(userId, "testName");
@@ -74,5 +81,13 @@ abstract class BaseRepositoryTest {
                 .content(content)
                 .build();
         return commentRepository.save(comment);
+    }
+
+    protected CommentLike createAndSaveCommentLike(User user, Comment comment) {
+        CommentLike commentLike = CommentLike.builder()
+                .user(user)
+                .comment(comment)
+                .build();
+        return commentLikeRepository.save(commentLike);
     }
 }

@@ -20,6 +20,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     long countByParent(Comment parent);
 
+    long countByFeed(Feed feed);
+
     @Query("SELECT c FROM Comment c LEFT JOIN CommentLike cl ON cl.comment = c " +
            "WHERE c.feed = :feed AND c.parent IS NULL " +
            "GROUP BY c ORDER BY COUNT(cl) DESC")

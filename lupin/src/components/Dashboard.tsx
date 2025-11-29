@@ -48,28 +48,7 @@ import {
   ChatMessage,
 } from "@/types/dashboard.types";
 import { feedApi, notificationApi } from "@/api";
-
-// 상대적 시간 표시 함수
-function getRelativeTime(date: Date | string): string {
-  const now = new Date();
-  const targetDate = typeof date === "string" ? new Date(date) : date;
-  const diffMs = now.getTime() - targetDate.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-  const diffYears = Math.floor(diffDays / 365);
-
-  if (diffSeconds < 60) return "방금 전";
-  if (diffMinutes < 60) return `${diffMinutes}분 전`;
-  if (diffHours < 24) return `${diffHours}시간 전`;
-  if (diffDays < 7) return `${diffDays}일 전`;
-  if (diffWeeks < 4) return `${diffWeeks}주 전`;
-  if (diffMonths < 12) return `${diffMonths}개월 전`;
-  return `${diffYears}년 전`;
-}
+import { getRelativeTime } from "@/lib/utils";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -84,7 +63,13 @@ const memberNavItems = [
   { id: "medical", icon: CalendarIcon, label: "진료" },
 ];
 
-const doctorNavItems = [{ id: "chat", icon: MessageCircle, label: "채팅" }];
+const doctorNavItems = [
+  { id: "home", icon: Home, label: "대시보드" },
+  { id: "feed", icon: Video, label: "피드" },
+  { id: "ranking", icon: Trophy, label: "랭킹" },
+  { id: "auction", icon: Gavel, label: "경매" },
+  { id: "chat", icon: MessageCircle, label: "진료" },
+];
 
 const availableDates = [
   new Date(2024, 10, 15),
@@ -103,10 +88,10 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const { page } = useParams<{ page: string }>();
   const navigate = useNavigate();
 
-  // URL에서 현재 페이지 결정 (기본값: home/chat)
-  const defaultPage = userType === "doctor" ? "chat" : "home";
+  // URL에서 현재 페이지 결정 (기본값: home)
+  const defaultPage = "home";
   const validPages = userType === "doctor"
-    ? ["chat", "profile"]
+    ? ["home", "feed", "ranking", "auction", "chat", "profile"]
     : ["home", "feed", "ranking", "auction", "medical", "create", "profile"];
   const selectedNav = validPages.includes(page || "") ? page! : defaultPage;
 
@@ -162,43 +147,32 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [pivotFeedId, setPivotFeedId] = useState<number | null>(null);
   const [pivotFeed, setPivotFeed] = useState<Feed | null>(null);
 
+  // 백엔드 응답을 프론트엔드 Feed 타입으로 변환
+  const mapBackendFeed = (backendFeed: any): Feed => ({
+    id: backendFeed.id,
+    writerId: backendFeed.writerId,
+    writerName: backendFeed.writerName,
+    writerAvatar: backendFeed.writerAvatar,
+    activity: backendFeed.activity,
+    points: backendFeed.points || 0,
+    content: backendFeed.content,
+    images: backendFeed.images || [],
+    likes: backendFeed.likes || 0,
+    comments: backendFeed.comments || 0,
+    calories: backendFeed.calories,
+    createdAt: backendFeed.createdAt,
+    updatedAt: backendFeed.updatedAt,
+    time: getRelativeTime(backendFeed.createdAt),
+    author: backendFeed.writerName,
+  });
+
   // 내 피드 로드 (전체)
   const loadMyFeeds = async () => {
     try {
       const currentUserId = parseInt(localStorage.getItem("userId") || "0");
       const response = await feedApi.getFeedsByUserId(currentUserId, 0, 100);
       const feeds = response.content || response;
-
-      // 백엔드 응답을 프론트엔드 타입으로 변환
-      const mappedFeeds = feeds.map((backendFeed: any) => {
-        let stats = {};
-        try {
-          stats = backendFeed.statsJson
-            ? JSON.parse(backendFeed.statsJson)
-            : {};
-        } catch (e) {
-          console.error("Failed to parse statsJson:", e);
-        }
-        const points = Math.min(Math.floor(backendFeed.duration / 5) * 5, 30);
-
-        return {
-          id: backendFeed.id,
-          authorId: backendFeed.writerId,
-          author: backendFeed.authorName,
-          avatar: "",
-          activity: backendFeed.activityType,
-          duration: `${backendFeed.duration}분`,
-          points: points,
-          content: backendFeed.content,
-          images: backendFeed.images || [],
-          likes: backendFeed.likesCount || 0,
-          comments: backendFeed.commentsCount || 0,
-          time: getRelativeTime(backendFeed.createdAt),
-          stats: stats,
-          likedBy: [],
-        };
-      });
-
+      const mappedFeeds = feeds.map(mapBackendFeed);
       setMyFeeds(mappedFeeds);
     } catch (error) {
       console.error("내 피드 로드 실패:", error);
@@ -217,10 +191,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       const response = await feedApi.getAllFeeds(page, pageSize, currentUserId, excludeFeedId);
       const feeds = response.content || response;
 
+      const mappedFeeds = feeds.map(mapBackendFeed);
       if (reset) {
-        setAllFeeds(feeds);
+        setAllFeeds(mappedFeeds);
       } else {
-        setAllFeeds((prev) => [...prev, ...feeds]);
+        setAllFeeds((prev) => [...prev, ...mappedFeeds]);
       }
 
       // 더 이상 로드할 피드가 있는지 확인
@@ -319,35 +294,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               const response = await feedApi.getFeedById(notification.feedId);
               // mapBackendFeedToFrontend와 동일한 변환 적용
               const backendFeed = response;
-              let stats = {};
-              try {
-                stats = backendFeed.statsJson
-                  ? JSON.parse(backendFeed.statsJson)
-                  : {};
-              } catch (e) {
-                console.error("Failed to parse statsJson:", e);
-              }
-              const points = Math.min(
-                Math.floor(backendFeed.duration / 5) * 5,
-                30
-              );
-
-              feed = {
-                id: backendFeed.id,
-                authorId: backendFeed.writerId,
-                author: backendFeed.authorName,
-                avatar: "",
-                activity: backendFeed.activityType,
-                duration: `${backendFeed.duration}분`,
-                points: points,
-                content: backendFeed.content,
-                images: backendFeed.imageUrls || [],
-                likes: backendFeed.likesCount || 0,
-                comments: backendFeed.commentsCount || 0,
-                time: getRelativeTime(backendFeed.createdAt),
-                stats: stats,
-                likedBy: [],
-              };
+              feed = mapBackendFeed(backendFeed);
 
               // allFeeds에 추가 (맨 앞에)
               setAllFeeds((prev) => [feed!, ...prev]);
@@ -363,7 +310,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               localStorage.getItem("userId") || "0"
             );
             const isMyFeed =
-              feed.authorId === currentUserId || myFeed !== undefined;
+              feed.writerId === currentUserId || myFeed !== undefined;
 
             if (isMyFeed) {
               // 내 피드면 홈으로 이동 + 다이얼로그

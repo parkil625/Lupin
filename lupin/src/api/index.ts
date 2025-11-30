@@ -6,7 +6,6 @@ export { feedApi } from './feedApi';
 export { commentApi } from './commentApi';
 export { userApi } from './userApi';
 export { notificationApi } from './notificationApi';
-export { lotteryApi } from './lotteryApi';
 export { chatApi } from './chatApi';
 export { reportApi } from './reportApi';
 export { oauthApi } from './oauthApi';

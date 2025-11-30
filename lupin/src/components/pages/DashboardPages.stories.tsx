@@ -227,14 +227,6 @@ const mockNotifications: Notification[] = [
     read: false,
     createdAt: '30분 전',
   },
-  {
-    id: 3,
-    type: 'challenge',
-    title: '챌린지',
-    content: '오늘의 추첨이 시작되었습니다!',
-    read: true,
-    createdAt: '1시간 전',
-  },
 ];
 
 // 공통 레이아웃 래퍼
@@ -292,8 +284,6 @@ export const HomePage: Story = {
     return (
       <DashboardWrapper selectedNav="home">
         <Home
-          challengeJoined={false}
-          handleJoinChallenge={() => {}}
           profileImage={mockAvatars['김운동']}
           myFeeds={mockFeeds.slice(0, 2)}
           setSelectedFeed={(feed) => {

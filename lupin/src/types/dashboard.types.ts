@@ -50,7 +50,7 @@ export interface Prescription {
 
 export interface Notification {
   id: number;
-  type: "challenge" | "appointment" | "like" | "comment" | "reply" | "chat" | "comment_like";
+  type: "appointment" | "like" | "comment" | "reply" | "chat" | "comment_like";
   title: string;
   content: string;
   time: string;

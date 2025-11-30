@@ -107,7 +107,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [showFeedDetailInHome, setShowFeedDetailInHome] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const feedContainerRef = useRef<HTMLDivElement>(null);
-  const [challengeJoined, setChallengeJoined] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [feedImageIndexes, setFeedImageIndexes] = useState<{
     [key: number]: number;
@@ -337,9 +336,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       } else if (notification.type === "appointment") {
         // 예약 알림 - 진료 페이지로 이동
         setSelectedNav("medical");
-      } else if (notification.type === "challenge") {
-        // 챌린지 알림 - 홈으로 이동
-        setSelectedNav("home");
       }
     } catch (error) {
       console.error("알림 처리 실패:", error);
@@ -559,11 +555,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       >
         {selectedNav === "home" && (
           <HomeView
-            challengeJoined={challengeJoined}
-            handleJoinChallenge={() => {
-              toast.success("응모가 완료되었습니다!");
-              setChallengeJoined(true);
-            }}
             profileImage={profileImage}
             myFeeds={myFeeds}
             setSelectedFeed={setSelectedFeed}

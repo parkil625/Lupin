@@ -2,7 +2,7 @@
  * Home.tsx
  *
  * 회원 대시보드 홈 페이지 컴포넌트
- * - 오늘의 활동, 챌린지, 최근 피드 표시
+ * - 오늘의 활동, 최근 피드 표시
  * - 점수 현황 및 프로필 정보 표시
  */
 
@@ -26,11 +26,9 @@ import {
   Plus,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
-import { userApi, feedApi, lotteryApi } from "@/api";
+import { userApi, feedApi } from "@/api";
 
 interface HomeProps {
-  challengeJoined: boolean;
-  handleJoinChallenge: () => void;
   profileImage: string | null;
   myFeeds: Feed[];
   setSelectedFeed: (feed: Feed) => void;
@@ -41,7 +39,6 @@ interface HomeProps {
 }
 
 export default function Home({
-  handleJoinChallenge,
   profileImage,
   myFeeds,
   setSelectedFeed,
@@ -54,7 +51,6 @@ export default function Home({
   const [isLoading, setIsLoading] = useState(true);
   const [userStats, setUserStats] = useState({
     points: 0,
-    lotteryTickets: 0,
     rank: 0,
     has7DayStreak: false,
     isTop10: false,
@@ -89,21 +85,6 @@ export default function Home({
     return true;
   };
 
-  // 테스트 URL 콘솔 출력
-  useEffect(() => {
-    console.log("=== 추첨 테스트 URL ===");
-    console.log("수동 추첨 실행:", `${window.location.origin}/?runDraw=true`);
-    console.log("당첨 팝업 테스트:", `${window.location.origin}/?testWin=true`);
-    console.log(
-      "낙첨 팝업 테스트:",
-      `${window.location.origin}/?testLose=true`
-    );
-    console.log("========================");
-  }, []);
-
-  // 추첨 결과 확인 - 백엔드 간소화로 인해 현재 비활성화
-  // 향후 당첨/낙첨 기능 구현 시 활성화 필요
-
   // 사용자 통계 로드
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -117,16 +98,12 @@ export default function Home({
         const rankingContext = await userApi.getUserRankingContext(userId);
         const myRanking = rankingContext.find((r: any) => r.id === userId);
 
-        // 추첨권 개수 조회
-        const ticketData = await lotteryApi.getTicketCount(userId);
-
         // 7일 연속 체크 (myFeeds가 7개 이상이고 연속인지 확인)
         const has7DayStreak = checkSevenDayStreak(myFeeds);
 
         const rank = myRanking?.rank || 999;
         setUserStats({
           points: user.currentPoints || 0,
-          lotteryTickets: ticketData.count || 0,
           rank: rank,
           has7DayStreak,
           isTop10: rank <= 10,
@@ -204,14 +181,6 @@ export default function Home({
                     </span>
                     <span className="text-sm font-black text-[#C93831]">
                       {userStats.points}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600 font-bold">
-                      추첨권{" "}
-                    </span>
-                    <span className="text-sm font-black text-[#C93831]">
-                      {userStats.lotteryTickets}
                     </span>
                   </div>
                   <div>

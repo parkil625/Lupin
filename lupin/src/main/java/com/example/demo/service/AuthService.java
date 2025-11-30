@@ -136,6 +136,46 @@ public class AuthService {
         }
     }
 
+    /**
+     * 구글 계정 연동
+     */
+    public void linkGoogle(User user, String googleIdToken) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(googleIdToken);
+            if (idToken == null) {
+                throw new BusinessException(ErrorCode.INVALID_TOKEN);
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String googleId = payload.getSubject();
+
+            // 이미 다른 계정에 연동된 이메일인지 확인
+            userRepository.findByProviderEmail(email)
+                    .filter(existingUser -> !existingUser.getId().equals(user.getId()))
+                    .ifPresent(existingUser -> {
+                        throw new BusinessException(ErrorCode.OAUTH_ALREADY_USED);
+                    });
+
+            // 연동 정보 업데이트
+            user.setProvider("GOOGLE");
+            user.setProviderId(googleId);
+            user.setProviderEmail(email);
+            userRepository.save(user);
+
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("구글 계정 연동 실패", e);
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        }
+    }
+
     // Private Helper Method
     private LoginDto generateTokens(User user) {
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getRole().name());

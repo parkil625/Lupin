@@ -132,4 +132,60 @@ class NotificationServiceTest {
         // then
         assertThat(result).isFalse();
     }
+
+    @Test
+    @DisplayName("모든 알림을 읽음 처리한다")
+    void markAllAsReadTest() {
+        // given
+        Notification notification1 = Notification.builder()
+                .user(user)
+                .type("LIKE")
+                .title("좋아요 알림")
+                .content("내용1")
+                .build();
+
+        Notification notification2 = Notification.builder()
+                .user(user)
+                .type("COMMENT")
+                .title("댓글 알림")
+                .content("내용2")
+                .build();
+
+        given(notificationRepository.findByUserAndIsReadFalse(user))
+                .willReturn(List.of(notification1, notification2));
+
+        // when
+        notificationService.markAllAsRead(user);
+
+        // then
+        assertThat(notification1.getIsRead()).isTrue();
+        assertThat(notification2.getIsRead()).isTrue();
+    }
+
+    @Test
+    @DisplayName("알림을 삭제한다")
+    void deleteNotificationTest() {
+        // given
+        Long notificationId = 1L;
+        given(notificationRepository.existsById(notificationId)).willReturn(true);
+
+        // when
+        notificationService.deleteNotification(notificationId);
+
+        // then
+        verify(notificationRepository).deleteById(notificationId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 알림을 삭제하면 예외가 발생한다")
+    void deleteNotificationNotFoundTest() {
+        // given
+        Long notificationId = 999L;
+        given(notificationRepository.existsById(notificationId)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> notificationService.deleteNotification(notificationId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOTIFICATION_NOT_FOUND);
+    }
 }

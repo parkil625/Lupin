@@ -86,7 +86,7 @@ class FeedControllerTest {
     @DisplayName("POST /api/feeds - 피드 작성 성공")
     void createFeed_Success() throws Exception {
         // given
-        given(feedService.createFeed(any(User.class), eq("달리기"), eq("오늘 달리기 완료!")))
+        given(feedService.createFeed(any(User.class), eq("달리기"), eq("오늘 달리기 완료!"), any()))
                 .willReturn(testFeed);
 
         // when & then

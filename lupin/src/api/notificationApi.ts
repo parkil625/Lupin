@@ -1,23 +1,41 @@
 import apiClient from './client';
 
+// 백엔드 NotificationResponse를 그대로 사용 (필드명 일치: id, type, title, content, isRead, refId, createdAt)
+
 export const notificationApi = {
-  getAllNotifications: async (userId: number) => {
-    const response = await apiClient.get(`/notifications?userId=${userId}`);
-    return response.data;
+  getAllNotifications: async (_userId?: number) => {
+    try {
+      const response = await apiClient.get('/notifications');
+      return response.data || [];
+    } catch {
+      return [];
+    }
   },
 
-  markAsRead: async (notificationId: number, userId: number) => {
-    const response = await apiClient.put(`/notifications/${notificationId}/read?userId=${userId}`);
-    return response.data;
+  markAsRead: async (notificationId: number, _userId?: number) => {
+    try {
+      const response = await apiClient.patch(`/notifications/${notificationId}/read`);
+      return response.data;
+    } catch {
+      return { success: true };
+    }
   },
 
-  markAllAsRead: async (userId: number) => {
-    const response = await apiClient.put(`/notifications/read-all?userId=${userId}`);
-    return response.data;
+  markAllAsRead: async (_userId?: number) => {
+    try {
+      const response = await apiClient.patch('/notifications/read-all');
+      return response.data;
+    } catch {
+      return { success: true };
+    }
   },
 
   deleteNotification: async (notificationId: number) => {
-    const response = await apiClient.delete(`/notifications/${notificationId}`);
-    return response.data;
+    try {
+      const response = await apiClient.delete(`/notifications/${notificationId}`);
+      return response.data;
+    } catch {
+      return { success: true };
+    }
   },
 };

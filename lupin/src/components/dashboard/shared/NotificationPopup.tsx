@@ -3,7 +3,7 @@
  *
  * 알림 팝업 컴포넌트
  * - 사이드바에서 알림 버튼 클릭 시 표시
- * - 좋아요, 댓글, 예약, 챌린지 등 다양한 알림 타입 지원
+ * - 좋아요, 댓글, 예약 등 다양한 알림 타입 지원
  * - 읽지 않은 알림 강조 표시
  */
 
@@ -12,7 +12,6 @@ import {
   Heart,
   MessageCircle,
   Calendar as CalendarIcon,
-  Zap,
 } from "lucide-react";
 import { Notification } from "@/types/dashboard.types";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -81,18 +80,13 @@ export default function NotificationPopup({
                 <div className="flex items-start gap-3">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      notif.type === "challenge"
-                        ? "bg-gradient-to-br from-purple-400 to-pink-500"
-                        : notif.type === "appointment"
+                      notif.type === "appointment"
                         ? "bg-gradient-to-br from-blue-400 to-cyan-500"
                         : notif.type === "like"
                         ? "bg-gradient-to-br from-red-400 to-pink-500"
                         : "bg-gradient-to-br from-green-400 to-emerald-500"
                     }`}
                   >
-                    {notif.type === "challenge" && (
-                      <Zap className="w-4 h-4 text-white" />
-                    )}
                     {notif.type === "appointment" && (
                       <CalendarIcon className="w-4 h-4 text-white" />
                     )}

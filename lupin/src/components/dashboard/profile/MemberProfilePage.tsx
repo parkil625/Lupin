@@ -207,7 +207,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
         try {
             // 이전 프로필 이미지 삭제 (S3 URL인 경우만)
             if (profileImage && profileImage.includes('s3.')) {
-                await imageApi.deleteImage(profileImage).catch(() => {});
+                await imageApi.deleteImage(profileImage).catch(() => { });
             }
 
             const s3Url = await imageApi.uploadImage(file, 'profile');
@@ -227,7 +227,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
         if (window.confirm("프로필 사진을 삭제하고 기본 이미지로 변경하시겠습니까?")) {
             // S3에서 이미지 삭제
             if (profileImage && profileImage.includes('s3.')) {
-                await imageApi.deleteImage(profileImage).catch(() => {});
+                await imageApi.deleteImage(profileImage).catch(() => { });
             }
 
             setProfileImage(null);
@@ -288,11 +288,10 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                                 <button
                                                     onClick={() => !isUploading && profileImageInputRef.current?.click()}
                                                     disabled={isUploading}
-                                                    className={`absolute bottom-0 right-0 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-colors ${
-                                                        isUploading
+                                                    className={`absolute bottom-0 right-0 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-colors ${isUploading
                                                             ? "bg-gray-400 cursor-not-allowed"
                                                             : "bg-[#C93831] text-white hover:bg-[#B02F28]"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <Camera className="w-5 h-5" />
                                                 </button>
@@ -321,7 +320,12 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                             <div className="flex-1">
                                 <h2 className="text-3xl font-black text-gray-900 mb-1">{localStorage.getItem('userName') || '사용자'}</h2>
                                 <p className="text-gray-500 font-medium text-sm mb-1">개발팀</p>
-                                <p className="text-gray-400 text-sm">{localStorage.getItem('userEmail') || ''}</p>
+                                <p className="text-gray-400 text-sm">
+                                    {(() => {
+                                        const email = localStorage.getItem('userEmail');
+                                        return email && email !== 'null' ? email : '';
+                                    })()}
+                                </p>
                             </div>
                         </div>
 
@@ -461,7 +465,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                                             <DropdownMenuItem
                                                                 onClick={() => {
                                                                     const btn = document.querySelector('#google-link-hidden-btn div[role="button"]') as HTMLElement;
-                                                                    if(btn) btn.click();
+                                                                    if (btn) btn.click();
                                                                 }}
                                                                 className="cursor-pointer"
                                                             >

@@ -1,4 +1,24 @@
 import apiClient from './client';
+import { getS3Url } from '@/lib/utils';
+
+// Feed 응답에서 images를 S3 URL로 변환
+const transformFeedImages = (feed: any) => {
+  if (!feed) return feed;
+  return {
+    ...feed,
+    images: (feed.images || []).map(getS3Url),
+    writerAvatar: feed.writerAvatar ? getS3Url(feed.writerAvatar) : feed.writerAvatar,
+  };
+};
+
+// 페이지네이션 응답에서 모든 피드의 images를 변환
+const transformPagedFeeds = (response: any) => {
+  if (!response || !response.content) return response;
+  return {
+    ...response,
+    content: response.content.map(transformFeedImages),
+  };
+};
 
 export const feedApi = {
   getAllFeeds: async (page = 0, size = 10, _excludeUserId?: number, _excludeFeedId?: number) => {
@@ -6,7 +26,7 @@ export const feedApi = {
       // 백엔드는 인증된 사용자 기준으로 자동으로 본인 피드를 제외함
       const params = new URLSearchParams({ page: String(page), size: String(size) });
       const response = await apiClient.get(`/feeds?${params}`);
-      return response.data;
+      return transformPagedFeeds(response.data);
     } catch {
       return { content: [], totalPages: 0, totalElements: 0 };
     }
@@ -16,7 +36,7 @@ export const feedApi = {
     try {
       // 현재 로그인한 사용자의 피드를 가져옴 (백엔드는 JWT 토큰에서 사용자 식별)
       const response = await apiClient.get(`/feeds/my?page=${page}&size=${size}`);
-      return response.data;
+      return transformPagedFeeds(response.data);
     } catch {
       return { content: [], totalPages: 0, totalElements: 0 };
     }
@@ -25,7 +45,7 @@ export const feedApi = {
   getFeedById: async (feedId: number) => {
     try {
       const response = await apiClient.get(`/feeds/${feedId}`);
-      return response.data;
+      return transformFeedImages(response.data);
     } catch {
       return null;
     }

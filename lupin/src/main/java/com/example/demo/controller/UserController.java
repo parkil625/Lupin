@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.YearMonth;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -25,6 +26,34 @@ public class UserController extends BaseController {
     private final UserService userService;
     private final PointService pointService;
     private final UserPenaltyService userPenaltyService;
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getMe(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = getCurrentUser(userDetails);
+        return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    @GetMapping("/ranking")
+    public ResponseEntity<List<Map<String, Object>>> getTopUsersByPoints(
+            @RequestParam(defaultValue = "10") int limit
+    ) {
+        return ResponseEntity.ok(userService.getTopUsersByPoints(limit));
+    }
+
+    @GetMapping("/{userId}/ranking-context")
+    public ResponseEntity<List<Map<String, Object>>> getUserRankingContext(
+            @PathVariable Long userId
+    ) {
+        return ResponseEntity.ok(userService.getUserRankingContext(userId));
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Long>> getStatistics() {
+        long totalUsers = userService.getTotalUserCount();
+        return ResponseEntity.ok(Map.of("totalUsers", totalUsers));
+    }
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getUserInfo(@PathVariable Long userId) {

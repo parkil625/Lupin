@@ -73,7 +73,10 @@ export default function DoctorProfilePage({ onLogout }: DoctorProfilePageProps) 
                     <InputGroup className="mt-1.5">
                       <InputGroupInput
                         type="email"
-                        value={localStorage.getItem('userEmail') || ''}
+                        value={(() => {
+                          const email = localStorage.getItem('userEmail');
+                          return email && email !== 'null' ? email : '';
+                        })()}
                         disabled
                         className="rounded-xl bg-white/80 border-gray-200"
                       />

@@ -39,6 +39,22 @@ export function parseBlockNoteContent(content: string): string {
   }
 }
 
+const S3_BUCKET = "lupin-storage";
+const S3_REGION = "ap-northeast-2";
+const S3_BASE_URL = `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com`;
+
+/**
+ * S3 키를 전체 URL로 변환
+ * 이미 http로 시작하는 URL이면 그대로 반환
+ */
+export function getS3Url(s3Key: string | undefined | null): string {
+  if (!s3Key) return "";
+  if (s3Key.startsWith("http://") || s3Key.startsWith("https://")) {
+    return s3Key;
+  }
+  return `${S3_BASE_URL}/${s3Key}`;
+}
+
 export function getRelativeTime(date: Date | string): string {
   const now = new Date();
   const targetDate = typeof date === "string" ? new Date(date) : date;

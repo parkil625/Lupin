@@ -29,6 +29,7 @@ import {
 import { Comment } from "@/types/dashboard.types";
 import { commentApi } from "@/api";
 import { getRelativeTime } from "@/lib/utils";
+import { useImageBrightness } from "@/hooks";
 
 // 목 데이터
 const mockFeed = {
@@ -326,7 +327,7 @@ function CommentPanel({ feedId }: { feedId: number }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white/80 backdrop-blur-md">
+    <div className="flex flex-col h-full bg-white/50 backdrop-blur-sm">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
         <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
@@ -411,6 +412,11 @@ function FeedItem() {
   const isFirstImage = currentImageIndex === 0;
   const isLastImage = currentImageIndex === images.length - 1;
 
+  // 이미지 밝기에 따른 아이콘 색상 결정
+  const currentImageUrl = images[currentImageIndex];
+  const iconColor = useImageBrightness(currentImageUrl);
+  const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
+
   return (
     <div className={`h-full mx-auto flex shadow-xl rounded-2xl overflow-hidden transition-all duration-300 ${
       showComments ? "aspect-[16/16]" : "aspect-[9/16]"
@@ -431,7 +437,7 @@ function FeedItem() {
               className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
               onClick={() => setCurrentImageIndex(currentImageIndex - 1)}
             >
-              <ChevronLeft className="w-8 h-8 text-white" />
+              <ChevronLeft className={`w-8 h-8 ${iconColorClass}`} />
             </button>
           )}
           {!isLastImage && (
@@ -439,7 +445,7 @@ function FeedItem() {
               className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
               onClick={() => setCurrentImageIndex(currentImageIndex + 1)}
             >
-              <ChevronRight className="w-8 h-8 text-white" />
+              <ChevronRight className={`w-8 h-8 ${iconColorClass}`} />
             </button>
           )}
 
@@ -449,7 +455,9 @@ function FeedItem() {
               <div
                 key={index}
                 className={`w-1.5 h-1.5 rounded-full ${
-                  index === currentImageIndex ? "bg-white" : "bg-white/50"
+                  index === currentImageIndex
+                    ? (iconColor === "white" ? "bg-white" : "bg-gray-900")
+                    : (iconColor === "white" ? "bg-white/50" : "bg-gray-900/50")
                 }`}
               />
             ))}
@@ -468,27 +476,27 @@ function FeedItem() {
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={() => setIsLiked(!isLiked)}
             >
-              <Heart className={`w-6 h-6 text-white ${isLiked ? "fill-white" : ""}`} />
-              <span className="text-xs font-bold text-white">{mockFeed.likes + (isLiked ? 1 : 0)}</span>
+              <Heart className={`w-6 h-6 ${iconColorClass} ${isLiked ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
+              <span className={`text-xs font-bold ${iconColorClass}`}>{mockFeed.likes + (isLiked ? 1 : 0)}</span>
             </button>
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={() => setShowComments(!showComments)}
             >
-              <MessageCircle className={`w-6 h-6 text-white ${showComments ? "fill-white" : ""}`} />
-              <span className="text-xs font-bold text-white">{mockFeed.comments}</span>
+              <MessageCircle className={`w-6 h-6 ${iconColorClass} ${showComments ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
+              <span className={`text-xs font-bold ${iconColorClass}`}>{mockFeed.comments}</span>
             </button>
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={() => setIsReported(!isReported)}
             >
-              <Siren className={`w-6 h-6 ${isReported ? "text-[#C93831] fill-[#C93831]" : "text-white"}`} />
+              <Siren className={`w-6 h-6 ${isReported ? "text-[#C93831] fill-[#C93831]" : iconColorClass}`} />
             </button>
           </div>
         </div>
 
         {/* 콘텐츠 영역 - 43% */}
-        <ScrollArea className="h-[43%] bg-white">
+        <ScrollArea className="h-[43%] bg-white/50 backdrop-blur-sm">
           <div className="p-6 space-y-3">
             {/* 뱃지 */}
             <div className="flex items-center justify-between">

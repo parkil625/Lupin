@@ -99,4 +99,22 @@ public class UserService {
     public long getTotalUserCount() {
         return userRepository.count();
     }
+
+    public Map<String, Object> getUserStats(Long userId) {
+        User user = getUserInfo(userId);
+        Long totalPoints = pointLogRepository.sumPointsByUser(user);
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("userId", userId);
+        stats.put("totalPoints", totalPoints != null ? totalPoints : 0L);
+        stats.put("feedCount", 0); // TODO: FeedRepository에서 조회
+        stats.put("commentCount", 0); // TODO: CommentRepository에서 조회
+        return stats;
+    }
+
+    @Transactional
+    public void updateAvatar(User user, String avatarUrl) {
+        user.setAvatar(avatarUrl);
+        userRepository.save(user);
+    }
 }

@@ -17,6 +17,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,10 +60,11 @@ class FeedServiceTest {
         // given
         String activity = "running";
         String content = "오늘 5km 달렸습니다";
+        List<String> s3Keys = Collections.emptyList();
         given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        Feed result = feedService.createFeed(writer, activity, content);
+        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
 
         // then
         assertThat(result.getWriter()).isEqualTo(writer);

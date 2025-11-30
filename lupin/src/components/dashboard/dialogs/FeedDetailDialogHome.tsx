@@ -30,11 +30,11 @@ import {
   Trash2,
   X,
   ArrowUpDown,
-  Pencil,
   Flame,
   Zap,
+  Clock,
   User,
-  AlertTriangle,
+  Siren,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { commentApi, reportApi } from "@/api";
@@ -49,6 +49,7 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { getRelativeTime } from "@/lib/utils";
+import { useImageBrightness } from "@/hooks";
 
 interface FeedDetailDialogHomeProps {
   feed: Feed | null;
@@ -86,7 +87,6 @@ export default function FeedDetailDialogHome({
   }>({});
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [iconColor, setIconColor] = useState<'white' | 'black'>('white');
   const [feedReported, setFeedReported] = useState(false);
   const [commentReported, setCommentReported] = useState<{ [key: number]: boolean }>({});
 
@@ -94,60 +94,11 @@ export default function FeedDetailDialogHome({
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
-  // 이미지 밝기 분석하여 아이콘 색상 결정
-  useEffect(() => {
-    if (feed?.images && feed.images.length > 0) {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = feed.images[currentImageIndex] || feed.images[0];
-
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-
-        // 우측 하단 영역의 밝기 계산 (아이콘이 위치한 부분)
-        const sampleWidth = Math.min(100, img.width);
-        const sampleHeight = Math.min(150, img.height);
-        const x = img.width - sampleWidth;
-        const y = img.height - sampleHeight;
-
-        const imageData = ctx.getImageData(x, y, sampleWidth, sampleHeight);
-        const data = imageData.data;
-
-        let totalBrightness = 0;
-        let totalAlpha = 0;
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const a = data[i + 3];
-          // 밝기 계산 (perceived brightness)
-          const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
-          totalBrightness += brightness;
-          totalAlpha += a;
-        }
-
-        const avgBrightness = totalBrightness / (data.length / 4);
-        const avgAlpha = totalAlpha / (data.length / 4);
-
-        // 투명한 배경이면 검정색, 아니면 평균 밝기에 따라 결정
-        if (avgAlpha < 200) {
-          setIconColor('black');
-        } else {
-          // 평균 밝기가 128보다 크면 어두운 아이콘, 작으면 밝은 아이콘
-          setIconColor(avgBrightness > 128 ? 'black' : 'white');
-        }
-      };
-    } else {
-      // 이미지 없을 때는 밝은 배경이므로 검은색
-      setIconColor('black');
-    }
-  }, [feed?.images, currentImageIndex]);
+  // 이미지 밝기에 따른 아이콘 색상 결정
+  const hasImages = feed?.images && feed.images.length > 0;
+  const currentImageUrl = hasImages ? feed.images[currentImageIndex] : undefined;
+  const iconColor = useImageBrightness(currentImageUrl);
+  const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
 
   // BlockNote 에디터 생성 (읽기 전용)
   const initialContent = useMemo(() => {
@@ -253,31 +204,14 @@ export default function FeedDetailDialogHome({
     fetchComments();
   }, [feed, targetCommentId]);
 
-  // 피드 신고 상태 확인
-  useEffect(() => {
-    const checkReportStatus = async () => {
-      if (!feed) {
-        setFeedReported(false);
-        return;
-      }
-      try {
-        const status = await reportApi.checkFeedReportStatus(feed.id, currentUserId);
-        setFeedReported(status.reported || false);
-      } catch (error) {
-        setFeedReported(false);
-      }
-    };
-    checkReportStatus();
-  }, [feed, currentUserId]);
-
   // 피드 신고 핸들러
   const handleReportFeed = async () => {
     if (!feed || feedReported) return;
     try {
-      await reportApi.reportFeed(feed.id, currentUserId);
+      await reportApi.reportFeed(feed.id);
       setFeedReported(true);
       toast.success("신고가 접수되었습니다.");
-    } catch (error) {
+    } catch {
       toast.error("신고에 실패했습니다.");
     }
   };
@@ -286,10 +220,10 @@ export default function FeedDetailDialogHome({
   const handleReportComment = async (commentId: number) => {
     if (commentReported[commentId]) return;
     try {
-      await reportApi.reportComment(commentId, currentUserId);
+      await reportApi.reportComment(commentId);
       setCommentReported(prev => ({ ...prev, [commentId]: true }));
       toast.success("신고가 접수되었습니다.");
-    } catch (error) {
+    } catch {
       toast.error("신고에 실패했습니다.");
     }
   };
@@ -454,7 +388,7 @@ export default function FeedDetailDialogHome({
     if (!confirm("댓글을 삭제하시겠습니까?")) return;
 
     try {
-      await commentApi.deleteComment(commentId, currentUserId);
+      await commentApi.deleteComment(commentId);
 
       // 로컬 상태에서 댓글 처리
       setComments(prevComments => {
@@ -680,17 +614,17 @@ export default function FeedDetailDialogHome({
                       {currentImageIndex > 0 && (
                         <button
                           onClick={onPrevImage}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
                         >
-                          <ChevronLeft className={`w-8 h-8 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
+                          <ChevronLeft className={`w-8 h-8 ${iconColorClass}`} />
                         </button>
                       )}
                       {currentImageIndex < feed.images.length - 1 && (
                         <button
                           onClick={onNextImage}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
                         >
-                          <ChevronRight className={`w-8 h-8 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
+                          <ChevronRight className={`w-8 h-8 ${iconColorClass}`} />
                         </button>
                       )}
                       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
@@ -698,7 +632,9 @@ export default function FeedDetailDialogHome({
                           <div
                             key={idx}
                             className={`w-1.5 h-1.5 rounded-full ${
-                              idx === currentImageIndex ? "bg-white" : "bg-white/50"
+                              idx === currentImageIndex
+                                ? (iconColor === "white" ? "bg-white" : "bg-gray-900")
+                                : (iconColor === "white" ? "bg-white/50" : "bg-gray-900/50")
                             }`}
                           ></div>
                         ))}
@@ -719,8 +655,8 @@ export default function FeedDetailDialogHome({
                   <div className="absolute top-4 right-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="hover:opacity-70 transition-opacity">
-                          <MoreVertical className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
+                        <button className="cursor-pointer hover:scale-110 transition-transform">
+                          <MoreVertical className={`w-6 h-6 ${iconColorClass}`} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -752,33 +688,17 @@ export default function FeedDetailDialogHome({
 
                   {/* Right Actions */}
                   <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center">
-                        <Heart
-                          className={`w-6 h-6 fill-red-500 text-red-500`}
-                        />
-                      </div>
-                      <span
-                        className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                      >
-                        {feed.likes}
-                      </span>
-                    </div>
+                    <button className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
+                      <Heart className={`w-6 h-6 ${iconColorClass} ${iconColor === "white" ? "fill-white" : "fill-gray-900"}`} />
+                      <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
+                    </button>
 
                     <button
-                      className="flex flex-col items-center gap-1 group"
+                      className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
                       onClick={() => setShowComments(!showComments)}
                     >
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                        <MessageCircle
-                          className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                        />
-                      </div>
-                      <span
-                        className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                      >
-                        {totalCommentCount}
-                      </span>
+                      <MessageCircle className={`w-6 h-6 ${iconColorClass} ${showComments ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
+                      <span className={`text-xs font-bold ${iconColorClass}`}>{totalCommentCount}</span>
                     </button>
                   </div>
                 </div>
@@ -797,8 +717,8 @@ export default function FeedDetailDialogHome({
                     {/* Menu Button */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <button className="hover:opacity-70 transition-opacity">
-                          <MoreVertical className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`} />
+                        <button className="cursor-pointer hover:scale-110 transition-transform">
+                          <MoreVertical className={`w-6 h-6 ${iconColorClass}`} />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -830,33 +750,24 @@ export default function FeedDetailDialogHome({
 
                   {/* Right Actions for No-Image Posts */}
                   <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center">
-                        <Heart
-                          className={`w-6 h-6 fill-red-500 text-red-500`}
-                        />
-                      </div>
-                      <span
-                        className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                      >
-                        {feed.likes}
-                      </span>
-                    </div>
+                    <button className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
+                      <Heart className={`w-6 h-6 ${iconColorClass} ${iconColor === "white" ? "fill-white" : "fill-gray-900"}`} />
+                      <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
+                    </button>
 
                     <button
-                      className="flex flex-col items-center gap-1 group"
+                      className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
                       onClick={() => setShowComments(!showComments)}
                     >
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                        <MessageCircle
-                          className={`w-6 h-6 ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                        />
-                      </div>
-                      <span
-                        className={`text-xs font-bold ${iconColor === 'white' ? 'text-white' : 'text-black'}`}
-                      >
-                        {totalCommentCount}
-                      </span>
+                      <MessageCircle className={`w-6 h-6 ${iconColorClass} ${showComments ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
+                      <span className={`text-xs font-bold ${iconColorClass}`}>{totalCommentCount}</span>
+                    </button>
+
+                    <button
+                      className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
+                      onClick={handleReportFeed}
+                    >
+                      <Siren className={`w-6 h-6 ${feedReported ? "text-[#C93831] fill-[#C93831]" : iconColorClass}`} />
                     </button>
                   </div>
                 </div>
@@ -865,7 +776,7 @@ export default function FeedDetailDialogHome({
 
             {/* Feed Content (Always visible) */}
             <ScrollArea
-              className="bg-transparent"
+              className="bg-white/50 backdrop-blur-sm"
               style={{
                 width: "475px",
                 maxWidth: "475px",
@@ -898,31 +809,27 @@ export default function FeedDetailDialogHome({
                   }
                 `}</style>
                 <div className="space-y-3" style={{ maxWidth: "427px" }}>
-                  <div className="flex items-start justify-between gap-3">
-                    {/* Left: Badges */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 font-bold border-0">
+                  {/* Badges */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2 flex-wrap">
+                      <Badge className="bg-amber-50 text-amber-600 font-medium border border-amber-200">
                         <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
                       </Badge>
-                      <Badge className="bg-white text-blue-700 px-3 py-1 font-bold text-xs border-0">
-                        {feed.activity}
+                      <Badge className="bg-blue-50 text-blue-600 font-medium border border-blue-200">
+                        <Zap className="w-3 h-3 mr-1" />{feed.activity}
                       </Badge>
                       {feed.calories && (
-                        <Badge className="bg-white text-orange-700 px-3 py-1 font-bold text-xs border-0">
-                          {feed.calories}kcal
+                        <Badge className="bg-orange-50 text-orange-600 font-medium border border-orange-200">
+                          <Flame className="w-3 h-3 mr-1" />{feed.calories}kcal
                         </Badge>
                       )}
                     </div>
-
-                    {/* Right: Time & Edited */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <Badge className="bg-white text-gray-700 px-3 py-1 font-bold text-xs flex items-center gap-1 border-0">
-                        {feed.updatedAt && <Pencil className="w-3 h-3" />}
-                        {feed.time}
-                      </Badge>
-                    </div>
+                    <Badge className="bg-slate-50 text-slate-500 font-medium border border-slate-200">
+                      <Clock className="w-3 h-3 mr-1" />{feed.time}
+                    </Badge>
                   </div>
 
+                  {/* Content */}
                   <div className="text-gray-900 font-medium text-sm leading-relaxed">
                     <BlockNoteView
                       editor={editor}
@@ -937,7 +844,7 @@ export default function FeedDetailDialogHome({
 
           {/* Comments Panel (Right - slides in) */}
           {showComments && (
-            <div className="flex-1 bg-white/80 backdrop-blur-md border-l border-gray-200/50 flex flex-col overflow-hidden">
+            <div className="flex-1 bg-white/50 backdrop-blur-sm border-l border-gray-200/50 flex flex-col overflow-hidden">
               {/* Comments Header */}
               <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900">

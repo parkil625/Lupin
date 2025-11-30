@@ -87,7 +87,7 @@ export default function LandingPage() {
                             </h1>
                             <p className="text-xl text-gray-700 font-medium">
                                 운동을 기록하고 점수를 모으세요.<br />
-                                30점마다 추첨권을 받고 매일 당첨 기회를 잡으세요!
+                                동료들과 함께 건강한 습관을 만들어가요!
                             </p>
                             <div className="flex gap-4">
                                 <Button
@@ -101,16 +101,16 @@ export default function LandingPage() {
                             </div>
                             <div className="flex gap-8 pt-4">
                                 <div className="backdrop-blur-xl bg-white/40 rounded-2xl p-4 border border-white/60">
-                                    <div className="text-3xl font-black text-[#C93831]">30점</div>
-                                    <div className="text-sm text-gray-600 font-bold">추첨권 1개</div>
-                                </div>
-                                <div className="backdrop-blur-xl bg-white/40 rounded-2xl p-4 border border-white/60">
-                                    <div className="text-3xl font-black text-[#C93831]">매일</div>
-                                    <div className="text-sm text-gray-600 font-bold">추첨 진행</div>
+                                    <div className="text-3xl font-black text-[#C93831]">피드</div>
+                                    <div className="text-sm text-gray-600 font-bold">하루 1회</div>
                                 </div>
                                 <div className="backdrop-blur-xl bg-white/40 rounded-2xl p-4 border border-white/60">
                                     <div className="text-3xl font-black text-[#C93831]">실시간</div>
                                     <div className="text-sm text-gray-600 font-bold">랭킹</div>
+                                </div>
+                                <div className="backdrop-blur-xl bg-white/40 rounded-2xl p-4 border border-white/60">
+                                    <div className="text-3xl font-black text-[#C93831]">비대면</div>
+                                    <div className="text-sm text-gray-600 font-bold">진료</div>
                                 </div>
                             </div>
                         </div>
@@ -131,7 +131,7 @@ export default function LandingPage() {
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-16">
                         <h2 className="text-5xl font-black text-gray-900 mb-4">Lupin이 특별한 이유</h2>
-                        <p className="text-xl text-gray-700 font-medium">운동 기록부터 추첨까지, 건강 관리가 즐거워집니다</p>
+                        <p className="text-xl text-gray-700 font-medium">운동 기록부터 비대면 진료까지, 건강 관리가 즐거워집니다</p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
@@ -143,7 +143,7 @@ export default function LandingPage() {
                                 <h3 className="text-2xl font-black text-gray-900">점수 획득 시스템</h3>
                                 <p className="text-gray-700 font-medium">
                                     운동을 완료하고 점수를 획득하세요.
-                                    30점마다 추첨권 1개를 자동으로 받아요!
+                                    점수에 따라 실시간 랭킹이 변동됩니다!
                                 </p>
                             </CardContent>
                         </Card>
@@ -151,12 +151,12 @@ export default function LandingPage() {
                         <Card className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
                             <CardContent className="p-8 space-y-4">
                                 <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <Trophy className="w-7 h-7 text-white" />
+                                    <MessageCircle className="w-7 h-7 text-white" />
                                 </div>
-                                <h3 className="text-2xl font-black text-gray-900">매일 추첨</h3>
+                                <h3 className="text-2xl font-black text-gray-900">비대면 진료</h3>
                                 <p className="text-gray-700 font-medium">
-                                    점수를 모아 추첨권을 받으세요.
-                                    당일 획득한 추첨권으로 매일 추첨에 참여합니다!
+                                    전문 의료진과 1:1 채팅으로
+                                    간편하게 비대면 진료를 받으세요!
                                 </p>
                             </CardContent>
                         </Card>
@@ -217,7 +217,7 @@ export default function LandingPage() {
                                     <div className="w-8 h-8 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
                                         <Check className="w-5 h-5 text-white" />
                                     </div>
-                                    <span className="text-gray-900 font-bold">30점마다 추첨권 자동 생성</span>
+                                    <span className="text-gray-900 font-bold">실시간 랭킹 반영</span>
                                 </div>
                             </div>
                         </div>
@@ -238,12 +238,12 @@ export default function LandingPage() {
                             { icon: Users, title: "데일리 피드", desc: "하루 한 번 운동 관련 피드를 작성하고 공유하세요", color: "from-[#C93831] to-pink-500" },
                             { icon: Heart, title: "좋아요", desc: "다른 사용자의 피드에 좋아요를 누르고 응원하세요", color: "from-pink-500 to-purple-500" },
                             { icon: BarChart3, title: "랭킹", desc: "점수에 따른 실시간 랭킹을 확인하세요", color: "from-purple-500 to-blue-500" },
-                            { icon: Trophy, title: "추첨", desc: "30점마다 추첨권 1개가 자동 생성되어 당일 응모됩니다", color: "from-yellow-400 to-orange-500" },
+                            { icon: Trophy, title: "배지", desc: "7일 연속 기록, TOP 10 등 특별 배지를 획득하세요", color: "from-yellow-400 to-orange-500" },
                             { icon: Search, title: "피드 검색", desc: "피드를 검색하고 필터링할 수 있습니다", color: "from-blue-500 to-cyan-500" },
                             { icon: Calendar, title: "진료 예약", desc: "비대면 진료를 예약하고 관리할 수 있습니다", color: "from-cyan-500 to-teal-500" },
                             { icon: MessageCircle, title: "비대면 진료", desc: "1:1 채팅을 통해 비대면으로 진료를 받을 수 있습니다", color: "from-teal-500 to-green-500" },
                             { icon: FileText, title: "처방전 확인", desc: "받은 처방전을 확인하고 관리할 수 있습니다", color: "from-green-500 to-lime-500" },
-                            { icon: Zap, title: "웰빙 챌린지", desc: "정해진 시간에 진행되는 이벤트에 참여하세요", color: "from-orange-500 to-red-500" },
+                            { icon: Zap, title: "포인트 시스템", desc: "활동에 따라 포인트를 획득하고 순위에 도전하세요", color: "from-orange-500 to-red-500" },
                             { icon: UserCircle, title: "마이페이지", desc: "개인 건강 정보를 수정하고 관리할 수 있습니다", color: "from-indigo-500 to-purple-500" }
                         ].map((feature, index) => (
                             <Card key={index} className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
@@ -265,15 +265,14 @@ export default function LandingPage() {
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-16">
                         <h2 className="text-5xl font-black text-gray-900 mb-4">어떻게 작동하나요?</h2>
-                        <p className="text-xl text-gray-700 font-medium">4단계로 시작하는 건강한 습관</p>
+                        <p className="text-xl text-gray-700 font-medium">3단계로 시작하는 건강한 습관</p>
                     </div>
 
-                    <div className="grid md:grid-cols-4 gap-6">
+                    <div className="grid md:grid-cols-3 gap-6">
                         {[
                             { step: "1", title: "운동하기", desc: "좋아하는 운동을 하세요", icon: Dumbbell, color: "from-[#C93831] to-pink-500" },
                             { step: "2", title: "활동 기록", desc: "운동 내역을 기록하세요", icon: Target, color: "from-purple-500 to-pink-500" },
-                            { step: "3", title: "점수 획득", desc: "점수와 추첨권을 받으세요", icon: Trophy, color: "from-yellow-400 to-orange-500" },
-                            { step: "4", title: "매일 추첨", desc: "당일 추첨에 자동 참여!", icon: Award, color: "from-blue-500 to-cyan-500" }
+                            { step: "3", title: "랭킹 경쟁", desc: "점수를 모아 순위에 도전!", icon: Trophy, color: "from-yellow-400 to-orange-500" }
                         ].map((item, index) => (
                             <div key={index} className="text-center space-y-4">
                                 <div className={`w-20 h-20 bg-gradient-to-br ${item.color} text-white rounded-3xl flex items-center justify-center mx-auto text-3xl font-black shadow-2xl`}>
@@ -295,7 +294,7 @@ export default function LandingPage() {
                         <h2 className="text-6xl font-black">지금 바로 시작하세요</h2>
                         <p className="text-2xl text-red-100 font-medium">
                             운동을 기록하고, 점수를 모으고, <br />
-                            매일 추첨의 기회를 잡으세요!
+                            동료들과 함께 건강해지세요!
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Button
@@ -318,7 +317,7 @@ export default function LandingPage() {
                             </div>
                             <div className="text-center">
                                 <Trophy className="w-12 h-12 mx-auto mb-2 text-red-200" />
-                                <div className="text-sm text-red-100 font-bold">매일 추첨</div>
+                                <div className="text-sm text-red-100 font-bold">실시간 랭킹</div>
                             </div>
                         </div>
                     </CardContent>
@@ -341,7 +340,7 @@ export default function LandingPage() {
                                 <li>활동 기록 & 점수 시스템</li>
                                 <li>데일리 피드 & 랭킹</li>
                                 <li>진료 예약 & 비대면 진료</li>
-                                <li>웰빙 챌린지 & 추첨</li>
+                                <li>포인트 시스템 & 랭킹</li>
                             </ul>
                         </div>
                         <div>

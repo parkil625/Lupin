@@ -1,11 +1,10 @@
 import apiClient from './client';
 
 export const feedApi = {
-  getAllFeeds: async (page = 0, size = 10, excludeUserId?: number, excludeFeedId?: number) => {
+  getAllFeeds: async (page = 0, size = 10, _excludeUserId?: number, _excludeFeedId?: number) => {
     try {
+      // 백엔드는 인증된 사용자 기준으로 자동으로 본인 피드를 제외함
       const params = new URLSearchParams({ page: String(page), size: String(size) });
-      if (excludeUserId) params.append('excludeUserId', String(excludeUserId));
-      if (excludeFeedId) params.append('excludeFeedId', String(excludeFeedId));
       const response = await apiClient.get(`/feeds?${params}`);
       return response.data;
     } catch {
@@ -13,9 +12,10 @@ export const feedApi = {
     }
   },
 
-  getFeedsByUserId: async (userId: number, page = 0, size = 10) => {
+  getFeedsByUserId: async (_userId: number, page = 0, size = 10) => {
     try {
-      const response = await apiClient.get(`/feeds/user/${userId}?page=${page}&size=${size}`);
+      // 현재 로그인한 사용자의 피드를 가져옴 (백엔드는 JWT 토큰에서 사용자 식별)
+      const response = await apiClient.get(`/feeds/my?page=${page}&size=${size}`);
       return response.data;
     } catch {
       return { content: [], totalPages: 0, totalElements: 0 };
@@ -76,8 +76,9 @@ export const feedApi = {
     }
   },
 
-  canPostToday: async (userId?: number) => {
+  canPostToday: async (_userId?: number) => {
     try {
+      // 백엔드는 JWT 토큰에서 사용자 식별
       const response = await apiClient.get('/feeds/can-post-today');
       return response.data;
     } catch {

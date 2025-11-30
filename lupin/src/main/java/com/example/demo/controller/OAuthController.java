@@ -1,6 +1,10 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.entity.User;
+import com.example.demo.dto.LoginDto;
+import com.example.demo.service.AuthService;
+import com.example.demo.service.KakaoOAuthService;
+import com.example.demo.service.NaverOAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +19,31 @@ import java.util.Map;
 @RequestMapping("/api/oauth")
 @RequiredArgsConstructor
 public class OAuthController extends BaseController {
+
+    private final AuthService authService;
+    private final NaverOAuthService naverOAuthService;
+    private final KakaoOAuthService kakaoOAuthService;
+
+    /**
+     * 구글 계정 연동
+     */
+    @PostMapping("/google/link")
+    public ResponseEntity<Map<String, Object>> linkGoogle(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> request
+    ) {
+        User user = getCurrentUser(userDetails);
+        String googleToken = request.get("token");
+
+        authService.linkGoogle(user, googleToken);
+
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "provider", "GOOGLE",
+                "providerEmail", user.getProviderEmail() != null ? user.getProviderEmail() : "",
+                "connectedAt", ""
+        ));
+    }
 
     /**
      * OAuth 연동 목록 조회
@@ -50,5 +79,71 @@ public class OAuthController extends BaseController {
         // 현재 User 엔티티는 단일 provider만 지원하므로
         // 연동 해제는 지원하지 않음 (로그인 자체가 불가능해지므로)
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 네이버 로그인
+     */
+    @PostMapping("/naver/login")
+    public ResponseEntity<LoginDto> naverLogin(@RequestBody Map<String, String> request) {
+        String code = request.get("code");
+        String state = request.get("state");
+        LoginDto loginDto = naverOAuthService.naverLogin(code, state);
+        return ResponseEntity.ok(loginDto);
+    }
+
+    /**
+     * 네이버 계정 연동
+     */
+    @PostMapping("/naver/link")
+    public ResponseEntity<Map<String, Object>> linkNaver(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> request
+    ) {
+        User user = getCurrentUser(userDetails);
+        String code = request.get("code");
+        String state = request.get("state");
+
+        naverOAuthService.linkNaver(user, code, state);
+
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "provider", "NAVER",
+                "providerEmail", user.getProviderEmail() != null ? user.getProviderEmail() : "",
+                "connectedAt", ""
+        ));
+    }
+
+    /**
+     * 카카오 로그인
+     */
+    @PostMapping("/kakao/login")
+    public ResponseEntity<LoginDto> kakaoLogin(@RequestBody Map<String, String> request) {
+        String code = request.get("code");
+        String redirectUri = request.get("redirectUri");
+        LoginDto loginDto = kakaoOAuthService.kakaoLogin(code, redirectUri);
+        return ResponseEntity.ok(loginDto);
+    }
+
+    /**
+     * 카카오 계정 연동
+     */
+    @PostMapping("/kakao/link")
+    public ResponseEntity<Map<String, Object>> linkKakao(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> request
+    ) {
+        User user = getCurrentUser(userDetails);
+        String code = request.get("code");
+        String redirectUri = request.get("redirectUri");
+
+        kakaoOAuthService.linkKakao(user, code, redirectUri);
+
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "provider", "KAKAO",
+                "providerEmail", user.getProviderEmail() != null ? user.getProviderEmail() : "",
+                "connectedAt", ""
+        ));
     }
 }

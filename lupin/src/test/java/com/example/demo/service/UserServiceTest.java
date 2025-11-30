@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,11 +14,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserService 테스트")
@@ -25,6 +28,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PointLogRepository pointLogRepository;
 
     @InjectMocks
     private UserService userService;
@@ -86,5 +92,50 @@ class UserServiceTest {
         assertThat(user.getName()).isEqualTo(newName);
         assertThat(user.getHeight()).isEqualTo(newHeight);
         assertThat(user.getWeight()).isEqualTo(newWeight);
+    }
+
+    @Test
+    @DisplayName("사용자 통계를 조회한다")
+    void getUserStatsTest() {
+        // given
+        Long userId = 1L;
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(pointLogRepository.sumPointsByUser(user)).willReturn(100L);
+
+        // when
+        Map<String, Object> stats = userService.getUserStats(userId);
+
+        // then
+        assertThat(stats.get("userId")).isEqualTo(userId);
+        assertThat(stats.get("totalPoints")).isEqualTo(100L);
+    }
+
+    @Test
+    @DisplayName("사용자 통계 조회시 포인트가 없으면 0을 반환한다")
+    void getUserStatsNoPointsTest() {
+        // given
+        Long userId = 1L;
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(pointLogRepository.sumPointsByUser(user)).willReturn(null);
+
+        // when
+        Map<String, Object> stats = userService.getUserStats(userId);
+
+        // then
+        assertThat(stats.get("totalPoints")).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("사용자 아바타를 수정한다")
+    void updateAvatarTest() {
+        // given
+        String avatarUrl = "https://example.com/avatar.jpg";
+
+        // when
+        userService.updateAvatar(user, avatarUrl);
+
+        // then
+        assertThat(user.getAvatar()).isEqualTo(avatarUrl);
+        verify(userRepository).save(user);
     }
 }

@@ -33,4 +33,18 @@ public class NotificationService {
     public boolean hasUnreadNotifications(User user) {
         return notificationRepository.existsByUserAndIsReadFalse(user);
     }
+
+    @Transactional
+    public void markAllAsRead(User user) {
+        List<Notification> unreadNotifications = notificationRepository.findByUserAndIsReadFalse(user);
+        unreadNotifications.forEach(Notification::markAsRead);
+    }
+
+    @Transactional
+    public void deleteNotification(Long notificationId) {
+        if (!notificationRepository.existsById(notificationId)) {
+            throw new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND);
+        }
+        notificationRepository.deleteById(notificationId);
+    }
 }

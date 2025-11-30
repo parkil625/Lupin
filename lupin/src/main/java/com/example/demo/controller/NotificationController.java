@@ -47,4 +47,19 @@ public class NotificationController extends BaseController {
         return ResponseEntity.ok(Map.of("hasUnread", hasUnread));
     }
 
+    @PatchMapping("/read-all")
+    public ResponseEntity<Map<String, Boolean>> markAllAsRead(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        User user = getCurrentUser(userDetails);
+        notificationService.markAllAsRead(user);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @DeleteMapping("/{notificationId}")
+    public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId) {
+        notificationService.deleteNotification(notificationId);
+        return ResponseEntity.ok().build();
+    }
+
 }

@@ -61,6 +61,55 @@ public class UserController extends BaseController {
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
+    @PutMapping("/{userId}")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, Object> request
+    ) {
+        User currentUser = getCurrentUser(userDetails);
+        // 본인만 수정 가능
+        if (!currentUser.getId().equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        String name = (String) request.get("name");
+        Number height = (Number) request.get("height");
+        Number weight = (Number) request.get("weight");
+
+        userService.updateProfile(currentUser,
+                name,
+                height != null ? height.doubleValue() : null,
+                weight != null ? weight.doubleValue() : null);
+
+        User updatedUser = userService.getUserInfo(userId);
+        return ResponseEntity.ok(UserResponse.from(updatedUser));
+    }
+
+    @GetMapping("/{userId}/stats")
+    public ResponseEntity<Map<String, Object>> getUserStats(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.getUserStats(userId));
+    }
+
+    @PutMapping("/{userId}/avatar")
+    public ResponseEntity<UserResponse> updateAvatar(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody Map<String, String> request
+    ) {
+        User currentUser = getCurrentUser(userDetails);
+        // 본인만 수정 가능
+        if (!currentUser.getId().equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        String avatarUrl = request.get("avatar");
+        userService.updateAvatar(currentUser, avatarUrl);
+
+        User updatedUser = userService.getUserInfo(userId);
+        return ResponseEntity.ok(UserResponse.from(updatedUser));
+    }
+
     @PutMapping("/profile")
     public ResponseEntity<Void> updateProfile(
             @AuthenticationPrincipal UserDetails userDetails,

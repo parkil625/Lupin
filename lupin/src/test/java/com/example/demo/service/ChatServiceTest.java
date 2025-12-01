@@ -413,4 +413,25 @@ class ChatServiceTest {
         assertThat(countAfter).isEqualTo(0);
         verify(chatRepository, times(1)).markAllAsReadInRoom(roomId, userId);
     }
+
+    @Test
+    @DisplayName("채팅방 ID로 환자 정보 조회")
+    void getPatientInfoFromRoomId() {
+        // Given
+        String roomId = "1:21";  // patientId:doctorId
+        Long patientId = 1L;
+
+        given(userRepository.findById(patientId))
+                .willReturn(java.util.Optional.of(patient));
+
+        // When
+        User result = chatService.getPatientFromRoomId(roomId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(patientId);
+        assertThat(result.getUserId()).isEqualTo("patient01");
+        assertThat(result.getName()).isEqualTo("환자1");
+        verify(userRepository, times(1)).findById(patientId);
+    }
 }

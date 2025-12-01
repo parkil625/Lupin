@@ -71,6 +71,11 @@ public class PrescriptionService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
 
+        // 담당 의사 검증
+        if (!appointment.getDoctor().getId().equals(doctorId)) {
+            throw new IllegalArgumentException("해당 예약의 담당 의사만 처방전을 발행할 수 있습니다.");
+        }
+
         // 중복 처방전 발행 방지
         Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(appointmentId);
         if (existingPrescription.isPresent()) {

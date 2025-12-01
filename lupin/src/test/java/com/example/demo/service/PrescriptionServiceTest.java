@@ -343,4 +343,30 @@ class PrescriptionServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("이미 처방전이 발행된 예약입니다.");
     }
+
+    @Test
+    @DisplayName("담당 의사만 처방전 발행 가능")
+    void shouldOnlyAllowAssignedDoctorToIssuePrescription() {
+        // given
+        Long appointmentId = 1L;
+        Long unauthorizedDoctorId = 2L;  // anotherDoctor
+        String diagnosis = "감기";
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)  // doctor(id=1)가 담당 의사
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(appointment));
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.issuePrescription(appointmentId, unauthorizedDoctorId, patient.getId(), diagnosis))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 예약의 담당 의사만 처방전을 발행할 수 있습니다.");
+    }
 }

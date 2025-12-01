@@ -590,6 +590,7 @@ export const NotificationView: Story = {
                 notifications={mockNotifications}
                 onClose={() => setShowNotifications(false)}
                 onNotificationClick={() => {}}
+                onMarkAllAsRead={() => {}}
               />
             )}
           </div>

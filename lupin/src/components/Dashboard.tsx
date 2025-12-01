@@ -47,7 +47,7 @@ import {
   Member,
   ChatMessage,
 } from "@/types/dashboard.types";
-import { feedApi, notificationApi } from "@/api";
+import { feedApi, notificationApi, commentApi } from "@/api";
 import { getRelativeTime } from "@/lib/utils";
 
 interface DashboardProps {
@@ -192,9 +192,9 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
       const mappedFeeds = feeds.map(mapBackendFeed);
       if (reset) {
-        setAllFeeds(mappedFeeds);
+        setAllFeeds(mappedFeeds.sort((a: Feed, b: Feed) => b.id - a.id));
       } else {
-        setAllFeeds((prev) => [...prev, ...mappedFeeds]);
+        setAllFeeds((prev) => [...prev, ...mappedFeeds].sort((a, b) => b.id - a.id));
       }
 
       // 더 이상 로드할 피드가 있는지 확인
@@ -245,14 +245,13 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const handleNotificationClick = async (notification: Notification) => {
     try {
       // 읽음 처리
-      if (!notification.read) {
-        const userId = 1; // 임시 사용자 ID
-        await notificationApi.markAsRead(notification.id, userId);
+      if (!notification.isRead) {
+        await notificationApi.markAsRead(notification.id);
 
         // 로컬 상태 업데이트
         setNotifications(
           notifications.map((n) =>
-            n.id === notification.id ? { ...n, read: true } : n
+            n.id === notification.id ? { ...n, isRead: true } : n
           )
         );
       }
@@ -261,85 +260,86 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       setShowNotifications(false);
       setSidebarExpanded(false);
 
-      // 알림 타입에 따라 적절한 페이지로 이동
-      if (
-        notification.type === "like" ||
-        notification.type === "comment" ||
-        notification.type === "reply" ||
-        notification.type === "comment_like"
-      ) {
-        // 피드 관련 알림 - 내 게시글이면 홈으로, 아니면 피드 페이지로
-        if (notification.feedId) {
-          // 내 피드와 다른 피드 모두에서 검색
-          const myFeed = myFeeds.find((f) => f.id === notification.feedId);
-          let otherFeed = allFeeds.find((f) => f.id === notification.feedId);
-          let feed = myFeed || otherFeed;
-
-          // 댓글/답글/댓글좋아요 알림이면 댓글 ID 설정
-          if (
-            (notification.type === "comment" ||
-              notification.type === "reply" ||
-              notification.type === "comment_like") &&
-            notification.commentId
-          ) {
-            setTargetCommentId(notification.commentId);
-          } else {
-            setTargetCommentId(null);
-          }
-
-          // 피드가 아직 로드되지 않은 경우 API에서 가져오기
-          if (!feed) {
-            try {
-              const response = await feedApi.getFeedById(notification.feedId);
-              // mapBackendFeedToFrontend와 동일한 변환 적용
-              const backendFeed = response;
-              feed = mapBackendFeed(backendFeed);
-
-              // allFeeds에 추가 (맨 앞에)
-              setAllFeeds((prev) => [feed!, ...prev]);
-            } catch (error) {
-              console.error("피드 로드 실패:", error);
-              return;
+      // 피드 관련 알림 처리
+      if (notification.type === "FEED_LIKE" || notification.type === "COMMENT") {
+        // refId가 피드 ID
+        const feedId = notification.refId ? parseInt(notification.refId) : null;
+        if (feedId) {
+          await navigateToFeed(feedId, null);
+        }
+      } else if (notification.type === "COMMENT_LIKE" || notification.type === "REPLY") {
+        // refId가 댓글 ID - 댓글에서 피드 ID 조회 필요
+        const commentId = notification.refId ? parseInt(notification.refId) : null;
+        if (commentId) {
+          try {
+            // 댓글 조회해서 feedId 가져오기
+            const comment = await commentApi.getCommentById(commentId);
+            if (comment.feedId) {
+              await navigateToFeed(comment.feedId, commentId);
             }
-          }
-
-          if (feed) {
-            // 현재 사용자 ID로 내 피드인지 확인
-            const currentUserId = parseInt(
-              localStorage.getItem("userId") || "0"
-            );
-            const isMyFeed =
-              feed.writerId === currentUserId || myFeed !== undefined;
-
-            if (isMyFeed) {
-              // 내 피드면 홈으로 이동 + 다이얼로그
-              setSelectedNav("home");
-              setSelectedFeed(feed);
-              setShowFeedDetailInHome(true);
-            } else {
-              // 다른 사람 피드면 pivot 패턴으로 피드 페이지 이동
-              setPivotFeedId(feed.id);
-              setPivotFeed(feed);
-              // 해당 피드 제외하고 나머지 로드
-              loadFeeds(0, true, feed.id);
-              setSelectedNav("feed");
-            }
+          } catch (error) {
+            console.error("댓글 조회 실패:", error);
           }
         }
-      } else if (notification.type === "chat") {
-        // 채팅 알림 - 채팅 페이지로 이동
-        if (userType === "doctor") {
-          setSelectedNav("chat");
-        } else {
-          setShowChat(true);
-        }
-      } else if (notification.type === "appointment") {
-        // 예약 알림 - 진료 페이지로 이동
-        setSelectedNav("medical");
       }
     } catch (error) {
       console.error("알림 처리 실패:", error);
       toast.error("알림을 처리하는데 실패했습니다.");
+    }
+  };
+
+  // 모두 읽음 핸들러
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationApi.markAllAsRead();
+      setNotifications(
+        notifications.map((n) => ({ ...n, isRead: true }))
+      );
+    } catch (error) {
+      console.error("모두 읽음 처리 실패:", error);
+    }
+  };
+
+  // 피드로 이동하는 공통 함수
+  const navigateToFeed = async (feedId: number, commentId: number | null) => {
+    // 내 피드와 다른 피드 모두에서 검색
+    const myFeed = myFeeds.find((f) => f.id === feedId);
+    let otherFeed = allFeeds.find((f) => f.id === feedId);
+    let feed = myFeed || otherFeed;
+
+    // 댓글 ID 설정
+    setTargetCommentId(commentId);
+
+    // 피드가 아직 로드되지 않은 경우 API에서 가져오기
+    if (!feed) {
+      try {
+        const response = await feedApi.getFeedById(feedId);
+        feed = mapBackendFeed(response);
+        setAllFeeds((prev) => [feed!, ...prev]);
+      } catch (error) {
+        console.error("피드 로드 실패:", error);
+        return;
+      }
+    }
+
+    if (feed) {
+      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
+      const isMyFeed = feed.writerId === currentUserId || myFeed !== undefined;
+
+      if (isMyFeed) {
+        // 내 피드면 홈으로 이동 + 다이얼로그
+        setSelectedNav("home");
+        setSelectedFeed(feed);
+        setShowFeedDetailInHome(true);
+      } else {
+        // 다른 사람 피드면 pivot 패턴으로 피드 페이지 이동
+        setPivotFeedId(feed.id);
+        setPivotFeed(feed);
+        loadFeeds(0, true, feed.id);
+        setSelectedNav("feed");
+        setSelectedFeed(feed);
+        setShowFeedDetailInHome(true);
+      }
     }
   };
 
@@ -521,7 +521,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           >
             <div className="relative flex-shrink-0">
               <Bell className="w-7 h-7 text-gray-700" />
-              {notifications.filter((n) => !n.read).length > 0 && (
+              {notifications.filter((n) => !n.isRead).length > 0 && (
                 <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>
               )}
             </div>
@@ -543,6 +543,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
                 if (closeSidebar) setSidebarExpanded(false);
               }}
               onNotificationClick={handleNotificationClick}
+              onMarkAllAsRead={handleMarkAllAsRead}
             />
           )}
         </div>

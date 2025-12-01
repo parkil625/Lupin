@@ -1,6 +1,15 @@
 import apiClient from './client';
 
 export const commentApi = {
+  getCommentById: async (commentId: number) => {
+    try {
+      const response = await apiClient.get(`/comments/${commentId}`);
+      return response.data;
+    } catch {
+      return null;
+    }
+  },
+
   getComments: async (feedId: number) => {
     try {
       const response = await apiClient.get(`/feeds/${feedId}/comments`);

@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class CommentResponse {
 
     private Long id;
+    private Long feedId;
     private String content;
     private String writerName;
     private Long writerId;
@@ -20,6 +21,7 @@ public class CommentResponse {
     public static CommentResponse from(Comment comment) {
         return CommentResponse.builder()
                 .id(comment.getId())
+                .feedId(comment.getFeed().getId())
                 .content(comment.getContent())
                 .writerName(comment.getWriter().getName())
                 .writerId(comment.getWriter().getId())

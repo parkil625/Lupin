@@ -66,6 +66,12 @@ public class CommentController extends BaseController {
         return ResponseEntity.ok(responses);
     }
 
+    @GetMapping("/comments/{commentId}")
+    public ResponseEntity<CommentResponse> getComment(@PathVariable Long commentId) {
+        Comment comment = commentService.getComment(commentId);
+        return ResponseEntity.ok(CommentResponse.from(comment));
+    }
+
     @PostMapping("/comments/{commentId}/replies")
     public ResponseEntity<CommentResponse> createReply(
             @AuthenticationPrincipal UserDetails userDetails,

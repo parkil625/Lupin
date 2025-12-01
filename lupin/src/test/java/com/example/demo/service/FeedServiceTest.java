@@ -441,37 +441,6 @@ class FeedServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_PHOTO_NOT_TODAY);
     }
 
-    // 아래는 더 이상 필요없는 코드 - 삭제
-    void _deprecated_createFeedWithOldPhotoCreatesWithZeroScoreTest() {
-        // given
-        String activity = "달리기";
-        String content = "오늘 운동했습니다";
-        List<String> s3Keys = List.of("start.jpg", "end.jpg");
-        // 일주일 전 사진 (±6시간 오차범위 초과)
-        LocalDateTime startTime = LocalDate.now().minusDays(7).atTime(10, 0);
-        LocalDateTime endTime = LocalDate.now().minusDays(7).atTime(11, 0);
-
-        var startTimeOpt = Optional.of(startTime);
-        var endTimeOpt = Optional.of(endTime);
-
-        Feed savedFeed = Feed.builder()
-                .id(1L)
-                .writer(writer)
-                .activity(activity)
-                .content(content)
-                .points(0L)
-                .calories(0)
-                .build();
-        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
-
-        // when
-        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
-
-        // then
-        assertThat(result.getPoints()).isEqualTo(0L);
-        assertThat(result.getCalories()).isEqualTo(0);
-    }
-
     @Test
     @DisplayName("자정을 넘어서 운동해도 오차범위 내면 허용된다")
     void createFeedWithMidnightWorkoutTest() {

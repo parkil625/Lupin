@@ -42,4 +42,12 @@ public class PrescriptionService {
     public Optional<Prescription> findByAppointmentId(Long appointmentId) {
         return prescriptionRepository.findByAppointmentId(appointmentId);
     }
+
+    public Optional<Prescription> findByRoomId(String roomId) {
+        if (roomId.startsWith("appointment_")) {
+            Long appointmentId = Long.parseLong(roomId.substring("appointment_".length()));
+            return findByAppointmentId(appointmentId);
+        }
+        return Optional.empty();
+    }
 }

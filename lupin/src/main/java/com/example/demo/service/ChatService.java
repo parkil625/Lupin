@@ -111,4 +111,8 @@ public class ChatService {
         return appointmentRepository.findByPatientIdOrderByDateDesc(patientId);
     }
 
+    public String createChatRoomForAppointment(Long appointmentId) {
+        return "appointment_" + appointmentId;
+    }
+
 }

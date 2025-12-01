@@ -1,7 +1,9 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.Prescription;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.repository.PrescriptionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,8 +14,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
@@ -94,5 +98,41 @@ class PrescriptionServiceTest {
                 prescriptionService.deletePrescription(prescriptionId, unauthorizedDoctorId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("처방전을 삭제할 권한이 없습니다.");
+    }
+
+    @Test
+    @DisplayName("예약 ID로 처방전 조회")
+    void findPrescriptionByAppointmentId() {
+        // given
+        Long appointmentId = 1L;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        Prescription prescriptionWithAppointment = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("감기")
+                .build();
+
+        given(prescriptionRepository.findByAppointmentId(appointmentId))
+                .willReturn(Optional.of(prescriptionWithAppointment));
+
+        // when
+        Optional<Prescription> result = prescriptionService.findByAppointmentId(appointmentId);
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().getAppointment().getId()).isEqualTo(appointmentId);
+        assertThat(result.get().getDoctor()).isEqualTo(doctor);
+        assertThat(result.get().getPatient()).isEqualTo(patient);
     }
 }

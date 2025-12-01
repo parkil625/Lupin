@@ -77,4 +77,28 @@ class AppointmentServiceTest {
         assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.IN_PROGRESS);
         verify(appointmentRepository, times(1)).findById(appointmentId);
     }
+
+    @Test
+    @DisplayName("진료 완료 시 예약 상태 'COMPLETED'로 변경")
+    void completeConsultation_ShouldChangeStatusToCompleted() {
+        // Given
+        Long appointmentId = 1L;
+        Appointment inProgressAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(inProgressAppointment));
+
+        // When
+        appointmentService.completeConsultation(appointmentId);
+
+        // Then
+        assertThat(inProgressAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
 }

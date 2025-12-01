@@ -396,4 +396,56 @@ class PrescriptionServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("해당 예약의 환자 정보가 일치하지 않습니다.");
     }
+
+    @Test
+    @DisplayName("필수 필드 누락 시 예외 발생 - 진단명 null")
+    void shouldThrowExceptionWhenDiagnosisIsNull() {
+        // given
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        String diagnosis = null;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(appointment));
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("진단명은 필수입니다.");
+    }
+
+    @Test
+    @DisplayName("필수 필드 누락 시 예외 발생 - 진단명 empty")
+    void shouldThrowExceptionWhenDiagnosisIsEmpty() {
+        // given
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        String diagnosis = "";
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(appointment));
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("진단명은 필수입니다.");
+    }
 }

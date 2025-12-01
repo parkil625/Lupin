@@ -612,4 +612,39 @@ class ChatServiceTest {
         assertThat(result.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
         verify(appointmentRepository, times(1)).findById(appointmentId);
     }
+
+    @Test
+    @DisplayName("빈 채팅방도 목록에 포함")
+    void shouldIncludeEmptyChatRooms() {
+        // Given
+        Long doctorId = 21L;
+        Long appointmentId1 = 1L;
+        Long appointmentId2 = 2L;
+
+        // appointment_2는 빈 채팅방 (예약은 있지만 메시지가 없음)
+        Appointment appointment1 = Appointment.builder()
+                .id(appointmentId1)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Appointment appointment2 = Appointment.builder()
+                .id(appointmentId2)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId))
+                .willReturn(Arrays.asList(appointment1, appointment2));
+
+        // When
+        List<String> roomIds = chatService.getAllChatRoomsIncludingEmpty(doctorId);
+
+        // Then
+        assertThat(roomIds).hasSize(2);
+        assertThat(roomIds).containsExactlyInAnyOrder("appointment_1", "appointment_2");
+        verify(appointmentRepository, times(1)).findByDoctorIdOrderByDateDesc(doctorId);
+    }
 }

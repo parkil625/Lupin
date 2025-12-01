@@ -51,17 +51,31 @@ public class PrescriptionService {
     }
 
     public Optional<Prescription> findByRoomId(String roomId) {
-        if (roomId.startsWith("appointment_")) {
-            Long appointmentId = Long.parseLong(roomId.substring("appointment_".length()));
-            return findByAppointmentId(appointmentId);
+        if (roomId == null || !roomId.startsWith("appointment_")) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        try {
+            String idPart = roomId.substring("appointment_".length());
+            Long appointmentId = Long.parseLong(idPart);
+
+            return findByAppointmentId(appointmentId);
+        }catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+
     }
 
     @Transactional
     public Prescription issuePrescription(Long appointmentId, Long doctorId, Long patientId, String diagnosis) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+
+        // 중복 처방전 발행 방지
+        Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(appointmentId);
+        if (existingPrescription.isPresent()) {
+            throw new IllegalStateException("이미 처방전이 발행된 예약입니다.");
+        }
 
         User doctor = userRepository.findById(doctorId)
                 .orElseThrow(() -> new IllegalArgumentException("의사를 찾을 수 없습니다."));

@@ -68,4 +68,12 @@ public class AppointmentService {
 
         appointment.startConsultation();
     }
+
+    @Transactional
+    public void completeConsultation(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예약입니다."));
+
+        appointment.complete();
+    }
 }

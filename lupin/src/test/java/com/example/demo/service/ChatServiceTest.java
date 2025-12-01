@@ -197,4 +197,43 @@ class ChatServiceTest {
         assertThat(roomIds).containsExactlyInAnyOrder("1:21", "2:21");
         verify(chatRepository, times(1)).findAll();
     }
+
+    @Test
+    @DisplayName("각 채팅방의 최근 메시지 조회")
+    void getLatestMessageForEachRoom() {
+        // Given
+        String roomId1 = "1:21";
+        String roomId2 = "2:21";
+
+        ChatMessage latestMessage1 = ChatMessage.builder()
+                .id(2L)
+                .roomId(roomId1)
+                .sender(doctor)
+                .content("네, 환자분")
+                .time(LocalDateTime.now())
+                .build();
+
+        ChatMessage latestMessage2 = ChatMessage.builder()
+                .id(4L)
+                .roomId(roomId2)
+                .sender(patient)
+                .content("안녕하세요")
+                .time(LocalDateTime.now().minusMinutes(5))
+                .build();
+
+        given(chatRepository.findByRoomIdOrderByTimeAsc(roomId1))
+                .willReturn(Arrays.asList(message1, latestMessage1));
+        given(chatRepository.findByRoomIdOrderByTimeAsc(roomId2))
+                .willReturn(List.of(latestMessage2));
+
+        // When
+        ChatMessage result1 = chatService.getLatestMessageInRoom(roomId1);
+        ChatMessage result2 = chatService.getLatestMessageInRoom(roomId2);
+
+        // Then
+        assertThat(result1.getContent()).isEqualTo("네, 환자분");
+        assertThat(result2.getContent()).isEqualTo("안녕하세요");
+        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId1);
+        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId2);
+    }
 }

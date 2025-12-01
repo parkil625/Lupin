@@ -2,8 +2,6 @@
  * 이미지 메타데이터 추출 및 운동 계산 유틸리티
  */
 
-import EXIF from "exif-js";
-
 export interface ImageMetadata {
   dateTime: Date | null;
   latitude?: number;
@@ -18,19 +16,22 @@ export interface WorkoutCalculation {
 
 /**
  * 이미지 파일에서 EXIF 메타데이터 추출
+ * 참고: 실제 EXIF 검증은 백엔드에서 수행됨 (S3 업로드된 이미지 기준)
+ * 프론트엔드에서는 미리보기 용도로만 사용
  */
-export function extractImageMetadata(file: File): Promise<ImageMetadata> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
+export async function extractImageMetadata(file: File): Promise<ImageMetadata> {
+  try {
+    // 동적 import로 exif-js 로드 (번들 최적화)
+    const EXIF = await import("exif-js").then(m => m.default || m);
 
-    reader.onload = function(e) {
-      const img = new Image();
-      img.src = e.target?.result as string;
-
-      img.onload = function() {
-        EXIF.getData(img as unknown as string, function(this: typeof img) {
-          const dateTimeStr = EXIF.getTag(this, "DateTimeOriginal") ||
-                              EXIF.getTag(this, "DateTime");
+    return new Promise((resolve) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (EXIF as any).getData(file, function(this: any) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const exif = EXIF as any;
+          const dateTimeStr = exif.getTag(this, "DateTimeOriginal") ||
+                              exif.getTag(this, "DateTime");
 
           let dateTime: Date | null = null;
 
@@ -45,10 +46,10 @@ export function extractImageMetadata(file: File): Promise<ImageMetadata> {
           }
 
           // GPS 좌표 추출 (있는 경우)
-          const latDMS = EXIF.getTag(this, "GPSLatitude");
-          const lonDMS = EXIF.getTag(this, "GPSLongitude");
-          const latRef = EXIF.getTag(this, "GPSLatitudeRef");
-          const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
+          const latDMS = exif.getTag(this, "GPSLatitude");
+          const lonDMS = exif.getTag(this, "GPSLongitude");
+          const latRef = exif.getTag(this, "GPSLatitudeRef");
+          const lonRef = exif.getTag(this, "GPSLongitudeRef");
 
           let latitude: number | undefined;
           let longitude: number | undefined;
@@ -59,15 +60,15 @@ export function extractImageMetadata(file: File): Promise<ImageMetadata> {
           }
 
           resolve({ dateTime, latitude, longitude });
-        });
-      };
-
-      img.onerror = () => resolve({ dateTime: null });
-    };
-
-    reader.onerror = () => resolve({ dateTime: null });
-    reader.readAsDataURL(file);
-  });
+        } catch {
+          resolve({ dateTime: null });
+        }
+      });
+    });
+  } catch {
+    // exif-js 로드 실패 시 null 반환 (백엔드에서 검증)
+    return { dateTime: null };
+  }
 }
 
 /**

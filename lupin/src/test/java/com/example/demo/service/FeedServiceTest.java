@@ -28,7 +28,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -49,6 +51,12 @@ class FeedServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
 
+    @Mock
+    private ImageMetadataService imageMetadataService;
+
+    @Mock
+    private WorkoutScoreService workoutScoreService;
+
     @InjectMocks
     private FeedService feedService;
 
@@ -65,21 +73,16 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("피드를 작성한다")
-    void createFeedTest() {
+    @DisplayName("이미지 없이 피드를 작성하면 예외가 발생한다")
+    void createFeedWithoutImagesThrowsExceptionTest() {
         // given
-        String activity = "running";
+        String activity = "달리기";
         String content = "오늘 5km 달렸습니다";
-        given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> invocation.getArgument(0));
 
-        // when
-        Feed result = feedService.createFeed(writer, activity, content);
-
-        // then
-        assertThat(result.getWriter()).isEqualTo(writer);
-        assertThat(result.getActivity()).isEqualTo(activity);
-        assertThat(result.getContent()).isEqualTo(content);
-        verify(feedRepository).save(any(Feed.class));
+        // when & then (이미지가 필수이므로 예외 발생)
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_IMAGES_REQUIRED);
     }
 
     @Test
@@ -282,13 +285,26 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("이미지와 함께 피드를 생성한다")
+    @DisplayName("이미지와 함께 피드를 생성한다 - EXIF 시간 검증 포함")
     void createFeedWithImagesTest() {
         // given
-        String activity = "running";
+        String activity = "달리기";
         String content = "오늘 5km 달렸습니다";
-        List<String> s3Keys = List.of("image1.jpg", "image2.jpg");
+        List<String> s3Keys = List.of("start.jpg", "end.jpg");
+        // 오늘 날짜 기준으로 테스트 (당일 검증 통과)
+        LocalDateTime startTime = LocalDate.now().atTime(10, 0);
+        LocalDateTime endTime = LocalDate.now().atTime(11, 0); // 1시간 운동
 
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.of(startTime));
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.of(endTime));
+        given(workoutScoreService.calculateScore(eq(activity), eq(startTime), eq(endTime)))
+                .willReturn(30); // 달리기 1시간 = 60분 * 1.5 = 90 -> max 30
+        given(workoutScoreService.calculateCalories(eq(activity), eq(startTime), eq(endTime)))
+                .willReturn(600);
+        given(workoutScoreService.calculateDurationMinutes(eq(startTime), eq(endTime)))
+                .willReturn(60L);
         given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> {
             Feed feed = invocation.getArgument(0);
             ReflectionTestUtils.setField(feed, "id", 1L);
@@ -303,30 +319,147 @@ class FeedServiceTest {
         assertThat(result.getWriter()).isEqualTo(writer);
         assertThat(result.getActivity()).isEqualTo(activity);
         assertThat(result.getContent()).isEqualTo(content);
+        assertThat(result.getPoints()).isEqualTo(30L);
+        assertThat(result.getCalories()).isEqualTo(600);
         verify(feedRepository).save(any(Feed.class));
         verify(feedImageRepository).save(argThat(image ->
-                image.getS3Key().equals("image1.jpg") && image.getSortOrder() == 0));
+                image.getS3Key().equals("start.jpg") && image.getSortOrder() == 0 && image.getImgType() == ImageType.START));
         verify(feedImageRepository).save(argThat(image ->
-                image.getS3Key().equals("image2.jpg") && image.getSortOrder() == 1));
+                image.getS3Key().equals("end.jpg") && image.getSortOrder() == 1 && image.getImgType() == ImageType.END));
+        verify(pointService).addPoints(writer, 30);
     }
 
     @Test
-    @DisplayName("이미지 없이 피드를 생성해도 정상 동작한다")
-    void createFeedWithoutImagesTest() {
+    @DisplayName("이미지가 2개 미만이면 예외가 발생한다")
+    void createFeedWithoutEnoughImagesThrowsExceptionTest() {
         // given
-        String activity = "running";
+        String activity = "달리기";
         String content = "오늘 5km 달렸습니다";
-        List<String> s3Keys = List.of();
+        List<String> s3Keys = List.of("only-one.jpg");
 
-        given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> invocation.getArgument(0));
+        // when & then
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_IMAGES_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("시작 사진 시간이 끝 사진 시간보다 늦으면 예외가 발생한다")
+    void createFeedWithInvalidPhotoTimeThrowsExceptionTest() {
+        // given
+        String activity = "달리기";
+        String content = "오늘 운동했습니다";
+        List<String> s3Keys = List.of("start.jpg", "end.jpg");
+        // 오늘 날짜 기준으로 테스트
+        LocalDateTime startTime = LocalDate.now().atTime(12, 0); // 늦은 시간
+        LocalDateTime endTime = LocalDate.now().atTime(10, 0);   // 이른 시간
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.of(startTime));
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.of(endTime));
+
+        // when & then
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_INVALID_PHOTO_TIME);
+    }
+
+    @Test
+    @DisplayName("사진에 EXIF 시간 정보가 없으면 예외가 발생한다")
+    void createFeedWithNoExifTimeThrowsExceptionTest() {
+        // given
+        String activity = "달리기";
+        String content = "오늘 운동했습니다";
+        List<String> s3Keys = List.of("start.jpg", "end.jpg");
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_PHOTO_TIME_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("운동 시간이 24시간을 초과하면 예외가 발생한다")
+    void createFeedWithTooLongWorkoutThrowsExceptionTest() {
+        // given
+        String activity = "달리기";
+        String content = "오늘 운동했습니다";
+        List<String> s3Keys = List.of("start.jpg", "end.jpg");
+        // 오늘 시작해서 모레 끝나는 경우 (48시간)
+        LocalDateTime startTime = LocalDate.now().atTime(10, 0);
+        LocalDateTime endTime = LocalDate.now().plusDays(2).atTime(10, 0); // 48시간 후
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.of(startTime));
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.of(endTime));
+
+        // when & then
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_WORKOUT_TOO_LONG);
+    }
+
+    @Test
+    @DisplayName("과거 사진으로 피드를 작성하면 예외가 발생한다")
+    void createFeedWithOldPhotoThrowsExceptionTest() {
+        // given
+        String activity = "달리기";
+        String content = "오늘 운동했습니다";
+        List<String> s3Keys = List.of("start.jpg", "end.jpg");
+        // 일주일 전 사진 (±6시간 오차범위 초과)
+        LocalDateTime startTime = LocalDate.now().minusDays(7).atTime(10, 0);
+        LocalDateTime endTime = LocalDate.now().minusDays(7).atTime(11, 0);
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.of(startTime));
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.of(endTime));
+
+        // when & then
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_PHOTO_NOT_TODAY);
+    }
+
+    @Test
+    @DisplayName("자정을 넘어서 운동해도 오차범위 내면 허용된다")
+    void createFeedWithMidnightWorkoutTest() {
+        // given
+        String activity = "달리기";
+        String content = "자정 넘어서 운동했습니다";
+        List<String> s3Keys = List.of("start.jpg", "end.jpg");
+        // 어제 23시에 시작해서 오늘 1시에 끝난 운동 (±6시간 오차범위 내)
+        LocalDateTime startTime = LocalDate.now().minusDays(1).atTime(23, 0);
+        LocalDateTime endTime = LocalDate.now().atTime(1, 0);
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.of(startTime));
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.of(endTime));
+        given(workoutScoreService.calculateScore(eq(activity), eq(startTime), eq(endTime)))
+                .willReturn(5);
+        given(workoutScoreService.calculateCalories(eq(activity), eq(startTime), eq(endTime)))
+                .willReturn(200);
+        given(workoutScoreService.calculateDurationMinutes(eq(startTime), eq(endTime)))
+                .willReturn(120L);
+        given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> {
+            Feed feed = invocation.getArgument(0);
+            ReflectionTestUtils.setField(feed, "id", 1L);
+            return feed;
+        });
+        given(feedImageRepository.save(any(FeedImage.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
 
         // then
-        assertThat(result.getWriter()).isEqualTo(writer);
+        assertThat(result).isNotNull();
         verify(feedRepository).save(any(Feed.class));
-        verify(feedImageRepository, never()).save(any(FeedImage.class));
     }
 
     @Test

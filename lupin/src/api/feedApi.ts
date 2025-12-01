@@ -51,22 +51,14 @@ export const feedApi = {
     }
   },
 
-  createFeed: async (data: { activityType: string; duration: number; content: string; images: string[] }) => {
-    try {
-      const response = await apiClient.post('/feeds', data);
-      return response.data;
-    } catch {
-      return { id: Date.now(), ...data };
-    }
+  createFeed: async (data: { activity: string; content: string; images: string[] }) => {
+    const response = await apiClient.post('/feeds', data);
+    return response.data;
   },
 
-  updateFeed: async (feedId: number, data: { content: string; activityType: string; images: string[] }) => {
-    try {
-      const response = await apiClient.put(`/feeds/${feedId}`, data);
-      return response.data;
-    } catch {
-      return { id: feedId, ...data };
-    }
+  updateFeed: async (feedId: number, data: { activity: string; content: string; images: string[] }) => {
+    const response = await apiClient.put(`/feeds/${feedId}`, data);
+    return response.data;
   },
 
   deleteFeed: async (feedId: number) => {

@@ -183,13 +183,28 @@ export default function CreateFeedDialog({
   // 제출 가능: 시작/끝 사진만 있으면 됨 (EXIF 검증은 백엔드에서)
   const canSubmit = startImage && endImage;
 
+  // 에디터에 실제 콘텐츠가 있는지 확인
+  const hasEditorContent = editor.document.some(block => {
+    if (block.type === 'paragraph' && Array.isArray(block.content)) {
+      return block.content.some((item: unknown) => {
+        if (typeof item === 'string') return item.trim().length > 0;
+        if (item && typeof item === 'object' && 'text' in item) {
+          return String((item as { text: string }).text || '').trim().length > 0;
+        }
+        return false;
+      });
+    }
+    // 다른 블록 타입(이미지, 헤더 등)이 있으면 콘텐츠가 있는 것으로 간주
+    return block.type !== 'paragraph';
+  });
+
   // 변경사항이 있는지 확인
   const hasChanges =
     startImage !== null ||
     endImage !== null ||
     otherImages.length > 0 ||
     workoutType !== "헬스" ||
-    JSON.stringify(editor.document) !== JSON.stringify([{ type: "paragraph", content: "" }]);
+    hasEditorContent;
 
   // 다이얼로그 닫기 핸들러
   const handleOpenChange = (newOpen: boolean) => {
@@ -370,16 +385,18 @@ export default function CreateFeedDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>작성 중인 내용이 있습니다</AlertDialogTitle>
             <AlertDialogDescription>
-              작성 중인 피드가 임시 저장되어 있습니다. 정말로 닫으시겠습니까?
-              (임시 저장된 내용은 다음에 다시 열 때 복원됩니다)
+              임시 저장하면 다음에 다시 열 때 복원됩니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowCloseConfirm(false)}>
-              계속 작성하기
+            <AlertDialogCancel onClick={handleCloseWithoutSaving}>
+              비우고 닫기
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleCloseWithoutSaving}>
-              임시저장 삭제하고 닫기
+            <AlertDialogAction onClick={() => {
+              setShowCloseConfirm(false);
+              onOpenChange(false);
+            }}>
+              저장 후 닫기
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

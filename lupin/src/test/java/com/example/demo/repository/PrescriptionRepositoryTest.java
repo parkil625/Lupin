@@ -208,4 +208,50 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(prescriptions.get(1).getDate()).isEqualTo(LocalDate.of(2025, 11, 15));
         assertThat(prescriptions.get(2).getDate()).isEqualTo(LocalDate.of(2025, 10, 20));
     }
+
+    @Test
+    @DisplayName("처방전 ID로 상세 조회 (약물 정보 포함)")
+    void shouldFindByIdWithMedicines() {
+        // given
+        User doctor = createAndSaveUser("doctor6", "Dr. Yoon");
+        User patient = createAndSaveUser("patient7", "Patient Shin");
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("당뇨")
+                .build();
+
+        PrescriptionMed med1 = PrescriptionMed.builder()
+                .medicineName("메트포르민")
+                .dosage("500mg")
+                .frequency("하루 2회")
+                .build();
+
+        PrescriptionMed med2 = PrescriptionMed.builder()
+                .medicineName("인슐린")
+                .dosage("10unit")
+                .frequency("하루 1회")
+                .build();
+
+        prescription.addMedicine(med1);
+        prescription.addMedicine(med2);
+
+        Prescription saved = prescriptionRepository.save(prescription);
+        Long prescriptionId = saved.getId();
+
+        // when
+        Prescription found = prescriptionRepository.findById(prescriptionId)
+                .orElseThrow(() -> new AssertionError("처방전을 찾을 수 없습니다"));
+
+        // then
+        assertThat(found.getId()).isEqualTo(prescriptionId);
+        assertThat(found.getDoctor()).isEqualTo(doctor);
+        assertThat(found.getPatient()).isEqualTo(patient);
+        assertThat(found.getDiagnosis()).isEqualTo("당뇨");
+        assertThat(found.getMedicines()).hasSize(2);
+        assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("메트포르민");
+        assertThat(found.getMedicines().get(1).getMedicineName()).isEqualTo("인슐린");
+    }
 }

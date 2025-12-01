@@ -499,4 +499,22 @@ class ChatServiceTest {
         // Then
         assertThat(roomId).isEqualTo("appointment_1");
     }
+
+    @Test
+    @DisplayName("채팅방 ID 형식: appointment_{appointmentId}")
+    void chatRoomIdFormatShouldBeValid() {
+        // Given & When
+        String roomId1 = chatService.createChatRoomForAppointment(1L);
+        String roomId2 = chatService.createChatRoomForAppointment(123L);
+        String roomId3 = chatService.createChatRoomForAppointment(999L);
+
+        // Then
+        assertThat(roomId1).matches("^appointment_\\d+$");
+        assertThat(roomId2).matches("^appointment_\\d+$");
+        assertThat(roomId3).matches("^appointment_\\d+$");
+
+        assertThat(roomId1).isEqualTo("appointment_1");
+        assertThat(roomId2).isEqualTo("appointment_123");
+        assertThat(roomId3).isEqualTo("appointment_999");
+    }
 }

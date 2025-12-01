@@ -81,6 +81,11 @@ public class PrescriptionService {
             throw new IllegalArgumentException("해당 예약의 환자 정보가 일치하지 않습니다.");
         }
 
+        // 필수 필드 검증
+        if (diagnosis == null || diagnosis.trim().isEmpty()) {
+            throw new IllegalArgumentException("진단명은 필수입니다.");
+        }
+
         // 중복 처방전 발행 방지
         Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(appointmentId);
         if (existingPrescription.isPresent()) {

@@ -54,6 +54,7 @@ class CommentIntegrationTest {
     private CommentLikeRepository commentLikeRepository;
 
     private User testUser;
+    private User otherUser;
     private Feed testFeed;
 
     @BeforeEach
@@ -62,6 +63,13 @@ class CommentIntegrationTest {
                 .userId("testuser")
                 .password("password")
                 .name("테스트유저")
+                .role(Role.MEMBER)
+                .build());
+
+        otherUser = userRepository.save(User.builder()
+                .userId("otheruser")
+                .password("password")
+                .name("다른유저")
                 .role(Role.MEMBER)
                 .build());
 
@@ -179,5 +187,48 @@ class CommentIntegrationTest {
 
         // 4. 취소 확인
         assertThat(commentLikeRepository.existsByUserAndComment(testUser, comment)).isFalse();
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 댓글 수정 시 403 반환")
+    @WithMockUser(username = "otheruser")
+    void updateCommentByOtherUser_Returns403() throws Exception {
+        // given
+        Comment comment = commentRepository.save(Comment.builder()
+                .writer(testUser)
+                .feed(testFeed)
+                .content("원본 댓글")
+                .build());
+
+        CommentRequest updateRequest = new CommentRequest("수정 시도");
+
+        // when & then
+        mockMvc.perform(put("/api/comments/" + comment.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isForbidden());
+
+        // 수정되지 않았는지 확인
+        Comment unchanged = commentRepository.findById(comment.getId()).orElseThrow();
+        assertThat(unchanged.getContent()).isEqualTo("원본 댓글");
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 댓글 삭제 시 403 반환")
+    @WithMockUser(username = "otheruser")
+    void deleteCommentByOtherUser_Returns403() throws Exception {
+        // given
+        Comment comment = commentRepository.save(Comment.builder()
+                .writer(testUser)
+                .feed(testFeed)
+                .content("삭제 대상")
+                .build());
+
+        // when & then
+        mockMvc.perform(delete("/api/comments/" + comment.getId()))
+                .andExpect(status().isForbidden());
+
+        // 삭제되지 않았는지 확인
+        assertThat(commentRepository.findById(comment.getId())).isPresent();
     }
 }

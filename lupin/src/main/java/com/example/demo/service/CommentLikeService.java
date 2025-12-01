@@ -7,6 +7,7 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
+import com.example.demo.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,8 @@ public class CommentLikeService {
 
     private final CommentLikeRepository commentLikeRepository;
     private final CommentRepository commentRepository;
+    private final NotificationService notificationService;
+    private final NotificationRepository notificationRepository;
 
     @Transactional
     public CommentLike likeComment(User user, Long commentId) {
@@ -33,7 +36,10 @@ public class CommentLikeService {
                 .comment(comment)
                 .build();
 
-        return commentLikeRepository.save(commentLike);
+        CommentLike savedCommentLike = commentLikeRepository.save(commentLike);
+        notificationService.createCommentLikeNotification(comment.getWriter(), user, savedCommentLike.getId());
+
+        return savedCommentLike;
     }
 
     @Transactional
@@ -41,10 +47,10 @@ public class CommentLikeService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
-        if (!commentLikeRepository.existsByUserAndComment(user, comment)) {
-            throw new BusinessException(ErrorCode.LIKE_NOT_FOUND);
-        }
+        CommentLike commentLike = commentLikeRepository.findByUserAndComment(user, comment)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
-        commentLikeRepository.deleteByUserAndComment(user, comment);
+        notificationRepository.deleteByRefIdAndType(String.valueOf(commentLike.getId()), "COMMENT_LIKE");
+        commentLikeRepository.delete(commentLike);
     }
 }

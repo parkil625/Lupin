@@ -1,11 +1,15 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.Feed;
+import com.example.demo.domain.entity.FeedImage;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.FeedImageRepository;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,7 +21,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -37,7 +41,13 @@ class FeedServiceTest {
     private FeedRepository feedRepository;
 
     @Mock
+    private FeedImageRepository feedImageRepository;
+
+    @Mock
     private PointService pointService;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @InjectMocks
     private FeedService feedService;
@@ -60,11 +70,10 @@ class FeedServiceTest {
         // given
         String activity = "running";
         String content = "오늘 5km 달렸습니다";
-        List<String> s3Keys = Collections.emptyList();
         given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
+        Feed result = feedService.createFeed(writer, activity, content);
 
         // then
         assertThat(result.getWriter()).isEqualTo(writer);
@@ -270,5 +279,167 @@ class FeedServiceTest {
 
         // then
         assertThat(canPost).isFalse();
+    }
+
+    @Test
+    @DisplayName("이미지와 함께 피드를 생성한다")
+    void createFeedWithImagesTest() {
+        // given
+        String activity = "running";
+        String content = "오늘 5km 달렸습니다";
+        List<String> s3Keys = List.of("image1.jpg", "image2.jpg");
+
+        given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> {
+            Feed feed = invocation.getArgument(0);
+            ReflectionTestUtils.setField(feed, "id", 1L);
+            return feed;
+        });
+        given(feedImageRepository.save(any(FeedImage.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
+
+        // then
+        assertThat(result.getWriter()).isEqualTo(writer);
+        assertThat(result.getActivity()).isEqualTo(activity);
+        assertThat(result.getContent()).isEqualTo(content);
+        verify(feedRepository).save(any(Feed.class));
+        verify(feedImageRepository).save(argThat(image ->
+                image.getS3Key().equals("image1.jpg") && image.getSortOrder() == 0));
+        verify(feedImageRepository).save(argThat(image ->
+                image.getS3Key().equals("image2.jpg") && image.getSortOrder() == 1));
+    }
+
+    @Test
+    @DisplayName("이미지 없이 피드를 생성해도 정상 동작한다")
+    void createFeedWithoutImagesTest() {
+        // given
+        String activity = "running";
+        String content = "오늘 5km 달렸습니다";
+        List<String> s3Keys = List.of();
+
+        given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
+
+        // then
+        assertThat(result.getWriter()).isEqualTo(writer);
+        verify(feedRepository).save(any(Feed.class));
+        verify(feedImageRepository, never()).save(any(FeedImage.class));
+    }
+
+    @Test
+    @DisplayName("피드 삭제 시 연관된 이미지도 삭제된다")
+    void deleteFeedWithImagesTest() {
+        // given
+        Long feedId = 1L;
+        Feed feed = Feed.builder()
+                .writer(writer)
+                .activity("running")
+                .content("내용")
+                .points(0L)
+                .build();
+        ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
+
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+        // when
+        feedService.deleteFeed(writer, feedId);
+
+        // then
+        verify(feedImageRepository).deleteByFeed(feed);
+        verify(feedRepository).delete(feed);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 피드를 삭제하면 예외가 발생한다")
+    void deleteFeedNotFoundTest() {
+        // given
+        Long feedId = 999L;
+        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> feedService.deleteFeed(writer, feedId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("본인이 아닌 사용자가 피드를 수정하면 예외가 발생한다")
+    void updateFeedByNonOwnerThrowsExceptionTest() {
+        // given
+        Long feedId = 1L;
+        User otherUser = User.builder()
+                .userId("other")
+                .password("password")
+                .name("다른사람")
+                .role(Role.MEMBER)
+                .build();
+        Feed feed = Feed.builder()
+                .writer(writer)
+                .activity("running")
+                .content("원래 내용")
+                .build();
+
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+        // when & then
+        assertThatThrownBy(() -> feedService.updateFeed(otherUser, feedId, "수정 내용", "walking"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_OWNER);
+    }
+
+    @Test
+    @DisplayName("본인이 아닌 사용자가 피드를 삭제하면 예외가 발생한다")
+    void deleteFeedByNonOwnerThrowsExceptionTest() {
+        // given
+        Long feedId = 1L;
+        User otherUser = User.builder()
+                .userId("other")
+                .password("password")
+                .name("다른사람")
+                .role(Role.MEMBER)
+                .build();
+        Feed feed = Feed.builder()
+                .writer(writer)
+                .activity("running")
+                .content("내용")
+                .points(0L)
+                .build();
+
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+        // when & then
+        assertThatThrownBy(() -> feedService.deleteFeed(otherUser, feedId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_OWNER);
+    }
+
+    @Test
+    @DisplayName("피드 삭제 시 관련 알림도 삭제된다")
+    void deleteFeedDeletesRelatedNotificationsTest() {
+        // given
+        Long feedId = 1L;
+        Feed feed = Feed.builder()
+                .writer(writer)
+                .activity("running")
+                .content("내용")
+                .points(0L)
+                .build();
+        ReflectionTestUtils.setField(feed, "id", feedId);
+        ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
+
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+        // when
+        feedService.deleteFeed(writer, feedId);
+
+        // then
+        verify(notificationRepository).deleteByRefIdAndTypeIn(
+                String.valueOf(feedId),
+                List.of("FEED_LIKE", "COMMENT")
+        );
+        verify(feedRepository).delete(feed);
     }
 }

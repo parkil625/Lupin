@@ -236,7 +236,7 @@ export default function FeedDetailDialogHome({
         const commentElement = document.getElementById(`comment-${targetCommentId}`);
         if (commentElement) {
           commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 하이라이트 효과 (인라인 스타일 사용)
+          // 하이라이트 효과 (인라인 스타일 사용, 3초)
           commentElement.style.backgroundColor = '#fef3c7';
           commentElement.style.borderRadius = '8px';
           commentElement.style.padding = '8px';
@@ -244,7 +244,7 @@ export default function FeedDetailDialogHome({
             commentElement.style.backgroundColor = '';
             commentElement.style.borderRadius = '';
             commentElement.style.padding = '';
-          }, 2000);
+          }, 3000);
         }
       }, 300);
     }

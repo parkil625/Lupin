@@ -223,4 +223,46 @@ class PrescriptionServiceTest {
         assertThat(result.getDoctor()).isEqualTo(doctor);
         assertThat(result.getPatient()).isEqualTo(patient);
     }
+
+    @Test
+    @DisplayName("처방전 발행 시 예약 ID와 연결")
+    void shouldLinkPrescriptionWithAppointmentWhenIssued() {
+        // given
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        String diagnosis = "감기";
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Prescription savedPrescription = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis(diagnosis)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(appointment));
+        given(userRepository.findById(doctorId))
+                .willReturn(Optional.of(doctor));
+        given(userRepository.findById(patient.getId()))
+                .willReturn(Optional.of(patient));
+        given(prescriptionRepository.save(any(Prescription.class)))
+                .willReturn(savedPrescription);
+
+        // when
+        Prescription result = prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis);
+
+        // then
+        assertThat(result.getAppointment()).isNotNull();
+        assertThat(result.getAppointment().getId()).isEqualTo(appointmentId);
+    }
 }

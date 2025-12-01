@@ -77,6 +77,8 @@ public class PrescriptionService {
                 .date(LocalDate.now())
                 .build();
 
+        appointment.complete();
+
         return prescriptionRepository.save(prescription);
     }
 }

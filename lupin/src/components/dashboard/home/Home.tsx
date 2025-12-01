@@ -255,64 +255,53 @@ export default function Home({
 
           {/* Posts Grid */}
           <div className="grid grid-cols-5">
-            {isLoading ? (
-              // 스켈레톤 로딩
-              Array.from({ length: 10 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="aspect-[3/4] animate-pulse"
-                  style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }}
-                />
-              ))
-            ) : (
-              myFeeds.map((feed) => (
-                <div
-                  key={feed.id}
-                  className="cursor-pointer group aspect-[3/4]"
-                  onClick={() => {
-                    setSelectedFeed(feed);
-                    setFeedImageIndex(feed.id, 0);
-                    setShowFeedDetailInHome(true);
-                  }}
-                >
-                  <Card className="h-full overflow-hidden rounded-none bg-white border-0 hover:opacity-90 transition-all relative">
-                    <div className="w-full h-full bg-white">
-                      {feed.images && feed.images.length > 0 ? (
-                        <img
-                          src={feed.images[0]}
-                          alt={feed.activity}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                          <div className="text-center p-4">
-                            <Sparkles className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                            <p className="text-sm font-bold text-gray-600">
-                              {feed.activity}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                      <div className="text-center text-white space-y-2">
-                        <div className="flex items-center justify-center gap-4">
-                          <span className="flex items-center gap-1 font-bold text-base">
-                            <Coins className="w-5 h-5" />
-                            +{feed.points}
-                          </span>
-                          <span className="flex items-center gap-1 font-bold text-base">
-                            <MessageCircle className="w-5 h-5" />
-                            {feed.comments}
-                          </span>
+            {myFeeds.map((feed) => (
+              <div
+                key={feed.id}
+                className="cursor-pointer group aspect-[3/4]"
+                onClick={() => {
+                  setSelectedFeed(feed);
+                  setFeedImageIndex(feed.id, 0);
+                  setShowFeedDetailInHome(true);
+                }}
+              >
+                <Card className="h-full overflow-hidden rounded-none bg-white border-0 hover:opacity-90 transition-all relative">
+                  <div className="w-full h-full bg-white">
+                    {feed.images && feed.images.length > 0 ? (
+                      <img
+                        src={feed.images[0]}
+                        alt={feed.activity}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                        <div className="text-center p-4">
+                          <Sparkles className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                          <p className="text-sm font-bold text-gray-600">
+                            {feed.activity}
+                          </p>
                         </div>
                       </div>
+                    )}
+                  </div>
+
+                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                    <div className="text-center text-white space-y-2">
+                      <div className="flex items-center justify-center gap-4">
+                        <span className="flex items-center gap-1 font-bold text-base">
+                          <Coins className="w-5 h-5" />
+                          +{feed.points}
+                        </span>
+                        <span className="flex items-center gap-1 font-bold text-base">
+                          <MessageCircle className="w-5 h-5" />
+                          {feed.comments}
+                        </span>
+                      </div>
                     </div>
-                  </Card>
-                </div>
-              ))
-            )}
+                  </div>
+                </Card>
+              </div>
+            ))}
           </div>
         </div>
       </div>

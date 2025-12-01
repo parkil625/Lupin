@@ -31,6 +31,10 @@ public class Prescription {
     @JoinColumn(name = "doctor_id", nullable = false)
     private User doctor;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "appointment_id")
+    private Appointment appointment;
+
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PrescriptionMed> medicines = new ArrayList<>();

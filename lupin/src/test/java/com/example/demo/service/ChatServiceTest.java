@@ -287,4 +287,39 @@ class ChatServiceTest {
         assertThat(sortedRoomIds.get(1)).isEqualTo("1:21");  // 5분 전
         assertThat(sortedRoomIds.get(2)).isEqualTo("3:21");  // 10분 전
     }
+
+    @Test
+    @DisplayName("특정 채팅방의 읽지 않은 메시지 개수")
+    void getUnreadMessageCount() {
+        // Given
+        String roomId = "1:21";
+        Long userId = 21L;  // doctor ID
+
+        ChatMessage unreadMessage1 = ChatMessage.builder()
+                .id(1L)
+                .roomId(roomId)
+                .sender(patient)
+                .content("안읽은 메시지1")
+                .isRead(false)
+                .build();
+
+        ChatMessage unreadMessage2 = ChatMessage.builder()
+                .id(2L)
+                .roomId(roomId)
+                .sender(patient)
+                .content("안읽은 메시지2")
+                .isRead(false)
+                .build();
+
+        List<ChatMessage> unreadMessages = Arrays.asList(unreadMessage1, unreadMessage2);
+        given(chatRepository.findUnreadMessages(roomId, userId))
+                .willReturn(unreadMessages);
+
+        // When
+        int count = chatService.getUnreadMessageCount(roomId, userId);
+
+        // Then
+        assertThat(count).isEqualTo(2);
+        verify(chatRepository, times(1)).findUnreadMessages(roomId, userId);
+    }
 }

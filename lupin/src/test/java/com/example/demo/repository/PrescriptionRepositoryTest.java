@@ -165,4 +165,47 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(prescriptions.get(1).getDate()).isEqualTo(LocalDate.of(2025, 11, 1));
         assertThat(prescriptions.get(2).getDate()).isEqualTo(LocalDate.of(2025, 10, 1));
     }
+
+    @Test
+    @DisplayName("의사 ID로 처방전 목록 조회 (최신순)")
+    void shouldFindByDoctorIdOrderByDateDesc() {
+        // given
+        User doctor = createAndSaveUser("doctor5", "Dr. Choi");
+        User patient1 = createAndSaveUser("patient5", "Patient Song");
+        User patient2 = createAndSaveUser("patient6", "Patient Kang");
+
+        Prescription prescription1 = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient1)
+                .date(LocalDate.of(2025, 11, 15))
+                .diagnosis("독감")
+                .build();
+
+        Prescription prescription2 = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient2)
+                .date(LocalDate.of(2025, 12, 5))
+                .diagnosis("알레르기")
+                .build();
+
+        Prescription prescription3 = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient1)
+                .date(LocalDate.of(2025, 10, 20))
+                .diagnosis("위염")
+                .build();
+
+        prescriptionRepository.save(prescription1);
+        prescriptionRepository.save(prescription2);
+        prescriptionRepository.save(prescription3);
+
+        // when
+        List<Prescription> prescriptions = prescriptionRepository.findByDoctorIdOrderByDateDesc(doctor.getId());
+
+        // then
+        assertThat(prescriptions).hasSize(3);
+        assertThat(prescriptions.get(0).getDate()).isEqualTo(LocalDate.of(2025, 12, 5));
+        assertThat(prescriptions.get(1).getDate()).isEqualTo(LocalDate.of(2025, 11, 15));
+        assertThat(prescriptions.get(2).getDate()).isEqualTo(LocalDate.of(2025, 10, 20));
+    }
 }

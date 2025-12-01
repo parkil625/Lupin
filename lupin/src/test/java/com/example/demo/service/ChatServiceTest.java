@@ -172,4 +172,29 @@ class ChatServiceTest {
         // Then
         assertThat(generatedRoomId).isEqualTo("1:21");
     }
+
+    @Test
+    @DisplayName("의사 ID로 모든 채팅방 ID 조회")
+    void getAllChatRoomsByDoctorId() {
+        // Given
+        Long doctorId = 21L;
+        ChatMessage message3 = ChatMessage.builder()
+                .id(3L)
+                .roomId("2:21")  // patient 2와 doctor 21
+                .sender(patient)
+                .content("두 번째 채팅방 메시지")
+                .build();
+
+        List<ChatMessage> allMessages = Arrays.asList(message1, message2, message3);
+        given(chatRepository.findAll())
+                .willReturn(allMessages);
+
+        // When
+        List<String> roomIds = chatService.getAllChatRoomsByDoctorId(doctorId);
+
+        // Then
+        assertThat(roomIds).hasSize(2);
+        assertThat(roomIds).containsExactlyInAnyOrder("1:21", "2:21");
+        verify(chatRepository, times(1)).findAll();
+    }
 }

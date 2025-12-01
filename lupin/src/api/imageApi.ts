@@ -3,7 +3,7 @@ import apiClient from './client';
 export const imageApi = {
   uploadImage: async (file: File) => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file);
     const response = await apiClient.post('/images/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });

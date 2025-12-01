@@ -1,53 +1,54 @@
 /**
  * 404 Not Found 페이지
+ * 페이지를 찾을 수 없을 때 표시
  */
 
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, ArrowLeft, Search } from "lucide-react";
+import { Home } from "lucide-react";
 
 export default function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full text-center">
-        {/* 404 숫자 */}
-        <div className="relative mb-8">
-          <h1 className="text-[150px] font-black text-gray-200 leading-none select-none">
-            404
-          </h1>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Search className="w-20 h-20 text-[#C93831] opacity-80" />
+    <div className="min-h-screen bg-gradient-to-b from-amber-100 via-orange-50 to-amber-200 flex items-center justify-center p-4">
+      <div className="max-w-lg w-full text-center">
+        {/* 루팡이 이미지 - 가장자리 페이드 효과 */}
+        <div className="mb-6 flex justify-center">
+          <div
+            className="relative w-full max-w-md"
+            style={{
+              maskImage: "radial-gradient(ellipse 70% 70% at center, black 40%, transparent 70%)",
+              WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, black 40%, transparent 70%)",
+            }}
+          >
+            <img
+              src="/error-404.png"
+              alt="404 - 루팡이가 페이지를 찾고 있어요"
+              className="w-full"
+            />
           </div>
         </div>
 
         {/* 메시지 */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          페이지를 찾을 수 없습니다
-        </h2>
-        <p className="text-gray-600 mb-8">
-          요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.
-          <br />
-          URL을 다시 확인해주세요.
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-3">
+          어라? 페이지가 운동하러 갔나 봐요!
+        </h1>
+        <p className="text-gray-600 mb-2">
+          루팡이 열심히 찾아봤지만, 요청하신 페이지는 이미 사라지고 없네요.
+        </p>
+        <p className="text-sm text-gray-500 mb-8">
+          혹시 주소를 잘못 입력하셨거나, 페이지가 이사를 갔을 수도 있어요.
         </p>
 
-        {/* 버튼들 */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button
-            onClick={() => navigate(-1)}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            이전 페이지
-          </Button>
+        {/* 버튼 */}
+        <div className="flex justify-center">
           <Button
             onClick={() => navigate("/")}
-            className="bg-[#C93831] hover:bg-[#B02F28] text-white flex items-center gap-2"
+            className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#9A2720] text-white flex items-center gap-2 shadow-lg"
           >
             <Home className="w-4 h-4" />
-            홈으로 가기
+            홈으로 돌아가기
           </Button>
         </div>
       </div>

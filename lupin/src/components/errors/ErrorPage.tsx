@@ -1,64 +1,64 @@
 /**
- * 일반 에러 페이지 (500 등)
+ * 500 Internal Server Error 페이지
+ * 서버 오류 발생 시 표시
  */
 
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, RefreshCw, AlertTriangle } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface ErrorPageProps {
   title?: string;
   message?: string;
-  showRefresh?: boolean;
 }
 
 export default function ErrorPage({
-  title = "오류가 발생했습니다",
-  message = "일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
-  showRefresh = true,
+  title = "서버가 오버트레이닝으로 퍼졌어요!",
+  message = "루팡이 너무 열정적으로 데이터를 옮기다가 서버에 과부하가 걸린 것 같습니다.",
 }: ErrorPageProps) {
-  const navigate = useNavigate();
 
   const handleRefresh = () => {
     window.location.reload();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full text-center">
-        {/* 에러 아이콘 */}
-        <div className="mb-8 flex justify-center">
-          <div className="w-24 h-24 rounded-full bg-red-100 flex items-center justify-center">
-            <AlertTriangle className="w-12 h-12 text-[#C93831]" />
+    <div className="min-h-screen bg-gradient-to-b from-slate-200 via-slate-100 to-slate-300 flex items-center justify-center p-4">
+      <div className="max-w-lg w-full text-center">
+        {/* 루팡이 이미지 - 가장자리 페이드 효과 */}
+        <div className="mb-6 flex justify-center">
+          <div
+            className="relative w-full max-w-md"
+            style={{
+              maskImage: "radial-gradient(ellipse 70% 70% at center, black 40%, transparent 70%)",
+              WebkitMaskImage: "radial-gradient(ellipse 70% 70% at center, black 40%, transparent 70%)",
+            }}
+          >
+            <img
+              src="/error-500.png"
+              alt="500 - 루팡이가 서버를 고치고 있어요"
+              className="w-full"
+            />
           </div>
         </div>
 
         {/* 메시지 */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-3">
           {title}
-        </h2>
-        <p className="text-gray-600 mb-8">
+        </h1>
+        <p className="text-gray-600 mb-2">
           {message}
         </p>
+        <p className="text-sm text-gray-500 mb-8">
+          잠시만 기다려주시면 루팡이 금방 고쳐놓을게요! (아마도요...)
+        </p>
 
-        {/* 버튼들 */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          {showRefresh && (
-            <Button
-              onClick={handleRefresh}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              새로고침
-            </Button>
-          )}
+        {/* 버튼 */}
+        <div className="flex justify-center">
           <Button
-            onClick={() => navigate("/")}
-            className="bg-[#C93831] hover:bg-[#B02F28] text-white flex items-center gap-2"
+            onClick={handleRefresh}
+            className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#9A2720] text-white flex items-center gap-2 shadow-lg"
           >
-            <Home className="w-4 h-4" />
-            홈으로 가기
+            <RefreshCw className="w-4 h-4" />
+            새로고침
           </Button>
         </div>
       </div>

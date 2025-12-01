@@ -344,8 +344,8 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("시작 사진 시간이 끝 사진 시간보다 늦으면 예외가 발생한다")
-    void createFeedWithInvalidPhotoTimeThrowsExceptionTest() {
+    @DisplayName("시작 사진 시간이 끝 사진 시간보다 늦으면 점수 0으로 피드가 생성된다")
+    void createFeedWithInvalidPhotoTimeCreatesWithZeroScoreTest() {
         // given
         String activity = "달리기";
         String content = "오늘 운동했습니다";
@@ -359,15 +359,27 @@ class FeedServiceTest {
         given(imageMetadataService.extractPhotoDateTime("end.jpg"))
                 .willReturn(Optional.of(endTime));
 
-        // when & then
-        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_INVALID_PHOTO_TIME);
+        Feed savedFeed = Feed.builder()
+                .id(1L)
+                .writer(writer)
+                .activity(activity)
+                .content(content)
+                .points(0L)
+                .calories(0)
+                .build();
+        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
+
+        // when
+        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
+
+        // then
+        assertThat(result.getPoints()).isEqualTo(0L);
+        assertThat(result.getCalories()).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("사진에 EXIF 시간 정보가 없으면 예외가 발생한다")
-    void createFeedWithNoExifTimeThrowsExceptionTest() {
+    @DisplayName("사진에 EXIF 시간 정보가 없으면 점수 0으로 피드가 생성된다")
+    void createFeedWithNoExifTimeCreatesWithZeroScoreTest() {
         // given
         String activity = "달리기";
         String content = "오늘 운동했습니다";
@@ -375,16 +387,30 @@ class FeedServiceTest {
 
         given(imageMetadataService.extractPhotoDateTime("start.jpg"))
                 .willReturn(Optional.empty());
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.empty());
 
-        // when & then
-        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_PHOTO_TIME_NOT_FOUND);
+        Feed savedFeed = Feed.builder()
+                .id(1L)
+                .writer(writer)
+                .activity(activity)
+                .content(content)
+                .points(0L)
+                .calories(0)
+                .build();
+        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
+
+        // when
+        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
+
+        // then
+        assertThat(result.getPoints()).isEqualTo(0L);
+        assertThat(result.getCalories()).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("운동 시간이 24시간을 초과하면 예외가 발생한다")
-    void createFeedWithTooLongWorkoutThrowsExceptionTest() {
+    @DisplayName("운동 시간이 24시간을 초과하면 점수 0으로 피드가 생성된다")
+    void createFeedWithTooLongWorkoutCreatesWithZeroScoreTest() {
         // given
         String activity = "달리기";
         String content = "오늘 운동했습니다";
@@ -398,15 +424,27 @@ class FeedServiceTest {
         given(imageMetadataService.extractPhotoDateTime("end.jpg"))
                 .willReturn(Optional.of(endTime));
 
-        // when & then
-        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_WORKOUT_TOO_LONG);
+        Feed savedFeed = Feed.builder()
+                .id(1L)
+                .writer(writer)
+                .activity(activity)
+                .content(content)
+                .points(0L)
+                .calories(0)
+                .build();
+        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
+
+        // when
+        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
+
+        // then
+        assertThat(result.getPoints()).isEqualTo(0L);
+        assertThat(result.getCalories()).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("과거 사진으로 피드를 작성하면 예외가 발생한다")
-    void createFeedWithOldPhotoThrowsExceptionTest() {
+    @DisplayName("과거 사진으로 피드를 작성하면 점수 0으로 피드가 생성된다")
+    void createFeedWithOldPhotoCreatesWithZeroScoreTest() {
         // given
         String activity = "달리기";
         String content = "오늘 운동했습니다";
@@ -420,10 +458,22 @@ class FeedServiceTest {
         given(imageMetadataService.extractPhotoDateTime("end.jpg"))
                 .willReturn(Optional.of(endTime));
 
-        // when & then
-        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_PHOTO_NOT_TODAY);
+        Feed savedFeed = Feed.builder()
+                .id(1L)
+                .writer(writer)
+                .activity(activity)
+                .content(content)
+                .points(0L)
+                .calories(0)
+                .build();
+        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
+
+        // when
+        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
+
+        // then
+        assertThat(result.getPoints()).isEqualTo(0L);
+        assertThat(result.getCalories()).isEqualTo(0);
     }
 
     @Test

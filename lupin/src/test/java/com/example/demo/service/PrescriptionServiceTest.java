@@ -135,4 +135,39 @@ class PrescriptionServiceTest {
         assertThat(result.get().getDoctor()).isEqualTo(doctor);
         assertThat(result.get().getPatient()).isEqualTo(patient);
     }
+
+    @Test
+    @DisplayName("채팅방에서 발행된 처방전 목록 조회 (appointment 형식)")
+    void findPrescriptionsByRoomId_AppointmentFormat() {
+        // given
+        String roomId = "appointment_1";  // appointment_{appointmentId}
+        Long appointmentId = 1L;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        Prescription prescription = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("감기")
+                .build();
+
+        given(prescriptionRepository.findByAppointmentId(appointmentId))
+                .willReturn(Optional.of(prescription));
+
+        // when
+        Optional<Prescription> result = prescriptionService.findByRoomId(roomId);
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().getAppointment().getId()).isEqualTo(appointmentId);
+    }
 }

@@ -373,4 +373,45 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("혈압약");
         assertThat(found.getMedicines().get(1).getMedicineName()).isEqualTo("이뇨제");
     }
+
+    @Test
+    @DisplayName("처방전 약물 삭제")
+    void shouldRemoveMedicineFromPrescription() {
+        // given
+        User doctor = createAndSaveUser("doctor10", "Dr. Kang");
+        User patient = createAndSaveUser("patient11", "Patient Hwang");
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("당뇨")
+                .build();
+
+        PrescriptionMed med1 = PrescriptionMed.builder()
+                .medicineName("메트포르민")
+                .dosage("500mg")
+                .frequency("하루 2회")
+                .build();
+
+        PrescriptionMed med2 = PrescriptionMed.builder()
+                .medicineName("인슐린")
+                .dosage("10unit")
+                .frequency("하루 1회")
+                .build();
+
+        prescription.addMedicine(med1);
+        prescription.addMedicine(med2);
+        Prescription saved = prescriptionRepository.save(prescription);
+
+        // when
+        saved.removeMedicine(med1);
+        prescriptionRepository.save(saved);
+
+        // then
+        Prescription found = prescriptionRepository.findById(saved.getId())
+                .orElseThrow(() -> new AssertionError("처방전을 찾을 수 없습니다"));
+        assertThat(found.getMedicines()).hasSize(1);
+        assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("인슐린");
+    }
 }

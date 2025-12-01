@@ -10,6 +10,8 @@ import com.example.demo.repository.FeedImageRepository;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.ImageMetadataService;
+import com.example.demo.service.WorkoutScoreService;
 
 import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,11 +57,37 @@ class FeedIntegrationTest {
     @Autowired
     private FeedImageRepository feedImageRepository;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private ImageMetadataService imageMetadataService;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private WorkoutScoreService workoutScoreService;
+
     private User testUser;
     private User otherUser;
 
     @BeforeEach
     void setUp() {
+        // Mock 설정: EXIF 시간 반환
+        java.time.LocalDateTime startTime = java.time.LocalDateTime.now().minusHours(1);
+        java.time.LocalDateTime endTime = java.time.LocalDateTime.now();
+
+        org.mockito.Mockito.when(imageMetadataService.extractPhotoDateTime(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(java.util.Optional.of(startTime))
+                .thenReturn(java.util.Optional.of(endTime));
+
+        org.mockito.Mockito.when(workoutScoreService.calculateScore(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
+                .thenReturn(10);
+
+        org.mockito.Mockito.when(workoutScoreService.calculateCalories(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
+                .thenReturn(100);
+
         testUser = userRepository.save(User.builder()
                 .userId("testuser")
                 .password("password")
@@ -79,10 +107,11 @@ class FeedIntegrationTest {
     @DisplayName("피드 생성 → 조회 통합 테스트")
     @WithMockUser(username = "testuser")
     void createAndGetFeed() throws Exception {
-        // 1. 피드 생성
+        // 1. 피드 생성 (이미지 필수)
         FeedRequest request = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("오늘 5km 달리기 완료!")
+                .images(List.of("start.jpg", "end.jpg"))
                 .build();
 
         String createResponse = mockMvc.perform(post("/api/feeds")

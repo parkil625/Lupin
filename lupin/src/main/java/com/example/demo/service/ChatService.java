@@ -1,6 +1,8 @@
 package com.example.demo.service;
+import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.ChatMessage;
 import com.example.demo.domain.entity.User;
+import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.ChatRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class ChatService {
 
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
+    private final AppointmentRepository appointmentRepository;
 
     @Transactional
     public ChatMessage saveMessage(String roomId, Long senderId, String content) {
@@ -100,6 +103,12 @@ public class ChatService {
         Long patientId = Long.parseLong(parts[0]);
         return userRepository.findById(patientId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 환자입니다."));
+    }
+
+    public List<Appointment> getAppointmentsFromRoomId(String roomId) {
+        String[] parts = roomId.split(":");
+        Long patientId = Long.parseLong(parts[0]);
+        return appointmentRepository.findByPatientIdOrderByDateDesc(patientId);
     }
 
 }

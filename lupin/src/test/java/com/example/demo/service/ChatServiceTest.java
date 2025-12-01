@@ -1,7 +1,10 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.ChatMessage;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.AppointmentStatus;
+import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.ChatRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +36,9 @@ class ChatServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AppointmentRepository appointmentRepository;
 
     @InjectMocks
     private ChatService chatService;
@@ -433,5 +439,44 @@ class ChatServiceTest {
         assertThat(result.getUserId()).isEqualTo("patient01");
         assertThat(result.getName()).isEqualTo("환자1");
         verify(userRepository, times(1)).findById(patientId);
+    }
+
+    @Test
+    @DisplayName("채팅방 ID로 관련 예약 정보 조회")
+    void getAppointmentsFromRoomId() {
+        // Given
+        String roomId = "1:21";  // patientId:doctorId
+        Long patientId = 1L;
+        Long doctorId = 21L;
+
+        Appointment appointment1 = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Appointment appointment2 = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 15, 10, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        List<Appointment> appointments = Arrays.asList(appointment1, appointment2);
+
+        given(appointmentRepository.findByPatientIdOrderByDateDesc(patientId))
+                .willReturn(appointments);
+
+        // When
+        List<Appointment> result = chatService.getAppointmentsFromRoomId(roomId);
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+        assertThat(result.get(1).getId()).isEqualTo(2L);
+        verify(appointmentRepository, times(1)).findByPatientIdOrderByDateDesc(patientId);
     }
 }

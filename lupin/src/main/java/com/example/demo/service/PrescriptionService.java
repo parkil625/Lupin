@@ -76,6 +76,11 @@ public class PrescriptionService {
             throw new IllegalArgumentException("해당 예약의 담당 의사만 처방전을 발행할 수 있습니다.");
         }
 
+        // 환자 정보 검증
+        if (!appointment.getPatient().getId().equals(patientId)) {
+            throw new IllegalArgumentException("해당 예약의 환자 정보가 일치하지 않습니다.");
+        }
+
         // 중복 처방전 발행 방지
         Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(appointmentId);
         if (existingPrescription.isPresent()) {

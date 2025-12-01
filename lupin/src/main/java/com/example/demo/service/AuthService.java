@@ -176,6 +176,22 @@ public class AuthService {
         }
     }
 
+    /**
+     * OAuth 연동 해제
+     */
+    public void unlinkOAuth(User user, String provider) {
+        // 현재 연동된 provider와 일치하는지 확인
+        if (user.getProvider() == null || !user.getProvider().equalsIgnoreCase(provider)) {
+            throw new BusinessException(ErrorCode.OAUTH_NOT_LINKED);
+        }
+
+        // 연동 정보 제거
+        user.setProvider(null);
+        user.setProviderId(null);
+        user.setProviderEmail(null);
+        userRepository.save(user);
+    }
+
     // Private Helper Method
     private LoginDto generateTokens(User user) {
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getRole().name());

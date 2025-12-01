@@ -170,11 +170,14 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
         setIsLoadingOAuth(true);
         try {
             await oauthApi.unlinkOAuth(provider);
-            setOauthConnections(prev => prev.filter(c => c.provider !== provider));
+            // 연동 목록 다시 로드하여 실제 상태 반영
+            const connections = await oauthApi.getConnections();
+            setOauthConnections(connections);
             toast.success(`${provider} 계정 연동이 해제되었습니다.`);
-        } catch (error) {
+        } catch (error: any) {
             console.error("OAuth 연동 해제 실패:", error);
-            toast.error("연동 해제에 실패했습니다.");
+            const message = error.response?.data?.message || "연동 해제에 실패했습니다.";
+            toast.error(message);
         } finally {
             setIsLoadingOAuth(false);
         }

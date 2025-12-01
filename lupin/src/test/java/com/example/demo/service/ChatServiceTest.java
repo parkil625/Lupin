@@ -544,4 +544,33 @@ class ChatServiceTest {
         assertThat(exists).isTrue();
         verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(expectedRoomId);
     }
+
+    @Test
+    @DisplayName("채팅방 ID로 예약 정보 조회 (appointment_X 형식)")
+    void getAppointmentFromAppointmentRoomId() {
+        // Given
+        String roomId = "appointment_1";  // appointment_{appointmentId}
+        Long appointmentId = 1L;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(java.util.Optional.of(appointment));
+
+        // When
+        Appointment result = chatService.getAppointmentFromRoomId(roomId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(appointmentId);
+        assertThat(result.getPatient()).isEqualTo(patient);
+        assertThat(result.getDoctor()).isEqualTo(doctor);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
 }

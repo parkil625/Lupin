@@ -106,14 +106,6 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // 기타 에러 처리
-    if (error.response) {
-      console.error('API Error:', error.response.status, error.response.data);
-    } else if (error.request) {
-      console.error('No response received:', error.request);
-    } else {
-      console.error('Error setting up request:', error.message);
-    }
     return Promise.reject(error);
   }
 );

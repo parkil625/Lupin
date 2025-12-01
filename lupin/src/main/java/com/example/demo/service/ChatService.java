@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -50,6 +51,14 @@ public class ChatService {
     @Transactional
     public void markAsRead(String roomId, Long userId) {
         chatRepository.markAllAsReadInRoom(roomId, userId);
+    }
+
+    public List<String> getAllChatRoomsByDoctorId(Long doctorId) {
+        return chatRepository.findAll().stream()
+                .map(ChatMessage::getRoomId)
+                .filter(roomId -> roomId.endsWith(":" + doctorId))
+                .distinct()
+                .collect(Collectors.toList());
     }
 
 }

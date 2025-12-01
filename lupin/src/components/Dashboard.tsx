@@ -436,8 +436,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       setAllFeeds(allFeeds.filter((feed) => feed.id !== feedId));
       setRefreshTrigger((prev) => prev + 1); // canPostToday 재확인 + 데이터 재로드
       toast.success("피드가 삭제되고 포인트가 회수되었습니다!");
-    } catch (error) {
-      console.error("피드 삭제 실패:", error);
+    } catch {
       toast.error("피드 삭제에 실패했습니다.");
     }
   };
@@ -463,7 +462,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       setRefreshTrigger((prev) => prev + 1);
       toast.success("피드가 작성되었습니다!");
     } catch (error: any) {
-      console.error("피드 생성 실패:", error);
       const message = error.response?.data?.message || "피드 작성에 실패했습니다.";
       toast.error(message);
     }

@@ -60,4 +60,12 @@ public class AppointmentService {
         // 엔티티 내부의 비즈니스 로직 호출 (상태 변경 검증 포함)
         appointment.cancel();
     }
+
+    @Transactional
+    public void startConsultation(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예약입니다."));
+
+        appointment.startConsultation();
+    }
 }

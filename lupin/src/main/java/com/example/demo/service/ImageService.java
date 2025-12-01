@@ -45,8 +45,26 @@ public class ImageService {
         return urls;
     }
 
-    public void deleteImage(String imageId) {
-        // imageId는 S3 키 또는 파일명으로 사용
-        s3Template.deleteObject(bucket, imageId);
+    public void deleteImage(String imageIdOrUrl) {
+        // URL인 경우 S3 키만 추출
+        String s3Key = extractS3Key(imageIdOrUrl);
+        s3Template.deleteObject(bucket, s3Key);
+    }
+
+    /**
+     * URL 또는 S3 키에서 S3 키만 추출
+     */
+    private String extractS3Key(String s3KeyOrUrl) {
+        if (s3KeyOrUrl == null || s3KeyOrUrl.isEmpty()) {
+            return s3KeyOrUrl;
+        }
+        if (!s3KeyOrUrl.startsWith("http")) {
+            return s3KeyOrUrl;
+        }
+        int lastSlashIndex = s3KeyOrUrl.lastIndexOf('/');
+        if (lastSlashIndex >= 0 && lastSlashIndex < s3KeyOrUrl.length() - 1) {
+            return s3KeyOrUrl.substring(lastSlashIndex + 1);
+        }
+        return s3KeyOrUrl;
     }
 }

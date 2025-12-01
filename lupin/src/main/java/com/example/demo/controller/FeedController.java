@@ -36,7 +36,7 @@ public class FeedController extends BaseController {
             @Valid @RequestBody FeedRequest request
     ) {
         User user = getCurrentUser(userDetails);
-        Feed feed = feedService.createFeed(user, request.getActivity(), request.getContent(), request.getImageUrls());
+        Feed feed = feedService.createFeed(user, request.getActivity(), request.getContent(), request.getImages());
         return ResponseEntity.ok(toFeedResponse(feed));
     }
 

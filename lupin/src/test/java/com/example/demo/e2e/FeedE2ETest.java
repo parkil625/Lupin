@@ -84,7 +84,7 @@ class FeedE2ETest {
         FeedRequest feedRequest = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("오늘 5km 달리기 완료!")
-                .imageUrls(List.of("run1.jpg", "run2.jpg"))
+                .images(List.of("run1.jpg", "run2.jpg"))
                 .build();
 
         mockMvc.perform(post("/api/feeds")

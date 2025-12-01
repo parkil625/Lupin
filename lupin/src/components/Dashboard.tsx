@@ -454,8 +454,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
       // API 호출로 피드 생성
       await feedApi.createFeed({
-        activityType: workoutType,
-        duration: 30,
+        activity: workoutType,
         content: content,
         images,
       });
@@ -463,9 +462,10 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       // 데이터 재로드 및 canPostToday 재확인
       setRefreshTrigger((prev) => prev + 1);
       toast.success("피드가 작성되었습니다!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("피드 생성 실패:", error);
-      toast.error("피드 작성에 실패했습니다.");
+      const message = error.response?.data?.message || "피드 작성에 실패했습니다.";
+      toast.error(message);
     }
   };
 

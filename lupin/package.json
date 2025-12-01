@@ -84,8 +84,10 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "eslint-plugin-storybook": "^10.0.8",
     "jsdom": "^27.2.0",
+    "piexifjs": "^1.0.6",
     "playwright": "^1.56.1",
     "postcss": "^8.5.6",
+    "sharp": "^0.34.5",
     "storybook": "^10.0.8",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
@@ -99,6 +101,7 @@
     "test:watch": "vitest --project=unit --watch",
     "test:storybook": "vitest --project=storybook",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "create-test-images": "node scripts/create-test-images.js"
   }
 }

@@ -1,10 +1,14 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.Feed;
+import com.example.demo.domain.entity.FeedImage;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.ImageType;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.FeedImageRepository;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -13,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,9 +25,12 @@ import java.time.LocalDateTime;
 public class FeedService {
 
     private static final int POINT_RECOVERY_DAYS = 7;
+    private static final List<String> FEED_NOTIFICATION_TYPES = List.of("FEED_LIKE", "COMMENT");
 
     private final FeedRepository feedRepository;
+    private final FeedImageRepository feedImageRepository;
     private final PointService pointService;
+    private final NotificationRepository notificationRepository;
 
     public Slice<Feed> getHomeFeeds(User user, int page, int size) {
         return feedRepository.findByWriterNotOrderByIdDesc(user, PageRequest.of(page, size));
@@ -34,13 +42,30 @@ public class FeedService {
 
     @Transactional
     public Feed createFeed(User writer, String activity, String content) {
+        return createFeed(writer, activity, content, List.of());
+    }
+
+    @Transactional
+    public Feed createFeed(User writer, String activity, String content, List<String> s3Keys) {
         Feed feed = Feed.builder()
                 .writer(writer)
                 .activity(activity)
                 .content(content)
                 .build();
 
-        return feedRepository.save(feed);
+        Feed savedFeed = feedRepository.save(feed);
+
+        for (int i = 0; i < s3Keys.size(); i++) {
+            FeedImage feedImage = FeedImage.builder()
+                    .feed(savedFeed)
+                    .s3Key(s3Keys.get(i))
+                    .imgType(ImageType.OTHER)
+                    .sortOrder(i)
+                    .build();
+            feedImageRepository.save(feedImage);
+        }
+
+        return savedFeed;
     }
 
     @Transactional
@@ -48,6 +73,7 @@ public class FeedService {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
+        validateOwnership(feed, user);
         feed.update(content, activity);
         return feed;
     }
@@ -57,8 +83,17 @@ public class FeedService {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
+        validateOwnership(feed, user);
         recoverPointsIfWithinPeriod(feed);
+        notificationRepository.deleteByRefIdAndTypeIn(String.valueOf(feedId), FEED_NOTIFICATION_TYPES);
+        feedImageRepository.deleteByFeed(feed);
         feedRepository.delete(feed);
+    }
+
+    private void validateOwnership(Feed feed, User user) {
+        if (!feed.getWriter().equals(user)) {
+            throw new BusinessException(ErrorCode.FEED_NOT_OWNER);
+        }
     }
 
     private void recoverPointsIfWithinPeriod(Feed feed) {

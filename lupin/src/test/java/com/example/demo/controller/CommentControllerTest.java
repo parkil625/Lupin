@@ -138,6 +138,21 @@ class CommentControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
+    @DisplayName("GET /api/comments/{commentId} - 댓글 단건 조회 성공")
+    void getComment_Success() throws Exception {
+        // given
+        given(commentService.getComment(1L)).willReturn(testComment);
+
+        // when & then
+        mockMvc.perform(get("/api/comments/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.content").value("테스트 댓글"))
+                .andExpect(jsonPath("$.feedId").value(1L));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
     @DisplayName("GET /api/feeds/{feedId}/comments - 댓글 목록 조회 성공")
     void getComments_Success() throws Exception {
         // given

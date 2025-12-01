@@ -1,9 +1,7 @@
 import apiClient from './client';
 
-// 백엔드 NotificationResponse를 그대로 사용 (필드명 일치: id, type, title, content, isRead, refId, createdAt)
-
 export const notificationApi = {
-  getAllNotifications: async (_userId?: number) => {
+  getAllNotifications: async () => {
     try {
       const response = await apiClient.get('/notifications');
       return response.data || [];
@@ -12,7 +10,7 @@ export const notificationApi = {
     }
   },
 
-  markAsRead: async (notificationId: number, _userId?: number) => {
+  markAsRead: async (notificationId: number) => {
     try {
       const response = await apiClient.patch(`/notifications/${notificationId}/read`);
       return response.data;
@@ -21,7 +19,7 @@ export const notificationApi = {
     }
   },
 
-  markAllAsRead: async (_userId?: number) => {
+  markAllAsRead: async () => {
     try {
       const response = await apiClient.patch('/notifications/read-all');
       return response.data;

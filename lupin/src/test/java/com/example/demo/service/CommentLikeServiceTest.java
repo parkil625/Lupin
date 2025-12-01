@@ -9,7 +9,9 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
+import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +36,12 @@ class CommentLikeServiceTest {
 
     @Mock
     private CommentRepository commentRepository;
+
+    @Mock
+    private NotificationService notificationService;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @InjectMocks
     private CommentLikeService commentLikeService;
@@ -70,6 +78,7 @@ class CommentLikeServiceTest {
                 .feed(feed)
                 .content("댓글 내용")
                 .build();
+        ReflectionTestUtils.setField(comment, "id", 1L);
     }
 
     @Test
@@ -91,6 +100,27 @@ class CommentLikeServiceTest {
     }
 
     @Test
+    @DisplayName("댓글에 좋아요를 누르면 댓글 작성자에게 알림이 생성된다 (refId = commentLikeId)")
+    void likeCommentCreatesNotificationTest() {
+        // given
+        Long commentId = 1L;
+        Long commentLikeId = 100L;
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(commentLikeRepository.existsByUserAndComment(user, comment)).willReturn(false);
+        given(commentLikeRepository.save(any(CommentLike.class))).willAnswer(invocation -> {
+            CommentLike commentLike = invocation.getArgument(0);
+            ReflectionTestUtils.setField(commentLike, "id", commentLikeId);
+            return commentLike;
+        });
+
+        // when
+        commentLikeService.likeComment(user, commentId);
+
+        // then
+        verify(notificationService).createCommentLikeNotification(writer, user, commentLikeId);
+    }
+
+    @Test
     @DisplayName("이미 좋아요한 댓글에 다시 좋아요를 누르면 예외가 발생한다")
     void likeCommentAlreadyLikedTest() {
         // given
@@ -105,18 +135,26 @@ class CommentLikeServiceTest {
     }
 
     @Test
-    @DisplayName("댓글 좋아요를 취소한다")
+    @DisplayName("댓글 좋아요를 취소하면 관련 알림도 삭제된다")
     void unlikeCommentTest() {
         // given
         Long commentId = 1L;
+        Long commentLikeId = 100L;
+        CommentLike commentLike = CommentLike.builder()
+                .user(user)
+                .comment(comment)
+                .build();
+        ReflectionTestUtils.setField(commentLike, "id", commentLikeId);
+
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.existsByUserAndComment(user, comment)).willReturn(true);
+        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.of(commentLike));
 
         // when
         commentLikeService.unlikeComment(user, commentId);
 
         // then
-        verify(commentLikeRepository).deleteByUserAndComment(user, comment);
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentLikeId), "COMMENT_LIKE");
+        verify(commentLikeRepository).delete(commentLike);
     }
 
     @Test
@@ -125,7 +163,7 @@ class CommentLikeServiceTest {
         // given
         Long commentId = 1L;
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.existsByUserAndComment(user, comment)).willReturn(false);
+        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> commentLikeService.unlikeComment(user, commentId))

@@ -88,4 +88,11 @@ public class ChatService {
         return chatRepository.findUnreadMessages(roomId, userId).size();
     }
 
+    public int getTotalUnreadMessageCountForDoctor(Long doctorId) {
+        List<String> roomIds = getAllChatRoomsByDoctorId(doctorId);
+        return roomIds.stream()
+                .mapToInt(roomId -> getUnreadMessageCount(roomId, doctorId))
+                .sum();
+    }
+
 }

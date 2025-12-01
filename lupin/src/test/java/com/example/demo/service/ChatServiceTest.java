@@ -322,4 +322,51 @@ class ChatServiceTest {
         assertThat(count).isEqualTo(2);
         verify(chatRepository, times(1)).findUnreadMessages(roomId, userId);
     }
+
+    @Test
+    @DisplayName("의사의 모든 채팅방 읽지 않은 메시지 총합")
+    void getTotalUnreadMessageCountForDoctor() {
+        // Given
+        Long doctorId = 21L;
+
+        // Room 1:21 - 2개 안읽음
+        ChatMessage unread1 = ChatMessage.builder()
+                .id(1L)
+                .roomId("1:21")
+                .sender(patient)
+                .content("메시지1")
+                .isRead(false)
+                .build();
+
+        ChatMessage unread2 = ChatMessage.builder()
+                .id(2L)
+                .roomId("1:21")
+                .sender(patient)
+                .content("메시지2")
+                .isRead(false)
+                .build();
+
+        // Room 2:21 - 1개 안읽음
+        ChatMessage unread3 = ChatMessage.builder()
+                .id(3L)
+                .roomId("2:21")
+                .sender(patient)
+                .content("메시지3")
+                .isRead(false)
+                .build();
+
+        List<ChatMessage> allMessages = Arrays.asList(unread1, unread2, unread3);
+        given(chatRepository.findAll()).willReturn(allMessages);
+
+        given(chatRepository.findUnreadMessages("1:21", doctorId))
+                .willReturn(Arrays.asList(unread1, unread2));
+        given(chatRepository.findUnreadMessages("2:21", doctorId))
+                .willReturn(List.of(unread3));
+
+        // When
+        int totalCount = chatService.getTotalUnreadMessageCountForDoctor(doctorId);
+
+        // Then
+        assertThat(totalCount).isEqualTo(3);  // 2 + 1 = 3
+    }
 }

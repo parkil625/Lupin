@@ -76,8 +76,8 @@ public class OAuthController extends BaseController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String provider
     ) {
-        // 현재 User 엔티티는 단일 provider만 지원하므로
-        // 연동 해제는 지원하지 않음 (로그인 자체가 불가능해지므로)
+        User user = getCurrentUser(userDetails);
+        authService.unlinkOAuth(user, provider);
         return ResponseEntity.ok().build();
     }
 

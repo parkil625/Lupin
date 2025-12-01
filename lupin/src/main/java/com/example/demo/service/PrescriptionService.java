@@ -1,11 +1,16 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.Prescription;
+import com.example.demo.domain.entity.User;
+import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.PrescriptionRepository;
+import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Service
@@ -14,6 +19,8 @@ import java.util.Optional;
 public class PrescriptionService {
 
     private final PrescriptionRepository prescriptionRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public void updateDiagnosis(Long prescriptionId, Long doctorId, String newDiagnosis) {
@@ -49,5 +56,27 @@ public class PrescriptionService {
             return findByAppointmentId(appointmentId);
         }
         return Optional.empty();
+    }
+
+    @Transactional
+    public Prescription issuePrescription(Long appointmentId, Long doctorId, Long patientId, String diagnosis) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+
+        User doctor = userRepository.findById(doctorId)
+                .orElseThrow(() -> new IllegalArgumentException("의사를 찾을 수 없습니다."));
+
+        User patient = userRepository.findById(patientId)
+                .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .diagnosis(diagnosis)
+                .date(LocalDate.now())
+                .build();
+
+        return prescriptionRepository.save(prescription);
     }
 }

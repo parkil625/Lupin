@@ -130,4 +130,8 @@ public class ChatService {
         throw new IllegalArgumentException("유효하지 않은 채팅방 ID 형식입니다.");
     }
 
+    public String getRoomIdByAppointmentId(Long appointmentId) {
+        return "appointment_" + appointmentId;
+    }
+
 }

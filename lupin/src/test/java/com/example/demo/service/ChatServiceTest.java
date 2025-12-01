@@ -573,4 +573,17 @@ class ChatServiceTest {
         assertThat(result.getDoctor()).isEqualTo(doctor);
         verify(appointmentRepository, times(1)).findById(appointmentId);
     }
+
+    @Test
+    @DisplayName("예약 ID로 채팅방 조회")
+    void getRoomIdByAppointmentId() {
+        // Given
+        Long appointmentId = 1L;
+
+        // When
+        String roomId = chatService.getRoomIdByAppointmentId(appointmentId);
+
+        // Then
+        assertThat(roomId).isEqualTo("appointment_1");
+    }
 }

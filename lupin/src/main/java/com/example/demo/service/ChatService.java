@@ -61,4 +61,12 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
+    public ChatMessage getLatestMessageInRoom(String roomId) {
+        List<ChatMessage> messages = chatRepository.findByRoomIdOrderByTimeAsc(roomId);
+        if (messages.isEmpty()) {
+            return null;
+        }
+        return messages.get(messages.size() - 1);
+    }
+
 }

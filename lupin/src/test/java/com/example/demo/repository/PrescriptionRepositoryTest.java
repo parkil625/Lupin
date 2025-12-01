@@ -103,4 +103,23 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThatThrownBy(() -> prescriptionRepository.save(prescription))
                 .isInstanceOf(Exception.class);
     }
+
+    @Test
+    @DisplayName("환자 ID 없이 처방전 생성 시 예외 발생 테스트")
+    void shouldThrowExceptionWhenPatientIsNull() {
+        // given
+        User doctor = createAndSaveUser("doctor3", "Dr. Jung");
+        LocalDate prescribedDate = LocalDate.of(2025, 12, 1);
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(null)  // 환자 없이 생성
+                .date(prescribedDate)
+                .diagnosis("감기")
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> prescriptionRepository.save(prescription))
+                .isInstanceOf(Exception.class);
+    }
 }

@@ -369,4 +369,48 @@ class ChatServiceTest {
         // Then
         assertThat(totalCount).isEqualTo(3);  // 2 + 1 = 3
     }
+
+    @Test
+    @DisplayName("읽음 처리 후 카운트 감소")
+    void shouldDecreaseUnreadCountAfterMarkingAsRead() {
+        // Given
+        String roomId = "1:21";
+        Long userId = 21L;  // doctor ID
+
+        ChatMessage unread1 = ChatMessage.builder()
+                .id(1L)
+                .roomId(roomId)
+                .sender(patient)
+                .content("안읽은 메시지1")
+                .isRead(false)
+                .build();
+
+        ChatMessage unread2 = ChatMessage.builder()
+                .id(2L)
+                .roomId(roomId)
+                .sender(patient)
+                .content("안읽은 메시지2")
+                .isRead(false)
+                .build();
+
+        // 읽기 전: 2개
+        given(chatRepository.findUnreadMessages(roomId, userId))
+                .willReturn(Arrays.asList(unread1, unread2));
+
+        int countBefore = chatService.getUnreadMessageCount(roomId, userId);
+
+        // When: 읽음 처리
+        chatService.markAsRead(roomId, userId);
+
+        // 읽음 처리 후: 0개
+        given(chatRepository.findUnreadMessages(roomId, userId))
+                .willReturn(List.of());
+
+        int countAfter = chatService.getUnreadMessageCount(roomId, userId);
+
+        // Then
+        assertThat(countBefore).isEqualTo(2);
+        assertThat(countAfter).isEqualTo(0);
+        verify(chatRepository, times(1)).markAllAsReadInRoom(roomId, userId);
+    }
 }

@@ -134,4 +134,11 @@ public class ChatService {
         return "appointment_" + appointmentId;
     }
 
+    public List<String> getAllChatRoomsIncludingEmpty(Long doctorId) {
+        List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
+        return appointments.stream()
+                .map(appointment -> getRoomIdByAppointmentId(appointment.getId()))
+                .collect(Collectors.toList());
+    }
+
 }

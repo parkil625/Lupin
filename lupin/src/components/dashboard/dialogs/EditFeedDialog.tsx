@@ -28,19 +28,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckCircle, Clock, Flame, Trophy } from "lucide-react";
+// CheckCircle, Clock, Flame, Trophy 제거됨 - EXIF 검증은 백엔드에서 수행
 import { Feed } from "@/types/dashboard.types";
 import { toast } from "sonner";
 import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
-import {
-  extractImageMetadata,
-  validateWorkoutTimes,
-  calculateWorkoutMetrics,
-  type WorkoutCalculation
-} from "@/lib/imageMetadata";
+// EXIF 검증은 백엔드에서만 수행됨
 
 interface EditFeedDialogProps {
   feed: Feed | null;
@@ -61,9 +56,6 @@ export default function EditFeedDialog({
   const [workoutType, setWorkoutType] = useState<string>("");
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [endTime, setEndTime] = useState<Date | null>(null);
-  const [workoutMetrics, setWorkoutMetrics] = useState<WorkoutCalculation | null>(null);
   const initialDataRef = useRef<{
     startImage: string | null;
     endImage: string | null;
@@ -156,49 +148,20 @@ export default function EditFeedDialog({
     });
   };
 
-  // 시작 이미지 업로드 (메타데이터 추출 포함)
+  // 시작 이미지 업로드 (EXIF 검증은 백엔드에서 수행)
   const handleStartImageUpload = async (file: File) => {
-    const metadata = await extractImageMetadata(file);
-    setStartTime(metadata.dateTime);
-
-    if (!metadata.dateTime) {
-      toast.warning("사진에서 시간 정보를 찾을 수 없습니다. 다른 사진을 시도해보세요.");
-    }
-
     await uploadImage(file, setStartImage);
   };
 
-  // 끝 이미지 업로드 (메타데이터 추출 포함)
+  // 끝 이미지 업로드 (EXIF 검증은 백엔드에서 수행)
   const handleEndImageUpload = async (file: File) => {
-    const metadata = await extractImageMetadata(file);
-    setEndTime(metadata.dateTime);
-
-    if (!metadata.dateTime) {
-      toast.warning("사진에서 시간 정보를 찾을 수 없습니다. 다른 사진을 시도해보세요.");
-    }
-
     await uploadImage(file, setEndImage);
   };
 
   const handleOtherImageUpload = (file: File) => uploadImage(file, (url) => setOtherImages(prev => [...prev, url]));
 
-  // 시작/끝 시간이 모두 있을 때 운동 지표 계산
-  useEffect(() => {
-    if (startTime && endTime) {
-      const validation = validateWorkoutTimes(startTime, endTime);
-      if (validation.valid) {
-        const metrics = calculateWorkoutMetrics(startTime, endTime, workoutType);
-        setWorkoutMetrics(metrics);
-      } else {
-        setWorkoutMetrics(null);
-      }
-    } else {
-      setWorkoutMetrics(null);
-    }
-  }, [startTime, endTime, workoutType]);
-
-  // 운동 인증 완료: 시작/끝 시간이 모두 있고, 끝 시간이 시작 시간보다 나중일 때만
-  const isVerified = startTime && endTime && endTime > startTime;
+  // EXIF 검증은 백엔드에서 수행, 프론트엔드에서는 운동 인증 상태 표시하지 않음
+  // 피드 생성 후 응답에서 점수/칼로리 확인
 
   // 제출 가능: 시작/끝 사진만 있으면 됨
   const canSubmit = startImage && endImage;
@@ -337,36 +300,10 @@ export default function EditFeedDialog({
               {canSubmit ? '수정 완료' : '시작/끝 사진 필요'}
             </Button>
 
-            {/* Workout Metrics */}
-            {workoutMetrics && (
-              <div className="mb-4 p-3 bg-white/50 rounded-lg border border-gray-200">
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <Clock className="w-4 h-4 mx-auto mb-1 text-blue-500" />
-                    <div className="text-xs text-gray-500">시간</div>
-                    <div className="text-sm font-bold">{workoutMetrics.durationMinutes}분</div>
-                  </div>
-                  <div>
-                    <Flame className="w-4 h-4 mx-auto mb-1 text-orange-500" />
-                    <div className="text-xs text-gray-500">칼로리</div>
-                    <div className="text-sm font-bold">{workoutMetrics.calories}kcal</div>
-                  </div>
-                  <div>
-                    <Trophy className="w-4 h-4 mx-auto mb-1 text-yellow-500" />
-                    <div className="text-xs text-gray-500">점수</div>
-                    <div className="text-sm font-bold">{workoutMetrics.score}점</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Verification Badge */}
-            {isVerified && (
-              <Badge className="bg-green-500 text-white px-3 py-1.5 font-bold border-0 w-full justify-center text-xs">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                운동 인증 완료
-              </Badge>
-            )}
+            {/* EXIF 검증은 백엔드에서 수행 - 피드 생성 후 점수/칼로리 표시됨 */}
+            <div className="text-xs text-gray-500 text-center">
+              사진의 EXIF 정보로 운동 시간과 점수가 자동 계산됩니다
+            </div>
           </div>
 
           {/* Right Editor */}

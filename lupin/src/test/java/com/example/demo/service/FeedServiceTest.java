@@ -60,11 +60,10 @@ class FeedServiceTest {
         // given
         String activity = "running";
         String content = "오늘 5km 달렸습니다";
-        List<String> s3Keys = Collections.emptyList();
         given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
+        Feed result = feedService.createFeed(writer, activity, content);
 
         // then
         assertThat(result.getWriter()).isEqualTo(writer);

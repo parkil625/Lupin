@@ -30,7 +30,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<Appointment>> getPatientAppointments(
+    public ResponseEntity<List<AppointmentResponse>> getPatientAppointments(
             @PathVariable("doctorId") Long doctorId){
 
         List<AppointmentResponse> list = appointmentService.getDoctorAppointments(doctorId)
@@ -39,11 +39,11 @@ public class AppointmentController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(list);
+    }
 
-        @PutMapping("/{appointmentId}/cancel")
-        public ResponseEntity<String> cancelAppointment(@PathVariable Long appointmentId) {
-            appointmentService.cancelAppointment(appointmentId);
-            return ResponseEntity.ok("예약이 취소되었습니다.");
-        }
+    @PutMapping("/{appointmentId}/cancel")
+    public ResponseEntity<String> cancelAppointment(@PathVariable Long appointmentId) {
+        appointmentService.cancelAppointment(appointmentId);
+        return ResponseEntity.ok("예약이 취소되었습니다.");
     }
 }

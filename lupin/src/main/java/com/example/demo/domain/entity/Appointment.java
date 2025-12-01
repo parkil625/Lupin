@@ -39,6 +39,19 @@ public class Appointment {
     @Builder.Default
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
+    public void startConsultation() {
+        if (this.status == AppointmentStatus.CANCELLED) {
+            throw new IllegalStateException("취소된 예약은 시작할 수 없습니다.");
+        }
+        if (this.status == AppointmentStatus.IN_PROGRESS) {
+            throw new IllegalStateException("이미 진행 중인 예약입니다.");
+        }
+        if (this.status == AppointmentStatus.COMPLETED) {
+            throw new IllegalStateException("이미 완료된 예약입니다.");
+        }
+        this.status = AppointmentStatus.IN_PROGRESS;
+    }
+
     public void complete() {
         if (this.status == AppointmentStatus.CANCELLED) {
             throw new IllegalStateException("취소된 예약은 완료할 수 없습니다.");

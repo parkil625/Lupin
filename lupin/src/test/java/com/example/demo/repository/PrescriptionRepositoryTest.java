@@ -414,4 +414,43 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(found.getMedicines()).hasSize(1);
         assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("인슐린");
     }
+
+    @Test
+    @DisplayName("처방전 삭제 시 약물 정보도 함께 삭제")
+    void shouldDeletePrescriptionWithMedicines() {
+        // given
+        User doctor = createAndSaveUser("doctor11", "Dr. Hong");
+        User patient = createAndSaveUser("patient12", "Patient Nam");
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("감기")
+                .build();
+
+        PrescriptionMed med1 = PrescriptionMed.builder()
+                .medicineName("타이레놀")
+                .dosage("500mg")
+                .frequency("하루 3회")
+                .build();
+
+        PrescriptionMed med2 = PrescriptionMed.builder()
+                .medicineName("기침약")
+                .dosage("200mg")
+                .frequency("하루 2회")
+                .build();
+
+        prescription.addMedicine(med1);
+        prescription.addMedicine(med2);
+
+        Prescription saved = prescriptionRepository.save(prescription);
+        Long prescriptionId = saved.getId();
+
+        // when
+        prescriptionRepository.deleteById(prescriptionId);
+
+        // then
+        assertThat(prescriptionRepository.findById(prescriptionId)).isEmpty();
+    }
 }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,6 +68,20 @@ public class ChatService {
             return null;
         }
         return messages.get(messages.size() - 1);
+    }
+
+    public List<String> getChatRoomsSortedByLatestMessage(Long doctorId) {
+        List<String> roomIds = getAllChatRoomsByDoctorId(doctorId);
+
+        return roomIds.stream()
+                .sorted(Comparator.comparing(
+                        roomId -> {
+                            ChatMessage latestMessage = getLatestMessageInRoom(roomId);
+                            return latestMessage != null ? latestMessage.getTime() : LocalDateTime.MIN;
+                        },
+                        Comparator.reverseOrder()
+                ))
+                .collect(Collectors.toList());
     }
 
 }

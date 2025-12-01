@@ -6,6 +6,8 @@ import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.CommentRequest;
 import com.example.demo.dto.request.FeedRequest;
 import com.example.demo.repository.*;
+import com.example.demo.service.ImageMetadataService;
+import com.example.demo.service.WorkoutScoreService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -64,10 +66,36 @@ class FeedE2ETest {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private ImageMetadataService imageMetadataService;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private WorkoutScoreService workoutScoreService;
+
     private User testUser;
 
     @BeforeEach
     void setUp() {
+        // Mock 설정: EXIF 시간 반환
+        java.time.LocalDateTime startTime = java.time.LocalDateTime.now().minusHours(1);
+        java.time.LocalDateTime endTime = java.time.LocalDateTime.now();
+
+        org.mockito.Mockito.when(imageMetadataService.extractPhotoDateTime(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(java.util.Optional.of(startTime))
+                .thenReturn(java.util.Optional.of(endTime));
+
+        org.mockito.Mockito.when(workoutScoreService.calculateScore(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
+                .thenReturn(10);
+
+        org.mockito.Mockito.when(workoutScoreService.calculateCalories(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
+                .thenReturn(100);
+
         testUser = userRepository.save(User.builder()
                 .userId("testuser")
                 .password("password")
@@ -368,10 +396,11 @@ class FeedE2ETest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        // 2. 피드 작성
+        // 2. 피드 작성 (이미지 필수)
         FeedRequest request = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("오늘의 피드")
+                .images(List.of("start.jpg", "end.jpg"))
                 .build();
 
         mockMvc.perform(post("/api/feeds")
@@ -685,10 +714,11 @@ class FeedE2ETest {
     @DisplayName("E2E: 여러 사용자 상호작용 시뮬레이션")
     @WithMockUser(username = "testuser")
     void multiUserInteraction() throws Exception {
-        // 1. 피드 작성
+        // 1. 피드 작성 (이미지 필수)
         FeedRequest feedRequest = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("다중 사용자 테스트")
+                .images(List.of("start.jpg", "end.jpg"))
                 .build();
 
         mockMvc.perform(post("/api/feeds")
@@ -731,22 +761,18 @@ class FeedE2ETest {
     }
 
     @Test
-    @DisplayName("E2E: 이미지 없는 피드 생성")
+    @DisplayName("E2E: 이미지 없는 피드 생성 시 400 에러")
     @WithMockUser(username = "testuser")
-    void createFeedWithoutImages() throws Exception {
+    void createFeedWithoutImages_Returns400() throws Exception {
         FeedRequest request = FeedRequest.builder()
                 .activity("WALKING")
                 .content("이미지 없는 피드")
                 .build();
 
+        // 이미지가 없으면 BAD_REQUEST 반환 (시작/끝 사진 필수)
         mockMvc.perform(post("/api/feeds")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("이미지 없는 피드"));
-
-        Feed savedFeed = feedRepository.findAll().get(0);
-        List<FeedImage> images = feedImageRepository.findByFeedOrderBySortOrderAsc(savedFeed);
-        assertThat(images).isEmpty();
+                .andExpect(status().isBadRequest());
     }
 }

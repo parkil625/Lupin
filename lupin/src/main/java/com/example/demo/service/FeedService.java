@@ -62,33 +62,34 @@ public class FeedService {
         String startImageKey = s3Keys.get(0);
         String endImageKey = s3Keys.get(1);
 
-        // EXIF 시간 추출
-        LocalDateTime startTime = imageMetadataService.extractPhotoDateTime(startImageKey)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_PHOTO_TIME_NOT_FOUND));
-        LocalDateTime endTime = imageMetadataService.extractPhotoDateTime(endImageKey)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_PHOTO_TIME_NOT_FOUND));
+        // EXIF 시간 추출 시도 및 점수 계산
+        int score = 0;
+        int calories = 0;
 
-        // 시작 시간이 끝 시간보다 같거나 늦으면 예외
-        if (!startTime.isBefore(endTime)) {
-            throw new BusinessException(ErrorCode.FEED_INVALID_PHOTO_TIME);
+        var startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
+        var endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
+
+        if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
+            LocalDateTime startTime = startTimeOpt.get();
+            LocalDateTime endTime = endTimeOpt.get();
+
+            // 유효성 검증 통과 시에만 점수 계산
+            if (isValidWorkoutTime(startTime, endTime, LocalDate.now())) {
+                score = workoutScoreService.calculateScore(activity, startTime, endTime);
+                calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
+
+                log.info("Workout verified: activity={}, duration={}min, score={}, calories={}",
+                        activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
+            } else {
+                log.warn("Workout time validation failed: startTime={}, endTime={}", startTime, endTime);
+            }
+        } else {
+            log.warn("EXIF time not found: startImage={}, endImage={}",
+                    startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
+                    endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
         }
 
-        // 운동 시간이 24시간 초과하면 예외
-        if (Duration.between(startTime, endTime).toHours() > MAX_WORKOUT_HOURS) {
-            throw new BusinessException(ErrorCode.FEED_WORKOUT_TOO_LONG);
-        }
-
-        // 사진 시간이 당일(±오차범위) 내인지 검증
-        validatePhotoTimeIsToday(startTime, endTime, LocalDate.now());
-
-        // 점수 및 칼로리 계산
-        int score = workoutScoreService.calculateScore(activity, startTime, endTime);
-        int calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
-
-        log.info("Workout verified: activity={}, duration={}min, score={}, calories={}",
-                activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
-
-        // 피드 저장
+        // 피드 저장 (EXIF 없어도 점수=0으로 저장)
         Feed feed = Feed.builder()
                 .writer(writer)
                 .activity(activity)
@@ -172,18 +173,29 @@ public class FeedService {
     }
 
     /**
-     * 사진 시간이 피드 작성일 기준 당일(±오차범위) 내인지 검증
-     * 예: 12월 1일 피드 → 11/30 18:00 ~ 12/2 05:59 사이 사진만 허용 (±6시간)
+     * 운동 시간 유효성 검증 (예외 던지지 않고 boolean 반환)
+     * - 시작 시간이 끝 시간보다 먼저여야 함
+     * - 운동 시간이 24시간을 초과하면 안 됨
+     * - 사진 시간이 당일(±오차범위) 내여야 함
      */
-    private void validatePhotoTimeIsToday(LocalDateTime startTime, LocalDateTime endTime, LocalDate feedDate) {
+    private boolean isValidWorkoutTime(LocalDateTime startTime, LocalDateTime endTime, LocalDate feedDate) {
+        // 시작 시간이 끝 시간보다 같거나 늦으면 무효
+        if (!startTime.isBefore(endTime)) {
+            return false;
+        }
+
+        // 운동 시간이 24시간 초과하면 무효
+        if (Duration.between(startTime, endTime).toHours() > MAX_WORKOUT_HOURS) {
+            return false;
+        }
+
+        // 사진 시간이 당일(±오차범위) 내인지 검증
         LocalDateTime allowedStart = feedDate.atStartOfDay().minusHours(PHOTO_TIME_TOLERANCE_HOURS);
         LocalDateTime allowedEnd = feedDate.atTime(23, 59, 59).plusHours(PHOTO_TIME_TOLERANCE_HOURS);
 
         boolean startTimeValid = !startTime.isBefore(allowedStart) && !startTime.isAfter(allowedEnd);
         boolean endTimeValid = !endTime.isBefore(allowedStart) && !endTime.isAfter(allowedEnd);
 
-        if (!startTimeValid || !endTimeValid) {
-            throw new BusinessException(ErrorCode.FEED_PHOTO_NOT_TODAY);
-        }
+        return startTimeValid && endTimeValid;
     }
 }

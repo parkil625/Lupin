@@ -1,6 +1,7 @@
 package com.example.demo.service;
 import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.dto.request.AppointmentRequest;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
@@ -48,11 +49,7 @@ public class AppointmentService {
     }
 
     public List<Appointment> getDoctorAppointments(Long doctorId) {
-        return appointmentRepository.findByPatientIdOrderByDateDesc(patientId);
-    }
-
-    public List<Appointment> getDoctorAppointments(Long doctorId) {
-        return appointmentRepository.findByDoctorIdOrderByDateAsc(doctorId);
+        return appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
     }
 
     @Transactional

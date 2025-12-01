@@ -306,4 +306,30 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(prescriptions.get(0).getDate()).isEqualTo(LocalDate.of(2025, 11, 25));
         assertThat(prescriptions.get(1).getDate()).isEqualTo(LocalDate.of(2025, 10, 20));
     }
+
+    @Test
+    @DisplayName("처방전 진단명 수정")
+    void shouldUpdateDiagnosis() {
+        // given
+        User doctor = createAndSaveUser("doctor8", "Dr. Seo");
+        User patient = createAndSaveUser("patient9", "Patient Oh");
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("감기")
+                .build();
+
+        Prescription saved = prescriptionRepository.save(prescription);
+
+        // when
+        saved.updateDiagnosis("독감");
+        prescriptionRepository.save(saved);
+
+        // then
+        Prescription found = prescriptionRepository.findById(saved.getId())
+                .orElseThrow(() -> new AssertionError("처방전을 찾을 수 없습니다"));
+        assertThat(found.getDiagnosis()).isEqualTo("독감");
+    }
 }

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PrescriptionRepositoryTest extends BaseRepositoryTest {
 
@@ -82,5 +83,24 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(saved.getMedicines().get(0).getDosage()).isEqualTo("100mg");
         assertThat(saved.getMedicines().get(0).getFrequency()).isEqualTo("하루 1회");
         assertThat(saved.getMedicines().get(1).getMedicineName()).isEqualTo("혈압약");
+    }
+
+    @Test
+    @DisplayName("의사 ID 없이 처방전 생성 시 예외 발생 테스트")
+    void shouldThrowExceptionWhenDoctorIsNull() {
+        // given
+        User patient = createAndSaveUser("patient3", "Patient Choi");
+        LocalDate prescribedDate = LocalDate.of(2025, 12, 1);
+
+        Prescription prescription = Prescription.builder()
+                .doctor(null)  // 의사 없이 생성
+                .patient(patient)
+                .date(prescribedDate)
+                .diagnosis("감기")
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> prescriptionRepository.save(prescription))
+                .isInstanceOf(Exception.class);
     }
 }

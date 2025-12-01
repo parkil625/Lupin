@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Prescription;
+import com.example.demo.domain.entity.PrescriptionMed;
 import com.example.demo.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,5 +40,47 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(saved.getPatient()).isEqualTo(patient);
         assertThat(saved.getDate()).isEqualTo(prescribedDate);
         assertThat(saved.getDiagnosis()).isEqualTo("감기");
+    }
+
+    @Test
+    @DisplayName("처방전 생성 시 약물 정보도 함께 저장되는지 테스트")
+    void shouldSavePrescriptionWithMedicines() {
+        // given
+        User doctor = createAndSaveUser("doctor2", "Dr. Park");
+        User patient = createAndSaveUser("patient2", "Patient Kim");
+        LocalDate prescribedDate = LocalDate.of(2025, 12, 1);
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(prescribedDate)
+                .diagnosis("고혈압")
+                .build();
+
+        PrescriptionMed med1 = PrescriptionMed.builder()
+                .medicineName("아스피린")
+                .dosage("100mg")
+                .frequency("하루 1회")
+                .build();
+
+        PrescriptionMed med2 = PrescriptionMed.builder()
+                .medicineName("혈압약")
+                .dosage("50mg")
+                .frequency("하루 2회")
+                .build();
+
+        prescription.addMedicine(med1);
+        prescription.addMedicine(med2);
+
+        // when
+        Prescription saved = prescriptionRepository.save(prescription);
+
+        // then
+        assertThat(saved.getId()).isNotNull();
+        assertThat(saved.getMedicines()).hasSize(2);
+        assertThat(saved.getMedicines().get(0).getMedicineName()).isEqualTo("아스피린");
+        assertThat(saved.getMedicines().get(0).getDosage()).isEqualTo("100mg");
+        assertThat(saved.getMedicines().get(0).getFrequency()).isEqualTo("하루 1회");
+        assertThat(saved.getMedicines().get(1).getMedicineName()).isEqualTo("혈압약");
     }
 }

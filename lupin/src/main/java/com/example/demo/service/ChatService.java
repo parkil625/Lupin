@@ -115,4 +115,10 @@ public class ChatService {
         return "appointment_" + appointmentId;
     }
 
+    public boolean chatRoomExists(Long appointmentId) {
+        String roomId = "appointment_" + appointmentId;
+        List<ChatMessage> messages = chatRepository.findByRoomIdOrderByTimeAsc(roomId);
+        return !messages.isEmpty();
+    }
+
 }

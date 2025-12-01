@@ -236,4 +236,55 @@ class ChatServiceTest {
         verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId1);
         verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId2);
     }
+
+    @Test
+    @DisplayName("채팅방 목록이 최근 메시지 시간순 정렬")
+    void getChatRoomsSortedByLatestMessage() {
+        // Given
+        Long doctorId = 21L;
+        LocalDateTime now = LocalDateTime.now();
+
+        // roomId1의 최근 메시지는 5분 전
+        ChatMessage room1Message = ChatMessage.builder()
+                .id(1L)
+                .roomId("1:21")
+                .sender(patient)
+                .content("메시지1")
+                .time(now.minusMinutes(5))
+                .build();
+
+        // roomId2의 최근 메시지는 지금
+        ChatMessage room2Message = ChatMessage.builder()
+                .id(2L)
+                .roomId("2:21")
+                .sender(patient)
+                .content("메시지2")
+                .time(now)
+                .build();
+
+        // roomId3의 최근 메시지는 10분 전
+        ChatMessage room3Message = ChatMessage.builder()
+                .id(3L)
+                .roomId("3:21")
+                .sender(patient)
+                .content("메시지3")
+                .time(now.minusMinutes(10))
+                .build();
+
+        List<ChatMessage> allMessages = Arrays.asList(room1Message, room2Message, room3Message);
+        given(chatRepository.findAll()).willReturn(allMessages);
+
+        given(chatRepository.findByRoomIdOrderByTimeAsc("1:21")).willReturn(List.of(room1Message));
+        given(chatRepository.findByRoomIdOrderByTimeAsc("2:21")).willReturn(List.of(room2Message));
+        given(chatRepository.findByRoomIdOrderByTimeAsc("3:21")).willReturn(List.of(room3Message));
+
+        // When
+        List<String> sortedRoomIds = chatService.getChatRoomsSortedByLatestMessage(doctorId);
+
+        // Then
+        assertThat(sortedRoomIds).hasSize(3);
+        assertThat(sortedRoomIds.get(0)).isEqualTo("2:21");  // 가장 최근
+        assertThat(sortedRoomIds.get(1)).isEqualTo("1:21");  // 5분 전
+        assertThat(sortedRoomIds.get(2)).isEqualTo("3:21");  // 10분 전
+    }
 }

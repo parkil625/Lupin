@@ -586,4 +586,30 @@ class ChatServiceTest {
         // Then
         assertThat(roomId).isEqualTo("appointment_1");
     }
+
+    @Test
+    @DisplayName("예약 취소 시 채팅방 상태 변경")
+    void shouldReflectCancelledAppointmentStatus() {
+        // Given
+        String roomId = "appointment_1";
+        Long appointmentId = 1L;
+
+        Appointment cancelledAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.CANCELLED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(java.util.Optional.of(cancelledAppointment));
+
+        // When
+        Appointment result = chatService.getAppointmentFromRoomId(roomId);
+
+        // Then
+        assertThat(result.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
 }

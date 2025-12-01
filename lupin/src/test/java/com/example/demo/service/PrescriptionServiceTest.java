@@ -78,4 +78,21 @@ class PrescriptionServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("처방전을 수정할 권한이 없습니다.");
     }
+
+    @Test
+    @DisplayName("타인의 처방전 삭제 시 예외 발생")
+    void shouldThrowExceptionWhenUnauthorizedDoctorTriesToDelete() {
+        // given
+        Long prescriptionId = 1L;
+        Long unauthorizedDoctorId = 2L;
+
+        given(prescriptionRepository.findById(prescriptionId))
+                .willReturn(Optional.of(prescription));
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.deletePrescription(prescriptionId, unauthorizedDoctorId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("처방전을 삭제할 권한이 없습니다.");
+    }
 }

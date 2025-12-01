@@ -70,6 +70,7 @@ class FeedServiceTest {
                 .name("작성자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(writer, "id", 1L);
     }
 
     @Test
@@ -344,8 +345,8 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("시작 사진 시간이 끝 사진 시간보다 늦으면 점수 0으로 피드가 생성된다")
-    void createFeedWithInvalidPhotoTimeCreatesWithZeroScoreTest() {
+    @DisplayName("시작 사진 시간이 끝 사진 시간보다 늦으면 예외가 발생한다")
+    void createFeedWithInvalidPhotoTimeThrowsExceptionTest() {
         // given
         String activity = "달리기";
         String content = "오늘 운동했습니다";
@@ -359,22 +360,10 @@ class FeedServiceTest {
         given(imageMetadataService.extractPhotoDateTime("end.jpg"))
                 .willReturn(Optional.of(endTime));
 
-        Feed savedFeed = Feed.builder()
-                .id(1L)
-                .writer(writer)
-                .activity(activity)
-                .content(content)
-                .points(0L)
-                .calories(0)
-                .build();
-        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
-
-        // when
-        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
-
-        // then
-        assertThat(result.getPoints()).isEqualTo(0L);
-        assertThat(result.getCalories()).isEqualTo(0);
+        // when & then
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_INVALID_PHOTO_TIME);
     }
 
     @Test
@@ -409,8 +398,8 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("운동 시간이 24시간을 초과하면 점수 0으로 피드가 생성된다")
-    void createFeedWithTooLongWorkoutCreatesWithZeroScoreTest() {
+    @DisplayName("운동 시간이 24시간을 초과하면 예외가 발생한다")
+    void createFeedWithTooLongWorkoutThrowsExceptionTest() {
         // given
         String activity = "달리기";
         String content = "오늘 운동했습니다";
@@ -424,27 +413,15 @@ class FeedServiceTest {
         given(imageMetadataService.extractPhotoDateTime("end.jpg"))
                 .willReturn(Optional.of(endTime));
 
-        Feed savedFeed = Feed.builder()
-                .id(1L)
-                .writer(writer)
-                .activity(activity)
-                .content(content)
-                .points(0L)
-                .calories(0)
-                .build();
-        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
-
-        // when
-        Feed result = feedService.createFeed(writer, activity, content, s3Keys);
-
-        // then
-        assertThat(result.getPoints()).isEqualTo(0L);
-        assertThat(result.getCalories()).isEqualTo(0);
+        // when & then
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_WORKOUT_TOO_LONG);
     }
 
     @Test
-    @DisplayName("과거 사진으로 피드를 작성하면 점수 0으로 피드가 생성된다")
-    void createFeedWithOldPhotoCreatesWithZeroScoreTest() {
+    @DisplayName("과거 사진으로 피드를 작성하면 예외가 발생한다")
+    void createFeedWithOldPhotoThrowsExceptionTest() {
         // given
         String activity = "달리기";
         String content = "오늘 운동했습니다";
@@ -457,6 +434,25 @@ class FeedServiceTest {
                 .willReturn(Optional.of(startTime));
         given(imageMetadataService.extractPhotoDateTime("end.jpg"))
                 .willReturn(Optional.of(endTime));
+
+        // when & then
+        assertThatThrownBy(() -> feedService.createFeed(writer, activity, content, s3Keys))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_PHOTO_NOT_TODAY);
+    }
+
+    // 아래는 더 이상 필요없는 코드 - 삭제
+    void _deprecated_createFeedWithOldPhotoCreatesWithZeroScoreTest() {
+        // given
+        String activity = "달리기";
+        String content = "오늘 운동했습니다";
+        List<String> s3Keys = List.of("start.jpg", "end.jpg");
+        // 일주일 전 사진 (±6시간 오차범위 초과)
+        LocalDateTime startTime = LocalDate.now().minusDays(7).atTime(10, 0);
+        LocalDateTime endTime = LocalDate.now().minusDays(7).atTime(11, 0);
+
+        var startTimeOpt = Optional.of(startTime);
+        var endTimeOpt = Optional.of(endTime);
 
         Feed savedFeed = Feed.builder()
                 .id(1L)
@@ -559,6 +555,7 @@ class FeedServiceTest {
                 .name("다른사람")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(otherUser, "id", 2L);
         Feed feed = Feed.builder()
                 .writer(writer)
                 .activity("running")
@@ -584,6 +581,7 @@ class FeedServiceTest {
                 .name("다른사람")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(otherUser, "id", 2L);
         Feed feed = Feed.builder()
                 .writer(writer)
                 .activity("running")

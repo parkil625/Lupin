@@ -32,7 +32,8 @@ public class UserController extends BaseController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         User user = getCurrentUser(userDetails);
-        return ResponseEntity.ok(UserResponse.from(user));
+        long points = pointService.getTotalPoints(user);
+        return ResponseEntity.ok(UserResponse.from(user, points));
     }
 
     @GetMapping("/ranking")
@@ -58,7 +59,8 @@ public class UserController extends BaseController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getUserInfo(@PathVariable Long userId) {
         User user = userService.getUserInfo(userId);
-        return ResponseEntity.ok(UserResponse.from(user));
+        long points = pointService.getTotalPoints(user);
+        return ResponseEntity.ok(UserResponse.from(user, points));
     }
 
     @PutMapping("/{userId}")
@@ -83,7 +85,8 @@ public class UserController extends BaseController {
                 weight != null ? weight.doubleValue() : null);
 
         User updatedUser = userService.getUserInfo(userId);
-        return ResponseEntity.ok(UserResponse.from(updatedUser));
+        long points = pointService.getTotalPoints(updatedUser);
+        return ResponseEntity.ok(UserResponse.from(updatedUser, points));
     }
 
     @GetMapping("/{userId}/stats")
@@ -107,7 +110,8 @@ public class UserController extends BaseController {
         userService.updateAvatar(currentUser, avatarUrl);
 
         User updatedUser = userService.getUserInfo(userId);
-        return ResponseEntity.ok(UserResponse.from(updatedUser));
+        long points = pointService.getTotalPoints(updatedUser);
+        return ResponseEntity.ok(UserResponse.from(updatedUser, points));
     }
 
     @PutMapping("/profile")

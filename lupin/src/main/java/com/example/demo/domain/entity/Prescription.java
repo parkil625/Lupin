@@ -46,6 +46,10 @@ public class Prescription {
         medicine.setPrescription(this);
     }
 
+    public void removeMedicine(PrescriptionMed medicine) {
+        medicines.remove(medicine);
+    }
+
     public void updateDiagnosis(String diagnosis) {
         this.diagnosis = diagnosis;
     }

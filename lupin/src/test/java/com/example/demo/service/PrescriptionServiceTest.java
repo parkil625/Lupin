@@ -369,4 +369,31 @@ class PrescriptionServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("해당 예약의 담당 의사만 처방전을 발행할 수 있습니다.");
     }
+
+    @Test
+    @DisplayName("환자 확인 후 처방전 발행")
+    void shouldVerifyPatientBeforeIssuingPrescription() {
+        // given
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        Long wrongPatientId = 999L;  // 다른 환자 ID
+        String diagnosis = "감기";
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)  // patient(id=3)가 예약 환자
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(appointment));
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.issuePrescription(appointmentId, doctorId, wrongPatientId, diagnosis))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 예약의 환자 정보가 일치하지 않습니다.");
+    }
 }

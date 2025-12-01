@@ -517,4 +517,31 @@ class ChatServiceTest {
         assertThat(roomId2).isEqualTo("appointment_123");
         assertThat(roomId3).isEqualTo("appointment_999");
     }
+
+    @Test
+    @DisplayName("이미 채팅방이 있으면 중복 생성 안 함")
+    void shouldNotCreateDuplicateChatRoom() {
+        // Given
+        Long appointmentId = 1L;
+        String expectedRoomId = "appointment_1";
+
+        // 해당 appointmentId로 이미 메시지가 존재하는 경우를 시뮬레이션
+        ChatMessage existingMessage = ChatMessage.builder()
+                .id(1L)
+                .roomId(expectedRoomId)
+                .sender(patient)
+                .content("기존 메시지")
+                .time(LocalDateTime.now())
+                .build();
+
+        given(chatRepository.findByRoomIdOrderByTimeAsc(expectedRoomId))
+                .willReturn(List.of(existingMessage));
+
+        // When
+        boolean exists = chatService.chatRoomExists(appointmentId);
+
+        // Then
+        assertThat(exists).isTrue();
+        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(expectedRoomId);
+    }
 }

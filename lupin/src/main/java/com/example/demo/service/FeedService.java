@@ -143,7 +143,7 @@ public class FeedService {
     }
 
     private void validateOwnership(Feed feed, User user) {
-        if (!feed.getWriter().equals(user)) {
+        if (!feed.getWriter().getId().equals(user.getId())) {
             throw new BusinessException(ErrorCode.FEED_NOT_OWNER);
         }
     }

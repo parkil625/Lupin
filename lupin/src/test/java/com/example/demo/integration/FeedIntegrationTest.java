@@ -192,7 +192,7 @@ class FeedIntegrationTest {
         FeedRequest request = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("사진 포함 피드")
-                .imageUrls(List.of("image1.jpg", "image2.jpg"))
+                .images(List.of("image1.jpg", "image2.jpg"))
                 .build();
 
         // when
@@ -260,7 +260,7 @@ class FeedIntegrationTest {
         FeedRequest request = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("삭제할 피드")
-                .imageUrls(List.of("image1.jpg", "image2.jpg"))
+                .images(List.of("image1.jpg", "image2.jpg"))
                 .build();
 
         mockMvc.perform(post("/api/feeds")

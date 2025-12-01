@@ -254,4 +254,56 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("메트포르민");
         assertThat(found.getMedicines().get(1).getMedicineName()).isEqualTo("인슐린");
     }
+
+    @Test
+    @DisplayName("특정 기간의 처방전 조회")
+    void shouldFindByPatientIdAndDateBetween() {
+        // given
+        User doctor = createAndSaveUser("doctor7", "Dr. Bae");
+        User patient = createAndSaveUser("patient8", "Patient Ahn");
+
+        Prescription prescription1 = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 9, 15))
+                .diagnosis("감기")
+                .build();
+
+        Prescription prescription2 = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 10, 20))
+                .diagnosis("두통")
+                .build();
+
+        Prescription prescription3 = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 11, 25))
+                .diagnosis("위염")
+                .build();
+
+        Prescription prescription4 = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 12, 30))
+                .diagnosis("알레르기")
+                .build();
+
+        prescriptionRepository.save(prescription1);
+        prescriptionRepository.save(prescription2);
+        prescriptionRepository.save(prescription3);
+        prescriptionRepository.save(prescription4);
+
+        // when
+        LocalDate startDate = LocalDate.of(2025, 10, 1);
+        LocalDate endDate = LocalDate.of(2025, 11, 30);
+        List<Prescription> prescriptions = prescriptionRepository
+                .findByPatientIdAndDateBetweenOrderByDateDesc(patient.getId(), startDate, endDate);
+
+        // then
+        assertThat(prescriptions).hasSize(2);
+        assertThat(prescriptions.get(0).getDate()).isEqualTo(LocalDate.of(2025, 11, 25));
+        assertThat(prescriptions.get(1).getDate()).isEqualTo(LocalDate.of(2025, 10, 20));
+    }
 }

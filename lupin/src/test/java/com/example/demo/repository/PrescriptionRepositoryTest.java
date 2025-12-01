@@ -332,4 +332,45 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
                 .orElseThrow(() -> new AssertionError("처방전을 찾을 수 없습니다"));
         assertThat(found.getDiagnosis()).isEqualTo("독감");
     }
+
+    @Test
+    @DisplayName("처방전 약물 추가")
+    void shouldAddMedicineToPrescription() {
+        // given
+        User doctor = createAndSaveUser("doctor9", "Dr. Lim");
+        User patient = createAndSaveUser("patient10", "Patient Jang");
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("고혈압")
+                .build();
+
+        PrescriptionMed med1 = PrescriptionMed.builder()
+                .medicineName("혈압약")
+                .dosage("50mg")
+                .frequency("하루 1회")
+                .build();
+
+        prescription.addMedicine(med1);
+        Prescription saved = prescriptionRepository.save(prescription);
+
+        // when
+        PrescriptionMed med2 = PrescriptionMed.builder()
+                .medicineName("이뇨제")
+                .dosage("25mg")
+                .frequency("하루 1회")
+                .build();
+
+        saved.addMedicine(med2);
+        prescriptionRepository.save(saved);
+
+        // then
+        Prescription found = prescriptionRepository.findById(saved.getId())
+                .orElseThrow(() -> new AssertionError("처방전을 찾을 수 없습니다"));
+        assertThat(found.getMedicines()).hasSize(2);
+        assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("혈압약");
+        assertThat(found.getMedicines().get(1).getMedicineName()).isEqualTo("이뇨제");
+    }
 }

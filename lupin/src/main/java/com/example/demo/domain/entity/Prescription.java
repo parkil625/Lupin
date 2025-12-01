@@ -45,4 +45,8 @@ public class Prescription {
         medicines.add(medicine);
         medicine.setPrescription(this);
     }
+
+    public void updateDiagnosis(String diagnosis) {
+        this.diagnosis = diagnosis;
+    }
 }

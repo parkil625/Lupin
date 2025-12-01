@@ -479,4 +479,24 @@ class ChatServiceTest {
         assertThat(result.get(1).getId()).isEqualTo(2L);
         verify(appointmentRepository, times(1)).findByPatientIdOrderByDateDesc(patientId);
     }
+
+    @Test
+    @DisplayName("예약 확정 시 채팅방 자동 생성")
+    void createChatRoomOnAppointmentConfirmation() {
+        // Given
+        Long appointmentId = 1L;
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        // When
+        String roomId = chatService.createChatRoomForAppointment(appointmentId);
+
+        // Then
+        assertThat(roomId).isEqualTo("appointment_1");
+    }
 }

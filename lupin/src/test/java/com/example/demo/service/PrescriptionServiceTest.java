@@ -306,4 +306,41 @@ class PrescriptionServiceTest {
         // then
         assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
     }
+
+    @Test
+    @DisplayName("완료된 예약에 중복 처방전 발행 불가")
+    void shouldNotAllowDuplicatePrescriptionForCompletedAppointment() {
+        // given
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        String diagnosis = "감기";
+
+        Appointment completedAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        Prescription existingPrescription = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(completedAppointment)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("기존 진단")
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(completedAppointment));
+        given(prescriptionRepository.findByAppointmentId(appointmentId))
+                .willReturn(Optional.of(existingPrescription));
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("이미 처방전이 발행된 예약입니다.");
+    }
 }

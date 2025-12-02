@@ -24,9 +24,7 @@ public class ChatMessageResponse {
     private LocalDateTime sentAt;
     private Boolean isRead;
 
-    /**
-     * Entity -> DTO 변환
-     */
+
     public static ChatMessageResponse from(ChatMessage message) {
         return ChatMessageResponse.builder()
                 .id(message.getId())

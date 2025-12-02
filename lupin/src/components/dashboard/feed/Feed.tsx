@@ -35,7 +35,9 @@ import { useImageBrightness } from "@/hooks";
 interface FeedViewProps {
   allFeeds: Feed[];
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  showSearch: boolean;
+  setShowSearch: React.Dispatch<React.SetStateAction<boolean>>;
   getFeedImageIndex: (feedId: number) => number;
   setFeedImageIndex: (feedId: number, index: number) => void;
   hasLiked: (feedId: number) => boolean;
@@ -608,6 +610,8 @@ export default function FeedView({
   allFeeds,
   searchQuery,
   setSearchQuery,
+  showSearch: _showSearch,
+  setShowSearch: _setShowSearch,
   getFeedImageIndex,
   setFeedImageIndex,
   hasLiked,

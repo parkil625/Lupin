@@ -38,6 +38,10 @@ out/
 
 ### Node ###
 node_modules/
+coverage/
+test-images/
+playwright-report/
+test-results/
 
 ### Claude Code ###
 .claude/

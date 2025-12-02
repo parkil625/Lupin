@@ -7,14 +7,13 @@ interface UseWebSocketProps {
     roomId: string;
     userId: number;
     onMessageReceived: (message: ChatMessageResponse) => void;
-    onReadNotification?: (notification: { userId: number; roomId: string }) => void;
+    // 🔧 제거: onReadNotification (REST API로만 처리)
 }
 
 export const useWebSocket = ({
                                  roomId,
                                  userId,
                                  onMessageReceived,
-                                 onReadNotification,
                              }: UseWebSocketProps) => {
     const [isConnected, setIsConnected] = useState(false);
     const clientRef = useRef<Client | null>(null);
@@ -45,19 +44,14 @@ export const useWebSocket = ({
                 console.log('✅ WebSocket 연결 성공');
                 setIsConnected(true);
 
-                client.subscribe(`/topic/chat/${roomId}`, (message) => {
+                // 🔧 수정: 백엔드와 일치하도록 /queue로 변경
+                client.subscribe(`/queue/chat/${roomId}`, (message) => {
                     const receivedMessage: ChatMessageResponse = JSON.parse(message.body);
                     console.log('📩 메시지 수신:', receivedMessage);
                     onMessageReceived(receivedMessage);
                 });
 
-                if (onReadNotification) {
-                    client.subscribe(`/topic/chat/${roomId}/read`, (message) => {
-                        const notification = JSON.parse(message.body);
-                        console.log('👀 읽음 알림 수신:', notification);
-                        onReadNotification(notification);
-                    });
-                }
+                // 🔧 제거: 읽음 알림은 REST API로만 처리 (WebSocket 미사용)
             },
             onStompError: (frame) => {
                 console.error('❌ STOMP 에러:', frame.headers['message']);
@@ -77,7 +71,7 @@ export const useWebSocket = ({
                 client.deactivate();
             }
         };
-    }, [roomId, userId, onMessageReceived, onReadNotification]);
+    }, [roomId, userId, onMessageReceived]);
 
     const sendMessage = useCallback((content: string, senderId: number, patientId: number, doctorId: number) => {
         if (!clientRef.current?.connected) {
@@ -85,34 +79,25 @@ export const useWebSocket = ({
             return;
         }
 
+        // 🔧 수정: 백엔드 ChatMessageRequest와 일치하도록 수정
         const messageRequest = {
+            roomId: `${patientId}:${doctorId}`,  // roomId 추가
             senderId,
-            patientId,
-            doctorId,
             content,
         };
 
+        // 🔧 수정: 백엔드 @MessageMapping과 일치하도록 /app/chat.send로 변경
         clientRef.current.publish({
-            destination: '/app/chat.sendMessage',
+            destination: '/app/chat.send',
             body: JSON.stringify(messageRequest),
         });
     }, []);
 
-    const markAsRead = useCallback(() => {
-        if (!clientRef.current?.connected) {
-            console.error('WebSocket이 연결되지 않았습니다.');
-            return;
-        }
-
-        clientRef.current.publish({
-            destination: '/app/chat.markAsRead',
-            body: JSON.stringify({ roomId, userId }),
-        });
-    }, [roomId, userId]);
+    // 🔧 제거: markAsRead는 REST API로만 처리 (WebSocket 미사용)
+    // REST API: PUT /api/chat/rooms/{roomId}/read?userId={userId}
 
     return {
         isConnected,
         sendMessage,
-        markAsRead,
     };
 };

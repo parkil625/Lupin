@@ -33,7 +33,6 @@ jobs:
 
       - name: Build and push Docker image
         id: build-image
-        working-directory: lupin
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}

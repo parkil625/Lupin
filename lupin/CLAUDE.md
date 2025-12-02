@@ -86,3 +86,9 @@ TIDY FIRST 접근 방식
 이 엔티티들의 구성은 내가 요청하지 않는 한 변경하지 마세요.
 나머지 엔티티는 동료의 엔티티이므로 내가 요청하지 않는 한 절대 수정하지 마세요.
 다른 로직을 구현할 때 엔티티를 변경하지 말고, 엔티티 상태에 맞게 다른 계층(Service, Controller, Repository 등)을 수정하세요.
+
+Windows 명령어 규칙
+이 프로젝트는 Windows 환경에서 개발됩니다. 다음 규칙을 반드시 따르세요:
+- `2>nul` 사용 금지: Windows에서 bash를 통해 실행 시 실제 "nul" 파일이 생성됨
+- 에러 출력 숨기기: `2>nul` 대신 `2>&1`을 사용하세요
+- 예시: `cmd /c "gradlew.bat test 2>&1"` (O), `cmd /c "gradlew.bat test 2>nul"` (X)

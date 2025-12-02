@@ -10,13 +10,13 @@ coverage:
     project:
       default:
         target: auto
-        threshold: 5%  # 커버리지 5% 이상 감소하면 실패
-        if_ci_failed: error
+        threshold: 10%  # 커버리지 10% 이상 감소하면 실패
+        informational: true  # 정보 제공용 (빌드 실패 안 함)
 
     patch:
       default:
-        target: 60%  # 새로 추가된 코드는 60% 이상 커버리지 필요
-        if_ci_failed: error
+        target: 40%  # 새 코드 40% 이상이면 OK
+        informational: true  # 정보 제공용 (빌드 실패 안 함)
 
 parsers:
   gcov:

@@ -129,7 +129,7 @@ export default function FeedDetailDialogHome({
         // JSON인지 확인
         const blocks = JSON.parse(feed.content);
         editor.replaceBlocks(editor.document, blocks);
-      } catch (e) {
+      } catch {
         // 일반 텍스트인 경우 BlockNote 기본 형식으로 변환
         const textBlocks = [
           {

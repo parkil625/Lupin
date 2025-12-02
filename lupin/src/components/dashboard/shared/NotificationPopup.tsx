@@ -55,26 +55,105 @@ export default function NotificationPopup({
   }, [onClose]);
 
   return (
-    <div
-      ref={popupRef}
-      className="absolute left-0 ml-20 w-80 backdrop-blur-3xl bg-white/50 border border-white/60 shadow-2xl rounded-2xl z-50 overflow-hidden"
-      style={{
-        height: "544px",
-        maxHeight: "544px",
-        bottom: "calc(100% - 32px)",
-      }}
-    >
-      <div className="flex flex-col" style={{ height: '544px' }}>
-        <div className="p-4 pb-2 flex-shrink-0 flex items-center justify-between">
+    <>
+      {/* 모바일용 전체 화면 알림 */}
+      <div
+        ref={popupRef}
+        className="md:hidden fixed inset-0 z-50 bg-white flex flex-col"
+      >
+        <div className="p-4 pb-2 flex-shrink-0 flex items-center justify-between border-b">
           <h3 className="text-lg font-black text-gray-900">알림</h3>
-          <button
-            onClick={onMarkAllAsRead}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <CheckCheck className="w-4 h-4" />
-            모두 읽음
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onMarkAllAsRead}
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <CheckCheck className="w-4 h-4" />
+              모두 읽음
+            </button>
+            <button
+              onClick={() => onClose(true)}
+              className="p-2 hover:bg-gray-100 rounded-full"
+            >
+              <span className="text-xl">×</span>
+            </button>
+          </div>
         </div>
+        <div className="flex-1 overflow-hidden px-4">
+          <ScrollArea className="h-full">
+            <div className="space-y-2 pb-20 pt-4 pr-4">
+            {notifications.map((notif) => (
+              <div
+                key={notif.id}
+                onClick={() => onNotificationClick(notif)}
+                className={`p-3 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                  notif.isRead
+                    ? "bg-gray-50"
+                    : "bg-gradient-to-r from-red-50/80 to-pink-50/80"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      notif.type === "FEED_LIKE" || notif.type === "COMMENT_LIKE"
+                        ? "bg-gradient-to-br from-red-400 to-pink-500"
+                        : notif.type === "COMMENT"
+                        ? "bg-gradient-to-br from-green-400 to-emerald-500"
+                        : "bg-gradient-to-br from-blue-400 to-cyan-500"
+                    }`}
+                  >
+                    {(notif.type === "FEED_LIKE" || notif.type === "COMMENT_LIKE") && (
+                      <Heart className="w-4 h-4 text-white" />
+                    )}
+                    {notif.type === "COMMENT" && (
+                      <MessageCircle className="w-4 h-4 text-white" />
+                    )}
+                    {notif.type === "REPLY" && (
+                      <Reply className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-sm text-gray-900 mb-1">
+                      {notif.title}
+                    </div>
+                    {notif.content && (
+                      <div className="text-xs text-gray-700 mb-1 line-clamp-2">
+                        {notif.content}
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-500">{getRelativeTime(notif.createdAt)}</div>
+                  </div>
+                  {!notif.isRead && (
+                    <div className="w-2 h-2 bg-[#C93831] rounded-full flex-shrink-0 mt-1"></div>
+                  )}
+                </div>
+              </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
+
+      {/* 데스크톱용 팝업 */}
+      <div
+        className="hidden md:block absolute left-0 ml-20 w-80 backdrop-blur-3xl bg-white/50 border border-white/60 shadow-2xl rounded-2xl z-50 overflow-hidden"
+        style={{
+          height: "544px",
+          maxHeight: "544px",
+          bottom: "calc(100% - 32px)",
+        }}
+      >
+        <div className="flex flex-col" style={{ height: '544px' }}>
+          <div className="p-4 pb-2 flex-shrink-0 flex items-center justify-between">
+            <h3 className="text-lg font-black text-gray-900">알림</h3>
+            <button
+              onClick={onMarkAllAsRead}
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <CheckCheck className="w-4 h-4" />
+              모두 읽음
+            </button>
+          </div>
         <div className="flex-1 overflow-hidden px-4">
           <ScrollArea className="h-full">
             <div className="space-y-2 pb-4 pr-4">
@@ -128,7 +207,8 @@ export default function NotificationPopup({
             </div>
           </ScrollArea>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

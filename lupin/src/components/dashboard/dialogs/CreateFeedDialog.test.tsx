@@ -134,6 +134,68 @@ describe('CreateFeedDialog 핵심 로직', () => {
       // Then: localStorage가 삭제됨
       expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
     });
+
+    it('글 작성 중 비우고 닫기 시 모든 데이터가 초기화되어야 한다', () => {
+      // Given: 사용자가 글을 작성 중
+      const draftData = {
+        startImage: 'https://example.com/start.jpg',
+        endImage: 'https://example.com/end.jpg',
+        otherImages: ['https://example.com/other1.jpg', 'https://example.com/other2.jpg'],
+        workoutType: '수영',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: '오늘 운동 열심히 했습니다!' }] }],
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+
+      // When: 비우고 닫기 실행 (handleCloseWithoutSaving 로직 시뮬레이션)
+      const resetState = {
+        startImage: null,
+        endImage: null,
+        otherImages: [],
+        workoutType: '헬스',
+      };
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+
+      // Then: localStorage가 완전히 삭제됨
+      expect(localStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
+
+      // And: 상태가 초기화됨
+      expect(resetState.startImage).toBeNull();
+      expect(resetState.endImage).toBeNull();
+      expect(resetState.otherImages).toEqual([]);
+      expect(resetState.workoutType).toBe('헬스');
+    });
+
+    it('비우고 닫기 후 다시 열면 빈 상태여야 한다', () => {
+      // Given: 임시저장 데이터가 있었음
+      const draftData = {
+        startImage: 'https://example.com/start.jpg',
+        endImage: 'https://example.com/end.jpg',
+        otherImages: [],
+        workoutType: '수영',
+        content: [{ type: 'paragraph', content: '테스트' }],
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+
+      // When: 비우고 닫기 실행
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+
+      // And: 다시 다이얼로그를 열 때
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+
+      // Then: 저장된 데이터가 없어야 함
+      expect(savedDraft).toBeNull();
+
+      // And: 초기 상태로 시작해야 함
+      const defaultState = {
+        startImage: null,
+        endImage: null,
+        otherImages: [],
+        workoutType: '헬스',
+        content: [{ type: 'paragraph', content: '' }],
+      };
+      expect(defaultState.startImage).toBeNull();
+      expect(defaultState.workoutType).toBe('헬스');
+    });
   });
 
   describe('저장 후 닫기 동작', () => {

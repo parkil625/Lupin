@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 import Login from "./components/auth/Login";
@@ -9,7 +10,7 @@ import { useAuthStore } from "./store/useAuthStore.ts";
 import { NotFoundPage, ErrorPage, ErrorBoundary } from "./components/errors";
 
 // 인증된 사용자만 접근 가능한 라우트
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
 
     if (!isLoggedIn) {
@@ -20,7 +21,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 // 비인증 사용자만 접근 가능한 라우트 (로그인 페이지 등)
-function PublicRoute({ children }: { children: React.ReactNode }) {
+function PublicRoute({ children }: { children: ReactNode }) {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
 
     if (isLoggedIn) {

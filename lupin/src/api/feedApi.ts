@@ -1,8 +1,24 @@
 import apiClient from './client';
 import { getS3Url } from '@/lib/utils';
 
+// Feed 응답 타입
+interface FeedResponse {
+  id?: number;
+  images?: string[];
+  writerAvatar?: string;
+  [key: string]: unknown;
+}
+
+// 페이지네이션 응답 타입
+interface PagedFeedResponse {
+  content?: FeedResponse[];
+  totalPages?: number;
+  totalElements?: number;
+  [key: string]: unknown;
+}
+
 // Feed 응답에서 images를 S3 URL로 변환
-const transformFeedImages = (feed: any) => {
+const transformFeedImages = (feed: FeedResponse | null) => {
   if (!feed) return feed;
   return {
     ...feed,
@@ -12,7 +28,7 @@ const transformFeedImages = (feed: any) => {
 };
 
 // 페이지네이션 응답에서 모든 피드의 images를 변환
-const transformPagedFeeds = (response: any) => {
+const transformPagedFeeds = (response: PagedFeedResponse | null) => {
   if (!response || !response.content) return response;
   return {
     ...response,

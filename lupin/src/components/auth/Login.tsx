@@ -4,7 +4,7 @@
  * React Hook Form + Zod 적용
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,13 +28,30 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
 
+interface GoogleInitConfig {
+  client_id: string;
+  callback: (response: GoogleCredentialResponse) => void;
+  use_fedcm_for_prompt?: boolean;
+}
+
+interface GoogleButtonConfig {
+  theme: string;
+  size: string;
+  type: string;
+  shape: string;
+}
+
+interface GoogleCredentialResponse {
+  credential: string;
+}
+
 declare global {
   interface Window {
     google?: {
       accounts: {
         id: {
-          initialize: (config: any) => void;
-          renderButton: (element: HTMLElement, config: any) => void;
+          initialize: (config: GoogleInitConfig) => void;
+          renderButton: (element: HTMLElement, config: GoogleButtonConfig) => void;
         };
       };
     };
@@ -95,7 +112,7 @@ export default function Login() {
     return () => {
       document.body.removeChild(script);
     };
-  }, []);
+  }, [handleGoogleLogin]);
 
   const handleNaverLogin = () => {
     const state = Math.random().toString(36).substring(7);
@@ -123,7 +140,7 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = async (response: any) => {
+  const handleGoogleLogin = useCallback(async (response: GoogleCredentialResponse) => {
     setError("");
     setIsLoading(true);
     try {
@@ -138,9 +155,10 @@ export default function Login() {
         if (result.name) localStorage.setItem("userName", result.name);
 
         login(result.accessToken, result.role);
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Google login failed:", err);
-        if (err.response?.status === 404) {
+        const axiosError = err as { response?: { status?: number } };
+        if (axiosError.response?.status === 404) {
             setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
         } else {
             setError("구글 로그인 중 오류가 발생했습니다.");
@@ -148,7 +166,7 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [login]);
 
   const onSubmit = async (data: LoginFormData) => {
     setError("");
@@ -164,10 +182,11 @@ export default function Login() {
         localStorage.setItem("userName", response.name);
 
         login(response.accessToken, response.role);
-    } catch (err: any) {
-      if (err.response?.status === 401) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number } };
+      if (axiosError.response?.status === 401) {
         setError("아이디 또는 비밀번호가 일치하지 않습니다.");
-      } else if (err.response?.status === 404) {
+      } else if (axiosError.response?.status === 404) {
         setError("존재하지 않는 사용자입니다.");
       } else {
         setError("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");

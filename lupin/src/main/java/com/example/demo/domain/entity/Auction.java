@@ -133,16 +133,16 @@ public class Auction {
             throw new IllegalStateException("Active 상태에서만 종료할 수 있습니다");
         }
 
+        if (this.winner == null) {
+            throw new IllegalStateException("winner가 없는 경매는 종료할 수 없습니다.");
+        }
+
         for (AuctionBid bid : bids) {
             if (bid.getUser().equals(this.winner)) {
                 bid.winBid();
             } else {
                 bid.lostBid();
             }
-        }
-
-        if (this.winner == null) {
-            throw new IllegalStateException("winner가 없는 경매는 종료할 수 없습니다.");
         }
 
         this.overtimeStarted = false;

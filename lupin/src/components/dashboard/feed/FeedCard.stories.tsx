@@ -4,7 +4,7 @@
  * FeedCard 컴포넌트 단독 스토리북
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { FeedCard } from "./FeedCard";
 import { Feed } from "@/types/dashboard.types";
 import { useState } from "react";

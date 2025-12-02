@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import Sidebar from '../dashboard/shared/Sidebar';
 import AnimatedBackground from '../dashboard/shared/AnimatedBackground';
@@ -53,6 +53,7 @@ const mockAvatars: Record<string, string> = {
 };
 
 // Mock 댓글 데이터 (피드별) - 추후 스토리에서 사용 예정
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _mockFeedComments: Record<number, Comment[]> = {
   1: [
     {
@@ -155,6 +156,7 @@ const mockFeeds: Feed[] = [
 ];
 
 // Mock 댓글 데이터 - 추후 스토리에서 사용 예정
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _mockComments: Comment[] = [
   {
     id: 1,

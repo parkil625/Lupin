@@ -95,7 +95,7 @@ export default function Home({
 
         // 랭킹 컨텍스트 조회 (현재 사용자의 순위 포함)
         const rankingContext = await userApi.getUserRankingContext(userId);
-        const myRanking = rankingContext.find((r: any) => r.id === userId);
+        const myRanking = rankingContext.find((r: { id: number; rank?: number }) => r.id === userId);
 
         // 7일 연속 체크 (myFeeds가 7개 이상이고 연속인지 확인)
         const has7DayStreak = checkSevenDayStreak(myFeeds);

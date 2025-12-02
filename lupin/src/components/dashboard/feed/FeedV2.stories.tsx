@@ -5,7 +5,7 @@
  * - Feed.stories.tsx와 비교하면서 작업
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import FeedViewV2 from "./FeedV2";
 
 const meta: Meta<typeof FeedViewV2> = {

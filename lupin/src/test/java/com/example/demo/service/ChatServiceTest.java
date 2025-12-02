@@ -1,7 +1,10 @@
 package com.example.demo.service;
 
+import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.ChatMessage;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.AppointmentStatus;
+import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.ChatRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +36,9 @@ class ChatServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AppointmentRepository appointmentRepository;
 
     @InjectMocks
     private ChatService chatService;
@@ -171,5 +177,474 @@ class ChatServiceTest {
 
         // Then
         assertThat(generatedRoomId).isEqualTo("1:21");
+    }
+
+    @Test
+    @DisplayName("의사 ID로 모든 채팅방 ID 조회")
+    void getAllChatRoomsByDoctorId() {
+        // Given
+        Long doctorId = 21L;
+        ChatMessage message3 = ChatMessage.builder()
+                .id(3L)
+                .roomId("2:21")  // patient 2와 doctor 21
+                .sender(patient)
+                .content("두 번째 채팅방 메시지")
+                .build();
+
+        List<ChatMessage> allMessages = Arrays.asList(message1, message2, message3);
+        given(chatRepository.findAll())
+                .willReturn(allMessages);
+
+        // When
+        List<String> roomIds = chatService.getAllChatRoomsByDoctorId(doctorId);
+
+        // Then
+        assertThat(roomIds).hasSize(2);
+        assertThat(roomIds).containsExactlyInAnyOrder("1:21", "2:21");
+        verify(chatRepository, times(1)).findAll();
+    }
+
+    @Test
+    @DisplayName("각 채팅방의 최근 메시지 조회")
+    void getLatestMessageForEachRoom() {
+        // Given
+        String roomId1 = "1:21";
+        String roomId2 = "2:21";
+
+        ChatMessage latestMessage1 = ChatMessage.builder()
+                .id(2L)
+                .roomId(roomId1)
+                .sender(doctor)
+                .content("네, 환자분")
+                .time(LocalDateTime.now())
+                .build();
+
+        ChatMessage latestMessage2 = ChatMessage.builder()
+                .id(4L)
+                .roomId(roomId2)
+                .sender(patient)
+                .content("안녕하세요")
+                .time(LocalDateTime.now().minusMinutes(5))
+                .build();
+
+        given(chatRepository.findByRoomIdOrderByTimeAsc(roomId1))
+                .willReturn(Arrays.asList(message1, latestMessage1));
+        given(chatRepository.findByRoomIdOrderByTimeAsc(roomId2))
+                .willReturn(List.of(latestMessage2));
+
+        // When
+        ChatMessage result1 = chatService.getLatestMessageInRoom(roomId1);
+        ChatMessage result2 = chatService.getLatestMessageInRoom(roomId2);
+
+        // Then
+        assertThat(result1.getContent()).isEqualTo("네, 환자분");
+        assertThat(result2.getContent()).isEqualTo("안녕하세요");
+        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId1);
+        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId2);
+    }
+
+    @Test
+    @DisplayName("채팅방 목록이 최근 메시지 시간순 정렬")
+    void getChatRoomsSortedByLatestMessage() {
+        // Given
+        Long doctorId = 21L;
+        LocalDateTime now = LocalDateTime.now();
+
+        // roomId1의 최근 메시지는 5분 전
+        ChatMessage room1Message = ChatMessage.builder()
+                .id(1L)
+                .roomId("1:21")
+                .sender(patient)
+                .content("메시지1")
+                .time(now.minusMinutes(5))
+                .build();
+
+        // roomId2의 최근 메시지는 지금
+        ChatMessage room2Message = ChatMessage.builder()
+                .id(2L)
+                .roomId("2:21")
+                .sender(patient)
+                .content("메시지2")
+                .time(now)
+                .build();
+
+        // roomId3의 최근 메시지는 10분 전
+        ChatMessage room3Message = ChatMessage.builder()
+                .id(3L)
+                .roomId("3:21")
+                .sender(patient)
+                .content("메시지3")
+                .time(now.minusMinutes(10))
+                .build();
+
+        List<ChatMessage> allMessages = Arrays.asList(room1Message, room2Message, room3Message);
+        given(chatRepository.findAll()).willReturn(allMessages);
+
+        given(chatRepository.findByRoomIdOrderByTimeAsc("1:21")).willReturn(List.of(room1Message));
+        given(chatRepository.findByRoomIdOrderByTimeAsc("2:21")).willReturn(List.of(room2Message));
+        given(chatRepository.findByRoomIdOrderByTimeAsc("3:21")).willReturn(List.of(room3Message));
+
+        // When
+        List<String> sortedRoomIds = chatService.getChatRoomsSortedByLatestMessage(doctorId);
+
+        // Then
+        assertThat(sortedRoomIds).hasSize(3);
+        assertThat(sortedRoomIds.get(0)).isEqualTo("2:21");  // 가장 최근
+        assertThat(sortedRoomIds.get(1)).isEqualTo("1:21");  // 5분 전
+        assertThat(sortedRoomIds.get(2)).isEqualTo("3:21");  // 10분 전
+    }
+
+    @Test
+    @DisplayName("특정 채팅방의 읽지 않은 메시지 개수")
+    void getUnreadMessageCount() {
+        // Given
+        String roomId = "1:21";
+        Long userId = 21L;  // doctor ID
+
+        ChatMessage unreadMessage1 = ChatMessage.builder()
+                .id(1L)
+                .roomId(roomId)
+                .sender(patient)
+                .content("안읽은 메시지1")
+                .isRead(false)
+                .build();
+
+        ChatMessage unreadMessage2 = ChatMessage.builder()
+                .id(2L)
+                .roomId(roomId)
+                .sender(patient)
+                .content("안읽은 메시지2")
+                .isRead(false)
+                .build();
+
+        List<ChatMessage> unreadMessages = Arrays.asList(unreadMessage1, unreadMessage2);
+        given(chatRepository.findUnreadMessages(roomId, userId))
+                .willReturn(unreadMessages);
+
+        // When
+        int count = chatService.getUnreadMessageCount(roomId, userId);
+
+        // Then
+        assertThat(count).isEqualTo(2);
+        verify(chatRepository, times(1)).findUnreadMessages(roomId, userId);
+    }
+
+    @Test
+    @DisplayName("의사의 모든 채팅방 읽지 않은 메시지 총합")
+    void getTotalUnreadMessageCountForDoctor() {
+        // Given
+        Long doctorId = 21L;
+
+        // Room 1:21 - 2개 안읽음
+        ChatMessage unread1 = ChatMessage.builder()
+                .id(1L)
+                .roomId("1:21")
+                .sender(patient)
+                .content("메시지1")
+                .isRead(false)
+                .build();
+
+        ChatMessage unread2 = ChatMessage.builder()
+                .id(2L)
+                .roomId("1:21")
+                .sender(patient)
+                .content("메시지2")
+                .isRead(false)
+                .build();
+
+        // Room 2:21 - 1개 안읽음
+        ChatMessage unread3 = ChatMessage.builder()
+                .id(3L)
+                .roomId("2:21")
+                .sender(patient)
+                .content("메시지3")
+                .isRead(false)
+                .build();
+
+        List<ChatMessage> allMessages = Arrays.asList(unread1, unread2, unread3);
+        given(chatRepository.findAll()).willReturn(allMessages);
+
+        given(chatRepository.findUnreadMessages("1:21", doctorId))
+                .willReturn(Arrays.asList(unread1, unread2));
+        given(chatRepository.findUnreadMessages("2:21", doctorId))
+                .willReturn(List.of(unread3));
+
+        // When
+        int totalCount = chatService.getTotalUnreadMessageCountForDoctor(doctorId);
+
+        // Then
+        assertThat(totalCount).isEqualTo(3);  // 2 + 1 = 3
+    }
+
+    @Test
+    @DisplayName("읽음 처리 후 카운트 감소")
+    void shouldDecreaseUnreadCountAfterMarkingAsRead() {
+        // Given
+        String roomId = "1:21";
+        Long userId = 21L;  // doctor ID
+
+        ChatMessage unread1 = ChatMessage.builder()
+                .id(1L)
+                .roomId(roomId)
+                .sender(patient)
+                .content("안읽은 메시지1")
+                .isRead(false)
+                .build();
+
+        ChatMessage unread2 = ChatMessage.builder()
+                .id(2L)
+                .roomId(roomId)
+                .sender(patient)
+                .content("안읽은 메시지2")
+                .isRead(false)
+                .build();
+
+        // 읽기 전: 2개
+        given(chatRepository.findUnreadMessages(roomId, userId))
+                .willReturn(Arrays.asList(unread1, unread2));
+
+        int countBefore = chatService.getUnreadMessageCount(roomId, userId);
+
+        // When: 읽음 처리
+        chatService.markAsRead(roomId, userId);
+
+        // 읽음 처리 후: 0개
+        given(chatRepository.findUnreadMessages(roomId, userId))
+                .willReturn(List.of());
+
+        int countAfter = chatService.getUnreadMessageCount(roomId, userId);
+
+        // Then
+        assertThat(countBefore).isEqualTo(2);
+        assertThat(countAfter).isEqualTo(0);
+        verify(chatRepository, times(1)).markAllAsReadInRoom(roomId, userId);
+    }
+
+    @Test
+    @DisplayName("채팅방 ID로 환자 정보 조회")
+    void getPatientInfoFromRoomId() {
+        // Given
+        String roomId = "1:21";  // patientId:doctorId
+        Long patientId = 1L;
+
+        given(userRepository.findById(patientId))
+                .willReturn(java.util.Optional.of(patient));
+
+        // When
+        User result = chatService.getPatientFromRoomId(roomId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(patientId);
+        assertThat(result.getUserId()).isEqualTo("patient01");
+        assertThat(result.getName()).isEqualTo("환자1");
+        verify(userRepository, times(1)).findById(patientId);
+    }
+
+    @Test
+    @DisplayName("채팅방 ID로 관련 예약 정보 조회")
+    void getAppointmentsFromRoomId() {
+        // Given
+        String roomId = "1:21";  // patientId:doctorId
+        Long patientId = 1L;
+        Long doctorId = 21L;
+
+        Appointment appointment1 = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Appointment appointment2 = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 15, 10, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        List<Appointment> appointments = Arrays.asList(appointment1, appointment2);
+
+        given(appointmentRepository.findByPatientIdOrderByDateDesc(patientId))
+                .willReturn(appointments);
+
+        // When
+        List<Appointment> result = chatService.getAppointmentsFromRoomId(roomId);
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+        assertThat(result.get(1).getId()).isEqualTo(2L);
+        verify(appointmentRepository, times(1)).findByPatientIdOrderByDateDesc(patientId);
+    }
+
+    @Test
+    @DisplayName("예약 확정 시 채팅방 자동 생성")
+    void createChatRoomOnAppointmentConfirmation() {
+        // Given
+        Long appointmentId = 1L;
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        // When
+        String roomId = chatService.createChatRoomForAppointment(appointmentId);
+
+        // Then
+        assertThat(roomId).isEqualTo("appointment_1");
+    }
+
+    @Test
+    @DisplayName("채팅방 ID 형식: appointment_{appointmentId}")
+    void chatRoomIdFormatShouldBeValid() {
+        // Given & When
+        String roomId1 = chatService.createChatRoomForAppointment(1L);
+        String roomId2 = chatService.createChatRoomForAppointment(123L);
+        String roomId3 = chatService.createChatRoomForAppointment(999L);
+
+        // Then
+        assertThat(roomId1).matches("^appointment_\\d+$");
+        assertThat(roomId2).matches("^appointment_\\d+$");
+        assertThat(roomId3).matches("^appointment_\\d+$");
+
+        assertThat(roomId1).isEqualTo("appointment_1");
+        assertThat(roomId2).isEqualTo("appointment_123");
+        assertThat(roomId3).isEqualTo("appointment_999");
+    }
+
+    @Test
+    @DisplayName("이미 채팅방이 있으면 중복 생성 안 함")
+    void shouldNotCreateDuplicateChatRoom() {
+        // Given
+        Long appointmentId = 1L;
+        String expectedRoomId = "appointment_1";
+
+        // 해당 appointmentId로 이미 메시지가 존재하는 경우를 시뮬레이션
+        ChatMessage existingMessage = ChatMessage.builder()
+                .id(1L)
+                .roomId(expectedRoomId)
+                .sender(patient)
+                .content("기존 메시지")
+                .time(LocalDateTime.now())
+                .build();
+
+        given(chatRepository.findByRoomIdOrderByTimeAsc(expectedRoomId))
+                .willReturn(List.of(existingMessage));
+
+        // When
+        boolean exists = chatService.chatRoomExists(appointmentId);
+
+        // Then
+        assertThat(exists).isTrue();
+        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(expectedRoomId);
+    }
+
+    @Test
+    @DisplayName("채팅방 ID로 예약 정보 조회 (appointment_X 형식)")
+    void getAppointmentFromAppointmentRoomId() {
+        // Given
+        String roomId = "appointment_1";  // appointment_{appointmentId}
+        Long appointmentId = 1L;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(java.util.Optional.of(appointment));
+
+        // When
+        Appointment result = chatService.getAppointmentFromRoomId(roomId);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(appointmentId);
+        assertThat(result.getPatient()).isEqualTo(patient);
+        assertThat(result.getDoctor()).isEqualTo(doctor);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
+
+    @Test
+    @DisplayName("예약 ID로 채팅방 조회")
+    void getRoomIdByAppointmentId() {
+        // Given
+        Long appointmentId = 1L;
+
+        // When
+        String roomId = chatService.getRoomIdByAppointmentId(appointmentId);
+
+        // Then
+        assertThat(roomId).isEqualTo("appointment_1");
+    }
+
+    @Test
+    @DisplayName("예약 취소 시 채팅방 상태 변경")
+    void shouldReflectCancelledAppointmentStatus() {
+        // Given
+        String roomId = "appointment_1";
+        Long appointmentId = 1L;
+
+        Appointment cancelledAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.CANCELLED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(java.util.Optional.of(cancelledAppointment));
+
+        // When
+        Appointment result = chatService.getAppointmentFromRoomId(roomId);
+
+        // Then
+        assertThat(result.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
+
+    @Test
+    @DisplayName("빈 채팅방도 목록에 포함")
+    void shouldIncludeEmptyChatRooms() {
+        // Given
+        Long doctorId = 21L;
+        Long appointmentId1 = 1L;
+        Long appointmentId2 = 2L;
+
+        // appointment_2는 빈 채팅방 (예약은 있지만 메시지가 없음)
+        Appointment appointment1 = Appointment.builder()
+                .id(appointmentId1)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Appointment appointment2 = Appointment.builder()
+                .id(appointmentId2)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId))
+                .willReturn(Arrays.asList(appointment1, appointment2));
+
+        // When
+        List<String> roomIds = chatService.getAllChatRoomsIncludingEmpty(doctorId);
+
+        // Then
+        assertThat(roomIds).hasSize(2);
+        assertThat(roomIds).containsExactlyInAnyOrder("appointment_1", "appointment_2");
+        verify(appointmentRepository, times(1)).findByDoctorIdOrderByDateDesc(doctorId);
     }
 }

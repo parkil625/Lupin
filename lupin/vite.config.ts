@@ -114,6 +114,23 @@ export default defineConfig({
           },
           setupFiles: ['.storybook/vitest.setup.ts']
         }
+      },
+      // E2E tests
+      {
+        extends: true,
+        test: {
+          name: 'e2e',
+          include: ['src/e2e/**/*.e2e.{ts,tsx}'],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright({}),
+            instances: [{
+              browser: 'chromium'
+            }]
+          },
+          testTimeout: 30000,
+        }
       }
     ]
   }

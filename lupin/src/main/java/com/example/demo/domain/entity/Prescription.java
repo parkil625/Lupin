@@ -31,6 +31,10 @@ public class Prescription {
     @JoinColumn(name = "doctor_id", nullable = false)
     private User doctor;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "appointment_id")
+    private Appointment appointment;
+
     @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PrescriptionMed> medicines = new ArrayList<>();
@@ -44,5 +48,13 @@ public class Prescription {
     public void addMedicine(PrescriptionMed medicine) {
         medicines.add(medicine);
         medicine.setPrescription(this);
+    }
+
+    public void removeMedicine(PrescriptionMed medicine) {
+        medicines.remove(medicine);
+    }
+
+    public void updateDiagnosis(String diagnosis) {
+        this.diagnosis = diagnosis;
     }
 }

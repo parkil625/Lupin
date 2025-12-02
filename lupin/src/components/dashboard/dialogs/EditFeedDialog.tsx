@@ -204,48 +204,48 @@ export default function EditFeedDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="w-full h-full md:h-[95vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col">
+        <DialogContent className="w-full h-[calc(100%-70px)] max-h-[calc(100vh-70px)] md:h-[95vh] md:max-h-[95vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col">
           <DialogTitle className="sr-only">피드 수정</DialogTitle>
           <DialogDescription className="sr-only">
             기존 피드 내용을 수정합니다. 운동 종류, 시작/끝 사진, 그리고 내용을 수정할 수 있습니다.
           </DialogDescription>
 
           {/* 헤더 + 탭 */}
-          <div className="p-4 border-b border-gray-200 flex-shrink-0">
-            <h2 className="text-xl font-black text-gray-900 mb-3">피드 수정</h2>
-
-            {/* 운동 종류 */}
-            <WorkoutTypeSelect
-              value={workoutType}
-              onChange={setWorkoutType}
-              className="mb-3"
-            />
+          <div className="p-3 border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-black text-gray-900">피드 수정</h2>
+              <WorkoutTypeSelect
+                value={workoutType}
+                onChange={setWorkoutType}
+                className="w-auto"
+              />
+            </div>
 
             {/* 탭 버튼 */}
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <button
                 onClick={() => setActiveTab("photo")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeTab === "photo"
                     ? "bg-[#C93831] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                <Image className="w-4 h-4" />
-                사진 첨부
+                <Image className="w-3.5 h-3.5" />
+                사진
                 {(startImage || endImage) && (
-                  <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full"></span>
                 )}
               </button>
               <button
                 onClick={() => setActiveTab("content")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeTab === "content"
                     ? "bg-[#C93831] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-3.5 h-3.5" />
                 글 작성
               </button>
             </div>

@@ -232,16 +232,16 @@ export default function CreateFeedDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="!max-w-[795px] !w-[795px] h-[95vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl !flex !gap-0" style={{ width: '795px', maxWidth: '795px' }}>
+      <DialogContent className="w-full h-full md:h-[95vh] md:!max-w-[795px] md:!w-[795px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl !flex !gap-0">
         <DialogHeader className="sr-only">
           <DialogTitle>피드 작성</DialogTitle>
           <DialogDescription>
             새로운 피드를 작성할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex h-full overflow-hidden w-full">
+        <div className="flex flex-col md:flex-row h-full overflow-hidden w-full">
           {/* Left Sidebar */}
-          <div className="w-80 bg-transparent border-r border-gray-200 p-6 flex-shrink-0">
+          <div className="w-full md:w-80 bg-transparent border-b md:border-b-0 md:border-r border-gray-200 p-4 md:p-6 flex-shrink-0">
             <h2 className="text-xl font-black text-gray-900 mb-4">피드 작성</h2>
 
             {/* Workout Type */}
@@ -336,21 +336,21 @@ export default function CreateFeedDialog({
           </div>
 
           {/* Right Editor */}
-          <div className="w-[475px] bg-transparent flex-shrink-0 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 w-[475px] h-full" style={{ width: '475px', maxWidth: '475px' }}>
+          <div className="flex-1 md:w-[475px] bg-transparent md:flex-shrink-0 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 w-full md:w-[475px] h-full">
               <style>{`
                 .bn-editor {
-                  max-width: 443px !important;
-                  width: 443px !important;
+                  max-width: 100% !important;
+                  width: 100% !important;
                   background: transparent !important;
                 }
                 .bn-container {
-                  max-width: 475px !important;
-                  width: 475px !important;
+                  max-width: 100% !important;
+                  width: 100% !important;
                   background: transparent !important;
                 }
                 .bn-block-content {
-                  max-width: 443px !important;
+                  max-width: 100% !important;
                   background: transparent !important;
                 }
                 .bn-inline-content {
@@ -363,13 +363,18 @@ export default function CreateFeedDialog({
                 .ProseMirror {
                   background: transparent !important;
                 }
-                [data-radix-scroll-area-viewport] {
-                  width: 475px !important;
-                  max-width: 475px !important;
+                @media (min-width: 768px) {
+                  .bn-editor, .bn-container {
+                    max-width: 443px !important;
+                    width: 443px !important;
+                  }
+                  .bn-block-content {
+                    max-width: 443px !important;
+                  }
                 }
               `}</style>
-              <div style={{ minWidth: '475px', width: '475px' }}>
-                <div style={{ padding: '1rem' }}>
+              <div className="w-full md:min-w-[475px] md:w-[475px]">
+                <div className="p-4">
                   <BlockNoteView editor={editor} theme="light" />
                 </div>
               </div>

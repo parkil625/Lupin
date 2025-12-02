@@ -75,16 +75,16 @@ export function FeedCard({
   };
 
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center w-full">
       <div
-        className={`h-full max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl flex transition-all duration-300 ${
-          showComments ? "w-[825px]" : "w-[475px]"
+        className={`h-full max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl flex transition-all duration-300 w-full ${
+          showComments ? "max-w-[825px]" : "max-w-[475px]"
         }`}
       >
         {/* 메인 피드 콘텐츠 */}
-        <div className="w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
+        <div className="w-full max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
           {/* 이미지 영역 */}
-          <div className="relative h-[545px] w-full overflow-hidden">
+          <div className="relative aspect-[9/10] w-full overflow-hidden">
             {hasImages ? (
               <>
                 <img

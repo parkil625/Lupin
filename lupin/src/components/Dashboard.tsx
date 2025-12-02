@@ -557,6 +557,17 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               <span className="text-[10px] mt-1 font-medium">{item.label}</span>
             </button>
           ))}
+          {/* 알림 버튼 */}
+          <button
+            onClick={() => setShowNotifications(true)}
+            className="flex flex-col items-center justify-center flex-1 py-2 text-gray-500 relative"
+          >
+            <Bell className="w-5 h-5" strokeWidth={2} />
+            {notifications.filter((n) => !n.isRead).length > 0 && (
+              <div className="absolute top-1.5 right-1/4 w-2 h-2 bg-red-500 rounded-full"></div>
+            )}
+            <span className="text-[10px] mt-1 font-medium">알림</span>
+          </button>
           <button
             onClick={() => handleNavSelect("profile")}
             className={`flex flex-col items-center justify-center flex-1 py-2 ${
@@ -571,6 +582,18 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           </button>
         </div>
       </div>
+
+      {/* 모바일용 알림 팝업 (하단 네비게이션에서 클릭 시) */}
+      {showNotifications && (
+        <div className="md:hidden">
+          <NotificationPopup
+            notifications={notifications}
+            onClose={() => setShowNotifications(false)}
+            onNotificationClick={handleNotificationClick}
+            onMarkAllAsRead={handleMarkAllAsRead}
+          />
+        </div>
+      )}
 
       <FeedDetailDialogHome
         feed={selectedFeed}

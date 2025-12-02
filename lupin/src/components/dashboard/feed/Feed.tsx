@@ -459,9 +459,7 @@ function FeedItem({
   };
 
   return (
-    <div className={`h-full mx-auto flex shadow-xl rounded-2xl overflow-hidden transition-all duration-300 ${
-      showComments ? "aspect-[16/16]" : "aspect-[9/16]"
-    }`}>
+    <div className={`h-full w-fit mx-auto flex shadow-xl rounded-2xl overflow-hidden transition-all duration-300 relative`}>
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] flex flex-col flex-shrink-0">
         {/* 이미지 영역 - 57% */}
@@ -575,11 +573,29 @@ function FeedItem({
         </ScrollArea>
       </div>
 
-      {/* 댓글 패널 (오른쪽) */}
+      {/* 댓글 패널 - 모바일: 전체화면 오버레이, 데스크톱: 옆에 표시 */}
       {showComments && (
-        <div className="h-full aspect-[7/16] border-l border-gray-200/50 flex-shrink-0">
-          <CommentPanel feedId={feed.id} />
-        </div>
+        <>
+          {/* 모바일용 전체화면 오버레이 */}
+          <div className="md:hidden fixed inset-0 z-50 bg-white flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-bold text-lg">댓글</h3>
+              <button
+                onClick={() => setShowComments(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <CommentPanel feedId={feed.id} />
+            </div>
+          </div>
+          {/* 데스크톱용 사이드 패널 */}
+          <div className="hidden md:block h-full aspect-[7/16] border-l border-gray-200/50 flex-shrink-0">
+            <CommentPanel feedId={feed.id} />
+          </div>
+        </>
       )}
     </div>
   );

@@ -62,7 +62,7 @@ class NotificationServiceTest {
                 .content("누군가 댓글을 달았습니다")
                 .build();
 
-        given(notificationRepository.findByUserOrderByCreatedAtDesc(user))
+        given(notificationRepository.findByUserOrderByCreatedAtDescIdDesc(user))
                 .willReturn(List.of(notification1, notification2));
 
         // when
@@ -187,5 +187,181 @@ class NotificationServiceTest {
         assertThatThrownBy(() -> notificationService.deleteNotification(notificationId))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOTIFICATION_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("피드 좋아요 알림을 생성한다")
+    void createFeedLikeNotificationTest() {
+        // given
+        User feedOwner = User.builder()
+                .userId("owner")
+                .password("password")
+                .name("피드주인")
+                .role(Role.MEMBER)
+                .build();
+
+        User liker = User.builder()
+                .userId("liker")
+                .password("password")
+                .name("좋아요누른사람")
+                .role(Role.MEMBER)
+                .build();
+
+        Long feedId = 1L;
+
+        // when
+        notificationService.createFeedLikeNotification(feedOwner, liker, feedId);
+
+        // then
+        verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
+                notification.getUser().equals(feedOwner) &&
+                notification.getType().equals("FEED_LIKE") &&
+                notification.getRefId().equals(String.valueOf(feedId))
+        ));
+    }
+
+    @Test
+    @DisplayName("자기 자신의 피드에 좋아요 시 알림을 생성하지 않는다")
+    void createFeedLikeNotificationSelfTest() {
+        // given
+        Long feedId = 1L;
+
+        // when
+        notificationService.createFeedLikeNotification(user, user, feedId);
+
+        // then
+        verify(notificationRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("댓글 작성 알림을 생성한다")
+    void createCommentNotificationTest() {
+        // given
+        User feedOwner = User.builder()
+                .userId("owner")
+                .password("password")
+                .name("피드주인")
+                .role(Role.MEMBER)
+                .build();
+
+        User commenter = User.builder()
+                .userId("commenter")
+                .password("password")
+                .name("댓글작성자")
+                .role(Role.MEMBER)
+                .build();
+
+        Long feedId = 1L;
+
+        // when
+        notificationService.createCommentNotification(feedOwner, commenter, feedId);
+
+        // then
+        verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
+                notification.getUser().equals(feedOwner) &&
+                notification.getType().equals("COMMENT") &&
+                notification.getRefId().equals(String.valueOf(feedId))
+        ));
+    }
+
+    @Test
+    @DisplayName("자기 자신의 피드에 댓글 시 알림을 생성하지 않는다")
+    void createCommentNotificationSelfTest() {
+        // given
+        Long feedId = 1L;
+
+        // when
+        notificationService.createCommentNotification(user, user, feedId);
+
+        // then
+        verify(notificationRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("댓글 좋아요 알림을 생성한다")
+    void createCommentLikeNotificationTest() {
+        // given
+        User commentOwner = User.builder()
+                .userId("owner")
+                .password("password")
+                .name("댓글주인")
+                .role(Role.MEMBER)
+                .build();
+
+        User liker = User.builder()
+                .userId("liker")
+                .password("password")
+                .name("좋아요누른사람")
+                .role(Role.MEMBER)
+                .build();
+
+        Long commentId = 1L;
+
+        // when
+        notificationService.createCommentLikeNotification(commentOwner, liker, commentId);
+
+        // then
+        verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
+                notification.getUser().equals(commentOwner) &&
+                notification.getType().equals("COMMENT_LIKE") &&
+                notification.getRefId().equals(String.valueOf(commentId))
+        ));
+    }
+
+    @Test
+    @DisplayName("자기 자신의 댓글에 좋아요 시 알림을 생성하지 않는다")
+    void createCommentLikeNotificationSelfTest() {
+        // given
+        Long commentId = 1L;
+
+        // when
+        notificationService.createCommentLikeNotification(user, user, commentId);
+
+        // then
+        verify(notificationRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("대댓글 알림을 생성한다")
+    void createReplyNotificationTest() {
+        // given
+        User commentOwner = User.builder()
+                .userId("owner")
+                .password("password")
+                .name("댓글주인")
+                .role(Role.MEMBER)
+                .build();
+
+        User replier = User.builder()
+                .userId("replier")
+                .password("password")
+                .name("답글작성자")
+                .role(Role.MEMBER)
+                .build();
+
+        Long commentId = 1L;
+
+        // when
+        notificationService.createReplyNotification(commentOwner, replier, commentId);
+
+        // then
+        verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
+                notification.getUser().equals(commentOwner) &&
+                notification.getType().equals("REPLY") &&
+                notification.getRefId().equals(String.valueOf(commentId))
+        ));
+    }
+
+    @Test
+    @DisplayName("자기 자신의 댓글에 답글 시 알림을 생성하지 않는다")
+    void createReplyNotificationSelfTest() {
+        // given
+        Long commentId = 1L;
+
+        // when
+        notificationService.createReplyNotification(user, user, commentId);
+
+        // then
+        verify(notificationRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
     }
 }

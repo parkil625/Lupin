@@ -2,8 +2,6 @@
  * 이미지 메타데이터 추출 및 운동 계산 유틸리티
  */
 
-import EXIF from "exif-js";
-
 export interface ImageMetadata {
   dateTime: Date | null;
   latitude?: number;
@@ -18,73 +16,14 @@ export interface WorkoutCalculation {
 
 /**
  * 이미지 파일에서 EXIF 메타데이터 추출
+ *
+ * 참고: 실제 EXIF 검증은 백엔드에서만 수행됨 (S3 업로드된 이미지 기준)
+ * 프론트엔드에서는 EXIF 추출하지 않음 (exif-js 빌드 호환성 문제)
  */
-export function extractImageMetadata(file: File): Promise<ImageMetadata> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-
-    reader.onload = function(e) {
-      const img = new Image();
-      img.src = e.target?.result as string;
-
-      img.onload = function() {
-        EXIF.getData(img as unknown as string, function(this: typeof img) {
-          const dateTimeStr = EXIF.getTag(this, "DateTimeOriginal") ||
-                              EXIF.getTag(this, "DateTime");
-
-          let dateTime: Date | null = null;
-
-          if (dateTimeStr) {
-            // EXIF 날짜 형식: "2024:01:15 10:30:00"
-            const parts = dateTimeStr.split(" ");
-            if (parts.length === 2) {
-              const datePart = parts[0].replace(/:/g, "-");
-              const timePart = parts[1];
-              dateTime = new Date(`${datePart}T${timePart}`);
-            }
-          }
-
-          // GPS 좌표 추출 (있는 경우)
-          const latDMS = EXIF.getTag(this, "GPSLatitude");
-          const lonDMS = EXIF.getTag(this, "GPSLongitude");
-          const latRef = EXIF.getTag(this, "GPSLatitudeRef");
-          const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
-
-          let latitude: number | undefined;
-          let longitude: number | undefined;
-
-          if (latDMS && lonDMS) {
-            latitude = convertDMSToDD(latDMS, latRef);
-            longitude = convertDMSToDD(lonDMS, lonRef);
-          }
-
-          resolve({ dateTime, latitude, longitude });
-        });
-      };
-
-      img.onerror = () => resolve({ dateTime: null });
-    };
-
-    reader.onerror = () => resolve({ dateTime: null });
-    reader.readAsDataURL(file);
-  });
-}
-
-/**
- * DMS(도분초)를 십진수로 변환
- */
-function convertDMSToDD(dms: number[], ref: string): number {
-  const degrees = dms[0];
-  const minutes = dms[1];
-  const seconds = dms[2];
-
-  let dd = degrees + minutes / 60 + seconds / 3600;
-
-  if (ref === "S" || ref === "W") {
-    dd = -dd;
-  }
-
-  return dd;
+export async function extractImageMetadata(_file: File): Promise<ImageMetadata> {
+  // 프론트엔드에서는 EXIF 추출하지 않음
+  // 백엔드에서 S3 이미지로 EXIF 검증함
+  return { dateTime: null };
 }
 
 /**

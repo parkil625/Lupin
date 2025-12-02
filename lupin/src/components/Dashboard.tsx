@@ -10,7 +10,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
-import { Bell } from "lucide-react";
+import { Bell, User } from "lucide-react";
 import { toast } from "sonner";
 import {
   Home,
@@ -47,8 +47,8 @@ import {
   Member,
   ChatMessage,
 } from "@/types/dashboard.types";
-import { feedApi, notificationApi } from "@/api";
-import { getRelativeTime } from "@/lib/utils";
+import { feedApi, notificationApi, commentApi } from "@/api";
+import { useFeedStore, mapBackendFeed } from "@/store/useFeedStore";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -100,12 +100,37 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     navigate(`/dashboard/${navId}`);
   };
 
+  // Zustand 스토어에서 피드 상태 가져오기
+  const {
+    myFeeds,
+    allFeeds,
+    selectedFeed,
+    setSelectedFeed,
+    editingFeed,
+    setEditingFeed,
+    feedPage,
+    hasMoreFeeds,
+    isLoadingFeeds,
+    pivotFeedId,
+    pivotFeed,
+    setPivotFeed,
+    refreshTrigger,
+    triggerRefresh,
+    loadMyFeeds,
+    loadFeeds,
+    loadMoreFeeds,
+    updateFeed: updateFeedInStore,
+    deleteFeed: deleteFeedInStore,
+    addFeed,
+    addFeedToAll,
+    toggleLike,
+  } = useFeedStore();
+
+  // 로컬 UI 상태
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
   const [showFeedDetailInHome, setShowFeedDetailInHome] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const feedContainerRef = useRef<HTMLDivElement>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [feedImageIndexes, setFeedImageIndexes] = useState<{
@@ -130,91 +155,13 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   );
   const [feedLikes, setFeedLikes] = useState<{ [key: number]: string[] }>({});
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [myFeeds, setMyFeeds] = useState<Feed[]>([]);
-  const [allFeeds, setAllFeeds] = useState<Feed[]>([]);
   const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>(
     []
   );
-  const [editingFeed, setEditingFeed] = useState<Feed | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [targetCommentId, setTargetCommentId] = useState<number | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [scrollToFeedId, setScrollToFeedId] = useState<number | null>(null);
-  const [feedPage, setFeedPage] = useState(0);
-  const [hasMoreFeeds, setHasMoreFeeds] = useState(true);
-  const [isLoadingFeeds, setIsLoadingFeeds] = useState(false);
-  const [pivotFeedId, setPivotFeedId] = useState<number | null>(null);
-  const [pivotFeed, setPivotFeed] = useState<Feed | null>(null);
-
-  // 백엔드 응답을 프론트엔드 Feed 타입으로 변환
-  const mapBackendFeed = (backendFeed: any): Feed => ({
-    id: backendFeed.id,
-    writerId: backendFeed.writerId,
-    writerName: backendFeed.writerName,
-    writerAvatar: backendFeed.writerAvatar,
-    activity: backendFeed.activity,
-    points: backendFeed.points || 0,
-    content: backendFeed.content,
-    images: backendFeed.images || [],
-    likes: backendFeed.likes || 0,
-    comments: backendFeed.comments || 0,
-    calories: backendFeed.calories,
-    createdAt: backendFeed.createdAt,
-    updatedAt: backendFeed.updatedAt,
-    time: getRelativeTime(backendFeed.createdAt),
-    author: backendFeed.writerName,
-  });
-
-  // 내 피드 로드 (전체)
-  const loadMyFeeds = async () => {
-    try {
-      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-      const response = await feedApi.getFeedsByUserId(currentUserId, 0, 100);
-      const feeds = response.content || response;
-      const mappedFeeds = feeds.map(mapBackendFeed);
-      setMyFeeds(mappedFeeds);
-    } catch (error) {
-      console.error("내 피드 로드 실패:", error);
-    }
-  };
-
-  // 다른 사람 피드 로드 (페이지네이션)
-  const loadFeeds = async (page: number, reset: boolean = false, excludeFeedId?: number) => {
-    if (isLoadingFeeds) return;
-
-    setIsLoadingFeeds(true);
-    try {
-      const pageSize = 10; // 한 번에 10개씩 로드
-      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-      // 백엔드에서 내 피드 제외 + excludeFeedId 제외
-      const response = await feedApi.getAllFeeds(page, pageSize, currentUserId, excludeFeedId);
-      const feeds = response.content || response;
-
-      const mappedFeeds = feeds.map(mapBackendFeed);
-      if (reset) {
-        setAllFeeds(mappedFeeds);
-      } else {
-        setAllFeeds((prev) => [...prev, ...mappedFeeds]);
-      }
-
-      // 더 이상 로드할 피드가 있는지 확인
-      const totalPages = response.totalPages || 1;
-      setHasMoreFeeds(page < totalPages - 1);
-      setFeedPage(page);
-    } catch (error) {
-      console.error("피드 데이터 로드 실패:", error);
-      toast.error("피드 데이터를 불러오는데 실패했습니다.");
-    } finally {
-      setIsLoadingFeeds(false);
-    }
-  };
-
-  // 추가 피드 로드
-  const loadMoreFeeds = () => {
-    if (hasMoreFeeds && !isLoadingFeeds) {
-      loadFeeds(feedPage + 1);
-    }
-  };
 
   // 초기 피드 로드 및 refreshTrigger 감지
   useEffect(() => {
@@ -245,14 +192,13 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const handleNotificationClick = async (notification: Notification) => {
     try {
       // 읽음 처리
-      if (!notification.read) {
-        const userId = 1; // 임시 사용자 ID
-        await notificationApi.markAsRead(notification.id, userId);
+      if (!notification.isRead) {
+        await notificationApi.markAsRead(notification.id);
 
         // 로컬 상태 업데이트
         setNotifications(
           notifications.map((n) =>
-            n.id === notification.id ? { ...n, read: true } : n
+            n.id === notification.id ? { ...n, isRead: true } : n
           )
         );
       }
@@ -261,85 +207,85 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       setShowNotifications(false);
       setSidebarExpanded(false);
 
-      // 알림 타입에 따라 적절한 페이지로 이동
-      if (
-        notification.type === "like" ||
-        notification.type === "comment" ||
-        notification.type === "reply" ||
-        notification.type === "comment_like"
-      ) {
-        // 피드 관련 알림 - 내 게시글이면 홈으로, 아니면 피드 페이지로
-        if (notification.feedId) {
-          // 내 피드와 다른 피드 모두에서 검색
-          const myFeed = myFeeds.find((f) => f.id === notification.feedId);
-          let otherFeed = allFeeds.find((f) => f.id === notification.feedId);
-          let feed = myFeed || otherFeed;
-
-          // 댓글/답글/댓글좋아요 알림이면 댓글 ID 설정
-          if (
-            (notification.type === "comment" ||
-              notification.type === "reply" ||
-              notification.type === "comment_like") &&
-            notification.commentId
-          ) {
-            setTargetCommentId(notification.commentId);
-          } else {
-            setTargetCommentId(null);
-          }
-
-          // 피드가 아직 로드되지 않은 경우 API에서 가져오기
-          if (!feed) {
-            try {
-              const response = await feedApi.getFeedById(notification.feedId);
-              // mapBackendFeedToFrontend와 동일한 변환 적용
-              const backendFeed = response;
-              feed = mapBackendFeed(backendFeed);
-
-              // allFeeds에 추가 (맨 앞에)
-              setAllFeeds((prev) => [feed!, ...prev]);
-            } catch (error) {
-              console.error("피드 로드 실패:", error);
-              return;
+      // 피드 관련 알림 처리
+      if (notification.type === "FEED_LIKE" || notification.type === "COMMENT") {
+        // refId가 피드 ID
+        const feedId = notification.refId ? parseInt(notification.refId) : null;
+        if (feedId) {
+          await navigateToFeed(feedId, null);
+        }
+      } else if (notification.type === "COMMENT_LIKE" || notification.type === "REPLY") {
+        // refId가 댓글 ID - 댓글에서 피드 ID 조회 필요
+        const commentId = notification.refId ? parseInt(notification.refId) : null;
+        if (commentId) {
+          try {
+            // 댓글 조회해서 feedId 가져오기
+            const comment = await commentApi.getCommentById(commentId);
+            if (comment.feedId) {
+              await navigateToFeed(comment.feedId, commentId);
             }
-          }
-
-          if (feed) {
-            // 현재 사용자 ID로 내 피드인지 확인
-            const currentUserId = parseInt(
-              localStorage.getItem("userId") || "0"
-            );
-            const isMyFeed =
-              feed.writerId === currentUserId || myFeed !== undefined;
-
-            if (isMyFeed) {
-              // 내 피드면 홈으로 이동 + 다이얼로그
-              setSelectedNav("home");
-              setSelectedFeed(feed);
-              setShowFeedDetailInHome(true);
-            } else {
-              // 다른 사람 피드면 pivot 패턴으로 피드 페이지 이동
-              setPivotFeedId(feed.id);
-              setPivotFeed(feed);
-              // 해당 피드 제외하고 나머지 로드
-              loadFeeds(0, true, feed.id);
-              setSelectedNav("feed");
-            }
+          } catch (error) {
+            console.error("댓글 조회 실패:", error);
           }
         }
-      } else if (notification.type === "chat") {
-        // 채팅 알림 - 채팅 페이지로 이동
-        if (userType === "doctor") {
-          setSelectedNav("chat");
-        } else {
-          setShowChat(true);
-        }
-      } else if (notification.type === "appointment") {
-        // 예약 알림 - 진료 페이지로 이동
-        setSelectedNav("medical");
       }
     } catch (error) {
       console.error("알림 처리 실패:", error);
       toast.error("알림을 처리하는데 실패했습니다.");
+    }
+  };
+
+  // 모두 읽음 핸들러
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationApi.markAllAsRead();
+      setNotifications(
+        notifications.map((n) => ({ ...n, isRead: true }))
+      );
+    } catch (error) {
+      console.error("모두 읽음 처리 실패:", error);
+    }
+  };
+
+  // 피드로 이동하는 공통 함수
+  const navigateToFeed = async (feedId: number, commentId: number | null) => {
+    // 내 피드와 다른 피드 모두에서 검색
+    const myFeed = myFeeds.find((f) => f.id === feedId);
+    let otherFeed = allFeeds.find((f) => f.id === feedId);
+    let feed = myFeed || otherFeed;
+
+    // 댓글 ID 설정
+    setTargetCommentId(commentId);
+
+    // 피드가 아직 로드되지 않은 경우 API에서 가져오기
+    if (!feed) {
+      try {
+        const response = await feedApi.getFeedById(feedId);
+        feed = mapBackendFeed(response);
+        addFeedToAll(feed);
+      } catch (error) {
+        console.error("피드 로드 실패:", error);
+        return;
+      }
+    }
+
+    if (feed) {
+      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
+      const isMyFeed = feed.writerId === currentUserId || myFeed !== undefined;
+
+      if (isMyFeed) {
+        // 내 피드면 홈으로 이동 + 다이얼로그
+        setSelectedNav("home");
+        setSelectedFeed(feed);
+        setShowFeedDetailInHome(true);
+      } else {
+        // 다른 사람 피드면 pivot 패턴으로 피드 페이지 이동
+        setPivotFeed(feed.id, feed);
+        loadFeeds(0, true, feed.id);
+        setSelectedNav("feed");
+        setSelectedFeed(feed);
+        setShowFeedDetailInHome(true);
+      }
     }
   };
 
@@ -349,8 +295,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const handleNavSelect = (navId: string) => {
     if (navId === "feed" && pivotFeedId) {
       // 피드 메뉴 직접 클릭 시 pivot 초기화하고 일반 피드 로드
-      setPivotFeedId(null);
-      setPivotFeed(null);
+      setPivotFeed(null, null);
       loadFeeds(0, true);
     }
     setSelectedNav(navId);
@@ -366,20 +311,15 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     setFeedImageIndexes((prev) => ({ ...prev, [feedId]: index }));
   const handleLike = (feedId: number) => {
     const currentLikes = feedLikes[feedId] || [];
-    const hasLiked = currentLikes.includes(userName);
+    const hasLikedFeed = currentLikes.includes(userName);
     setFeedLikes({
       ...feedLikes,
-      [feedId]: hasLiked
+      [feedId]: hasLikedFeed
         ? currentLikes.filter((name) => name !== userName)
         : [...currentLikes, userName],
     });
-    setAllFeeds(
-      allFeeds.map((feed) =>
-        feed.id === feedId
-          ? { ...feed, likes: hasLiked ? feed.likes - 1 : feed.likes + 1 }
-          : feed
-      )
-    );
+    // Zustand 스토어 액션 사용
+    toggleLike(feedId, !hasLikedFeed);
   };
   const hasLiked = (feedId: number) =>
     (feedLikes[feedId] || []).includes(userName);
@@ -390,7 +330,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     setShowFeedDetailInHome(false);
   };
 
-  const handleUpdateFeed = (
+  const handleUpdateFeed = async (
     feedId: number,
     images: string[],
     content: string,
@@ -398,46 +338,37 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     _startImage: string | null,
     _endImage: string | null
   ) => {
-    setMyFeeds(
-      myFeeds.map((feed) =>
-        feed.id === feedId
-          ? {
-              ...feed,
-              images,
-              content,
-              activity: workoutType,
-              time: "방금 전",
-              edited: true,
-            }
-          : feed
-      )
-    );
-    setAllFeeds(
-      allFeeds.map((feed) =>
-        feed.id === feedId
-          ? {
-              ...feed,
-              images,
-              content,
-              activity: workoutType,
-              time: "방금 전",
-              edited: true,
-            }
-          : feed
-      )
-    );
-    toast.success("피드가 수정되었습니다!");
+    try {
+      // API 호출하여 DB에 저장
+      await feedApi.updateFeed(feedId, {
+        activity: workoutType,
+        content,
+        images,
+      });
+
+      // Zustand 스토어 액션으로 상태 업데이트
+      updateFeedInStore(feedId, {
+        images,
+        content,
+        activity: workoutType,
+        time: "방금 전",
+      });
+      triggerRefresh();
+      toast.success("피드가 수정되었습니다!");
+    } catch (error: any) {
+      const message = error.response?.data?.message || "피드 수정에 실패했습니다.";
+      toast.error(message);
+    }
   };
 
   const handleDeleteFeed = async (feedId: number) => {
     try {
       await feedApi.deleteFeed(feedId);
-      setMyFeeds(myFeeds.filter((feed) => feed.id !== feedId));
-      setAllFeeds(allFeeds.filter((feed) => feed.id !== feedId));
-      setRefreshTrigger((prev) => prev + 1); // canPostToday 재확인 + 데이터 재로드
+      // Zustand 스토어 액션으로 상태 업데이트
+      deleteFeedInStore(feedId);
+      triggerRefresh(); // canPostToday 재확인 + 데이터 재로드
       toast.success("피드가 삭제되고 포인트가 회수되었습니다!");
-    } catch (error) {
-      console.error("피드 삭제 실패:", error);
+    } catch {
       toast.error("피드 삭제에 실패했습니다.");
     }
   };
@@ -450,22 +381,19 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     _endImage: string | null
   ) => {
     try {
-      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-
       // API 호출로 피드 생성
       await feedApi.createFeed({
-        activityType: workoutType,
-        duration: 30,
+        activity: workoutType,
         content: content,
         images,
       });
 
       // 데이터 재로드 및 canPostToday 재확인
-      setRefreshTrigger((prev) => prev + 1);
+      triggerRefresh();
       toast.success("피드가 작성되었습니다!");
-    } catch (error) {
-      console.error("피드 생성 실패:", error);
-      toast.error("피드 작성에 실패했습니다.");
+    } catch (error: any) {
+      const message = error.response?.data?.message || "피드 작성에 실패했습니다.";
+      toast.error(message);
     }
   };
 
@@ -482,8 +410,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           userType="doctor"
         />
         <div
-          className={`h-full transition-all duration-300 ${
-            sidebarExpanded ? "ml-64" : "ml-20"
+          className={`h-full transition-all duration-300 ml-0 ${
+            sidebarExpanded ? "md:ml-64" : "md:ml-20"
           }`}
         >
           {selectedNav === "chat" && <DoctorChatPage />}
@@ -521,7 +449,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           >
             <div className="relative flex-shrink-0">
               <Bell className="w-7 h-7 text-gray-700" />
-              {notifications.filter((n) => !n.read).length > 0 && (
+              {notifications.filter((n) => !n.isRead).length > 0 && (
                 <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>
               )}
             </div>
@@ -543,14 +471,15 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
                 if (closeSidebar) setSidebarExpanded(false);
               }}
               onNotificationClick={handleNotificationClick}
+              onMarkAllAsRead={handleMarkAllAsRead}
             />
           )}
         </div>
       </Sidebar>
 
       <div
-        className={`h-full transition-all duration-300 ${
-          sidebarExpanded || showNotifications ? "ml-64" : "ml-20"
+        className={`h-full transition-all duration-300 ml-0 pb-16 md:pb-0 ${
+          sidebarExpanded || showNotifications ? "md:ml-64" : "md:ml-20"
         }`}
       >
         {selectedNav === "home" && (
@@ -597,7 +526,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         {selectedNav === "create" && (
           <CreatePage
             onCreatePost={(newFeed) => {
-              setMyFeeds([newFeed, ...myFeeds]);
+              addFeed(newFeed);
             }}
           />
         )}
@@ -609,6 +538,62 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           />
         )}
       </div>
+
+      {/* 모바일 하단 네비게이션 바 */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-t border-gray-200 shadow-lg">
+        <div className="flex justify-around items-center h-16 px-1">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => handleNavSelect(item.id)}
+              className={`flex flex-col items-center justify-center flex-1 py-2 ${
+                selectedNav === item.id ? "text-[#C93831]" : "text-gray-500"
+              }`}
+            >
+              <item.icon
+                className="w-5 h-5"
+                strokeWidth={selectedNav === item.id ? 2.5 : 2}
+              />
+              <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+            </button>
+          ))}
+          {/* 알림 버튼 */}
+          <button
+            onClick={() => setShowNotifications(true)}
+            className="flex flex-col items-center justify-center flex-1 py-2 text-gray-500 relative"
+          >
+            <Bell className="w-5 h-5" strokeWidth={2} />
+            {notifications.filter((n) => !n.isRead).length > 0 && (
+              <div className="absolute top-1.5 right-1/4 w-2 h-2 bg-red-500 rounded-full"></div>
+            )}
+            <span className="text-[10px] mt-1 font-medium">알림</span>
+          </button>
+          <button
+            onClick={() => handleNavSelect("profile")}
+            className={`flex flex-col items-center justify-center flex-1 py-2 ${
+              selectedNav === "profile" ? "text-[#C93831]" : "text-gray-500"
+            }`}
+          >
+            <User
+              className="w-5 h-5"
+              strokeWidth={selectedNav === "profile" ? 2.5 : 2}
+            />
+            <span className="text-[10px] mt-1 font-medium">MY</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 모바일용 알림 팝업 (하단 네비게이션에서 클릭 시) */}
+      {showNotifications && (
+        <div className="md:hidden">
+          <NotificationPopup
+            notifications={notifications}
+            onClose={() => setShowNotifications(false)}
+            onNotificationClick={handleNotificationClick}
+            onMarkAllAsRead={handleMarkAllAsRead}
+          />
+        </div>
+      )}
 
       <FeedDetailDialogHome
         feed={selectedFeed}

@@ -15,8 +15,13 @@ public class UserResponse {
     private Double weight;
     private String gender;
     private String avatar;
+    private Long currentPoints;
 
     public static UserResponse from(User user) {
+        return from(user, 0L);
+    }
+
+    public static UserResponse from(User user, Long currentPoints) {
         return UserResponse.builder()
                 .id(user.getId())
                 .userId(user.getUserId())
@@ -25,6 +30,7 @@ public class UserResponse {
                 .weight(user.getWeight())
                 .gender(user.getGender())
                 .avatar(user.getAvatar())
+                .currentPoints(currentPoints)
                 .build();
     }
 }

@@ -8,7 +8,9 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +35,12 @@ class FeedLikeServiceTest {
 
     @Mock
     private FeedRepository feedRepository;
+
+    @Mock
+    private NotificationService notificationService;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @InjectMocks
     private FeedLikeService feedLikeService;
@@ -62,6 +70,7 @@ class FeedLikeServiceTest {
                 .activity("running")
                 .content("피드 내용")
                 .build();
+        ReflectionTestUtils.setField(feed, "id", 1L);
     }
 
     @Test
@@ -83,6 +92,27 @@ class FeedLikeServiceTest {
     }
 
     @Test
+    @DisplayName("피드에 좋아요를 누르면 피드 작성자에게 알림이 생성된다 (refId = feedLikeId)")
+    void likeFeedCreatesNotificationTest() {
+        // given
+        Long feedId = 1L;
+        Long feedLikeId = 100L;
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedLikeRepository.existsByUserAndFeed(user, feed)).willReturn(false);
+        given(feedLikeRepository.save(any(FeedLike.class))).willAnswer(invocation -> {
+            FeedLike feedLike = invocation.getArgument(0);
+            ReflectionTestUtils.setField(feedLike, "id", feedLikeId);
+            return feedLike;
+        });
+
+        // when
+        feedLikeService.likeFeed(user, feedId);
+
+        // then
+        verify(notificationService).createFeedLikeNotification(writer, user, feedLikeId);
+    }
+
+    @Test
     @DisplayName("이미 좋아요한 피드에 다시 좋아요를 누르면 예외가 발생한다")
     void likeFeedAlreadyLikedTest() {
         // given
@@ -97,18 +127,26 @@ class FeedLikeServiceTest {
     }
 
     @Test
-    @DisplayName("피드 좋아요를 취소한다")
+    @DisplayName("피드 좋아요를 취소하면 관련 알림도 삭제된다")
     void unlikeFeedTest() {
         // given
         Long feedId = 1L;
+        Long feedLikeId = 100L;
+        FeedLike feedLike = FeedLike.builder()
+                .user(user)
+                .feed(feed)
+                .build();
+        ReflectionTestUtils.setField(feedLike, "id", feedLikeId);
+
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
-        given(feedLikeRepository.existsByUserAndFeed(user, feed)).willReturn(true);
+        given(feedLikeRepository.findByUserAndFeed(user, feed)).willReturn(Optional.of(feedLike));
 
         // when
         feedLikeService.unlikeFeed(user, feedId);
 
         // then
-        verify(feedLikeRepository).deleteByUserAndFeed(user, feed);
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedLikeId), "FEED_LIKE");
+        verify(feedLikeRepository).delete(feedLike);
     }
 
     @Test
@@ -117,7 +155,7 @@ class FeedLikeServiceTest {
         // given
         Long feedId = 1L;
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
-        given(feedLikeRepository.existsByUserAndFeed(user, feed)).willReturn(false);
+        given(feedLikeRepository.findByUserAndFeed(user, feed)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> feedLikeService.unlikeFeed(user, feedId))

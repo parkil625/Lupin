@@ -50,14 +50,12 @@ export interface Prescription {
 
 export interface Notification {
   id: number;
-  type: "appointment" | "like" | "comment" | "reply" | "chat" | "comment_like";
+  type: string;  // "FEED_LIKE", "COMMENT", "COMMENT_LIKE", "REPLY"
   title: string;
-  content: string;
-  time: string;
-  read: boolean;
-  feedId?: number;  // 피드 관련 알림일 경우
-  commentId?: number;  // 댓글 관련 알림일 경우
-  chatRoomId?: number;  // 채팅 관련 알림일 경우
+  content?: string;
+  isRead: boolean;
+  refId?: string;
+  createdAt: string;
 }
 
 export interface Member {

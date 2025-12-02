@@ -17,13 +17,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Heart,
   MessageCircle,
   Sparkles,
   Flame,
   Award,
   User,
   Plus,
+  Coins,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { userApi, feedApi } from "@/api";
@@ -56,7 +56,6 @@ export default function Home({
     isTop10: false,
     isTop100: false,
     name: "",
-    monthlyLikes: 0,
   });
 
   // 7일 연속 체크 함수
@@ -109,7 +108,6 @@ export default function Home({
           isTop10: rank <= 10,
           isTop100: rank <= 100,
           name: user.realName || localStorage.getItem("userName") || "사용자",
-          monthlyLikes: user.monthlyLikes || 0,
         });
       } catch (error) {
         console.error("사용자 통계 로드 실패:", error);
@@ -137,12 +135,12 @@ export default function Home({
   }, [myFeeds, refreshTrigger]); // myFeeds가 변경되거나 refreshTrigger가 변경되면 다시 확인
 
   return (
-    <div className="h-full overflow-auto p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="h-full overflow-auto p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         {/* Profile Header */}
-        <div className="p-8">
-          <div className="flex items-start gap-8 mb-8">
-            <Avatar className="w-40 h-40 border-4 border-white shadow-xl bg-gray-100">
+        <div className="p-4 md:p-8">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-8 mb-6 md:mb-8">
+            <Avatar className="w-24 h-24 md:w-40 md:h-40 border-4 border-white shadow-xl bg-gray-100">
               {profileImage ? (
                 <img
                   src={profileImage}
@@ -151,24 +149,24 @@ export default function Home({
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-white">
-                  <User className="w-20 h-20 text-gray-400" />
+                  <User className="w-10 h-10 md:w-20 md:h-20 text-gray-400" />
                 </div>
               )}
             </Avatar>
 
-            <div className="flex-1">
+            <div className="flex-1 text-center sm:text-left">
               {isLoading ? (
-                <div className="mb-4 rounded-lg animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '89px', height: '36px' }} />
+                <div className="mb-4 rounded-lg animate-pulse mx-auto sm:mx-0" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '89px', height: '36px' }} />
               ) : (
-                <h1 className="text-3xl font-black text-gray-900 mb-4">
+                <h1 className="text-xl md:text-3xl font-black text-gray-900 mb-3 md:mb-4">
                   {userStats.name}
                 </h1>
               )}
 
               {isLoading ? (
-                <div className="mb-4 rounded-lg animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '424px', height: '24px' }} />
+                <div className="mb-4 rounded-lg animate-pulse mx-auto sm:mx-0" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '280px', maxWidth: '100%', height: '24px' }} />
               ) : (
-                <div className="flex gap-8 mb-4">
+                <div className="flex justify-center sm:justify-start gap-4 md:gap-8 mb-3 md:mb-4">
                   <div>
                     <span className="text-sm text-gray-600 font-bold">피드 </span>
                     <span className="text-sm font-black text-[#C93831]">
@@ -177,18 +175,10 @@ export default function Home({
                   </div>
                   <div>
                     <span className="text-sm text-gray-600 font-bold">
-                      이번 달 점수{" "}
+                      포인트{" "}
                     </span>
                     <span className="text-sm font-black text-[#C93831]">
                       {userStats.points}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600 font-bold">
-                      좋아요{" "}
-                    </span>
-                    <span className="text-sm font-black text-[#C93831]">
-                      {userStats.monthlyLikes}
                     </span>
                   </div>
                   <div>
@@ -201,12 +191,12 @@ export default function Home({
               )}
 
               {isLoading ? (
-                <div className="flex gap-2">
+                <div className="flex justify-center sm:justify-start gap-2">
                   <div className="rounded-md animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '28px' }} />
                   <div className="rounded-md animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '28px' }} />
                 </div>
               ) : (
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex justify-center sm:justify-start gap-2 flex-wrap">
                   {userStats.has7DayStreak && (
                     <Badge className="bg-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
                       <Flame className="w-3 h-3 mr-1" />
@@ -234,8 +224,8 @@ export default function Home({
         {/* Posts Section */}
         <div>
           {/* Posts Header */}
-          <div className="flex items-center justify-between mb-6 px-8">
-            <h2 className="text-2xl font-black text-gray-900">피드</h2>
+          <div className="flex items-center justify-between mb-4 md:mb-6 px-4 md:px-8">
+            <h2 className="text-xl md:text-2xl font-black text-gray-900">피드</h2>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -264,7 +254,7 @@ export default function Home({
           </div>
 
           {/* Posts Grid */}
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {myFeeds.map((feed) => (
               <div
                 key={feed.id}
@@ -275,7 +265,7 @@ export default function Home({
                   setShowFeedDetailInHome(true);
                 }}
               >
-                <Card className="h-full overflow-hidden backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg hover:shadow-2xl transition-all relative">
+                <Card className="h-full overflow-hidden rounded-none bg-white border-0 hover:opacity-90 transition-all relative">
                   <div className="w-full h-full bg-white">
                     {feed.images && feed.images.length > 0 ? (
                       <img
@@ -299,17 +289,13 @@ export default function Home({
                     <div className="text-center text-white space-y-2">
                       <div className="flex items-center justify-center gap-4">
                         <span className="flex items-center gap-1 font-bold text-base">
-                          <Heart className="w-5 h-5" />
-                          {feed.likes}
+                          <Coins className="w-5 h-5" />
+                          +{feed.points}
                         </span>
                         <span className="flex items-center gap-1 font-bold text-base">
                           <MessageCircle className="w-5 h-5" />
                           {feed.comments}
                         </span>
-                      </div>
-                      <div className="text-sm font-bold">
-                        <Sparkles className="w-4 h-4 inline mr-1" />+
-                        {feed.points}점
                       </div>
                     </div>
                   </div>

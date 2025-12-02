@@ -541,8 +541,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
       {/* 모바일 하단 네비게이션 바 */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-t border-gray-200 shadow-lg">
-        <div className="flex justify-around items-center h-16 px-2">
-          {navItems.slice(0, 4).map((item) => (
+        <div className="flex justify-around items-center h-16 px-1">
+          {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => handleNavSelect(item.id)}
@@ -551,10 +551,10 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               }`}
             >
               <item.icon
-                className="w-6 h-6"
+                className="w-5 h-5"
                 strokeWidth={selectedNav === item.id ? 2.5 : 2}
               />
-              <span className="text-xs mt-1 font-medium">{item.label}</span>
+              <span className="text-[10px] mt-1 font-medium">{item.label}</span>
             </button>
           ))}
           <button
@@ -564,10 +564,10 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             }`}
           >
             <User
-              className="w-6 h-6"
+              className="w-5 h-5"
               strokeWidth={selectedNav === "profile" ? 2.5 : 2}
             />
-            <span className="text-xs mt-1 font-medium">MY</span>
+            <span className="text-[10px] mt-1 font-medium">MY</span>
           </button>
         </div>
       </div>

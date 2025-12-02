@@ -69,7 +69,7 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
 
         // Top 10 사용자 조회
         const topUsersResponse = await userApi.getTopUsersByPoints(10);
-        const topUsers = topUsersResponse.map((user: any, index: number) => ({
+        const topUsers = topUsersResponse.map((user: { name?: string; points?: number; monthlyLikes?: number; profileImage?: string; department?: string; activeDays?: number; avgScore?: number }, index: number) => ({
           rank: index + 1,
           name: user.name || "이름 없음",
           points: user.points || 0,
@@ -84,7 +84,7 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
 
         // 현재 사용자 랭킹 컨텍스트 조회 (본인 + 앞뒤 1명)
         const contextResponse = await userApi.getUserRankingContext(userId);
-        const contextUsers = contextResponse.map((user: any) => ({
+        const contextUsers = contextResponse.map((user: { id?: number; rank?: number; name?: string; points?: number; monthlyLikes?: number; profileImage?: string; department?: string; activeDays?: number; avgScore?: number; streak?: number }) => ({
           rank: user.rank || 0,
           name: user.name || "이름 없음",
           points: user.points || 0,
@@ -99,7 +99,7 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
         setMyRankingContext(contextUsers);
 
         // 현재 사용자의 통계 설정
-        const currentUser = contextUsers.find((u: any) => u.isMe);
+        const currentUser = contextUsers.find((u: { isMe?: boolean }) => u.isMe);
         if (currentUser) {
           setMyStats({
             activeDays: currentUser.activeDays,

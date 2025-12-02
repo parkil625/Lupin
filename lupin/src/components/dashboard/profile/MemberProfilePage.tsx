@@ -213,9 +213,10 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
             const connections = await oauthApi.getConnections();
             setOauthConnections(connections);
             toast.success(`${provider} 계정 연동이 해제되었습니다.`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("OAuth 연동 해제 실패:", error);
-            const message = error.response?.data?.message || "연동 해제에 실패했습니다.";
+            const axiosError = error as { response?: { data?: { message?: string } } };
+            const message = axiosError.response?.data?.message || "연동 해제에 실패했습니다.";
             toast.error(message);
         } finally {
             setIsLoadingOAuth(false);

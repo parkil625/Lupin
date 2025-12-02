@@ -34,8 +34,9 @@ test.describe('피드 좋아요 E2E 테스트', () => {
     const feedCard = page.locator('[data-testid="feed-card"]').first();
 
     if (await feedCard.isVisible({ timeout: 5000 })) {
-      // 현재 좋아요 수 확인
-      const likeCount = feedCard.locator('[data-testid="like-count"]');
+      // 현재 좋아요 수 확인 (추후 검증용)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _likeCount = feedCard.locator('[data-testid="like-count"]');
 
       // 좋아요 버튼 클릭
       const likeButton = feedCard.locator('[data-testid="like-button"]')

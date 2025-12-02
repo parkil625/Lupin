@@ -151,10 +151,15 @@ export default function Login() {
   };
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log("=== 로그인 시도 ===");
+    console.log("employeeId:", data.employeeId);
+    console.log("password:", data.password);
+    console.log("password length:", data.password.length);
     setError("");
     setIsLoading(true);
     try {
       const response = await authApi.login(data.employeeId, data.password);
+      console.log("로그인 성공:", response);
         const safeId = response.id || response.userId;
         if (safeId) {
             localStorage.setItem("userId", safeId.toString());
@@ -165,7 +170,10 @@ export default function Login() {
 
         login(response.accessToken, response.role);
     } catch (err: any) {
-      console.error("Login failed:", err);
+      console.error("=== 로그인 실패 ===");
+      console.error("Error:", err);
+      console.error("Response:", err.response);
+      console.error("Status:", err.response?.status);
       if (err.response?.status === 401) {
         setError("아이디 또는 비밀번호가 일치하지 않습니다.");
       } else if (err.response?.status === 404) {
@@ -215,7 +223,9 @@ export default function Login() {
           </div>
 
           {/* 로그인 폼 */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit, (errors) => {
+            console.error("=== 폼 유효성 검사 실패 ===", errors);
+          })} className="space-y-4">
             <div className="space-y-2">
               <Label
                 htmlFor="employeeId"

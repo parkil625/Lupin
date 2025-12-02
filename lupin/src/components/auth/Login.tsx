@@ -1,10 +1,14 @@
 /**
  * Login.tsx
  * 원형 아이콘 소셜 로그인 스타일 적용
+ * React Hook Form + Zod 적용
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Card } from "../ui/card";
@@ -12,6 +16,14 @@ import { Button } from "../ui/button";
 import { ArrowLeft, Lock, User, AlertCircle, X, Eye, EyeOff } from "lucide-react";
 import { authApi, oauthApi } from "../../api";
 import { useAuthStore } from "../../store/useAuthStore";
+
+// Zod 스키마 정의
+const loginSchema = z.object({
+  employeeId: z.string().min(1, "아이디를 입력해주세요"),
+  password: z.string().min(1, "비밀번호를 입력해주세요"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
@@ -33,8 +45,23 @@ export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
 
-  const [employeeId, setEmployeeId] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      employeeId: "",
+      password: "",
+    },
+  });
+
+  const employeeId = watch("employeeId");
+  const password = watch("password");
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -123,12 +150,11 @@ export default function Login() {
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: LoginFormData) => {
     setError("");
     setIsLoading(true);
     try {
-      const response = await authApi.login(employeeId, password);
+      const response = await authApi.login(data.employeeId, data.password);
         const safeId = response.id || response.userId;
         if (safeId) {
             localStorage.setItem("userId", safeId.toString());
@@ -153,27 +179,27 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-screen overflow-hidden relative flex items-center justify-center">
+    <div className="min-h-screen w-screen overflow-hidden relative flex items-center justify-center px-4 py-16 md:py-8">
       {/* 배경 효과 */}
       <div className="absolute inset-0 -z-10 bg-white">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-red-50 rounded-full blur-3xl opacity-40"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-50 rounded-full blur-3xl opacity-40"></div>
-        <div className="absolute top-1/2 left-1/3 w-80 h-80 bg-purple-50 rounded-full blur-3xl opacity-30"></div>
+        <div className="absolute top-20 left-10 w-64 md:w-96 h-64 md:h-96 bg-red-50 rounded-full blur-3xl opacity-40"></div>
+        <div className="absolute bottom-20 right-10 w-64 md:w-96 h-64 md:h-96 bg-pink-50 rounded-full blur-3xl opacity-40"></div>
+        <div className="absolute top-1/2 left-1/3 w-48 md:w-80 h-48 md:h-80 bg-purple-50 rounded-full blur-3xl opacity-30"></div>
       </div>
 
       {/* 메인으로 돌아가기 버튼 */}
       <button
         onClick={() => navigate("/")}
-        className="absolute top-8 left-8 flex items-center gap-2 px-6 py-3 rounded-full backdrop-blur-3xl bg-white/40 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:bg-white/50 group"
+        className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-1 md:gap-2 px-4 md:px-6 py-2 md:py-3 rounded-full backdrop-blur-3xl bg-white/40 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:bg-white/50 group"
       >
-        <ArrowLeft className="w-5 h-5 text-gray-700 group-hover:text-[#C93831] transition-colors" />
-        <span className="text-gray-700 group-hover:text-[#C93831] transition-colors font-medium">
+        <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-700 group-hover:text-[#C93831] transition-colors" />
+        <span className="text-sm md:text-base text-gray-700 group-hover:text-[#C93831] transition-colors font-medium">
           메인으로
         </span>
       </button>
 
-      <Card className="w-full max-w-md relative overflow-hidden shadow-2xl backdrop-blur-3xl bg-white/40 border border-white/60">
-        <div className="relative p-8 space-y-5">
+      <Card className="w-full max-w-md relative overflow-hidden shadow-2xl backdrop-blur-3xl bg-white/40 border border-white/60 mx-4 md:mx-0">
+        <div className="relative p-6 md:p-8 space-y-4 md:space-y-5">
           {/* 로고 & 타이틀 */}
           <div className="text-center space-y-4">
             <div className="flex justify-center mb-6">
@@ -189,7 +215,7 @@ export default function Login() {
           </div>
 
           {/* 로그인 폼 */}
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label
                 htmlFor="employeeId"
@@ -203,21 +229,24 @@ export default function Login() {
                   id="employeeId"
                   type="text"
                   placeholder="아이디"
-                  value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
-                  className="pl-12 pr-10 h-14 rounded-2xl border-2 border-gray-200 bg-white focus:border-[#C93831] transition-all shadow-sm"
-                  required
+                  {...register("employeeId")}
+                  className={`pl-12 pr-10 h-14 rounded-2xl border-2 bg-white transition-all shadow-sm ${
+                    errors.employeeId ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-[#C93831]"
+                  }`}
                 />
                 {employeeId && (
                   <button
                     type="button"
-                    onClick={() => setEmployeeId("")}
+                    onClick={() => setValue("employeeId", "")}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
+              {errors.employeeId && (
+                <p className="text-xs text-red-500 mt-1">{errors.employeeId.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label
@@ -232,10 +261,10 @@ export default function Login() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="비밀번호"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-12 pr-20 h-14 rounded-2xl border-2 border-gray-200 bg-white focus:border-[#C93831] transition-all shadow-sm"
-                  required
+                  {...register("password")}
+                  className={`pl-12 pr-20 h-14 rounded-2xl border-2 bg-white transition-all shadow-sm ${
+                    errors.password ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-[#C93831]"
+                  }`}
                 />
                 {password && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -248,7 +277,7 @@ export default function Login() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPassword("")}
+                      onClick={() => setValue("password", "")}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       <X className="w-5 h-5" />
@@ -256,6 +285,9 @@ export default function Login() {
                   </div>
                 )}
               </div>
+              {errors.password && (
+                <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
+              )}
             </div>
 
             {error && (

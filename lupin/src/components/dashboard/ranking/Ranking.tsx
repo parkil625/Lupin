@@ -130,18 +130,18 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
   if (loading) {
     return (
       <ScrollArea className="h-full">
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           <div className="max-w-7xl mx-auto w-full">
-            <div className="mb-6">
-              <h1 className="text-5xl font-black text-gray-900 mb-2">
+            <div className="mb-4 md:mb-6">
+              <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-2">
                 {currentMonth}월 랭킹
               </h1>
-              <p className="text-gray-700 font-medium text-lg">
+              <p className="text-gray-700 font-medium text-base md:text-lg">
                 이번 달 TOP 운동왕은 누구?
               </p>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid lg:grid-cols-3 gap-4 md:gap-8">
               <div className="lg:col-span-2 flex flex-col gap-2">
                 {Array.from({ length: 10 }).map((_, i) => (
                   <div key={i} className="w-full rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', height: '58px' }} />
@@ -192,18 +192,18 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <div className="max-w-7xl mx-auto w-full">
-          <div className="mb-6">
-            <h1 className="text-5xl font-black text-gray-900 mb-2">
+          <div className="mb-4 md:mb-6">
+            <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-2">
               {currentMonth}월 랭킹
             </h1>
-            <p className="text-gray-700 font-medium text-lg">
+            <p className="text-gray-700 font-medium text-base md:text-lg">
               이번 달 TOP 운동왕은 누구?
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-4 md:gap-8">
             <div className="lg:col-span-2 flex flex-col gap-2">
             {/* Top 10 Rankers */}
             {topRankers.map((ranker) => (

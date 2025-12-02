@@ -241,7 +241,7 @@ export default function CreateFeedDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-full h-[calc(100%-70px)] max-h-[calc(100vh-70px)] md:h-[95vh] md:max-h-[95vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col">
+      <DialogContent className="w-full h-[calc(100vh-100px)] max-h-[calc(100vh-100px)] md:h-[85vh] md:max-h-[85vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col fixed top-4 bottom-auto md:top-1/2 md:-translate-y-1/2">
         <DialogHeader className="sr-only">
           <DialogTitle>피드 작성</DialogTitle>
           <DialogDescription>

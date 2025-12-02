@@ -204,7 +204,7 @@ export default function EditFeedDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="w-full h-[calc(100%-70px)] max-h-[calc(100vh-70px)] md:h-[95vh] md:max-h-[95vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col">
+        <DialogContent className="w-full h-[calc(100vh-100px)] max-h-[calc(100vh-100px)] md:h-[85vh] md:max-h-[85vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col fixed top-4 bottom-auto md:top-1/2 md:-translate-y-1/2">
           <DialogTitle className="sr-only">피드 수정</DialogTitle>
           <DialogDescription className="sr-only">
             기존 피드 내용을 수정합니다. 운동 종류, 시작/끝 사진, 그리고 내용을 수정할 수 있습니다.
@@ -387,9 +387,9 @@ export default function EditFeedDialog({
       <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>변경사항이 저장되지 않았습니다</AlertDialogTitle>
+            <AlertDialogTitle>수정 중인 내용이 있습니다</AlertDialogTitle>
             <AlertDialogDescription>
-              수정한 내용이 저장되지 않았습니다. 정말로 닫으시겠습니까?
+              저장하지 않고 닫으면 변경사항이 사라집니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -397,7 +397,7 @@ export default function EditFeedDialog({
               계속 수정하기
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleCloseWithoutSaving}>
-              저장하지 않고 닫기
+              닫기
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

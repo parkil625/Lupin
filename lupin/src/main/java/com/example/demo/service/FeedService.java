@@ -74,20 +74,22 @@ public class FeedService {
             LocalDateTime startTime = startTimeOpt.get();
             LocalDateTime endTime = endTimeOpt.get();
 
-            // 시간 유효성 검증 (실패 시 예외 발생)
-            validateWorkoutTime(startTime, endTime, LocalDate.now());
+            // 시간 유효성 검증 (실패 시 점수=0)
+            if (isValidWorkoutTime(startTime, endTime, LocalDate.now())) {
+                // 점수 계산
+                score = workoutScoreService.calculateScore(activity, startTime, endTime);
+                calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
 
-            // 점수 계산
-            score = workoutScoreService.calculateScore(activity, startTime, endTime);
-            calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
-
-            log.info("Workout verified: activity={}, duration={}min, score={}, calories={}",
-                    activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
+                log.info("Workout verified: activity={}, duration={}min, score={}, calories={}",
+                        activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
+            } else {
+                log.warn("Workout time validation failed - score set to 0");
+            }
         } else {
             log.warn("EXIF time not found: startImage={}, endImage={}",
                     startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
                     endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
-            // EXIF 없으면 점수=0으로 피드 생성 (예외 없음)
+            // EXIF 없으면 점수=0으로 피드 생성
         }
 
         // 피드 저장 (EXIF 없어도 점수=0으로 저장)
@@ -155,13 +157,15 @@ public class FeedService {
             LocalDateTime startTime = startTimeOpt.get();
             LocalDateTime endTime = endTimeOpt.get();
 
-            validateWorkoutTime(startTime, endTime, LocalDate.now());
+            if (isValidWorkoutTime(startTime, endTime, LocalDate.now())) {
+                score = workoutScoreService.calculateScore(activity, startTime, endTime);
+                calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
 
-            score = workoutScoreService.calculateScore(activity, startTime, endTime);
-            calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
-
-            log.info("Feed update - Workout verified: activity={}, duration={}min, score={}, calories={}",
-                    activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
+                log.info("Feed update - Workout verified: activity={}, duration={}min, score={}, calories={}",
+                        activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
+            } else {
+                log.warn("Feed update - Workout time validation failed - score set to 0");
+            }
         }
 
         // 피드 점수/칼로리 업데이트
@@ -236,20 +240,22 @@ public class FeedService {
     }
 
     /**
-     * 운동 시간 유효성 검증 (실패 시 예외 발생)
+     * 운동 시간 유효성 검증 (유효하면 true, 아니면 false)
      * - 시작 시간이 끝 시간보다 먼저여야 함
      * - 운동 시간이 24시간을 초과하면 안 됨
      * - 사진 시간이 당일(±오차범위) 내여야 함
      */
-    private void validateWorkoutTime(LocalDateTime startTime, LocalDateTime endTime, LocalDate feedDate) {
-        // 시작 시간이 끝 시간보다 같거나 늦으면 예외
+    private boolean isValidWorkoutTime(LocalDateTime startTime, LocalDateTime endTime, LocalDate feedDate) {
+        // 시작 시간이 끝 시간보다 같거나 늦으면 무효
         if (!startTime.isBefore(endTime)) {
-            throw new BusinessException(ErrorCode.FEED_INVALID_PHOTO_TIME);
+            log.warn("Invalid workout time: start={} is not before end={}", startTime, endTime);
+            return false;
         }
 
-        // 운동 시간이 24시간 초과하면 예외
+        // 운동 시간이 24시간 초과하면 무효
         if (Duration.between(startTime, endTime).toHours() > MAX_WORKOUT_HOURS) {
-            throw new BusinessException(ErrorCode.FEED_WORKOUT_TOO_LONG);
+            log.warn("Workout too long: {} hours", Duration.between(startTime, endTime).toHours());
+            return false;
         }
 
         // 사진 시간이 당일(±오차범위) 내인지 검증
@@ -259,8 +265,15 @@ public class FeedService {
         boolean startTimeValid = !startTime.isBefore(allowedStart) && !startTime.isAfter(allowedEnd);
         boolean endTimeValid = !endTime.isBefore(allowedStart) && !endTime.isAfter(allowedEnd);
 
+        log.info("Workout time validation: feedDate={}, allowedRange=[{} ~ {}], startTime={} (valid={}), endTime={} (valid={})",
+                feedDate, allowedStart, allowedEnd, startTime, startTimeValid, endTime, endTimeValid);
+
         if (!startTimeValid || !endTimeValid) {
-            throw new BusinessException(ErrorCode.FEED_PHOTO_NOT_TODAY);
+            log.warn("Photo time outside allowed range: start={}, end={}, allowed=[{} ~ {}]",
+                    startTime, endTime, allowedStart, allowedEnd);
+            return false;
         }
+
+        return true;
     }
 }

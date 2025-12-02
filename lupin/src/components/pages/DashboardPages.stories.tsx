@@ -312,7 +312,7 @@ export const HomePage: Story = {
         <CreateFeedDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
-          onCreate={(images, content, workoutType, startImage, endImage) => {
+          onCreate={(images, content, workoutType, _startImage, _endImage) => {
             alert(`피드 생성!\n운동 종류: ${workoutType}\n이미지 수: ${images.length}`);
             setShowCreateDialog(false);
           }}
@@ -323,7 +323,7 @@ export const HomePage: Story = {
           feed={editingFeed}
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
-          onSave={(feedId, images, content, workoutType, startImage, endImage) => {
+          onSave={(feedId, images, content, workoutType, _startImage, _endImage) => {
             alert(`피드 수정 완료!\nID: ${feedId}\n운동 종류: ${workoutType}`);
             setShowEditDialog(false);
           }}

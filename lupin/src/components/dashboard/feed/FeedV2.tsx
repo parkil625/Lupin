@@ -74,10 +74,10 @@ function CommentPanel({ feedId }: { feedId: number }) {
         const commentList = response.content || response;
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: any) => {
+          commentList.map(async (comment: { id: number; writerName?: string; createdAt?: string }) => {
             try {
               const repliesData = await commentApi.getRepliesByCommentId(comment.id);
-              const replies = (repliesData || []).map((reply: any) => ({
+              const replies = (repliesData || []).map((reply: { writerName?: string; createdAt?: string }) => ({
                 ...reply,
                 author: reply.writerName || "알 수 없음",
                 avatar: (reply.writerName || "?").charAt(0),

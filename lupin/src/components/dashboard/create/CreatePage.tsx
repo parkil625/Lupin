@@ -194,7 +194,7 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*';
-                input.onchange = (e) => handleFileSelect(e as any, 'start');
+                input.onchange = (e) => handleFileSelect(e as unknown as React.ChangeEvent<HTMLInputElement>, 'start');
                 input.click();
               }}
               onDrop={(e) => handleDrop(e, 'start')}
@@ -230,7 +230,7 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = 'image/*';
-                input.onchange = (e) => handleFileSelect(e as any, 'end');
+                input.onchange = (e) => handleFileSelect(e as unknown as React.ChangeEvent<HTMLInputElement>, 'end');
                 input.click();
               }}
               onDrop={(e) => handleDrop(e, 'end')}

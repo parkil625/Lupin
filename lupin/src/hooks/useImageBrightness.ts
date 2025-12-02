@@ -15,6 +15,7 @@ export function useImageBrightness(imageUrl: string | undefined): IconColor {
 
   useEffect(() => {
     if (!imageUrl) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 이미지 없을 때 기본값 설정
       setIconColor("black");
       return;
     }

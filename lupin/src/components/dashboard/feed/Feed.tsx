@@ -660,6 +660,7 @@ export default function FeedView({
       ref={(el) => {
         containerRef.current = el;
         if (feedContainerRef) {
+          // eslint-disable-next-line react-hooks/immutability -- 부모 컴포넌트에 ref 전달 필요
           (feedContainerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
         }
       }}

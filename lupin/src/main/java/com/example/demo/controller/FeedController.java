@@ -36,7 +36,7 @@ public class FeedController extends BaseController {
             @Valid @RequestBody FeedRequest request
     ) {
         User user = getCurrentUser(userDetails);
-        Feed feed = feedService.createFeed(user, request.getActivity(), request.getContent());
+        Feed feed = feedService.createFeed(user, request.getActivity(), request.getContent(), request.getImages());
         return ResponseEntity.ok(toFeedResponse(feed));
     }
 
@@ -47,7 +47,14 @@ public class FeedController extends BaseController {
             @Valid @RequestBody FeedRequest request
     ) {
         User user = getCurrentUser(userDetails);
-        Feed feed = feedService.updateFeed(user, feedId, request.getContent(), request.getActivity());
+        Feed feed;
+        if (request.getImages() != null && request.getImages().size() >= 2) {
+            // 이미지가 있으면 이미지와 함께 수정
+            feed = feedService.updateFeed(user, feedId, request.getContent(), request.getActivity(), request.getImages());
+        } else {
+            // 이미지가 없으면 내용만 수정
+            feed = feedService.updateFeed(user, feedId, request.getContent(), request.getActivity());
+        }
         return ResponseEntity.ok(toFeedResponse(feed));
     }
 

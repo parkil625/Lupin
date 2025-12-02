@@ -6,9 +6,13 @@
  * - 프로필 사진 변경
  * - 신체 정보 관리
  * - OAuth 계정 연동 (구글, 네이버, 카카오)
+ * - React Hook Form + Zod 적용
  */
 
 import React, { useState, useRef, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -48,6 +52,22 @@ declare global {
     }
 }
 
+// Zod 스키마 정의
+const profileSchema = z.object({
+    height: z.string().min(1, "키를 입력해주세요").refine(
+        (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) <= 300,
+        "올바른 키를 입력해주세요 (1-300cm)"
+    ),
+    weight: z.string().min(1, "몸무게를 입력해주세요").refine(
+        (val) => !isNaN(Number(val)) && Number(val) > 0 && Number(val) <= 500,
+        "올바른 몸무게를 입력해주세요 (1-500kg)"
+    ),
+    birthDate: z.string().min(1, "생년월일을 입력해주세요"),
+    gender: z.string().min(1, "성별을 선택해주세요"),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
+
 interface MemberProfilePageProps {
     onLogout: () => void;
     profileImage: string | null;
@@ -55,13 +75,25 @@ interface MemberProfilePageProps {
 }
 
 export default function MemberProfilePage({ onLogout, profileImage, setProfileImage }: MemberProfilePageProps) {
-    // localStorage에서 초기값 로드
-    const [height, setHeight] = useState(() => localStorage.getItem("userHeight") || "175");
-    const [weight, setWeight] = useState(() => localStorage.getItem("userWeight") || "70");
-    const [phone, setPhone] = useState(() => localStorage.getItem("userPhone") || "");
-    const [address, setAddress] = useState(() => localStorage.getItem("userAddress") || "서울특별시 강남구 테헤란로 123");
-    const [birthDate, setBirthDate] = useState(() => localStorage.getItem("userBirthDate") || "1990-01-01");
-    const [gender, setGender] = useState(() => localStorage.getItem("userGender") || "남성");
+    // React Hook Form 설정
+    const {
+        register,
+        handleSubmit,
+        watch,
+        setValue,
+        formState: { errors },
+    } = useForm<ProfileFormData>({
+        resolver: zodResolver(profileSchema),
+        defaultValues: {
+            height: localStorage.getItem("userHeight") || "175",
+            weight: localStorage.getItem("userWeight") || "70",
+            birthDate: localStorage.getItem("userBirthDate") || "1990-01-01",
+            gender: localStorage.getItem("userGender") || "남성",
+        },
+    });
+
+    const gender = watch("gender");
+
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
@@ -170,24 +202,25 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
         setIsLoadingOAuth(true);
         try {
             await oauthApi.unlinkOAuth(provider);
-            setOauthConnections(prev => prev.filter(c => c.provider !== provider));
+            // 연동 목록 다시 로드하여 실제 상태 반영
+            const connections = await oauthApi.getConnections();
+            setOauthConnections(connections);
             toast.success(`${provider} 계정 연동이 해제되었습니다.`);
-        } catch (error) {
+        } catch (error: any) {
             console.error("OAuth 연동 해제 실패:", error);
-            toast.error("연동 해제에 실패했습니다.");
+            const message = error.response?.data?.message || "연동 해제에 실패했습니다.";
+            toast.error(message);
         } finally {
             setIsLoadingOAuth(false);
         }
     };
 
     // 프로필 저장 핸들러
-    const handleSaveProfile = () => {
-        localStorage.setItem("userHeight", height);
-        localStorage.setItem("userWeight", weight);
-        localStorage.setItem("userPhone", phone);
-        localStorage.setItem("userAddress", address);
-        localStorage.setItem("userBirthDate", birthDate);
-        localStorage.setItem("userGender", gender);
+    const onSaveProfile = (data: ProfileFormData) => {
+        localStorage.setItem("userHeight", data.height);
+        localStorage.setItem("userWeight", data.weight);
+        localStorage.setItem("userBirthDate", data.birthDate);
+        localStorage.setItem("userGender", data.gender);
         setIsEditingProfile(false);
         toast.success("프로필이 저장되었습니다!");
     };
@@ -238,18 +271,18 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
     };
 
     return (
-        <div className="h-full overflow-auto p-8 bg-gray-50/50">
-            <div className="max-w-4xl mx-auto space-y-8">
+        <div className="h-full overflow-auto p-4 md:p-8 bg-gray-50/50">
+            <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
                 {/* Header with Title and Button Group */}
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-5xl font-black text-gray-900 mb-2">마이페이지</h1>
-                        <p className="text-gray-700 font-medium text-lg">내 정보를 관리하세요</p>
+                        <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-2">마이페이지</h1>
+                        <p className="text-gray-700 font-medium text-base md:text-lg">내 정보를 관리하세요</p>
                     </div>
                     {/* Button Group */}
                     <ButtonGroup>
                         <Button
-                            onClick={() => isEditingProfile ? handleSaveProfile() : setIsEditingProfile(true)}
+                            onClick={() => isEditingProfile ? handleSubmit(onSaveProfile)() : setIsEditingProfile(true)}
                             variant="outline"
                         >
                             <Edit className="w-4 h-4 mr-2" />
@@ -267,11 +300,11 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                 </div>
 
                 <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl">
-                    <div className="p-8">
+                    <div className="p-4 md:p-8">
                         {/* Profile Section */}
-                        <div className="flex gap-6 mb-8">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-6 mb-6 md:mb-8">
                             {/* Profile Image with AspectRatio */}
-                            <div className="w-32 flex-shrink-0">
+                            <div className="w-24 md:w-32 flex-shrink-0">
                                 <AspectRatio ratio={1}>
                                     <div className="relative w-full h-full">
                                         <Avatar className="w-full h-full border-4 border-white shadow-xl">
@@ -279,7 +312,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                                 <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                                             ) : (
                                                 <AvatarFallback className="bg-white">
-                                                    <User className="w-16 h-16 text-gray-400" />
+                                                    <User className="w-10 h-10 md:w-16 md:h-16 text-gray-400" />
                                                 </AvatarFallback>
                                             )}
                                         </Avatar>
@@ -317,8 +350,8 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                     </div>
                                 </AspectRatio>
                             </div>
-                            <div className="flex-1">
-                                <h2 className="text-3xl font-black text-gray-900 mb-1">{localStorage.getItem('userName') || '사용자'}</h2>
+                            <div className="flex-1 text-center sm:text-left">
+                                <h2 className="text-xl md:text-3xl font-black text-gray-900 mb-1">{localStorage.getItem('userName') || '사용자'}</h2>
                                 <p className="text-gray-500 font-medium text-sm mb-1">개발팀</p>
                                 <p className="text-gray-400 text-sm">
                                     {(() => {
@@ -332,24 +365,26 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                         {/* Basic Information Group */}
                         <div className="space-y-6">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-4">기본 정보</h3>
-                                <div className="grid grid-cols-2 gap-4">
+                                <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">기본 정보</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <Label className="text-sm text-gray-600 font-medium">생년월일</Label>
                                         <InputGroup className="mt-1.5">
                                             <InputGroupInput
                                                 type="date"
-                                                value={birthDate}
-                                                onChange={(e) => setBirthDate(e.target.value)}
+                                                {...register("birthDate")}
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl bg-white/80 border-gray-200"
+                                                className={`rounded-xl bg-white/80 ${errors.birthDate ? "border-red-400" : "border-gray-200"}`}
                                             />
                                         </InputGroup>
+                                        {errors.birthDate && (
+                                            <p className="text-xs text-red-500 mt-1">{errors.birthDate.message}</p>
+                                        )}
                                     </div>
                                     <div>
                                         <Label className="text-sm text-gray-600 font-medium">성별</Label>
-                                        <Select value={gender} onValueChange={setGender} disabled={!isEditingProfile}>
-                                            <SelectTrigger className="mt-1.5 rounded-xl bg-white/80 border-gray-200">
+                                        <Select value={gender} onValueChange={(val) => setValue("gender", val)} disabled={!isEditingProfile}>
+                                            <SelectTrigger className={`mt-1.5 rounded-xl bg-white/80 ${errors.gender ? "border-red-400" : "border-gray-200"}`}>
                                                 <SelectValue placeholder="성별 선택" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -357,44 +392,51 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                                 <SelectItem value="여성">여성</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        {errors.gender && (
+                                            <p className="text-xs text-red-500 mt-1">{errors.gender.message}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Body Information Group */}
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-4">신체 정보</h3>
-                                <div className="grid grid-cols-2 gap-4">
+                                <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">신체 정보</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <Label className="text-sm text-gray-600 font-medium">키 (cm)</Label>
                                         <InputGroup className="mt-1.5">
                                             <InputGroupInput
                                                 type="number"
-                                                value={height}
-                                                onChange={(e) => setHeight(e.target.value)}
+                                                {...register("height")}
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl bg-white/80 border-gray-200"
+                                                className={`rounded-xl bg-white/80 ${errors.height ? "border-red-400" : "border-gray-200"}`}
                                             />
                                         </InputGroup>
+                                        {errors.height && (
+                                            <p className="text-xs text-red-500 mt-1">{errors.height.message}</p>
+                                        )}
                                     </div>
                                     <div>
                                         <Label className="text-sm text-gray-600 font-medium">몸무게 (kg)</Label>
                                         <InputGroup className="mt-1.5">
                                             <InputGroupInput
                                                 type="number"
-                                                value={weight}
-                                                onChange={(e) => setWeight(e.target.value)}
+                                                {...register("weight")}
                                                 disabled={!isEditingProfile}
-                                                className="rounded-xl bg-white/80 border-gray-200"
+                                                className={`rounded-xl bg-white/80 ${errors.weight ? "border-red-400" : "border-gray-200"}`}
                                             />
                                         </InputGroup>
+                                        {errors.weight && (
+                                            <p className="text-xs text-red-500 mt-1">{errors.weight.message}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
 
                             {/* OAuth 연동 관리 */}
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-4">소셜 계정 연동</h3>
+                                <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">소셜 계정 연동</h3>
                                 <div className="p-5 rounded-xl bg-white/80 border border-gray-200">
                                     {(() => {
                                         // 연동된 계정 찾기 (하나만 연동 가능)

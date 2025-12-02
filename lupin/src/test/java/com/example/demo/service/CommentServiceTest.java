@@ -3,8 +3,10 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.demo.exception.BusinessException;
+import com.example.demo.exception.ErrorCode;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -30,6 +36,12 @@ class CommentServiceTest {
 
     @Mock
     private FeedRepository feedRepository;
+
+    @Mock
+    private NotificationService notificationService;
+
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @InjectMocks
     private CommentService commentService;
@@ -129,6 +141,42 @@ class CommentServiceTest {
     }
 
     @Test
+    @DisplayName("댓글 ID로 댓글을 조회한다")
+    void getComment() {
+        // given
+        Long commentId = 1L;
+        Comment comment = Comment.builder()
+                .id(commentId)
+                .writer(writer)
+                .feed(feed)
+                .content("테스트 댓글")
+                .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        // when
+        Comment result = commentService.getComment(commentId);
+
+        // then
+        assertThat(result.getId()).isEqualTo(commentId);
+        assertThat(result.getContent()).isEqualTo("테스트 댓글");
+        verify(commentRepository).findById(commentId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 댓글 ID로 조회 시 예외가 발생한다")
+    void getCommentWithNonExistentIdThrowsException() {
+        // given
+        Long commentId = 999L;
+        given(commentRepository.findById(commentId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.getComment(commentId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
+    }
+
+    @Test
     @DisplayName("피드의 댓글 목록을 최신순으로 조회한다")
     void getCommentsByFeedOrderByLatest() {
         // given
@@ -223,5 +271,240 @@ class CommentServiceTest {
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getContent()).isEqualTo("대댓글1");
         verify(commentRepository).findByParentOrderByIdAsc(parentComment);
+    }
+
+    @Test
+    @DisplayName("대댓글을 작성하면 부모 댓글 작성자에게 알림이 생성된다 (refId = replyId)")
+    void createReplyCreatesNotificationTest() {
+        // given
+        User commentOwner = User.builder()
+                .id(2L)
+                .userId("commentOwner")
+                .name("댓글주인")
+                .role(Role.MEMBER)
+                .build();
+
+        User replier = User.builder()
+                .id(3L)
+                .userId("replier")
+                .name("답글작성자")
+                .role(Role.MEMBER)
+                .build();
+
+        Long feedId = 1L;
+        Long parentId = 1L;
+        Long replyId = 100L;
+        String content = "대댓글입니다";
+
+        Comment parentComment = Comment.builder()
+                .id(parentId)
+                .writer(commentOwner)
+                .feed(feed)
+                .content("부모 댓글")
+                .build();
+
+        Comment savedReply = Comment.builder()
+                .id(replyId)
+                .writer(replier)
+                .feed(feed)
+                .parent(parentComment)
+                .content(content)
+                .build();
+
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(commentRepository.findById(parentId)).willReturn(Optional.of(parentComment));
+        given(commentRepository.save(any(Comment.class))).willReturn(savedReply);
+
+        // when
+        commentService.createReply(replier, feedId, parentId, content);
+
+        // then
+        verify(notificationService).createReplyNotification(commentOwner, replier, replyId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 피드에 댓글 작성 시 예외가 발생한다")
+    void createCommentWithNonExistentFeedThrowsException() {
+        // given
+        Long feedId = 999L;
+        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.createComment(writer, feedId, "댓글"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 댓글 수정 시 예외가 발생한다")
+    void updateNonExistentCommentThrowsException() {
+        // given
+        Long commentId = 999L;
+        given(commentRepository.findById(commentId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.updateComment(writer, commentId, "수정"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 댓글 삭제 시 예외가 발생한다")
+    void deleteNonExistentCommentThrowsException() {
+        // given
+        Long commentId = 999L;
+        given(commentRepository.findById(commentId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.deleteComment(writer, commentId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 피드의 댓글 목록 조회 시 예외가 발생한다")
+    void getCommentsByNonExistentFeedThrowsException() {
+        // given
+        Long feedId = 999L;
+        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.getCommentsByFeed(feedId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 피드의 인기 댓글 조회 시 예외가 발생한다")
+    void getPopularCommentsByNonExistentFeedThrowsException() {
+        // given
+        Long feedId = 999L;
+        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.getCommentsByFeedOrderByPopular(feedId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 피드에 대댓글 작성 시 예외가 발생한다")
+    void createReplyWithNonExistentFeedThrowsException() {
+        // given
+        Long feedId = 999L;
+        Long parentId = 1L;
+        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.createReply(writer, feedId, parentId, "대댓글"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 부모 댓글에 대댓글 작성 시 예외가 발생한다")
+    void createReplyWithNonExistentParentThrowsException() {
+        // given
+        Long feedId = 1L;
+        Long parentId = 999L;
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(commentRepository.findById(parentId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.createReply(writer, feedId, parentId, "대댓글"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 부모 댓글의 대댓글 조회 시 예외가 발생한다")
+    void getRepliesWithNonExistentParentThrowsException() {
+        // given
+        Long parentId = 999L;
+        given(commentRepository.findById(parentId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commentService.getReplies(parentId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("본인이 아닌 사용자가 댓글을 수정하면 예외가 발생한다")
+    void updateCommentByNonOwnerThrowsExceptionTest() {
+        // given
+        Long commentId = 1L;
+        User otherUser = User.builder()
+                .id(99L)
+                .userId("other")
+                .name("다른사람")
+                .role(Role.MEMBER)
+                .build();
+
+        Comment comment = Comment.builder()
+                .id(commentId)
+                .writer(writer)
+                .feed(feed)
+                .content("원래 댓글")
+                .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        // when & then
+        assertThatThrownBy(() -> commentService.updateComment(otherUser, commentId, "수정 내용"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_OWNER);
+    }
+
+    @Test
+    @DisplayName("본인이 아닌 사용자가 댓글을 삭제하면 예외가 발생한다")
+    void deleteCommentByNonOwnerThrowsExceptionTest() {
+        // given
+        Long commentId = 1L;
+        User otherUser = User.builder()
+                .id(99L)
+                .userId("other")
+                .name("다른사람")
+                .role(Role.MEMBER)
+                .build();
+
+        Comment comment = Comment.builder()
+                .id(commentId)
+                .writer(writer)
+                .feed(feed)
+                .content("삭제할 댓글")
+                .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        // when & then
+        assertThatThrownBy(() -> commentService.deleteComment(otherUser, commentId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_OWNER);
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 시 관련 알림도 삭제된다")
+    void deleteCommentDeletesRelatedNotificationsTest() {
+        // given
+        Long commentId = 1L;
+        Comment comment = Comment.builder()
+                .id(commentId)
+                .writer(writer)
+                .feed(feed)
+                .content("삭제할 댓글")
+                .build();
+
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
+        // when
+        commentService.deleteComment(writer, commentId);
+
+        // then
+        verify(notificationRepository).deleteByRefIdAndTypeIn(
+                String.valueOf(commentId),
+                List.of("COMMENT_LIKE", "REPLY")
+        );
+        verify(commentRepository).delete(comment);
     }
 }

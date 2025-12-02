@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,19 +27,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckCircle, Clock, Flame, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
+import { Image, FileText } from "lucide-react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { imageApi } from "@/api/imageApi";
-import {
-  extractImageMetadata,
-  validateWorkoutTimes,
-  calculateWorkoutMetrics,
-  type WorkoutCalculation
-} from "@/lib/imageMetadata";
+// EXIF 검증은 백엔드에서만 수행됨
 
 interface CreateFeedDialogProps {
   open: boolean;
@@ -61,9 +55,7 @@ export default function CreateFeedDialog({
   const [workoutType, setWorkoutType] = useState<string>("헬스");
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [startTime, setStartTime] = useState<Date | null>(null);
-  const [endTime, setEndTime] = useState<Date | null>(null);
-  const [workoutMetrics, setWorkoutMetrics] = useState<WorkoutCalculation | null>(null);
+  const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
 
   const editor = useCreateBlockNote({
     initialContent: [
@@ -145,9 +137,6 @@ export default function CreateFeedDialog({
     setEndImage(null);
     setOtherImages([]);
     setWorkoutType("헬스");
-    setStartTime(null);
-    setEndTime(null);
-    setWorkoutMetrics(null);
     try {
       editor.replaceBlocks(editor.document, [
         {
@@ -181,52 +170,35 @@ export default function CreateFeedDialog({
     }
   };
 
-  // 시작 이미지 업로드 (메타데이터 추출 포함)
+  // 시작 이미지 업로드 (EXIF 검증은 백엔드에서 수행)
   const handleStartImageUpload = async (file: File) => {
-    const metadata = await extractImageMetadata(file);
-    setStartTime(metadata.dateTime);
-
-    if (!metadata.dateTime) {
-      toast.warning("사진에서 시간 정보를 찾을 수 없습니다. 다른 사진을 시도해보세요.");
-    }
-
     await uploadImage(file, setStartImage);
   };
 
-  // 끝 이미지 업로드 (메타데이터 추출 및 계산 포함)
+  // 끝 이미지 업로드 (EXIF 검증은 백엔드에서 수행)
   const handleEndImageUpload = async (file: File) => {
-    const metadata = await extractImageMetadata(file);
-    setEndTime(metadata.dateTime);
-
-    if (!metadata.dateTime) {
-      toast.warning("사진에서 시간 정보를 찾을 수 없습니다. 다른 사진을 시도해보세요.");
-    }
-
     await uploadImage(file, setEndImage);
   };
 
   const handleOtherImageUpload = (file: File) => uploadImage(file, (url) => setOtherImages(prev => [...prev, url]));
 
-  // 시작/끝 시간이 모두 있을 때 운동 지표 계산
-  useEffect(() => {
-    if (startTime && endTime) {
-      const validation = validateWorkoutTimes(startTime, endTime);
-      if (validation.valid) {
-        const metrics = calculateWorkoutMetrics(startTime, endTime, workoutType);
-        setWorkoutMetrics(metrics);
-      } else {
-        setWorkoutMetrics(null);
-      }
-    } else {
-      setWorkoutMetrics(null);
-    }
-  }, [startTime, endTime, workoutType]);
-
-  // 운동 인증 완료: 시작/끝 시간이 모두 있고, 끝 시간이 시작 시간보다 나중일 때만
-  const isVerified = startTime && endTime && endTime > startTime;
-
-  // 제출 가능: 시작/끝 사진만 있으면 됨
+  // 제출 가능: 시작/끝 사진만 있으면 됨 (EXIF 검증은 백엔드에서)
   const canSubmit = startImage && endImage;
+
+  // 에디터에 실제 콘텐츠가 있는지 확인
+  const hasEditorContent = editor.document.some(block => {
+    if (block.type === 'paragraph' && Array.isArray(block.content)) {
+      return block.content.some((item: unknown) => {
+        if (typeof item === 'string') return item.trim().length > 0;
+        if (item && typeof item === 'object' && 'text' in item) {
+          return String((item as { text: string }).text || '').trim().length > 0;
+        }
+        return false;
+      });
+    }
+    // 다른 블록 타입(이미지, 헤더 등)이 있으면 콘텐츠가 있는 것으로 간주
+    return block.type !== 'paragraph';
+  });
 
   // 변경사항이 있는지 확인
   const hasChanges =
@@ -234,7 +206,7 @@ export default function CreateFeedDialog({
     endImage !== null ||
     otherImages.length > 0 ||
     workoutType !== "헬스" ||
-    JSON.stringify(editor.document) !== JSON.stringify([{ type: "paragraph", content: "" }]);
+    hasEditorContent;
 
   // 다이얼로그 닫기 핸들러
   const handleOpenChange = (newOpen: boolean) => {
@@ -255,9 +227,6 @@ export default function CreateFeedDialog({
     setEndImage(null);
     setOtherImages([]);
     setWorkoutType("헬스");
-    setStartTime(null);
-    setEndTime(null);
-    setWorkoutMetrics(null);
 
     onOpenChange(false);
   };
@@ -265,151 +234,153 @@ export default function CreateFeedDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="!max-w-[795px] !w-[795px] h-[95vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl !flex !gap-0" style={{ width: '795px', maxWidth: '795px' }}>
+      <DialogContent className="w-full h-full md:h-[95vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col">
         <DialogHeader className="sr-only">
           <DialogTitle>피드 작성</DialogTitle>
           <DialogDescription>
             새로운 피드를 작성할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex h-full overflow-hidden w-full">
-          {/* Left Sidebar */}
-          <div className="w-80 bg-transparent border-r border-gray-200 p-6 flex-shrink-0">
-            <h2 className="text-xl font-black text-gray-900 mb-4">피드 작성</h2>
 
-            {/* Workout Type */}
-            <WorkoutTypeSelect
-              value={workoutType}
-              onChange={setWorkoutType}
-              className="mb-4"
-            />
+        {/* 헤더 + 탭 */}
+        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+          <h2 className="text-xl font-black text-gray-900 mb-3">피드 작성</h2>
 
-            {/* 2x2 Photo Grid */}
-            <TooltipProvider>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <ImageUploadBox
-                        label="시작 사진"
-                        image={startImage}
-                        onImageChange={setStartImage}
-                        onFileSelect={handleStartImageUpload}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>운동 시작 시 찍은 사진을 업로드하세요.<br/>사진의 촬영 시간이 자동으로 인식됩니다.</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <ImageUploadBox
-                        label="끝 사진"
-                        image={endImage}
-                        onImageChange={setEndImage}
-                        onFileSelect={handleEndImageUpload}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>운동 종료 시 찍은 사진을 업로드하세요.<br/>시작 사진보다 나중에 찍어야 인증됩니다.</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <ImageUploadBox
-                        label="기타 사진"
-                        image={otherImages[0] || null}
-                        onImageChange={() => setOtherImages(otherImages.slice(1))}
-                        onFileSelect={handleOtherImageUpload}
-                        variant="display"
-                        showCount={otherImages.length}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>추가로 올리고 싶은 사진이 있다면<br/>여기에 업로드하세요. (선택사항)</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <ImageUploadBox
-                        label="업로드"
-                        image={null}
-                        onImageChange={() => {}}
-                        onFileSelect={handleOtherImageUpload}
-                        variant="upload"
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>클릭해서 추가 사진을 업로드하세요.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </TooltipProvider>
+          {/* 운동 종류 */}
+          <WorkoutTypeSelect
+            value={workoutType}
+            onChange={setWorkoutType}
+            className="mb-3"
+          />
 
-            {/* Submit Button */}
-            <Button
-              onClick={handleSubmit}
-              disabled={!canSubmit || isUploading}
-              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* 탭 버튼 */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab("photo")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all ${
+                activeTab === "photo"
+                  ? "bg-[#C93831] text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
             >
-              {isUploading ? "사진 올리는 중..." : canSubmit ? "작성" : "시작/끝 사진 필요"}
-            </Button>
-
-            {/* Workout Metrics */}
-            {workoutMetrics && (
-              <div className="mb-4 p-3 bg-white/50 rounded-lg border border-gray-200">
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <Clock className="w-4 h-4 mx-auto mb-1 text-blue-500" />
-                    <div className="text-xs text-gray-500">시간</div>
-                    <div className="text-sm font-bold">{workoutMetrics.durationMinutes}분</div>
-                  </div>
-                  <div>
-                    <Flame className="w-4 h-4 mx-auto mb-1 text-orange-500" />
-                    <div className="text-xs text-gray-500">칼로리</div>
-                    <div className="text-sm font-bold">{workoutMetrics.calories}kcal</div>
-                  </div>
-                  <div>
-                    <Trophy className="w-4 h-4 mx-auto mb-1 text-yellow-500" />
-                    <div className="text-xs text-gray-500">점수</div>
-                    <div className="text-sm font-bold">{workoutMetrics.score}점</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Verification Badge */}
-            {isVerified && (
-              <Badge className="bg-green-500 text-white px-3 py-1.5 font-bold border-0 w-full justify-center text-xs">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                운동 인증 완료
-              </Badge>
-            )}
+              <Image className="w-4 h-4" />
+              사진 첨부
+              {(startImage || endImage) && (
+                <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("content")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all ${
+                activeTab === "content"
+                  ? "bg-[#C93831] text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              글 작성
+            </button>
           </div>
+        </div>
 
-          {/* Right Editor */}
-          <div className="w-[475px] bg-transparent flex-shrink-0 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 w-[475px] h-full" style={{ width: '475px', maxWidth: '475px' }}>
+        {/* 탭 콘텐츠 */}
+        <div className="flex-1 overflow-hidden">
+          {/* 사진 탭 */}
+          {activeTab === "photo" && (
+            <ScrollArea className="h-full">
+              <div className="p-4">
+                <TooltipProvider>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <ImageUploadBox
+                            label="시작 사진"
+                            image={startImage}
+                            onImageChange={setStartImage}
+                            onFileSelect={handleStartImageUpload}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>운동 시작 시 찍은 사진을 업로드하세요.<br/>사진의 촬영 시간이 자동으로 인식됩니다.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <ImageUploadBox
+                            label="끝 사진"
+                            image={endImage}
+                            onImageChange={setEndImage}
+                            onFileSelect={handleEndImageUpload}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>운동 종료 시 찍은 사진을 업로드하세요.<br/>시작 사진보다 나중에 찍어야 인증됩니다.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <ImageUploadBox
+                            label="기타 사진"
+                            image={otherImages[0] || null}
+                            onImageChange={() => setOtherImages(otherImages.slice(1))}
+                            onFileSelect={handleOtherImageUpload}
+                            variant="display"
+                            showCount={otherImages.length}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>추가로 올리고 싶은 사진이 있다면<br/>여기에 업로드하세요. (선택사항)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <ImageUploadBox
+                            label="업로드"
+                            image={null}
+                            onImageChange={() => {}}
+                            onFileSelect={handleOtherImageUpload}
+                            variant="upload"
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>클릭해서 추가 사진을 업로드하세요.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TooltipProvider>
+
+                <p className="text-xs text-gray-500 text-center">
+                  사진의 EXIF 정보로 운동 시간과 점수가 자동 계산됩니다
+                </p>
+              </div>
+            </ScrollArea>
+          )}
+
+          {/* 글 작성 탭 */}
+          {activeTab === "content" && (
+            <ScrollArea className="h-full">
               <style>{`
                 .bn-editor {
-                  max-width: 443px !important;
-                  width: 443px !important;
+                  max-width: 100% !important;
+                  width: 100% !important;
                   background: transparent !important;
+                  min-height: 300px !important;
                 }
                 .bn-container {
-                  max-width: 475px !important;
-                  width: 475px !important;
+                  max-width: 100% !important;
+                  width: 100% !important;
                   background: transparent !important;
                 }
                 .bn-block-content {
-                  max-width: 443px !important;
+                  max-width: 100% !important;
                   background: transparent !important;
                 }
                 .bn-inline-content {
@@ -421,19 +392,25 @@ export default function CreateFeedDialog({
                 }
                 .ProseMirror {
                   background: transparent !important;
-                }
-                [data-radix-scroll-area-viewport] {
-                  width: 475px !important;
-                  max-width: 475px !important;
+                  min-height: 300px !important;
                 }
               `}</style>
-              <div style={{ minWidth: '475px', width: '475px' }}>
-                <div style={{ padding: '1rem' }}>
-                  <BlockNoteView editor={editor} theme="light" />
-                </div>
+              <div className="p-4">
+                <BlockNoteView editor={editor} theme="light" />
               </div>
             </ScrollArea>
-          </div>
+          )}
+        </div>
+
+        {/* 하단 버튼 */}
+        <div className="p-4 border-t border-gray-200 flex-shrink-0">
+          <Button
+            onClick={handleSubmit}
+            disabled={!canSubmit || isUploading}
+            className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isUploading ? "사진 올리는 중..." : canSubmit ? "작성" : "시작/끝 사진 필요"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -444,16 +421,18 @@ export default function CreateFeedDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>작성 중인 내용이 있습니다</AlertDialogTitle>
             <AlertDialogDescription>
-              작성 중인 피드가 임시 저장되어 있습니다. 정말로 닫으시겠습니까?
-              (임시 저장된 내용은 다음에 다시 열 때 복원됩니다)
+              임시 저장하면 다음에 다시 열 때 복원됩니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowCloseConfirm(false)}>
-              계속 작성하기
+            <AlertDialogCancel onClick={handleCloseWithoutSaving}>
+              비우고 닫기
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleCloseWithoutSaving}>
-              임시저장 삭제하고 닫기
+            <AlertDialogAction onClick={() => {
+              setShowCloseConfirm(false);
+              onOpenChange(false);
+            }}>
+              저장 후 닫기
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,0 +1,200 @@
+/**
+ * src/store/useFeedStore.ts
+ *
+ * 피드 상태 관리 Zustand 스토어
+ * - 내 피드, 전체 피드 데이터
+ * - 선택된 피드, 수정 중인 피드
+ * - 페이지네이션 상태
+ * - 피드 CRUD 액션
+ */
+import { create } from 'zustand';
+import { Feed } from '@/types/dashboard.types';
+import { feedApi } from '@/api';
+import { getRelativeTime } from '@/lib/utils';
+
+interface FeedState {
+  // 피드 데이터
+  myFeeds: Feed[];
+  allFeeds: Feed[];
+  selectedFeed: Feed | null;
+  editingFeed: Feed | null;
+
+  // 페이지네이션
+  feedPage: number;
+  hasMoreFeeds: boolean;
+  isLoadingFeeds: boolean;
+
+  // 알림에서 피드로 이동 시 사용
+  pivotFeedId: number | null;
+  pivotFeed: Feed | null;
+
+  // 데이터 새로고침 트리거
+  refreshTrigger: number;
+
+  // Actions
+  setMyFeeds: (feeds: Feed[]) => void;
+  setAllFeeds: (feeds: Feed[]) => void;
+  setSelectedFeed: (feed: Feed | null) => void;
+  setEditingFeed: (feed: Feed | null) => void;
+  setPivotFeed: (feedId: number | null, feed: Feed | null) => void;
+  triggerRefresh: () => void;
+
+  // 피드 로드 액션
+  loadMyFeeds: () => Promise<void>;
+  loadFeeds: (page: number, reset?: boolean, excludeFeedId?: number) => Promise<void>;
+  loadMoreFeeds: () => void;
+
+  // 피드 CRUD 액션
+  addFeed: (feed: Feed) => void;
+  addFeedToAll: (feed: Feed) => void;
+  updateFeed: (feedId: number, updates: Partial<Feed>) => void;
+  deleteFeed: (feedId: number) => void;
+
+  // 피드 좋아요
+  toggleLike: (feedId: number, liked: boolean) => void;
+}
+
+// 백엔드 응답을 프론트엔드 Feed 타입으로 변환 (export하여 다른 곳에서도 사용 가능)
+export const mapBackendFeed = (backendFeed: any): Feed => ({
+  id: backendFeed.id,
+  writerId: backendFeed.writerId,
+  writerName: backendFeed.writerName,
+  writerAvatar: backendFeed.writerAvatar,
+  activity: backendFeed.activity,
+  points: backendFeed.points || 0,
+  content: backendFeed.content,
+  images: backendFeed.images || [],
+  likes: backendFeed.likes || 0,
+  comments: backendFeed.comments || 0,
+  calories: backendFeed.calories,
+  createdAt: backendFeed.createdAt,
+  updatedAt: backendFeed.updatedAt,
+  time: getRelativeTime(backendFeed.createdAt),
+  author: backendFeed.writerName,
+});
+
+export const useFeedStore = create<FeedState>((set, get) => ({
+  // 초기 상태
+  myFeeds: [],
+  allFeeds: [],
+  selectedFeed: null,
+  editingFeed: null,
+  feedPage: 0,
+  hasMoreFeeds: true,
+  isLoadingFeeds: false,
+  pivotFeedId: null,
+  pivotFeed: null,
+  refreshTrigger: 0,
+
+  // 기본 setter
+  setMyFeeds: (feeds) => set({ myFeeds: feeds }),
+  setAllFeeds: (feeds) => set({ allFeeds: feeds }),
+  setSelectedFeed: (feed) => set({ selectedFeed: feed }),
+  setEditingFeed: (feed) => set({ editingFeed: feed }),
+  setPivotFeed: (feedId, feed) => set({ pivotFeedId: feedId, pivotFeed: feed }),
+  triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),
+
+  // 내 피드 로드
+  loadMyFeeds: async () => {
+    try {
+      const currentUserId = parseInt(localStorage.getItem('userId') || '0');
+      const response = await feedApi.getFeedsByUserId(currentUserId, 0, 100);
+      const feeds = response.content || response;
+      const mappedFeeds = feeds.map(mapBackendFeed);
+      set({ myFeeds: mappedFeeds });
+    } catch (error) {
+      console.error('내 피드 로드 실패:', error);
+    }
+  },
+
+  // 다른 사람 피드 로드 (페이지네이션)
+  loadFeeds: async (page: number, reset = false, excludeFeedId?: number) => {
+    const { isLoadingFeeds } = get();
+    if (isLoadingFeeds) return;
+
+    set({ isLoadingFeeds: true });
+    try {
+      const pageSize = 10;
+      const currentUserId = parseInt(localStorage.getItem('userId') || '0');
+      const response = await feedApi.getAllFeeds(page, pageSize, currentUserId, excludeFeedId);
+      const feeds = response.content || response;
+      const mappedFeeds = feeds.map(mapBackendFeed);
+
+      if (reset) {
+        set({ allFeeds: mappedFeeds.sort((a: Feed, b: Feed) => b.id - a.id) });
+      } else {
+        set((state) => ({
+          allFeeds: [...state.allFeeds, ...mappedFeeds].sort((a, b) => b.id - a.id)
+        }));
+      }
+
+      const totalPages = response.totalPages || 1;
+      set({
+        hasMoreFeeds: page < totalPages - 1,
+        feedPage: page,
+      });
+    } catch (error) {
+      console.error('피드 데이터 로드 실패:', error);
+    } finally {
+      set({ isLoadingFeeds: false });
+    }
+  },
+
+  // 추가 피드 로드
+  loadMoreFeeds: () => {
+    const { hasMoreFeeds, isLoadingFeeds, feedPage, loadFeeds } = get();
+    if (hasMoreFeeds && !isLoadingFeeds) {
+      loadFeeds(feedPage + 1);
+    }
+  },
+
+  // 피드 추가 (내 피드)
+  addFeed: (feed) => {
+    set((state) => ({
+      myFeeds: [feed, ...state.myFeeds],
+    }));
+  },
+
+  // 피드 추가 (전체 피드)
+  addFeedToAll: (feed) => {
+    set((state) => ({
+      allFeeds: [feed, ...state.allFeeds],
+    }));
+  },
+
+  // 피드 업데이트
+  updateFeed: (feedId, updates) => {
+    set((state) => ({
+      myFeeds: state.myFeeds.map((feed) =>
+        feed.id === feedId ? { ...feed, ...updates } : feed
+      ),
+      allFeeds: state.allFeeds.map((feed) =>
+        feed.id === feedId ? { ...feed, ...updates } : feed
+      ),
+    }));
+  },
+
+  // 피드 삭제
+  deleteFeed: (feedId) => {
+    set((state) => ({
+      myFeeds: state.myFeeds.filter((feed) => feed.id !== feedId),
+      allFeeds: state.allFeeds.filter((feed) => feed.id !== feedId),
+    }));
+  },
+
+  // 좋아요 토글
+  toggleLike: (feedId, liked) => {
+    set((state) => ({
+      allFeeds: state.allFeeds.map((feed) =>
+        feed.id === feedId
+          ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1 }
+          : feed
+      ),
+      myFeeds: state.myFeeds.map((feed) =>
+        feed.id === feedId
+          ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1 }
+          : feed
+      ),
+    }));
+  },
+}));

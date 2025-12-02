@@ -6,7 +6,7 @@ import KakaoCallback from "./components/auth/KakaoCallback";
 import Dashboard from "./components/Dashboard";
 import LandingPage from "./components/LandingPage";
 import { useAuthStore } from "./store/useAuthStore.ts";
-import { NotFoundPage, ErrorBoundary } from "./components/errors";
+import { NotFoundPage, ErrorPage, ErrorBoundary } from "./components/errors";
 
 // 인증된 사용자만 접근 가능한 라우트
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -79,6 +79,10 @@ export default function App() {
                             </ProtectedRoute>
                         }
                     />
+
+                    {/* 시연용 에러 페이지 */}
+                    <Route path="/demo/404" element={<NotFoundPage />} />
+                    <Route path="/demo/500" element={<ErrorPage />} />
 
                     {/* 404 페이지 */}
                     <Route path="*" element={<NotFoundPage />} />

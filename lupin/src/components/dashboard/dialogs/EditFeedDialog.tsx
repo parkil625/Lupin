@@ -76,6 +76,7 @@ export default function EditFeedDialog({
   // 다이얼로그가 닫히면 상태 초기화
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 다이얼로그 닫힐 때 상태 초기화 필요
       setShowCloseConfirm(false);
       setHasChanges(false);
       initialDataRef.current = null;
@@ -90,6 +91,7 @@ export default function EditFeedDialog({
       const initialOtherImages = feed.images.slice(2) || [];
       const initialWorkoutType = feed.activity || "running";
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- feed 데이터로 폼 초기화 필요
       setStartImage(initialStartImage);
       setEndImage(initialEndImage);
       setOtherImages(initialOtherImages);
@@ -138,12 +140,14 @@ export default function EditFeedDialog({
       workoutType !== initialDataRef.current.workoutType ||
       currentContent !== initialDataRef.current.content;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 변경사항 감지를 위한 상태 업데이트
     setHasChanges(changed);
   }, [startImage, endImage, otherImages, workoutType, editor]);
 
   // EXIF 시간 검증 (이미지가 변경된 경우에만)
   useEffect(() => {
     if (!imagesChanged) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 검증 상태 초기화
       setVerificationStatus("none");
       return;
     }

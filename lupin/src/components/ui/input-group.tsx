@@ -18,6 +18,7 @@ InputGroup.displayName = "InputGroup"
 const InputGroupInput = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
+  // eslint-disable-next-line react/prop-types
 >(({ className, type, ...props }, ref) => {
   return (
     <input
@@ -36,6 +37,7 @@ InputGroupInput.displayName = "InputGroupInput"
 const InputGroupTextarea = React.forwardRef<
   HTMLTextAreaElement,
   React.TextareaHTMLAttributes<HTMLTextAreaElement>
+  // eslint-disable-next-line react/prop-types
 >(({ className, ...props }, ref) => {
   return (
     <textarea
@@ -100,6 +102,7 @@ InputGroupText.displayName = "InputGroupText"
 const InputGroupButton = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
+  // eslint-disable-next-line react/prop-types
 >(({ className, ...props }, ref) => {
   return (
     <button

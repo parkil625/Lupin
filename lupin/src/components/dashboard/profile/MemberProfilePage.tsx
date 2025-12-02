@@ -39,13 +39,24 @@ import { imageApi } from "@/api/imageApi";
 import { oauthApi, OAuthConnection } from "@/api/oauthApi";
 
 // 구글 타입을 위한 선언
+interface GoogleInitConfig {
+    client_id: string;
+    callback: (response: { credential: string }) => void;
+}
+
+interface GoogleButtonConfig {
+    theme: string;
+    size: string;
+    type?: string;
+}
+
 declare global {
     interface Window {
         google?: {
             accounts: {
                 id: {
-                    initialize: (config: any) => void;
-                    renderButton: (element: HTMLElement, config: any) => void;
+                    initialize: (config: GoogleInitConfig) => void;
+                    renderButton: (element: HTMLElement, config: GoogleButtonConfig) => void;
                 };
             };
         };
@@ -121,7 +132,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
     }, []);
 
     // [New] 구글 연동 핸들러
-    const handleLinkGoogle = async (response: any) => {
+    const handleLinkGoogle = async (response: { credential: string }) => {
         setIsLoadingOAuth(true);
         try {
             await oauthApi.linkGoogle(response.credential);
@@ -129,10 +140,10 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
             const connections = await oauthApi.getConnections();
             setOauthConnections(connections);
             toast.success("구글 계정이 연동되었습니다.");
-        } catch (error: any) {
-            console.error("Google link failed:", error);
-            if (error.response?.data?.message) {
-                toast.error(error.response.data.message);
+        } catch (error: unknown) {
+            const axiosError = error as { response?: { data?: { message?: string } } };
+            if (axiosError.response?.data?.message) {
+                toast.error(axiosError.response.data.message);
             } else {
                 toast.error("구글 연동에 실패했습니다.");
             }
@@ -144,7 +155,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
     // [New] 구글 스크립트 로드 및 버튼 초기화
     useEffect(() => {
         // 이미 연동되어 있으면 스크립트 로드 불필요
-        if (isLinked('GOOGLE')) return;
+        if (oauthConnections.some(c => c.provider === 'GOOGLE')) return;
 
         const script = document.createElement("script");
         script.src = "https://accounts.google.com/gsi/client";

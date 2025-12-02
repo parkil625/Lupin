@@ -17,7 +17,6 @@ import {
   Video,
   Trophy,
   Calendar as CalendarIcon,
-  PlusSquare,
   MessageCircle,
   Gavel,
 } from "lucide-react";
@@ -37,7 +36,6 @@ import PrescriptionFormDialog from "./dashboard/dialogs/PrescriptionFormDialog";
 import EditFeedDialog from "./dashboard/dialogs/EditFeedDialog";
 import CreateFeedDialog from "./dashboard/dialogs/CreateFeedDialog";
 import DoctorChatPage from "./dashboard/chat/DoctorChatPage";
-import DoctorProfilePage from "./dashboard/profile/DoctorProfilePage";
 import CreatePage from "./dashboard/create/CreatePage";
 import MemberProfilePage from "./dashboard/profile/MemberProfilePage";
 import {
@@ -108,7 +106,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     setSelectedFeed,
     editingFeed,
     setEditingFeed,
-    feedPage,
     hasMoreFeeds,
     isLoadingFeeds,
     pivotFeedId,
@@ -167,7 +164,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   useEffect(() => {
     loadMyFeeds(); // 내 피드는 전체 로드
     loadFeeds(0, true); // 다른 피드는 페이지네이션
-  }, [userType, refreshTrigger]); // refreshTrigger 변경 시 데이터 재로드
+  }, [userType, refreshTrigger, loadMyFeeds, loadFeeds]); // refreshTrigger 변경 시 데이터 재로드
 
   // 알림 데이터 로드
   useEffect(() => {
@@ -353,8 +350,9 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       });
       triggerRefresh();
       toast.success("피드가 수정되었습니다!");
-    } catch (error: any) {
-      const message = error.response?.data?.message || "피드 수정에 실패했습니다.";
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const message = axiosError.response?.data?.message || "피드 수정에 실패했습니다.";
       toast.error(message);
     }
   };
@@ -389,8 +387,9 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       // 데이터 재로드 및 canPostToday 재확인
       triggerRefresh();
       toast.success("피드가 작성되었습니다!");
-    } catch (error: any) {
-      const message = error.response?.data?.message || "피드 작성에 실패했습니다.";
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const message = axiosError.response?.data?.message || "피드 작성에 실패했습니다.";
       toast.error(message);
     }
   };

@@ -81,9 +81,11 @@ export default function KakaoCallback() {
                     // 홈으로 이동
                     navigate("/dashboard", { replace: true });
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
+                const axiosError = err as { response?: { status?: number; data?: { errorCode?: string; message?: string } } };
+
                 // [수정] 연동되지 않은 계정일 경우 모달 띄우기
-                if (err.response?.status === 404 && err.response?.data?.errorCode === 'OAUTH_NOT_LINKED') {
+                if (axiosError.response?.status === 404 && axiosError.response?.data?.errorCode === 'OAUTH_NOT_LINKED') {
                     sessionStorage.removeItem("kakao_oauth_state");
                     sessionStorage.removeItem("kakao_oauth_mode");
 
@@ -96,10 +98,10 @@ export default function KakaoCallback() {
                 sessionStorage.removeItem("kakao_oauth_state");
                 sessionStorage.removeItem("kakao_oauth_mode");
 
-                if (err.response?.status === 404) {
+                if (axiosError.response?.status === 404) {
                     setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
-                } else if (err.response?.data?.message) {
-                    setError(err.response.data.message);
+                } else if (axiosError.response?.data?.message) {
+                    setError(axiosError.response.data.message);
                 } else {
                     setError(mode === "link" ? "카카오 계정 연동 중 오류가 발생했습니다." : "카카오 로그인 중 오류가 발생했습니다.");
                 }

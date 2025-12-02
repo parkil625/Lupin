@@ -95,11 +95,11 @@ export default function CreateFeedDialog({
           if (draft.content && Array.isArray(draft.content)) {
             try {
               editor.replaceBlocks(editor.document, draft.content);
-            } catch (error) {
+            } catch {
               console.log("Editor content restore failed");
             }
           }
-        } catch (error) {
+        } catch {
           console.log("Failed to load draft");
         }
       }
@@ -182,7 +182,7 @@ export default function CreateFeedDialog({
           content: "",
         },
       ]);
-    } catch (error) {
+    } catch {
       console.log("Editor reset skipped");
     }
 

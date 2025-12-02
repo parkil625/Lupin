@@ -1,0 +1,60 @@
+# Codecov Configuration
+# https://docs.codecov.com/docs/codecov-yaml
+
+coverage:
+  precision: 2
+  round: down
+  range: "50...100"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%  # 커버리지 5% 이상 감소하면 실패
+        if_ci_failed: error
+
+    patch:
+      default:
+        target: 60%  # 새로 추가된 코드는 60% 이상 커버리지 필요
+        if_ci_failed: error
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+
+flags:
+  backend:
+    paths:
+      - lupin/src/main/java/
+    carryforward: true
+
+  frontend:
+    paths:
+      - src/
+    carryforward: true
+
+ignore:
+  - "**/*Test.java"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/e2e/**"
+  - "**/*.d.ts"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"

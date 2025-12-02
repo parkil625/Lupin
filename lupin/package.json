@@ -100,16 +100,17 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
     "test": "vitest --project=unit",
     "test:watch": "vitest --project=unit --watch",
-    "test:e2e": "vitest --project=e2e",
-    "test:e2e:ui": "vitest --project=e2e --ui",
+    "test:coverage": "vitest --project=unit --coverage",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:headed": "npx playwright test --headed",
     "test:storybook": "vitest --project=storybook",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "create-test-images": "node scripts/create-test-images.js",
-    "test:playwright": "npx playwright test",
-    "test:playwright:ui": "npx playwright test --ui",
-    "test:playwright:headed": "npx playwright test --headed"
+    "create-test-images": "node scripts/create-test-images.js"
   }
 }

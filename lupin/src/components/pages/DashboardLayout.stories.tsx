@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import Sidebar from '../dashboard/shared/Sidebar';
 import AnimatedBackground from '../dashboard/shared/AnimatedBackground';

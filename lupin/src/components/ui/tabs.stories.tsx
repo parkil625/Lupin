@@ -106,7 +106,7 @@ export const ProfileTabs: Story = {
             <div className="space-y-2 text-sm">
               <p>러닝 기록 - 5km (30분)</p>
               <p>수영 기록 - 1km (45분)</p>
-              <p>피드 작성 - "오늘 운동 완료!"</p>
+              <p>피드 작성 - &quot;오늘 운동 완료!&quot;</p>
             </div>
           </CardContent>
         </Card>

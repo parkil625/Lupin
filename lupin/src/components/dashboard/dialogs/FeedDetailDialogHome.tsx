@@ -110,22 +110,23 @@ export default function FeedDetailDialogHome({
   const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
 
   // BlockNote 에디터 생성 (읽기 전용)
+  const feedContent = feed?.content;
   const initialContent = useMemo(() => {
-    if (!feed?.content) return undefined;
+    if (!feedContent) return undefined;
     try {
       // JSON인지 확인
-      const parsed = JSON.parse(feed.content);
+      const parsed = JSON.parse(feedContent);
       return parsed;
     } catch {
       // 일반 텍스트인 경우 BlockNote 기본 형식으로 변환
       return [
         {
           type: "paragraph",
-          content: feed.content,
+          content: feedContent,
         },
       ];
     }
-  }, [feed?.content]);
+  }, [feedContent]);
 
   const editor = useCreateBlockNote({
     initialContent,
@@ -181,7 +182,7 @@ export default function FeedDetailDialogHome({
                 time: getRelativeTime(comment.createdAt),
                 replies,
               };
-            } catch (error) {
+            } catch {
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",

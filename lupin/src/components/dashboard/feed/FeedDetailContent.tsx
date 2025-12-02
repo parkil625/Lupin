@@ -97,14 +97,15 @@ export function FeedDetailContent({
   const iconColor = useImageBrightness(currentImage);
 
   // BlockNote 에디터 (읽기 전용)
+  const feedContent = feed?.content;
   const initialContent = useMemo(() => {
-    if (!feed?.content) return undefined;
+    if (!feedContent) return undefined;
     try {
-      return JSON.parse(feed.content);
+      return JSON.parse(feedContent);
     } catch {
-      return [{ type: "paragraph", content: feed.content }];
+      return [{ type: "paragraph", content: feedContent }];
     }
-  }, [feed?.content]);
+  }, [feedContent]);
 
   const editor = useCreateBlockNote({ initialContent });
 

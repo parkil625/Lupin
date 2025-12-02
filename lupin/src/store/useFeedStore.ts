@@ -12,6 +12,23 @@ import { Feed } from '@/types/dashboard.types';
 import { feedApi } from '@/api';
 import { getRelativeTime } from '@/lib/utils';
 
+// 백엔드 피드 응답 타입
+interface BackendFeed {
+  id: number;
+  writerId: number;
+  writerName: string;
+  writerAvatar?: string;
+  activity: string;
+  points?: number;
+  content: string;
+  images?: string[];
+  likes?: number;
+  comments?: number;
+  calories?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 interface FeedState {
   // 피드 데이터
   myFeeds: Feed[];
@@ -55,7 +72,7 @@ interface FeedState {
 }
 
 // 백엔드 응답을 프론트엔드 Feed 타입으로 변환 (export하여 다른 곳에서도 사용 가능)
-export const mapBackendFeed = (backendFeed: any): Feed => ({
+export const mapBackendFeed = (backendFeed: BackendFeed): Feed => ({
   id: backendFeed.id,
   writerId: backendFeed.writerId,
   writerName: backendFeed.writerName,

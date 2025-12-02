@@ -160,7 +160,10 @@ sonarqube {
 		property "sonar.projectKey", "parkil625_Lupin"
 		property "sonar.organization", "parkil625"
 		property "sonar.host.url", "https://sonarcloud.io"
-		property "sonar.coverage.jacoco.xmlReportPaths", "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+		property "sonar.sources", "src/main/java"
+		property "sonar.tests", "src/test/java"
+		property "sonar.java.binaries", "build/classes/java/main"
+		property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
 	}
 }
 

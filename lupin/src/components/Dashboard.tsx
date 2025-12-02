@@ -45,7 +45,7 @@ import {
   Member,
   ChatMessage,
 } from "@/types/dashboard.types";
-import { feedApi, notificationApi, commentApi } from "@/api";
+import { feedApi, notificationApi, commentApi, userApi } from "@/api";
 import { useFeedStore, mapBackendFeed } from "@/store/useFeedStore";
 
 interface DashboardProps {
@@ -165,6 +165,22 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     loadMyFeeds(); // 내 피드는 전체 로드
     loadFeeds(0, true); // 다른 피드는 페이지네이션
   }, [userType, refreshTrigger, loadMyFeeds, loadFeeds]); // refreshTrigger 변경 시 데이터 재로드
+
+  // 사용자 프로필 (아바타) 로드
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const user = await userApi.getCurrentUser();
+        if (user?.avatar) {
+          setProfileImage(user.avatar);
+        }
+      } catch (error) {
+        console.error("사용자 프로필 로드 실패:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // 알림 데이터 로드
   useEffect(() => {

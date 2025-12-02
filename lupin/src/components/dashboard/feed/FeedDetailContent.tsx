@@ -26,7 +26,7 @@ import {
   User,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
-import { commentApi, reportApi, feedApi } from "@/api";
+import { commentApi, reportApi } from "@/api";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -78,7 +78,6 @@ export function FeedDetailContent({
   const [commentLikes, setCommentLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [feedReported, setFeedReported] = useState(false);
   const [commentReported, setCommentReported] = useState<Record<number, boolean>>({});
 
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";

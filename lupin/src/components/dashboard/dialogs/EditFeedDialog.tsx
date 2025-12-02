@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-// CheckCircle, Clock, Flame, Trophy 제거됨 - EXIF 검증은 백엔드에서 수행
+import { Image, FileText } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { toast } from "sonner";
 import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
@@ -56,6 +55,7 @@ export default function EditFeedDialog({
   const [workoutType, setWorkoutType] = useState<string>("");
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
   const initialDataRef = useRef<{
     startImage: string | null;
     endImage: string | null;
@@ -204,153 +204,182 @@ export default function EditFeedDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="w-full h-full md:h-[95vh] md:!max-w-[795px] md:!w-[795px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl !flex !gap-0">
+        <DialogContent className="w-full h-full md:h-[95vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col">
           <DialogTitle className="sr-only">피드 수정</DialogTitle>
           <DialogDescription className="sr-only">
             기존 피드 내용을 수정합니다. 운동 종류, 시작/끝 사진, 그리고 내용을 수정할 수 있습니다.
           </DialogDescription>
-          <div className="flex flex-col md:flex-row h-full overflow-hidden w-full">
-          {/* Left Sidebar */}
-          <div className="w-full md:w-80 bg-transparent border-b md:border-b-0 md:border-r border-gray-200 p-4 md:p-6 flex-shrink-0">
-            <h2 className="text-xl font-black text-gray-900 mb-4">피드 수정</h2>
 
-            {/* Workout Type */}
+          {/* 헤더 + 탭 */}
+          <div className="p-4 border-b border-gray-200 flex-shrink-0">
+            <h2 className="text-xl font-black text-gray-900 mb-3">피드 수정</h2>
+
+            {/* 운동 종류 */}
             <WorkoutTypeSelect
               value={workoutType}
               onChange={setWorkoutType}
-              className="mb-4"
+              className="mb-3"
             />
 
-            {/* 2x2 Photo Grid */}
-            <TooltipProvider>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <ImageUploadBox
-                        label="시작 사진"
-                        image={startImage}
-                        onImageChange={setStartImage}
-                        onFileSelect={handleStartImageUpload}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>운동 시작 시 찍은 사진을 업로드하세요.<br/>사진의 촬영 시간이 자동으로 인식됩니다.</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <ImageUploadBox
-                        label="끝 사진"
-                        image={endImage}
-                        onImageChange={setEndImage}
-                        onFileSelect={handleEndImageUpload}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>운동 종료 시 찍은 사진을 업로드하세요.<br/>시작 사진보다 나중에 찍어야 인증됩니다.</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <ImageUploadBox
-                        label="기타 사진"
-                        image={otherImages[0] || null}
-                        onImageChange={() => setOtherImages(otherImages.slice(1))}
-                        onFileSelect={handleOtherImageUpload}
-                        variant="display"
-                        showCount={otherImages.length}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>추가로 올리고 싶은 사진이 있다면<br/>여기에 업로드하세요. (선택사항)</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <ImageUploadBox
-                        label="업로드"
-                        image={null}
-                        onImageChange={() => {}}
-                        onFileSelect={handleOtherImageUpload}
-                        variant="upload"
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>클릭해서 추가 사진을 업로드하세요.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </TooltipProvider>
-
-            {/* 작성 버튼 */}
-            <Button
-              onClick={handleSave}
-              disabled={!canSubmit}
-              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold py-2.5 rounded-lg transition-colors mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {canSubmit ? '수정 완료' : '시작/끝 사진 필요'}
-            </Button>
-
-            {/* EXIF 검증은 백엔드에서 수행 - 피드 생성 후 점수/칼로리 표시됨 */}
-            <div className="text-xs text-gray-500 text-center">
-              사진의 EXIF 정보로 운동 시간과 점수가 자동 계산됩니다
+            {/* 탭 버튼 */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab("photo")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all ${
+                  activeTab === "photo"
+                    ? "bg-[#C93831] text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <Image className="w-4 h-4" />
+                사진 첨부
+                {(startImage || endImage) && (
+                  <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab("content")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all ${
+                  activeTab === "content"
+                    ? "bg-[#C93831] text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                글 작성
+              </button>
             </div>
           </div>
 
-          {/* Right Editor */}
-          <div className="flex-1 md:w-[475px] bg-transparent md:flex-shrink-0 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 w-full md:w-[475px] h-full">
-              <style>{`
-                .bn-editor {
-                  max-width: 100% !important;
-                  width: 100% !important;
-                  background: transparent !important;
-                }
-                .bn-container {
-                  max-width: 100% !important;
-                  width: 100% !important;
-                  background: transparent !important;
-                }
-                .bn-block-content {
-                  max-width: 100% !important;
-                  background: transparent !important;
-                }
-                .bn-inline-content {
-                  word-wrap: break-word !important;
-                  overflow-wrap: break-word !important;
-                }
-                .bn-block {
-                  background: transparent !important;
-                }
-                .ProseMirror {
-                  background: transparent !important;
-                }
-                @media (min-width: 768px) {
-                  .bn-editor, .bn-container {
-                    max-width: 443px !important;
-                    width: 443px !important;
+          {/* 탭 콘텐츠 */}
+          <div className="flex-1 overflow-hidden">
+            {/* 사진 탭 */}
+            {activeTab === "photo" && (
+              <ScrollArea className="h-full">
+                <div className="p-4">
+                  <TooltipProvider>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <ImageUploadBox
+                              label="시작 사진"
+                              image={startImage}
+                              onImageChange={setStartImage}
+                              onFileSelect={handleStartImageUpload}
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>운동 시작 시 찍은 사진을 업로드하세요.<br/>사진의 촬영 시간이 자동으로 인식됩니다.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <ImageUploadBox
+                              label="끝 사진"
+                              image={endImage}
+                              onImageChange={setEndImage}
+                              onFileSelect={handleEndImageUpload}
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>운동 종료 시 찍은 사진을 업로드하세요.<br/>시작 사진보다 나중에 찍어야 인증됩니다.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <ImageUploadBox
+                              label="기타 사진"
+                              image={otherImages[0] || null}
+                              onImageChange={() => setOtherImages(otherImages.slice(1))}
+                              onFileSelect={handleOtherImageUpload}
+                              variant="display"
+                              showCount={otherImages.length}
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>추가로 올리고 싶은 사진이 있다면<br/>여기에 업로드하세요. (선택사항)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <ImageUploadBox
+                              label="업로드"
+                              image={null}
+                              onImageChange={() => {}}
+                              onFileSelect={handleOtherImageUpload}
+                              variant="upload"
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>클릭해서 추가 사진을 업로드하세요.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
+
+                  <p className="text-xs text-gray-500 text-center">
+                    사진의 EXIF 정보로 운동 시간과 점수가 자동 계산됩니다
+                  </p>
+                </div>
+              </ScrollArea>
+            )}
+
+            {/* 글 작성 탭 */}
+            {activeTab === "content" && (
+              <ScrollArea className="h-full">
+                <style>{`
+                  .bn-editor {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    background: transparent !important;
+                    min-height: 300px !important;
+                  }
+                  .bn-container {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    background: transparent !important;
                   }
                   .bn-block-content {
-                    max-width: 443px !important;
+                    max-width: 100% !important;
+                    background: transparent !important;
                   }
-                }
-              `}</style>
-              <div className="w-full md:min-w-[475px] md:w-[475px]">
+                  .bn-inline-content {
+                    word-wrap: break-word !important;
+                    overflow-wrap: break-word !important;
+                  }
+                  .bn-block {
+                    background: transparent !important;
+                  }
+                  .ProseMirror {
+                    background: transparent !important;
+                    min-height: 300px !important;
+                  }
+                `}</style>
                 <div className="p-4">
                   <BlockNoteView editor={editor} theme="light" />
                 </div>
-              </div>
-            </ScrollArea>
+              </ScrollArea>
+            )}
           </div>
-        </div>
+
+          {/* 하단 버튼 */}
+          <div className="p-4 border-t border-gray-200 flex-shrink-0">
+            <Button
+              onClick={handleSave}
+              disabled={!canSubmit}
+              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {canSubmit ? '수정 완료' : '시작/끝 사진 필요'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

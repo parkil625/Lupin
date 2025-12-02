@@ -47,16 +47,22 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
               const replies = await commentApi.getRepliesByCommentId(comment.id);
               const formattedReplies = (replies || []).map((reply: any) => ({
                 ...reply,
+                author: reply.writerName,
+                avatar: reply.writerAvatar || null,
                 time: getRelativeTime(reply.createdAt),
               }));
               return {
                 ...comment,
+                author: comment.writerName,
+                avatar: comment.writerAvatar || null,
                 time: getRelativeTime(comment.createdAt),
                 replies: formattedReplies,
               };
             } catch {
               return {
                 ...comment,
+                author: comment.writerName,
+                avatar: comment.writerAvatar || null,
                 time: getRelativeTime(comment.createdAt),
                 replies: [],
               };
@@ -88,7 +94,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
       const newComment: Comment = {
         id: response.id,
         author: response.writerName || currentUserName,
-        avatar: (response.writerName || currentUserName).charAt(0),
+        avatar: response.writerAvatar || null,
         content: response.content,
         time: "방금 전",
         replies: [],
@@ -116,7 +122,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
       const newReply: Comment = {
         id: response.id,
         author: response.writerName || currentUserName,
-        avatar: (response.writerName || currentUserName).charAt(0),
+        avatar: response.writerAvatar || null,
         content: response.content,
         time: "방금 전",
         parentId: replyingTo,
@@ -358,6 +364,7 @@ function CommentItem({
           activeDays={comment.activeDays}
           avgScore={comment.avgScore}
           points={comment.points}
+          avatarUrl={comment.avatar || undefined}
           size="sm"
         />
         <div className="flex-1 min-w-0">

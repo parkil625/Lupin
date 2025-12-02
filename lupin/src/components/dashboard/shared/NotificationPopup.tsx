@@ -65,7 +65,10 @@ export default function NotificationPopup({
           <h3 className="text-lg font-black text-gray-900">알림</h3>
           <div className="flex items-center gap-3">
             <button
-              onClick={onMarkAllAsRead}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkAllAsRead();
+              }}
               className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
             >
               <CheckCheck className="w-4 h-4" />
@@ -147,7 +150,10 @@ export default function NotificationPopup({
           <div className="p-4 pb-2 flex-shrink-0 flex items-center justify-between">
             <h3 className="text-lg font-black text-gray-900">알림</h3>
             <button
-              onClick={onMarkAllAsRead}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkAllAsRead();
+              }}
               className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
             >
               <CheckCheck className="w-4 h-4" />

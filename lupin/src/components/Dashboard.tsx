@@ -64,11 +64,11 @@ const memberNavItems = [
 ];
 
 const doctorNavItems = [
-  { id: "home", icon: Home, label: "대시보드" },
+  { id: "home", icon: Home, label: "홈" },
   { id: "feed", icon: Video, label: "피드" },
   { id: "ranking", icon: Trophy, label: "랭킹" },
   { id: "auction", icon: Gavel, label: "경매" },
-  { id: "chat", icon: MessageCircle, label: "진료" },
+  { id: "chat", icon: MessageCircle, label: "채팅" },
 ];
 
 const availableDates = [
@@ -91,7 +91,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   // URL에서 현재 페이지 결정 (기본값: home)
   const defaultPage = "home";
   const validPages = userType === "doctor"
-    ? ["home", "feed", "ranking", "auction", "chat", "profile"]
+    ? ["home", "feed", "ranking", "auction", "chat", "create", "profile"]
     : ["home", "feed", "ranking", "auction", "medical", "create", "profile"];
   const selectedNav = validPages.includes(page || "") ? page! : defaultPage;
 
@@ -165,10 +165,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
   // 초기 피드 로드 및 refreshTrigger 감지
   useEffect(() => {
-    if (userType === "member") {
-      loadMyFeeds(); // 내 피드는 전체 로드
-      loadFeeds(0, true); // 다른 피드는 페이지네이션
-    }
+    loadMyFeeds(); // 내 피드는 전체 로드
+    loadFeeds(0, true); // 다른 피드는 페이지네이션
   }, [userType, refreshTrigger]); // refreshTrigger 변경 시 데이터 재로드
 
   // 알림 데이터 로드
@@ -397,35 +395,9 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     }
   };
 
-  if (userType === "doctor") {
-    return (
-      <div className="h-screen w-screen overflow-hidden relative">
-        <AnimatedBackground variant="doctor" />
-        <Sidebar
-          expanded={sidebarExpanded}
-          onExpandChange={setSidebarExpanded}
-          navItems={navItems}
-          selectedNav={selectedNav}
-          onNavSelect={setSelectedNav}
-          userType="doctor"
-        />
-        <div
-          className={`h-full transition-all duration-300 ml-0 ${
-            sidebarExpanded ? "md:ml-64" : "md:ml-20"
-          }`}
-        >
-          {selectedNav === "chat" && <DoctorChatPage />}
-          {selectedNav === "profile" && (
-            <DoctorProfilePage onLogout={onLogout} />
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen w-screen overflow-hidden relative">
-      <AnimatedBackground variant="member" />
+      <AnimatedBackground variant={userType} />
       <Sidebar
         expanded={sidebarExpanded || showNotifications}
         onExpandChange={(expanded) =>
@@ -434,7 +406,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         navItems={navItems}
         selectedNav={selectedNav}
         onNavSelect={handleNavSelect}
-        userType="member"
+        userType={userType}
         profileImage={profileImage}
       >
         <div
@@ -523,6 +495,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             setSelectedPrescription={setSelectedPrescription}
           />
         )}
+        {selectedNav === "chat" && <DoctorChatPage />}
         {selectedNav === "create" && (
           <CreatePage
             onCreatePost={(newFeed) => {

@@ -236,7 +236,7 @@ export default function FeedDetailDialogHome({
         const commentElement = document.getElementById(`comment-${targetCommentId}`);
         if (commentElement) {
           commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 하이라이트 효과 (인라인 스타일 사용)
+          // 하이라이트 효과 (인라인 스타일 사용, 3초)
           commentElement.style.backgroundColor = '#fef3c7';
           commentElement.style.borderRadius = '8px';
           commentElement.style.padding = '8px';
@@ -244,7 +244,7 @@ export default function FeedDetailDialogHome({
             commentElement.style.backgroundColor = '';
             commentElement.style.borderRadius = '';
             commentElement.style.padding = '';
-          }, 2000);
+          }, 3000);
         }
       }, 300);
     }
@@ -579,15 +579,11 @@ export default function FeedDetailDialogHome({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`p-0 h-[95vh] max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl transition-all duration-300 ${
+        className={`p-0 w-full h-full md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl transition-all duration-300 ${
           showComments
-            ? "!w-[825px] !max-w-[825px]"
-            : "!w-[475px] !max-w-[475px]"
+            ? "md:!w-[825px] md:!max-w-[825px]"
+            : "md:!w-[475px] md:!max-w-[475px]"
         }`}
-        style={{
-          width: showComments ? "825px" : "475px",
-          maxWidth: showComments ? "825px" : "475px",
-        }}
       >
         <DialogHeader className="sr-only">
           <DialogTitle>피드 상세보기</DialogTitle>
@@ -595,18 +591,17 @@ export default function FeedDetailDialogHome({
             피드의 상세 내용을 확인할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
-        <div className="relative h-full flex overflow-hidden">
+        <div className="relative h-full flex flex-col md:flex-row overflow-hidden">
           {/* Main Feed Content (Left) */}
-          <div className="w-[475px] max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
+          <div className="w-full md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
             {feed.images && feed.images.length > 0 ? (
               <>
                 {/* Image Carousel */}
-                <div className="relative h-[545px] w-full max-w-[475px] overflow-hidden flex-shrink-0">
+                <div className="relative h-[50vh] md:h-[545px] w-full md:max-w-[475px] overflow-hidden flex-shrink-0">
                   <img
                     src={feed.images[currentImageIndex] || feed.images[0]}
                     alt={feed.activity}
                     className="w-full h-full object-cover"
-                    style={{ maxWidth: "475px", width: "475px", height: "545px" }}
                   />
 
                   {feed.images.length > 1 && (
@@ -776,29 +771,23 @@ export default function FeedDetailDialogHome({
 
             {/* Feed Content (Always visible) */}
             <ScrollArea
-              className="bg-white/50 backdrop-blur-sm"
-              style={{
-                width: "475px",
-                maxWidth: "475px",
-                height: "calc(95vh - 545px)",
-                maxHeight: "calc(95vh - 545px)"
-              }}
+              className="bg-white/50 backdrop-blur-sm flex-1 w-full md:w-[475px] md:max-w-[475px]"
             >
-              <div className="p-6 space-y-3">
+              <div className="p-4 md:p-6 space-y-3">
                 <style>{`
                   .bn-container {
-                    max-width: 427px !important;
-                    width: 427px !important;
+                    max-width: 100% !important;
+                    width: 100% !important;
                     background: transparent !important;
                   }
                   .bn-editor {
-                    max-width: 427px !important;
-                    width: 427px !important;
+                    max-width: 100% !important;
+                    width: 100% !important;
                     padding: 0 !important;
                     background: transparent !important;
                   }
                   .bn-block-content {
-                    max-width: 427px !important;
+                    max-width: 100% !important;
                   }
                   .ProseMirror {
                     background: transparent !important;
@@ -807,8 +796,14 @@ export default function FeedDetailDialogHome({
                   .ProseMirror p, .ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4, .ProseMirror h5, .ProseMirror h6, .ProseMirror li, .ProseMirror span {
                     color: #111827 !important;
                   }
+                  @media (min-width: 768px) {
+                    .bn-container, .bn-editor, .bn-block-content {
+                      max-width: 427px !important;
+                      width: 427px !important;
+                    }
+                  }
                 `}</style>
-                <div className="space-y-3" style={{ maxWidth: "427px" }}>
+                <div className="space-y-3 w-full md:max-w-[427px]">
                   {/* Badges */}
                   <div className="flex items-center justify-between">
                     <div className="flex gap-2 flex-wrap">

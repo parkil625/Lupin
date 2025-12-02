@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 public class FeedRequest {
@@ -16,9 +19,12 @@ public class FeedRequest {
     @Size(max = 1000, message = "피드 내용은 1000자 이하로 작성해주세요")
     private String content;
 
+    private List<String> images = new ArrayList<>();
+
     @Builder
-    public FeedRequest(String activity, String content) {
+    public FeedRequest(String activity, String content, List<String> images) {
         this.activity = activity;
         this.content = content;
+        this.images = images != null ? images : new ArrayList<>();
     }
 }

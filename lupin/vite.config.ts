@@ -74,7 +74,11 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none'
+    }
   },
   test: {
     projects: [
@@ -109,6 +113,23 @@ export default defineConfig({
             }]
           },
           setupFiles: ['.storybook/vitest.setup.ts']
+        }
+      },
+      // E2E tests
+      {
+        extends: true,
+        test: {
+          name: 'e2e',
+          include: ['src/e2e/**/*.e2e.{ts,tsx}'],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright({}),
+            instances: [{
+              browser: 'chromium'
+            }]
+          },
+          testTimeout: 30000,
         }
       }
     ]

@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -128,47 +129,82 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
   // 로딩 중일 때 스켈레톤 렌더링
   if (loading) {
     return (
-      <div className="h-full overflow-auto p-8">
-        <div className="max-w-7xl mx-auto w-full">
-          <div className="mb-6">
-            <h1 className="text-5xl font-black text-gray-900 mb-2">
-              {currentMonth}월 랭킹
-            </h1>
-            <p className="text-gray-700 font-medium text-lg">
-              이번 달 TOP 운동왕은 누구?
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 flex flex-col gap-2">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="w-full rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', height: '58px' }} />
-              ))}
+      <ScrollArea className="h-full">
+        <div className="p-4 md:p-8">
+          <div className="max-w-7xl mx-auto w-full">
+            <div className="mb-4 md:mb-6">
+              <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-2">
+                {currentMonth}월 랭킹
+              </h1>
+              <p className="text-gray-700 font-medium text-base md:text-lg">
+                이번 달 TOP 운동왕은 누구?
+              </p>
             </div>
-            <div className="space-y-6">
-              <div className="rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '390px', height: '200px' }} />
-              <div className="rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '390px', height: '200px' }} />
+
+            <div className="grid lg:grid-cols-3 gap-4 md:gap-8">
+              <div className="lg:col-span-2 flex flex-col gap-2">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="w-full rounded-xl animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', height: '58px' }} />
+                ))}
+              </div>
+              <div className="space-y-6">
+                {/* 내 통계 스켈레톤 */}
+                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                      <div className="h-6 w-20 rounded animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                    </div>
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div className="h-5 w-24 rounded animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                          <div className="h-7 w-12 rounded animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+                {/* 전체 현황 스켈레톤 */}
+                <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                      <div className="h-6 w-24 rounded animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                    </div>
+                    <div className="space-y-3">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div className="h-5 w-24 rounded animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                          <div className="h-7 w-12 rounded animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </ScrollArea>
     );
   }
 
   return (
-    <div className="h-full overflow-auto p-8">
-      <div className="max-w-7xl mx-auto w-full">
-        <div className="mb-6">
-          <h1 className="text-5xl font-black text-gray-900 mb-2">
-            {currentMonth}월 랭킹
-          </h1>
-          <p className="text-gray-700 font-medium text-lg">
-            이번 달 TOP 운동왕은 누구?
-          </p>
-        </div>
+    <ScrollArea className="h-full">
+      <div className="p-4 md:p-8">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="mb-4 md:mb-6">
+            <h1 className="text-3xl md:text-5xl font-black text-gray-900 mb-2">
+              {currentMonth}월 랭킹
+            </h1>
+            <p className="text-gray-700 font-medium text-base md:text-lg">
+              이번 달 TOP 운동왕은 누구?
+            </p>
+          </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 flex flex-col gap-2">
+          <div className="grid lg:grid-cols-3 gap-4 md:gap-8">
+            <div className="lg:col-span-2 flex flex-col gap-2">
             {/* Top 10 Rankers */}
             {topRankers.map((ranker) => (
               <Card
@@ -509,5 +545,6 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
         </div>
       </div>
     </div>
+    </ScrollArea>
   );
 }

@@ -19,9 +19,16 @@ public enum ErrorCode {
 
     // Feed
     FEED_NOT_FOUND(HttpStatus.NOT_FOUND, "피드를 찾을 수 없습니다."),
+    FEED_NOT_OWNER(HttpStatus.FORBIDDEN, "피드 수정/삭제 권한이 없습니다."),
+    FEED_IMAGES_REQUIRED(HttpStatus.BAD_REQUEST, "시작 사진과 끝 사진을 모두 업로드해주세요."),
+    FEED_INVALID_PHOTO_TIME(HttpStatus.BAD_REQUEST, "시작 사진의 시간이 끝 사진보다 같거나 늦습니다. 올바른 사진을 업로드해주세요."),
+    FEED_PHOTO_TIME_NOT_FOUND(HttpStatus.BAD_REQUEST, "사진에서 촬영 시간 정보를 찾을 수 없습니다. EXIF 정보가 포함된 사진을 업로드해주세요."),
+    FEED_WORKOUT_TOO_LONG(HttpStatus.BAD_REQUEST, "운동 시간이 24시간을 초과합니다. 올바른 사진을 업로드해주세요."),
+    FEED_PHOTO_NOT_TODAY(HttpStatus.BAD_REQUEST, "당일 촬영한 사진만 업로드할 수 있습니다. 오늘 운동한 사진을 업로드해주세요."),
 
     // Comment
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다."),
+    COMMENT_NOT_OWNER(HttpStatus.FORBIDDEN, "댓글 수정/삭제 권한이 없습니다."),
 
     // Like
     ALREADY_LIKED(HttpStatus.BAD_REQUEST, "이미 좋아요를 눌렀습니다."),

@@ -4,7 +4,7 @@
  * 피드 상세보기 다이얼로그 스토리북
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import FeedDetailDialogHome from "./FeedDetailDialogHome";
 import { Feed } from "@/types/dashboard.types";
 import { useState } from "react";

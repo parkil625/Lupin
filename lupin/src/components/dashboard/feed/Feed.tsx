@@ -459,11 +459,11 @@ function FeedItem({
   };
 
   return (
-    <div className={`h-full mx-auto flex shadow-xl rounded-2xl overflow-hidden transition-all duration-300 relative ${
-      showComments ? "md:aspect-[16/16]" : ""
-    } aspect-[9/16]`}>
+    <div className={`h-full w-full max-w-sm sm:max-w-md md:max-w-lg mx-auto flex shadow-xl rounded-2xl overflow-hidden transition-all duration-300 relative ${
+      showComments ? "md:max-w-3xl" : ""
+    }`}>
       {/* 피드 카드 (왼쪽) */}
-      <div className="h-full aspect-[9/16] flex flex-col flex-shrink-0">
+      <div className="h-full w-full md:w-auto md:aspect-[9/16] flex flex-col flex-shrink-0">
         {/* 이미지 영역 - 57% */}
         <div className="relative h-[57%]">
           {hasImages ? (

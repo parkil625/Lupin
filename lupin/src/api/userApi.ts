@@ -48,7 +48,7 @@ export const userApi = {
     }
   },
 
-  updateUser: async (userId: number, data: any) => {
+  updateUser: async (userId: number, data: Record<string, unknown>) => {
     try {
       const response = await apiClient.put(`/users/${userId}`, data);
       return response.data;

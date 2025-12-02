@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // 핵심 로직만 테스트 (컴포넌트 렌더링 없이)
 const DRAFT_STORAGE_KEY = 'createFeedDraft';

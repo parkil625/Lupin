@@ -3,7 +3,6 @@ plugins {
 	id 'org.springframework.boot' version '3.5.7'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'jacoco'
-	id 'org.sonarqube' version '4.4.1.3373'
 	id 'org.asciidoctor.jvm.convert' version '3.3.2'
 	id 'info.solidsoft.pitest' version '1.15.0'
 }
@@ -151,21 +150,6 @@ jacocoTestCoverageVerification {
 				minimum = 0.0 // 커버리지 체크 비활성화
 			}
 		}
-	}
-}
-
-// SonarQube 설정
-sonarqube {
-	properties {
-		property "sonar.projectKey", "parkil625_Lupin"
-		property "sonar.organization", "parkil625"
-		property "sonar.host.url", "https://sonarcloud.io"
-		property "sonar.sources", "src/main/java"
-		property "sonar.tests", "src/test/java"
-		property "sonar.java.binaries", "build/classes/java/main"
-		property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml"
-		// Quality Gate 조건 완화
-		property "sonar.qualitygate.wait", "false"
 	}
 }
 

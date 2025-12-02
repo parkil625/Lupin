@@ -42,7 +42,7 @@ export default function Sidebar({
   return (
     <div
       data-sidebar="true"
-      className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ${
+      className={`hidden md:block fixed left-0 top-0 h-full z-50 transition-all duration-300 ${
         expanded ? "w-64" : "w-20"
       }`}
       onMouseEnter={() => onExpandChange(true)}

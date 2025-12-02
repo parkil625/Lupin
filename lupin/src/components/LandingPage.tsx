@@ -73,19 +73,19 @@ export default function LandingPage() {
             </header>
 
             {/* Hero Section */}
-            <section className="pt-32 pb-20 px-4 scroll-fade-up">
+            <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 scroll-fade-up">
                 <div className="container mx-auto max-w-6xl">
-                    <div className="grid md:grid-cols-2 gap-12 items-center">
-                        <div className="space-y-6">
-                            <Badge className="bg-[#C93831] text-white hover:bg-[#B02F28] border-0 px-4 py-2 font-bold shadow-lg">
-                                <Sparkles className="w-4 h-4 mr-1" />
+                    <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                        <div className="space-y-4 md:space-y-6 order-2 md:order-1">
+                            <Badge className="bg-[#C93831] text-white hover:bg-[#B02F28] border-0 px-3 md:px-4 py-1.5 md:py-2 font-bold shadow-lg text-xs md:text-sm">
+                                <Sparkles className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                                 직원 전용 헬스케어 플랫폼
                             </Badge>
-                            <h1 className="text-6xl font-black text-gray-900 leading-tight">
+                            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 leading-tight">
                                 건강한 습관,<br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C93831] to-pink-500">함께 만들어가요</span>
                             </h1>
-                            <p className="text-xl text-gray-700 font-medium">
+                            <p className="text-base md:text-xl text-gray-700 font-medium">
                                 운동을 기록하고 점수를 모으세요.<br />
                                 동료들과 함께 건강한 습관을 만들어가요!
                             </p>
@@ -93,33 +93,33 @@ export default function LandingPage() {
                                 <Button
                                     size="lg"
                                     onClick={() => navigate('/login')}
-                                    className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold text-lg px-8 py-6 rounded-2xl border-0 shadow-2xl hover:scale-105 transition-transform"
+                                    className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold text-sm md:text-lg px-6 md:px-8 py-4 md:py-6 rounded-2xl border-0 shadow-2xl hover:scale-105 transition-transform"
                                 >
                                     시작하기
-                                    <ArrowRight className="w-5 h-5 ml-2" />
+                                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5 ml-2" />
                                 </Button>
                             </div>
-                            <div className="flex gap-8 pt-4">
-                                <div className="backdrop-blur-xl bg-white/40 rounded-2xl p-4 border border-white/60">
-                                    <div className="text-3xl font-black text-[#C93831]">피드</div>
-                                    <div className="text-sm text-gray-600 font-bold">하루 1회</div>
+                            <div className="flex gap-3 md:gap-8 pt-2 md:pt-4">
+                                <div className="backdrop-blur-xl bg-white/40 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/60">
+                                    <div className="text-xl md:text-3xl font-black text-[#C93831]">피드</div>
+                                    <div className="text-xs md:text-sm text-gray-600 font-bold">하루 1회</div>
                                 </div>
-                                <div className="backdrop-blur-xl bg-white/40 rounded-2xl p-4 border border-white/60">
-                                    <div className="text-3xl font-black text-[#C93831]">실시간</div>
-                                    <div className="text-sm text-gray-600 font-bold">랭킹</div>
+                                <div className="backdrop-blur-xl bg-white/40 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/60">
+                                    <div className="text-xl md:text-3xl font-black text-[#C93831]">실시간</div>
+                                    <div className="text-xs md:text-sm text-gray-600 font-bold">랭킹</div>
                                 </div>
-                                <div className="backdrop-blur-xl bg-white/40 rounded-2xl p-4 border border-white/60">
-                                    <div className="text-3xl font-black text-[#C93831]">비대면</div>
-                                    <div className="text-sm text-gray-600 font-bold">진료</div>
+                                <div className="backdrop-blur-xl bg-white/40 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/60">
+                                    <div className="text-xl md:text-3xl font-black text-[#C93831]">비대면</div>
+                                    <div className="text-xs md:text-sm text-gray-600 font-bold">진료</div>
                                 </div>
                             </div>
                         </div>
-                        <div className="relative">
+                        <div className="relative order-1 md:order-2">
                             <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
                             <img
                                 src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=75"
                                 alt="운동 활동"
-                                className="relative rounded-3xl shadow-2xl border-8 border-white/50 backdrop-blur-sm"
+                                className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full"
                             />
                         </div>
                     </div>
@@ -127,21 +127,21 @@ export default function LandingPage() {
             </section>
 
             {/* Service Introduction */}
-            <section className="py-20 px-4 scroll-slide-right">
+            <section className="py-12 md:py-20 px-4 scroll-slide-right">
                 <div className="container mx-auto max-w-6xl">
-                    <div className="text-center mb-16">
-                        <h2 className="text-5xl font-black text-gray-900 mb-4">Lupin이 특별한 이유</h2>
-                        <p className="text-xl text-gray-700 font-medium">운동 기록부터 비대면 진료까지, 건강 관리가 즐거워집니다</p>
+                    <div className="text-center mb-8 md:mb-16">
+                        <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">Lupin이 특별한 이유</h2>
+                        <p className="text-base md:text-xl text-gray-700 font-medium">운동 기록부터 비대면 진료까지, 건강 관리가 즐거워집니다</p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
                         <Card className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
-                            <CardContent className="p-8 space-y-4">
-                                <div className="w-14 h-14 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <Target className="w-7 h-7 text-white" />
+                            <CardContent className="p-6 md:p-8 space-y-3 md:space-y-4">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg">
+                                    <Target className="w-6 h-6 md:w-7 md:h-7 text-white" />
                                 </div>
-                                <h3 className="text-2xl font-black text-gray-900">점수 획득 시스템</h3>
-                                <p className="text-gray-700 font-medium">
+                                <h3 className="text-xl md:text-2xl font-black text-gray-900">점수 획득 시스템</h3>
+                                <p className="text-sm md:text-base text-gray-700 font-medium">
                                     운동을 완료하고 점수를 획득하세요.
                                     점수에 따라 실시간 랭킹이 변동됩니다!
                                 </p>
@@ -149,12 +149,12 @@ export default function LandingPage() {
                         </Card>
 
                         <Card className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
-                            <CardContent className="p-8 space-y-4">
-                                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <MessageCircle className="w-7 h-7 text-white" />
+                            <CardContent className="p-6 md:p-8 space-y-3 md:space-y-4">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg">
+                                    <MessageCircle className="w-6 h-6 md:w-7 md:h-7 text-white" />
                                 </div>
-                                <h3 className="text-2xl font-black text-gray-900">비대면 진료</h3>
-                                <p className="text-gray-700 font-medium">
+                                <h3 className="text-xl md:text-2xl font-black text-gray-900">비대면 진료</h3>
+                                <p className="text-sm md:text-base text-gray-700 font-medium">
                                     전문 의료진과 1:1 채팅으로
                                     간편하게 비대면 진료를 받으세요!
                                 </p>
@@ -162,12 +162,12 @@ export default function LandingPage() {
                         </Card>
 
                         <Card className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
-                            <CardContent className="p-8 space-y-4">
-                                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <BarChart3 className="w-7 h-7 text-white" />
+                            <CardContent className="p-6 md:p-8 space-y-3 md:space-y-4">
+                                <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg">
+                                    <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-white" />
                                 </div>
-                                <h3 className="text-2xl font-black text-gray-900">실시간 랭킹</h3>
-                                <p className="text-gray-700 font-medium">
+                                <h3 className="text-xl md:text-2xl font-black text-gray-900">실시간 랭킹</h3>
+                                <p className="text-sm md:text-base text-gray-700 font-medium">
                                     점수 기반 실시간 랭킹에서
                                     다른 동료들과 경쟁하고 성장하세요!
                                 </p>
@@ -178,25 +178,25 @@ export default function LandingPage() {
             </section>
 
             {/* Activity Recording */}
-            <section className="py-20 px-4 scroll-slide-left">
+            <section className="py-12 md:py-20 px-4 scroll-slide-left">
                 <div className="container mx-auto max-w-6xl">
-                    <div className="text-center mb-16">
-                        <h2 className="text-5xl font-black text-gray-900 mb-4">활동 기록</h2>
-                        <p className="text-xl text-gray-700 font-medium">운동 후 활동 내역을 기록하고 점수를 획득하세요</p>
+                    <div className="text-center mb-8 md:mb-16">
+                        <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">활동 기록</h2>
+                        <p className="text-base md:text-xl text-gray-700 font-medium">운동 후 활동 내역을 기록하고 점수를 획득하세요</p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
                         <img
                             src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=75"
                             alt="운동 기록"
-                            className="rounded-3xl shadow-2xl border-8 border-white/50 backdrop-blur-sm"
+                            className="rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full"
                         />
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-3">
-                                <Dumbbell className="w-10 h-10 text-[#C93831]" />
-                                <h3 className="text-4xl font-black text-gray-900">간편한 운동 기록</h3>
+                        <div className="space-y-4 md:space-y-6">
+                            <div className="flex items-center gap-2 md:gap-3">
+                                <Dumbbell className="w-8 h-8 md:w-10 md:h-10 text-[#C93831]" />
+                                <h3 className="text-2xl md:text-4xl font-black text-gray-900">간편한 운동 기록</h3>
                             </div>
-                            <p className="text-xl text-gray-700 font-medium">
+                            <p className="text-base md:text-xl text-gray-700 font-medium">
                                 운동이 끝나면 바로 기록하세요.
                                 운동 시간과 종류에 따라 점수를 받을 수 있습니다.
                             </p>
@@ -226,14 +226,14 @@ export default function LandingPage() {
             </section>
 
             {/* Key Features */}
-            <section className="py-20 px-4 scroll-scale-in">
+            <section className="py-12 md:py-20 px-4 scroll-scale-in">
                 <div className="container mx-auto max-w-6xl">
-                    <div className="text-center mb-16">
-                        <h2 className="text-5xl font-black text-gray-900 mb-4">핵심 기능</h2>
-                        <p className="text-xl text-gray-700 font-medium">다양한 기능으로 건강 관리를 쉽고 재미있게</p>
+                    <div className="text-center mb-8 md:mb-16">
+                        <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">핵심 기능</h2>
+                        <p className="text-base md:text-xl text-gray-700 font-medium">다양한 기능으로 건강 관리를 쉽고 재미있게</p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
                         {[
                             { icon: Users, title: "데일리 피드", desc: "하루 한 번 운동 관련 피드를 작성하고 공유하세요", color: "from-[#C93831] to-pink-500" },
                             { icon: Heart, title: "좋아요", desc: "다른 사용자의 피드에 좋아요를 누르고 응원하세요", color: "from-pink-500 to-purple-500" },
@@ -247,12 +247,12 @@ export default function LandingPage() {
                             { icon: UserCircle, title: "마이페이지", desc: "개인 건강 정보를 수정하고 관리할 수 있습니다", color: "from-indigo-500 to-purple-500" }
                         ].map((feature, index) => (
                             <Card key={index} className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
-                                <CardContent className="p-6 text-center space-y-4">
-                                    <div className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mx-auto shadow-lg`}>
-                                        <feature.icon className="w-7 h-7 text-white" />
+                                <CardContent className="p-4 md:p-6 text-center space-y-2 md:space-y-4">
+                                    <div className={`w-10 h-10 md:w-14 md:h-14 bg-gradient-to-br ${feature.color} rounded-xl md:rounded-2xl flex items-center justify-center mx-auto shadow-lg`}>
+                                        <feature.icon className="w-5 h-5 md:w-7 md:h-7 text-white" />
                                     </div>
-                                    <h3 className="text-xl font-black text-gray-900">{feature.title}</h3>
-                                    <p className="text-sm text-gray-700 font-medium">{feature.desc}</p>
+                                    <h3 className="text-base md:text-xl font-black text-gray-900">{feature.title}</h3>
+                                    <p className="text-xs md:text-sm text-gray-700 font-medium hidden sm:block">{feature.desc}</p>
                                 </CardContent>
                             </Card>
                         ))}
@@ -261,26 +261,26 @@ export default function LandingPage() {
             </section>
 
             {/* How it Works */}
-            <section className="py-20 px-4 scroll-bounce-in">
+            <section className="py-12 md:py-20 px-4 scroll-bounce-in">
                 <div className="container mx-auto max-w-6xl">
-                    <div className="text-center mb-16">
-                        <h2 className="text-5xl font-black text-gray-900 mb-4">어떻게 작동하나요?</h2>
-                        <p className="text-xl text-gray-700 font-medium">3단계로 시작하는 건강한 습관</p>
+                    <div className="text-center mb-8 md:mb-16">
+                        <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">어떻게 작동하나요?</h2>
+                        <p className="text-base md:text-xl text-gray-700 font-medium">3단계로 시작하는 건강한 습관</p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-3 gap-3 md:gap-6">
                         {[
                             { step: "1", title: "운동하기", desc: "좋아하는 운동을 하세요", icon: Dumbbell, color: "from-[#C93831] to-pink-500" },
                             { step: "2", title: "활동 기록", desc: "운동 내역을 기록하세요", icon: Target, color: "from-purple-500 to-pink-500" },
                             { step: "3", title: "랭킹 경쟁", desc: "점수를 모아 순위에 도전!", icon: Trophy, color: "from-yellow-400 to-orange-500" }
                         ].map((item, index) => (
-                            <div key={index} className="text-center space-y-4">
-                                <div className={`w-20 h-20 bg-gradient-to-br ${item.color} text-white rounded-3xl flex items-center justify-center mx-auto text-3xl font-black shadow-2xl`}>
+                            <div key={index} className="text-center space-y-2 md:space-y-4">
+                                <div className={`w-14 h-14 md:w-20 md:h-20 bg-gradient-to-br ${item.color} text-white rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto text-xl md:text-3xl font-black shadow-2xl`}>
                                     {item.step}
                                 </div>
-                                <item.icon className="w-10 h-10 text-[#C93831] mx-auto" />
-                                <h3 className="text-xl font-black text-gray-900">{item.title}</h3>
-                                <p className="text-sm text-gray-700 font-medium">{item.desc}</p>
+                                <item.icon className="w-6 h-6 md:w-10 md:h-10 text-[#C93831] mx-auto" />
+                                <h3 className="text-sm md:text-xl font-black text-gray-900">{item.title}</h3>
+                                <p className="text-xs md:text-sm text-gray-700 font-medium hidden sm:block">{item.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -288,11 +288,11 @@ export default function LandingPage() {
             </section>
 
             {/* CTA Section */}
-            <section className="py-20 px-4 scroll-zoom-in">
+            <section className="py-12 md:py-20 px-4 scroll-zoom-in">
                 <Card className="container mx-auto max-w-5xl backdrop-blur-2xl bg-gradient-to-br from-[#C93831]/90 to-[#B02F28]/90 border border-white/40 shadow-2xl">
-                    <CardContent className="p-16 text-center space-y-8 text-white">
-                        <h2 className="text-6xl font-black">지금 바로 시작하세요</h2>
-                        <p className="text-2xl text-red-100 font-medium">
+                    <CardContent className="p-8 md:p-16 text-center space-y-4 md:space-y-8 text-white">
+                        <h2 className="text-3xl md:text-6xl font-black">지금 바로 시작하세요</h2>
+                        <p className="text-base md:text-2xl text-red-100 font-medium">
                             운동을 기록하고, 점수를 모으고, <br />
                             동료들과 함께 건강해지세요!
                         </p>
@@ -300,24 +300,24 @@ export default function LandingPage() {
                             <Button
                                 size="lg"
                                 onClick={() => navigate('/login')}
-                                className="bg-white text-[#C93831] hover:bg-gray-50 font-bold text-xl px-10 py-7 rounded-2xl shadow-xl hover:scale-105 transition-transform"
+                                className="bg-white text-[#C93831] hover:bg-gray-50 font-bold text-base md:text-xl px-6 md:px-10 py-4 md:py-7 rounded-2xl shadow-xl hover:scale-105 transition-transform"
                             >
-                                <Sparkles className="w-6 h-6 mr-2" />
+                                <Sparkles className="w-5 h-5 md:w-6 md:h-6 mr-2" />
                                 로그인하고 시작하기
                             </Button>
                         </div>
-                        <div className="pt-8 flex items-center justify-center gap-12">
+                        <div className="pt-4 md:pt-8 flex items-center justify-center gap-6 md:gap-12">
                             <div className="text-center">
-                                <Award className="w-12 h-12 mx-auto mb-2 text-red-200" />
-                                <div className="text-sm text-red-100 font-bold">직원 전용</div>
+                                <Award className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 text-red-200" />
+                                <div className="text-xs md:text-sm text-red-100 font-bold">직원 전용</div>
                             </div>
                             <div className="text-center">
-                                <Heart className="w-12 h-12 mx-auto mb-2 text-red-200" />
-                                <div className="text-sm text-red-100 font-bold">무료 서비스</div>
+                                <Heart className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 text-red-200" />
+                                <div className="text-xs md:text-sm text-red-100 font-bold">무료 서비스</div>
                             </div>
                             <div className="text-center">
-                                <Trophy className="w-12 h-12 mx-auto mb-2 text-red-200" />
-                                <div className="text-sm text-red-100 font-bold">실시간 랭킹</div>
+                                <Trophy className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 text-red-200" />
+                                <div className="text-xs md:text-sm text-red-100 font-bold">실시간 랭킹</div>
                             </div>
                         </div>
                     </CardContent>
@@ -325,27 +325,27 @@ export default function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer className="backdrop-blur-2xl bg-gray-900/95 text-gray-400 py-12 px-4 mt-20">
+            <footer className="backdrop-blur-2xl bg-gray-900/95 text-gray-400 py-8 md:py-12 px-4 mt-12 md:mt-20">
                 <div className="container mx-auto max-w-6xl">
-                    <div className="grid md:grid-cols-3 gap-8 mb-8">
-                        <div className="space-y-4">
-                            <img src="/Lupin.png" alt="Lupin Logo" className="h-10 w-auto object-contain" />
-                            <p className="text-sm font-medium">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
+                        <div className="space-y-3 md:space-y-4 text-center md:text-left">
+                            <img src="/Lupin.png" alt="Lupin Logo" className="h-8 md:h-10 w-auto object-contain mx-auto md:mx-0" />
+                            <p className="text-xs md:text-sm font-medium">
                                 건강한 습관, 함께 만들어가요
                             </p>
                         </div>
-                        <div>
-                            <h3 className="text-white font-black mb-4">회원 기능</h3>
-                            <ul className="space-y-2 text-sm font-medium">
+                        <div className="text-center md:text-left">
+                            <h3 className="text-white font-black mb-2 md:mb-4 text-sm md:text-base">회원 기능</h3>
+                            <ul className="space-y-1 md:space-y-2 text-xs md:text-sm font-medium">
                                 <li>활동 기록 & 점수 시스템</li>
                                 <li>데일리 피드 & 랭킹</li>
                                 <li>진료 예약 & 비대면 진료</li>
                                 <li>포인트 시스템 & 랭킹</li>
                             </ul>
                         </div>
-                        <div>
-                            <h3 className="text-white font-black mb-4">의료진 기능</h3>
-                            <ul className="space-y-2 text-sm font-medium">
+                        <div className="text-center md:text-left">
+                            <h3 className="text-white font-black mb-2 md:mb-4 text-sm md:text-base">의료진 기능</h3>
+                            <ul className="space-y-1 md:space-y-2 text-xs md:text-sm font-medium">
                                 <li>비대면 진료</li>
                                 <li>예약 관리</li>
                                 <li>회원 관리</li>
@@ -353,7 +353,7 @@ export default function LandingPage() {
                             </ul>
                         </div>
                     </div>
-                    <div className="pt-8 border-t border-gray-800 text-center text-sm font-medium">
+                    <div className="pt-6 md:pt-8 border-t border-gray-800 text-center text-xs md:text-sm font-medium">
                         <p>© 2025 Lupin. All rights reserved.</p>
                     </div>
                 </div>

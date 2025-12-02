@@ -37,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { imageApi } from "@/api/imageApi";
 import { oauthApi, OAuthConnection } from "@/api/oauthApi";
+import { userApi } from "@/api/userApi";
 
 // 구글 타입을 위한 선언
 interface GoogleInitConfig {
@@ -112,11 +113,6 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
     // OAuth 연동 관련 상태
     const [oauthConnections, setOauthConnections] = useState<OAuthConnection[]>([]);
     const [isLoadingOAuth, setIsLoadingOAuth] = useState(false);
-
-    // 연동 여부 확인 헬퍼 함수
-    const isLinked = (provider: string) => {
-        return oauthConnections.some(c => c.provider === provider);
-    };
 
     // OAuth 연동 목록 로드
     useEffect(() => {
@@ -255,6 +251,13 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
             }
 
             const s3Url = await imageApi.uploadImage(file, 'profile');
+
+            // DB에 아바타 URL 저장
+            const userId = parseInt(localStorage.getItem("userId") || "0");
+            if (userId > 0) {
+                await userApi.updateAvatar(userId, s3Url);
+            }
+
             setProfileImage(s3Url);
             toast.success("프로필 사진이 변경되었습니다!");
         } catch (error) {
@@ -272,6 +275,12 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
             // S3에서 이미지 삭제
             if (profileImage && profileImage.includes('s3.')) {
                 await imageApi.deleteImage(profileImage).catch(() => { });
+            }
+
+            // DB에서 아바타 URL 제거
+            const userId = parseInt(localStorage.getItem("userId") || "0");
+            if (userId > 0) {
+                await userApi.updateAvatar(userId, "").catch(() => { });
             }
 
             setProfileImage(null);

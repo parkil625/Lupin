@@ -12,7 +12,7 @@ import FeedDetailDialogHome from '../dashboard/dialogs/FeedDetailDialogHome';
 import CreateFeedDialog from '../dashboard/dialogs/CreateFeedDialog';
 import EditFeedDialog from '../dashboard/dialogs/EditFeedDialog';
 import { SearchInput } from '../molecules';
-import { Home as HomeIcon, Video, Trophy, Gavel, Calendar, Bell, Heart, MessageCircle, X, ArrowUpDown, User, Plus, Sparkles } from 'lucide-react';
+import { Home as HomeIcon, Video, Trophy, Gavel, Calendar, Bell, Heart, MessageCircle, User, Sparkles } from 'lucide-react';
 import { Feed, Notification, Comment } from '@/types/dashboard.types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -52,8 +52,8 @@ const mockAvatars: Record<string, string> = {
   '박선일': 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop',
 };
 
-// Mock 댓글 데이터 (피드별)
-const mockFeedComments: Record<number, Comment[]> = {
+// Mock 댓글 데이터 (피드별) - 추후 스토리에서 사용 예정
+const _mockFeedComments: Record<number, Comment[]> = {
   1: [
     {
       id: 101,
@@ -154,8 +154,8 @@ const mockFeeds: Feed[] = [
   },
 ];
 
-// Mock 댓글 데이터
-const mockComments: Comment[] = [
+// Mock 댓글 데이터 - 추후 스토리에서 사용 예정
+const _mockComments: Comment[] = [
   {
     id: 1,
     author: '최건강',

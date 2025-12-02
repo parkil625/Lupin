@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -276,7 +277,10 @@ class AuctionServiceTest {
     void 현재진행중인_경매정보와_경매물품조회_처음페이지입장시(){
         //given
         Auction auction = createActiveAuction(1L);
-        AuctionItem auctionItem = createAuctionItem(1L);
+        AuctionItem auctionItem = createAuctionItem(auction);
+
+        // Auction과 AuctionItem 양방향 연결
+        ReflectionTestUtils.setField(auction, "auctionItem", auctionItem);
 
         given(auctionRepository.findFirstWithItemByStatus(AuctionStatus.ACTIVE)).willReturn(Optional.of(auction));
 
@@ -360,12 +364,13 @@ class AuctionServiceTest {
                 .build();
     }
 
-    private AuctionItem createAuctionItem(Long auctionId) {
+    private AuctionItem createAuctionItem(Auction auction) {
         return AuctionItem.builder()
-                .id(auctionId)
+                .id(1L)
                 .itemName("경매물품")
                 .description("경매 물품 설명")
                 .itemImage("아이템이미지경로")
+                .auction(auction)
                 .build();
     }
 

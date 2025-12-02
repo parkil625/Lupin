@@ -34,7 +34,8 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { imageApi } from "@/api/imageApi";
-// EXIF 검증은 백엔드에서만 수행됨
+import exifr from "exifr";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 interface CreateFeedDialogProps {
   open: boolean;
@@ -56,6 +57,11 @@ export default function CreateFeedDialog({
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
+
+  // EXIF 시간 및 검증 상태
+  const [startExifTime, setStartExifTime] = useState<Date | null>(null);
+  const [endExifTime, setEndExifTime] = useState<Date | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<"none" | "verified" | "invalid">("none");
 
   const editor = useCreateBlockNote({
     initialContent: [
@@ -114,6 +120,35 @@ export default function CreateFeedDialog({
     }
   }, [open, startImage, endImage, otherImages, workoutType, editor]);
 
+  // EXIF 시간 검증
+  useEffect(() => {
+    if (!startExifTime || !endExifTime) {
+      setVerificationStatus("none");
+      return;
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const toleranceHours = 6;
+
+    // 허용 범위: 오늘 0시 - 6시간 ~ 오늘 23:59:59 + 6시간
+    const allowedStart = new Date(today.getTime() - toleranceHours * 60 * 60 * 1000);
+    const allowedEnd = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1 + toleranceHours * 60 * 60 * 1000);
+
+    // 조건 검증
+    const isStartBeforeEnd = startExifTime < endExifTime;
+    const durationHours = (endExifTime.getTime() - startExifTime.getTime()) / (1000 * 60 * 60);
+    const isDurationValid = durationHours <= 24;
+    const isStartInRange = startExifTime >= allowedStart && startExifTime <= allowedEnd;
+    const isEndInRange = endExifTime >= allowedStart && endExifTime <= allowedEnd;
+
+    if (isStartBeforeEnd && isDurationValid && isStartInRange && isEndInRange) {
+      setVerificationStatus("verified");
+    } else {
+      setVerificationStatus("invalid");
+    }
+  }, [startExifTime, endExifTime]);
+
   // 작성 버튼 클릭
   const handleSubmit = () => {
     // 시작 사진과 끝 사진이 모두 있어야 함
@@ -137,6 +172,9 @@ export default function CreateFeedDialog({
     setEndImage(null);
     setOtherImages([]);
     setWorkoutType("헬스");
+    setStartExifTime(null);
+    setEndExifTime(null);
+    setVerificationStatus("none");
     try {
       editor.replaceBlocks(editor.document, [
         {
@@ -167,13 +205,33 @@ export default function CreateFeedDialog({
     }
   };
 
-  // 시작 이미지 업로드 (EXIF 검증은 백엔드에서 수행)
+  // EXIF 시간 추출 함수
+  const extractExifTime = async (file: File): Promise<Date | null> => {
+    try {
+      const exif = await exifr.parse(file, { pick: ["DateTimeOriginal", "CreateDate", "ModifyDate"] });
+      if (exif) {
+        const dateTime = exif.DateTimeOriginal || exif.CreateDate || exif.ModifyDate;
+        if (dateTime) {
+          return new Date(dateTime);
+        }
+      }
+    } catch (error) {
+      console.log("EXIF 추출 실패:", error);
+    }
+    return null;
+  };
+
+  // 시작 이미지 업로드 + EXIF 추출
   const handleStartImageUpload = async (file: File) => {
+    const exifTime = await extractExifTime(file);
+    setStartExifTime(exifTime);
     await uploadImage(file, setStartImage);
   };
 
-  // 끝 이미지 업로드 (EXIF 검증은 백엔드에서 수행)
+  // 끝 이미지 업로드 + EXIF 추출
   const handleEndImageUpload = async (file: File) => {
+    const exifTime = await extractExifTime(file);
+    setEndExifTime(exifTime);
     await uploadImage(file, setEndImage);
   };
 
@@ -223,6 +281,9 @@ export default function CreateFeedDialog({
     setEndImage(null);
     setOtherImages([]);
     setWorkoutType("헬스");
+    setStartExifTime(null);
+    setEndExifTime(null);
+    setVerificationStatus("none");
     try {
       editor.replaceBlocks(editor.document, [
         { type: "paragraph", content: "" },
@@ -363,6 +424,32 @@ export default function CreateFeedDialog({
                     </Tooltip>
                   </div>
                 </TooltipProvider>
+
+                {/* 인증 상태 뱃지 */}
+                {verificationStatus === "verified" && (
+                  <div className="flex items-center justify-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-sm font-semibold text-green-700">운동 인증 완료!</span>
+                    <span className="text-xs text-green-600">
+                      ({Math.round((endExifTime!.getTime() - startExifTime!.getTime()) / (1000 * 60))}분 운동)
+                    </span>
+                  </div>
+                )}
+                {verificationStatus === "invalid" && (
+                  <div className="flex items-center justify-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg mb-4">
+                    <AlertCircle className="w-5 h-5 text-orange-600" />
+                    <div className="text-center">
+                      <span className="text-sm font-semibold text-orange-700">시간 조건 미충족</span>
+                      <p className="text-xs text-orange-600">피드는 작성되지만 포인트가 0점입니다</p>
+                    </div>
+                  </div>
+                )}
+                {verificationStatus === "none" && startImage && endImage && (
+                  <div className="flex items-center justify-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-lg mb-4">
+                    <AlertCircle className="w-5 h-5 text-gray-500" />
+                    <span className="text-sm text-gray-600">EXIF 시간 정보를 읽을 수 없습니다</span>
+                  </div>
+                )}
 
                 <p className="text-xs text-gray-500 text-center">
                   사진의 EXIF 정보로 운동 시간과 점수가 자동 계산됩니다

@@ -83,6 +83,34 @@ export default function Login() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // handleGoogleLogin을 useEffect보다 먼저 선언해야 함 (temporal dead zone 방지)
+  const handleGoogleLogin = useCallback(async (response: GoogleCredentialResponse) => {
+    setError("");
+    setIsLoading(true);
+    try {
+        const result = await authApi.googleLogin(response.credential);
+
+        const safeId = result.id || result.userId;
+        if (safeId) {
+            localStorage.setItem("userId", safeId.toString());
+        }
+
+        if (result.email) localStorage.setItem("userEmail", result.email);
+        if (result.name) localStorage.setItem("userName", result.name);
+
+        login(result.accessToken, result.role);
+    } catch (err: unknown) {
+        const axiosError = err as { response?: { status?: number } };
+        if (axiosError.response?.status === 404) {
+            setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
+        } else {
+            setError("구글 로그인 중 오류가 발생했습니다.");
+        }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [login]);
+
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
@@ -139,34 +167,6 @@ export default function Login() {
       googleButton.click();
     }
   };
-
-  const handleGoogleLogin = useCallback(async (response: GoogleCredentialResponse) => {
-    setError("");
-    setIsLoading(true);
-    try {
-        const result = await authApi.googleLogin(response.credential);
-
-        const safeId = result.id || result.userId;
-        if (safeId) {
-            localStorage.setItem("userId", safeId.toString());
-        }
-
-        if (result.email) localStorage.setItem("userEmail", result.email);
-        if (result.name) localStorage.setItem("userName", result.name);
-
-        login(result.accessToken, result.role);
-    } catch (err: unknown) {
-        console.error("Google login failed:", err);
-        const axiosError = err as { response?: { status?: number } };
-        if (axiosError.response?.status === 404) {
-            setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
-        } else {
-            setError("구글 로그인 중 오류가 발생했습니다.");
-        }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [login]);
 
   const onSubmit = async (data: LoginFormData) => {
     setError("");

@@ -1,14 +1,31 @@
 import apiClient from './client';
 
+/**
+ * 채팅 메시지 응답 DTO
+ * 백엔드 ChatMessageResponse.java와 일치하도록 수정
+ */
 export interface ChatMessageResponse {
   id: number;
-  roomId: number;
+  roomId: string;      // 🔧 수정: String으로 변경 ("appointment_123" 형식)
   senderId: number;
   senderName: string;
   content: string;
-  createdAt: string;
-  sentAt: string;
+  sentAt: string;      // 🔧 수정: createdAt 제거 (백엔드에 없음)
   isRead: boolean;
+}
+
+/**
+ * 채팅방 응답 DTO
+ * 백엔드에서 정의 필요 (현재 미구현)
+ */
+export interface ChatRoomResponse {
+  roomId: string;           // "appointment_123"
+  patientId: number;
+  patientName: string;
+  doctorId: number;
+  lastMessage?: string;
+  unreadCount: number;
+  lastMessageTime?: string;
 }
 
 export const chatApi = {
@@ -30,15 +47,17 @@ export const chatApi = {
     }
   },
 
-  getAllMessagesByRoomId: async (roomId: string) => {
+  /**
+   * 채팅 기록 조회
+   * 🔧 수정: 백엔드 엔드포인트에 맞춤 (/api/chat/history/{roomId})
+   */
+  getAllMessagesByRoomId: async (roomId: string): Promise<ChatMessageResponse[]> => {
     try {
-      const response = await apiClient.get(`/chat/rooms/${roomId}/messages`);
+      const response = await apiClient.get(`/chat/history/${roomId}`);
       return response.data;
-    } catch {
-      return [
-        { id: 1, roomId, senderId: 21, senderName: '김의사', content: '안녕하세요, 오늘 상담 도와드리겠습니다.', sentAt: new Date(Date.now() - 60000).toISOString(), isRead: true },
-        { id: 2, roomId, senderId: 1, senderName: '박선일', content: '네, 안녕하세요. 최근 두통이 있어서요.', sentAt: new Date(Date.now() - 30000).toISOString(), isRead: true },
-      ];
+    } catch (error) {
+      console.error('채팅 기록 조회 실패:', error);
+      throw error;  // 🔧 수정: 에러를 상위로 전파 (Silent Failure 제거)
     }
   },
 
@@ -60,12 +79,16 @@ export const chatApi = {
     }
   },
 
-  markAsRead: async (roomId: number, userId: number) => {
+  /**
+   * 읽음 처리
+   * 🔧 수정: roomId 타입 변경 (number → string)
+   */
+  markAsRead: async (roomId: string, userId: number): Promise<void> => {
     try {
-      const response = await apiClient.put(`/chat/rooms/${roomId}/read?userId=${userId}`);
-      return response.data;
-    } catch {
-      return { success: true };
+      await apiClient.put(`/chat/rooms/${roomId}/read?userId=${userId}`);
+    } catch (error) {
+      console.error('읽음 처리 실패:', error);
+      throw error;  // 🔧 수정: Silent Failure 제거
     }
   },
 };

@@ -19,13 +19,13 @@ export function parseBlockNoteContent(content: string): string {
     const blocks = JSON.parse(content);
     if (Array.isArray(blocks)) {
       return blocks
-        .map((block: any) => {
+        .map((block: { content?: string | { text?: string }[] }) => {
           if (typeof block.content === "string") {
             return block.content;
           }
           if (Array.isArray(block.content)) {
             return block.content
-              .map((item: any) => (typeof item === "string" ? item : item.text || ""))
+              .map((item: string | { text?: string }) => (typeof item === "string" ? item : item.text || ""))
               .join("");
           }
           return "";

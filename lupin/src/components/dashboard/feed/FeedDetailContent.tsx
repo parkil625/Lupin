@@ -28,6 +28,15 @@ import {
 import { Feed, Comment } from "@/types/dashboard.types";
 import { commentApi, reportApi } from "@/api";
 import { toast } from "sonner";
+
+// 백엔드 댓글 응답 타입
+interface BackendComment {
+  id: number;
+  writerName?: string;
+  content: string;
+  createdAt: string;
+  [key: string]: unknown;
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,10 +130,10 @@ export function FeedDetailContent({
         const commentList = response.content || response;
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: any) => {
+          commentList.map(async (comment: BackendComment) => {
             try {
               const repliesData = await commentApi.getRepliesByCommentId(comment.id);
-              const replies = (repliesData || []).map((reply: any) => ({
+              const replies = (repliesData || []).map((reply: BackendComment) => ({
                 ...reply,
                 author: reply.writerName || "알 수 없음",
                 avatar: (reply.writerName || "?").charAt(0),

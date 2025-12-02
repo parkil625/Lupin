@@ -180,7 +180,6 @@ export default function EditFeedDialog({
     const contentJson = JSON.stringify(blocks);
 
     onSave(feed.id, images, contentJson, workoutType, startImage, endImage);
-    toast.success("피드가 수정되었습니다!");
     onOpenChange(false);
   };
 

@@ -5,7 +5,7 @@
  * - Dialog 없이 독립적으로 사용 가능한 피드 상세 뷰
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { FeedDetailContent } from "./FeedDetailContent";
 import { Feed } from "@/types/dashboard.types";
 import { useState } from "react";

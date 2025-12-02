@@ -5,7 +5,7 @@
  * - 다양한 상태의 피드 카드 미리보기
  */
 
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import FeedView from "./Feed";
 import { Feed } from "@/types/dashboard.types";
 import { useRef, useState } from "react";

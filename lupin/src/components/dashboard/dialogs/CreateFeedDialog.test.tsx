@@ -85,7 +85,7 @@ describe('CreateFeedDialog 핵심 로직', () => {
       const startImage = null;
       const endImage = null;
       const otherImages: string[] = [];
-      const workoutType = '수영';
+      const workoutType: string = '수영';
       const hasEditorContent = false;
 
       const hasChanges =

@@ -212,7 +212,7 @@ export const NotificationCard: Story = {
       </CardHeader>
       <CardContent>
         <p>
-          <strong>박의사</strong>님이 회원님의 피드에 댓글을 남겼습니다: "좋은 운동이네요!"
+          <strong>박의사</strong>님이 회원님의 피드에 댓글을 남겼습니다: &quot;좋은 운동이네요!&quot;
         </p>
       </CardContent>
       <CardFooter>

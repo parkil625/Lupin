@@ -73,6 +73,7 @@ const mockFeeds: Feed[] = [
 // 래퍼 컴포넌트 (상태 관리용)
 function FeedWrapper({ feeds }: { feeds: Feed[] }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [feedImageIndices, setFeedImageIndices] = useState<Record<number, number>>({});
   const [likedFeeds, setLikedFeeds] = useState<Set<number>>(new Set());
   const feedContainerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +102,8 @@ function FeedWrapper({ feeds }: { feeds: Feed[] }) {
         allFeeds={feeds}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        showSearch={showSearch}
+        setShowSearch={setShowSearch}
         getFeedImageIndex={getFeedImageIndex}
         setFeedImageIndex={setFeedImageIndex}
         hasLiked={hasLiked}
@@ -166,6 +169,8 @@ export const Loading: Story = {
           allFeeds={[]}
           searchQuery=""
           setSearchQuery={() => {}}
+          showSearch={false}
+          setShowSearch={() => {}}
           getFeedImageIndex={() => 0}
           setFeedImageIndex={() => {}}
           hasLiked={() => false}

@@ -42,10 +42,10 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
         const commentList = response.content || response;
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: any) => {
+          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; createdAt?: string }) => {
             try {
               const replies = await commentApi.getRepliesByCommentId(comment.id);
-              const formattedReplies = (replies || []).map((reply: any) => ({
+              const formattedReplies = (replies || []).map((reply: { writerName?: string; writerAvatar?: string; createdAt?: string }) => ({
                 ...reply,
                 author: reply.writerName,
                 avatar: reply.writerAvatar || null,

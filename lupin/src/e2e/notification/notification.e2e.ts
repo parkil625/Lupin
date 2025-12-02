@@ -87,7 +87,8 @@ test.describe('알림 E2E 테스트', () => {
       .or(page.locator('[class*="badge"]'));
 
     // 뱃지가 있거나 없을 수 있음 (알림 유무에 따라)
-    const isVisible = await badge.isVisible({ timeout: 3000 });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _isVisible = await badge.isVisible({ timeout: 3000 });
     // 테스트 통과 (뱃지 존재 여부만 확인)
   });
 

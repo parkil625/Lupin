@@ -101,7 +101,7 @@ export default function DoctorChatPage() {
   useEffect(() => {
     const loadChatRooms = async () => {
       try {
-        const rooms = await chatApi.getChatRoomsByUserId(currentUserId);
+        const rooms = await chatApi.getChatRooms(currentUserId);
         setChatRooms(rooms);
       } catch (error) {
         console.error("채팅방 목록 로드 실패:", error);

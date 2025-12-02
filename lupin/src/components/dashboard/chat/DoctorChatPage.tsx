@@ -32,10 +32,7 @@ interface MedicineQuantity {
   quantity: number;
 }
 
-interface ReadNotification {
-  userId: number;
-  roomId: string;
-}
+// 🔧 제거: ReadNotification (REST API로만 처리)
 
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
@@ -84,22 +81,16 @@ export default function DoctorChatPage() {
     [currentUserId]
   );
 
-  const handleReadNotification = useCallback(
-    (notification: ReadNotification) => {
-      console.log("상대방이 메시지를 읽었습니다:", notification);
-    },
-    []
-  );
+  // 🔧 제거: handleReadNotification (REST API로만 처리)
 
+  // 🔧 수정: markAsRead, onReadNotification 제거 (REST API로만 처리)
   const {
     isConnected,
     sendMessage: sendWebSocketMessage,
-    markAsRead,
   } = useWebSocket({
     roomId: roomId || "placeholder",
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
-    onReadNotification: handleReadNotification,
   });
 
   // 자동 스크롤
@@ -139,6 +130,7 @@ export default function DoctorChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedChatMember?.id, currentDoctorId]);
 
+  // 🔧 수정: REST API로 읽음 처리
   useEffect(() => {
     if (
       isConnected &&
@@ -146,12 +138,17 @@ export default function DoctorChatPage() {
       roomId &&
       roomId !== "placeholder"
     ) {
-      const timer = setTimeout(() => {
-        markAsRead();
+      const timer = setTimeout(async () => {
+        try {
+          await chatApi.markAsRead(roomId, currentUserId);
+          console.log('✅ 읽음 처리 완료:', roomId);
+        } catch (error) {
+          console.error('❌ 읽음 처리 실패:', error);
+        }
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isConnected, roomId, markAsRead, selectedChatMember]);
+  }, [isConnected, roomId, selectedChatMember, currentUserId]);
 
   const handleFinishConsultation = () => {
     if (!selectedChatMember) return;

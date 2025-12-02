@@ -592,4 +592,86 @@ class FeedServiceTest {
         );
         verify(feedRepository).delete(feed);
     }
+
+    @Test
+    @DisplayName("피드 수정 시 이미지도 변경한다")
+    void updateFeedWithImagesTest() {
+        // given
+        Long feedId = 1L;
+        Feed feed = Feed.builder()
+                .writer(writer)
+                .activity("running")
+                .content("원래 내용")
+                .points(30L)
+                .calories(500)
+                .build();
+        ReflectionTestUtils.setField(feed, "id", feedId);
+
+        List<String> newS3Keys = List.of("new-start.jpg", "new-end.jpg");
+        String newContent = "수정된 내용";
+        String newActivity = "walking";
+
+        // 오늘 날짜 기준으로 테스트
+        LocalDateTime newStartTime = LocalDate.now().atTime(14, 0);
+        LocalDateTime newEndTime = LocalDate.now().atTime(15, 30); // 1.5시간 운동
+
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(imageMetadataService.extractPhotoDateTime("new-start.jpg"))
+                .willReturn(Optional.of(newStartTime));
+        given(imageMetadataService.extractPhotoDateTime("new-end.jpg"))
+                .willReturn(Optional.of(newEndTime));
+        given(workoutScoreService.calculateScore(eq(newActivity), eq(newStartTime), eq(newEndTime)))
+                .willReturn(25);
+        given(workoutScoreService.calculateCalories(eq(newActivity), eq(newStartTime), eq(newEndTime)))
+                .willReturn(400);
+        given(workoutScoreService.calculateDurationMinutes(eq(newStartTime), eq(newEndTime)))
+                .willReturn(90L);
+        given(feedImageRepository.save(any(FeedImage.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        Feed result = feedService.updateFeed(writer, feedId, newContent, newActivity, newS3Keys);
+
+        // then
+        assertThat(result.getContent()).isEqualTo(newContent);
+        assertThat(result.getActivity()).isEqualTo(newActivity);
+        assertThat(result.getPoints()).isEqualTo(25L);
+        assertThat(result.getCalories()).isEqualTo(400);
+        verify(feedImageRepository).deleteByFeed(feed);
+        verify(feedImageRepository).save(argThat(image ->
+                image.getS3Key().equals("new-start.jpg") && image.getImgType() == ImageType.START));
+        verify(feedImageRepository).save(argThat(image ->
+                image.getS3Key().equals("new-end.jpg") && image.getImgType() == ImageType.END));
+        verify(pointService).deductPoints(writer, 30L); // 기존 포인트 차감
+        verify(pointService).addPoints(writer, 25L);    // 새 포인트 적립
+    }
+
+    @Test
+    @DisplayName("피드 수정 시 이미지 없이 내용만 변경한다")
+    void updateFeedContentOnlyTest() {
+        // given
+        Long feedId = 1L;
+        Feed feed = Feed.builder()
+                .writer(writer)
+                .activity("running")
+                .content("원래 내용")
+                .points(30L)
+                .build();
+        ReflectionTestUtils.setField(feed, "id", feedId);
+
+        String newContent = "수정된 내용";
+        String newActivity = "walking";
+
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+        // when - 이미지 없이 호출 (기존 메서드)
+        Feed result = feedService.updateFeed(writer, feedId, newContent, newActivity);
+
+        // then
+        assertThat(result.getContent()).isEqualTo(newContent);
+        assertThat(result.getActivity()).isEqualTo(newActivity);
+        assertThat(result.getPoints()).isEqualTo(30L); // 포인트 변경 없음
+        verify(feedImageRepository, never()).deleteByFeed(any());
+        verify(pointService, never()).deductPoints(any(), anyLong());
+        verify(pointService, never()).addPoints(any(), anyLong());
+    }
 }

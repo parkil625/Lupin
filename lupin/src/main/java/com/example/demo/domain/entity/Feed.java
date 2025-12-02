@@ -55,4 +55,10 @@ public class Feed {
         this.activity = activity;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void updateScore(Long points, Integer calories) {
+        this.points = points;
+        this.calories = calories;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

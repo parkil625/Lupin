@@ -390,7 +390,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     setShowFeedDetailInHome(false);
   };
 
-  const handleUpdateFeed = (
+  const handleUpdateFeed = async (
     feedId: number,
     images: string[],
     content: string,
@@ -398,35 +398,49 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     _startImage: string | null,
     _endImage: string | null
   ) => {
-    setMyFeeds(
-      myFeeds.map((feed) =>
-        feed.id === feedId
-          ? {
-              ...feed,
-              images,
-              content,
-              activity: workoutType,
-              time: "방금 전",
-              edited: true,
-            }
-          : feed
-      )
-    );
-    setAllFeeds(
-      allFeeds.map((feed) =>
-        feed.id === feedId
-          ? {
-              ...feed,
-              images,
-              content,
-              activity: workoutType,
-              time: "방금 전",
-              edited: true,
-            }
-          : feed
-      )
-    );
-    toast.success("피드가 수정되었습니다!");
+    try {
+      // API 호출하여 DB에 저장
+      await feedApi.updateFeed(feedId, {
+        activity: workoutType,
+        content,
+        images,
+      });
+
+      // 로컬 상태 업데이트
+      setMyFeeds(
+        myFeeds.map((feed) =>
+          feed.id === feedId
+            ? {
+                ...feed,
+                images,
+                content,
+                activity: workoutType,
+                time: "방금 전",
+                edited: true,
+              }
+            : feed
+        )
+      );
+      setAllFeeds(
+        allFeeds.map((feed) =>
+          feed.id === feedId
+            ? {
+                ...feed,
+                images,
+                content,
+                activity: workoutType,
+                time: "방금 전",
+                edited: true,
+              }
+            : feed
+        )
+      );
+      setRefreshTrigger((prev) => prev + 1);
+      toast.success("피드가 수정되었습니다!");
+    } catch (error: any) {
+      const message = error.response?.data?.message || "피드 수정에 실패했습니다.";
+      toast.error(message);
+    }
   };
 
   const handleDeleteFeed = async (feedId: number) => {

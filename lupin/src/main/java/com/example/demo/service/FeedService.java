@@ -132,6 +132,68 @@ public class FeedService {
     }
 
     @Transactional
+    public Feed updateFeed(User user, Long feedId, String content, String activity, List<String> s3Keys) {
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
+
+        validateOwnership(feed, user);
+
+        // 기존 포인트 저장 (포인트 차액 계산용)
+        long oldPoints = feed.getPoints() != null ? feed.getPoints() : 0L;
+
+        // 내용/운동종류 업데이트
+        feed.update(content, activity);
+
+        // EXIF 시간 추출 및 점수 계산
+        int score = 0;
+        int calories = 0;
+
+        var startTimeOpt = imageMetadataService.extractPhotoDateTime(s3Keys.get(0));
+        var endTimeOpt = imageMetadataService.extractPhotoDateTime(s3Keys.get(1));
+
+        if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
+            LocalDateTime startTime = startTimeOpt.get();
+            LocalDateTime endTime = endTimeOpt.get();
+
+            validateWorkoutTime(startTime, endTime, LocalDate.now());
+
+            score = workoutScoreService.calculateScore(activity, startTime, endTime);
+            calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
+
+            log.info("Feed update - Workout verified: activity={}, duration={}min, score={}, calories={}",
+                    activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
+        }
+
+        // 피드 점수/칼로리 업데이트
+        feed.updateScore((long) score, calories);
+
+        // 기존 이미지 삭제
+        feedImageRepository.deleteByFeed(feed);
+
+        // 새 이미지 저장
+        for (int i = 0; i < s3Keys.size(); i++) {
+            ImageType imgType = (i == 0) ? ImageType.START : (i == 1) ? ImageType.END : ImageType.OTHER;
+            FeedImage feedImage = FeedImage.builder()
+                    .feed(feed)
+                    .s3Key(s3Keys.get(i))
+                    .imgType(imgType)
+                    .sortOrder(i)
+                    .build();
+            feedImageRepository.save(feedImage);
+        }
+
+        // 포인트 조정 (기존 차감 후 새로 적립)
+        if (oldPoints > 0) {
+            pointService.deductPoints(user, oldPoints);
+        }
+        if (score > 0) {
+            pointService.addPoints(user, score);
+        }
+
+        return feed;
+    }
+
+    @Transactional
     public void deleteFeed(User user, Long feedId) {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));

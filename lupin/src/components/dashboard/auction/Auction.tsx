@@ -67,6 +67,7 @@ export default function Auction() {
     useEffect(() => {
         fetchAuctions();
         fetchUserPoints();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {

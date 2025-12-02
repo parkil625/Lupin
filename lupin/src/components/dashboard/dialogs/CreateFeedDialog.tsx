@@ -155,17 +155,14 @@ export default function CreateFeedDialog({
   // 이미지 업로드 핸들러
   const uploadImage = async (file: File, setter: (url: string) => void) => {
     setIsUploading(true);
-    const loadingToast = toast.loading("이미지를 업로드하고 있습니다...");
 
     try {
       const s3Url = await imageApi.uploadImage(file);
       setter(s3Url);
-      toast.success("업로드 완료!");
     } catch (error) {
       console.error(error);
       toast.error("이미지 업로드 실패");
     } finally {
-      toast.dismiss(loadingToast);
       setIsUploading(false);
     }
   };

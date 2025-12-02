@@ -56,10 +56,10 @@ export default function NotificationPopup({
 
   return (
     <>
-      {/* 모바일용 전체 화면 알림 */}
+      {/* 모바일용 전체 화면 알림 (하단 네비 제외) */}
       <div
         ref={popupRef}
-        className="md:hidden fixed inset-0 z-50 bg-white flex flex-col"
+        className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-40 bg-white flex flex-col"
       >
         <div className="p-4 pb-2 flex-shrink-0 flex items-center justify-between border-b">
           <h3 className="text-lg font-black text-gray-900">알림</h3>

@@ -14,6 +14,7 @@ public class CommentResponse {
     private Long feedId;
     private String content;
     private String writerName;
+    private String writerAvatar;
     private Long writerId;
     private LocalDateTime createdAt;
     private Long parentId;
@@ -24,6 +25,7 @@ public class CommentResponse {
                 .feedId(comment.getFeed().getId())
                 .content(comment.getContent())
                 .writerName(comment.getWriter().getName())
+                .writerAvatar(comment.getWriter().getAvatar())
                 .writerId(comment.getWriter().getId())
                 .createdAt(comment.getCreatedAt())
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)

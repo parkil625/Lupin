@@ -185,7 +185,7 @@ export const FeedSearch: Story = {
 
         {value && (
           <div className="mt-4 text-sm text-gray-600">
-            "{value}" 검색 결과...
+            &quot;{value}&quot; 검색 결과...
           </div>
         )}
       </div>

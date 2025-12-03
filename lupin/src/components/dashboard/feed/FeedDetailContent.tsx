@@ -365,7 +365,7 @@ export function FeedDetailContent({
 
                 <div className="flex items-center gap-4 mb-2">
                   <button onClick={() => toggleCommentLike(comment.id)} className="flex items-center gap-1 hover:opacity-70 transition-opacity">
-                    <Heart className={`w-4 h-4 ${likeInfo.liked ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
+                    <Heart className={`w-4 h-4 ${likeInfo.liked ? "fill-[#C93831] text-[#C93831]" : "text-gray-600"}`} />
                     {likeInfo.count > 0 && <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>}
                   </button>
                   {depth === 0 && (
@@ -519,7 +519,7 @@ export function FeedDetailContent({
             <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
               <button onClick={() => onLike?.(feed.id)} className="flex flex-col items-center gap-1 group">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                  <Heart className={`w-6 h-6 ${liked || isMine ? "fill-red-500 text-red-500" : iconColor === "white" ? "text-white" : "text-black"}`} />
+                  <Heart className={`w-6 h-6 ${liked || isMine ? "fill-[#C93831] text-[#C93831]" : iconColor === "white" ? "text-white" : "text-black"}`} />
                 </div>
                 <span className={`text-xs font-bold ${iconColor === "white" ? "text-white" : "text-black"}`}>{feed.likes}</span>
               </button>

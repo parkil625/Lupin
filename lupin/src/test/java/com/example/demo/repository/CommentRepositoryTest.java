@@ -46,11 +46,13 @@ class CommentRepositoryTest extends BaseRepositoryTest {
         User user2 = createAndSaveUser("user2");
         Feed feed = createAndSaveFeed(user1, "running");
 
-        createAndSaveComment(user1, feed, "첫 번째 댓글");
+        Comment parent = createAndSaveComment(user1, feed, "부모 댓글");
+        createAndSaveReply(user1, feed, parent, "대댓글");
         createAndSaveComment(user2, feed, "두 번째 댓글");
 
-        // when
-        commentRepository.deleteByFeed(feed);
+        // when - 대댓글 먼저 삭제 후 부모 댓글 삭제
+        commentRepository.deleteRepliesByFeed(feed);
+        commentRepository.deleteParentCommentsByFeed(feed);
 
         // then
         List<Comment> comments = commentRepository.findByFeedOrderByIdDesc(feed);

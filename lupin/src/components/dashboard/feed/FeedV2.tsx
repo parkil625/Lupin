@@ -270,7 +270,7 @@ function CommentPanel({ feedId }: { feedId: number }) {
                 <p className="text-sm text-gray-900 break-words mb-2">{comment.content}</p>
                 <div className="flex items-center gap-4 mb-2">
                   <button onClick={() => toggleCommentLike(comment.id)} className="flex items-center gap-1 hover:opacity-70 transition-opacity">
-                    <Heart className={`w-4 h-4 ${likeInfo.liked ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
+                    <Heart className={`w-4 h-4 ${likeInfo.liked ? "fill-[#C93831] text-[#C93831]" : "text-gray-600"}`} />
                     {likeInfo.count > 0 && <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>}
                   </button>
                   {depth === 0 && (

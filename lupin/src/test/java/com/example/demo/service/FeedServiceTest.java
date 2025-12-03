@@ -7,7 +7,11 @@ import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentLikeRepository;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedImageRepository;
+import com.example.demo.repository.FeedLikeRepository;
+import com.example.demo.repository.FeedReportRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +48,18 @@ class FeedServiceTest {
 
     @Mock
     private FeedImageRepository feedImageRepository;
+
+    @Mock
+    private FeedLikeRepository feedLikeRepository;
+
+    @Mock
+    private FeedReportRepository feedReportRepository;
+
+    @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
+    private CommentLikeRepository commentLikeRepository;
 
     @Mock
     private PointService pointService;

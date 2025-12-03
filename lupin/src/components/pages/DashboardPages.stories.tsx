@@ -7,7 +7,7 @@ import Home from '../dashboard/home/Home';
 import Ranking from '../dashboard/ranking/Ranking';
 import Auction from '../dashboard/auction/Auction';
 import Medical from '../dashboard/medical/Medical';
-import MemberProfilePage from '../dashboard/profile/MemberProfilePage';
+import ProfilePageComponent from '../dashboard/profile/ProfilePage';
 import NotificationPopup from '../dashboard/shared/NotificationPopup';
 import FeedDetailDialogHome from '../dashboard/dialogs/FeedDetailDialogHome';
 import CreateFeedDialog from '../dashboard/dialogs/CreateFeedDialog';
@@ -428,7 +428,7 @@ export const ProfilePage: Story = {
 
     return (
       <DashboardWrapper selectedNav="profile">
-        <MemberProfilePage
+        <ProfilePageComponent
           onLogout={() => {}}
           profileImage={profileImage}
           setProfileImage={setProfileImage}

@@ -23,9 +23,21 @@ public class ImageController {
         return ResponseEntity.ok(imageUrl);
     }
 
+    @PostMapping(value = "/upload/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadProfileImage(@RequestParam("image") MultipartFile image) throws IOException {
+        String imageUrl = imageService.uploadImage(image, "profiles");
+        return ResponseEntity.ok(imageUrl);
+    }
+
+    @PostMapping(value = "/upload/feed", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadFeedImage(@RequestParam("image") MultipartFile image) throws IOException {
+        String imageUrl = imageService.uploadImage(image, "feed");
+        return ResponseEntity.ok(imageUrl);
+    }
+
     @PostMapping(value = "/upload-multiple", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<String>> uploadImages(@RequestParam("files") List<MultipartFile> files) throws IOException {
-        List<String> imageUrls = imageService.uploadImages(files);
+        List<String> imageUrls = imageService.uploadImages(files, "feed");
         return ResponseEntity.ok(imageUrls);
     }
 

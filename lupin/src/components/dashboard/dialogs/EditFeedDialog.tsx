@@ -266,7 +266,7 @@ export default function EditFeedDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="w-full h-[calc(100vh-100px)] max-h-[calc(100vh-100px)] md:h-[85vh] md:max-h-[85vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col fixed top-4 bottom-auto md:top-1/2 md:-translate-y-1/2">
+        <DialogContent className="w-full h-[calc(100vh-32px)] max-h-[calc(100vh-32px)] md:h-[85vh] md:max-h-[85vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col fixed inset-x-4 top-4 bottom-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
           <DialogTitle className="sr-only">피드 수정</DialogTitle>
           <DialogDescription className="sr-only">
             기존 피드 내용을 수정합니다. 운동 종류, 시작/끝 사진, 그리고 내용을 수정할 수 있습니다.
@@ -279,7 +279,7 @@ export default function EditFeedDialog({
               <WorkoutTypeSelect
                 value={workoutType}
                 onChange={setWorkoutType}
-                className="w-auto"
+                className="min-w-[130px]"
               />
             </div>
 

@@ -56,7 +56,7 @@ export function FeedCard({
     try {
       return JSON.parse(feed.content);
     } catch {
-      return [{ type: "paragraph", content: feed.content }];
+      return [{ type: "paragraph" as const, content: [{ type: "text" as const, text: feed.content, styles: {} }] }];
     }
   }, [feed.content]);
 

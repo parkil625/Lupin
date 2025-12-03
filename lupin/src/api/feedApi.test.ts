@@ -34,7 +34,7 @@ describe("feedApi", () => {
       const result = await feedApi.getAllFeeds(0, 10);
 
       expect(apiClient.get).toHaveBeenCalledWith("/feeds?page=0&size=10");
-      expect(result.content[0].images[0]).toBe("https://s3.example.com/img1.jpg");
+      expect(result?.content?.[0]?.images?.[0]).toBe("https://s3.example.com/img1.jpg");
     });
 
     it("should return empty content on error", async () => {
@@ -60,7 +60,7 @@ describe("feedApi", () => {
       const result = await feedApi.getFeedsByUserId(1, 0, 10);
 
       expect(apiClient.get).toHaveBeenCalledWith("/feeds/my?page=0&size=10");
-      expect(result.content).toHaveLength(1);
+      expect(result?.content).toHaveLength(1);
     });
 
     it("should return empty on error", async () => {
@@ -68,7 +68,7 @@ describe("feedApi", () => {
 
       const result = await feedApi.getFeedsByUserId(1);
 
-      expect(result.content).toEqual([]);
+      expect(result?.content).toEqual([]);
     });
   });
 
@@ -82,7 +82,7 @@ describe("feedApi", () => {
       const result = await feedApi.getFeedById(123);
 
       expect(apiClient.get).toHaveBeenCalledWith("/feeds/123");
-      expect(result.id).toBe(123);
+      expect(result?.id).toBe(123);
     });
 
     it("should return null on error", async () => {

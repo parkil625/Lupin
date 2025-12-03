@@ -24,6 +24,7 @@ import {
   User,
   Plus,
   Coins,
+  Bell,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { userApi, feedApi } from "@/api";
@@ -36,6 +37,8 @@ interface HomeProps {
   setShowFeedDetailInHome: (show: boolean) => void;
   onCreateClick: () => void;
   refreshTrigger?: number;
+  unreadNotificationCount?: number;
+  onNotificationClick?: () => void;
 }
 
 export default function Home({
@@ -46,6 +49,8 @@ export default function Home({
   setShowFeedDetailInHome,
   onCreateClick,
   refreshTrigger,
+  unreadNotificationCount = 0,
+  onNotificationClick,
 }: HomeProps) {
   const [canPostToday, setCanPostToday] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -135,7 +140,20 @@ export default function Home({
   }, [myFeeds, refreshTrigger]); // myFeeds가 변경되거나 refreshTrigger가 변경되면 다시 확인
 
   return (
-    <div className="h-full overflow-auto p-4 md:p-8">
+    <div className="h-full overflow-auto p-4 md:p-8 relative">
+      {/* 모바일 알림 버튼 (우측 상단) */}
+      {onNotificationClick && (
+        <button
+          onClick={onNotificationClick}
+          className="md:hidden fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-white/80 backdrop-blur-xl shadow-lg flex items-center justify-center hover:bg-white transition-colors"
+        >
+          <Bell className="w-5 h-5 text-gray-700" />
+          {unreadNotificationCount > 0 && (
+            <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></div>
+          )}
+        </button>
+      )}
+
       <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         {/* Profile Header */}
         <div className="p-4 md:p-8">

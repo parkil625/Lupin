@@ -302,7 +302,7 @@ export default function CreateFeedDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-full h-[calc(100vh-100px)] max-h-[calc(100vh-100px)] md:h-[85vh] md:max-h-[85vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col fixed top-4 bottom-auto md:top-1/2 md:-translate-y-1/2">
+      <DialogContent className="w-full h-[calc(100vh-32px)] max-h-[calc(100vh-32px)] md:h-[85vh] md:max-h-[85vh] md:!max-w-[500px] md:!w-[500px] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex flex-col fixed inset-x-4 top-4 bottom-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
         <DialogHeader className="sr-only">
           <DialogTitle>피드 작성</DialogTitle>
           <DialogDescription>
@@ -317,7 +317,7 @@ export default function CreateFeedDialog({
             <WorkoutTypeSelect
               value={workoutType}
               onChange={setWorkoutType}
-              className="w-auto"
+              className="min-w-[130px]"
             />
           </div>
 

@@ -20,9 +20,9 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user = :user AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
     Long sumPointsByUserAndMonth(@Param("user") User user, @Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
 
-    @Query("SELECT p.user, COALESCE(SUM(p.points), 0) as totalPoints FROM PointLog p GROUP BY p.user ORDER BY totalPoints DESC")
+    @Query("SELECT p.user, COALESCE(SUM(p.points), 0) as totalPoints FROM PointLog p WHERE p.user.role = com.example.demo.domain.enums.Role.MEMBER GROUP BY p.user ORDER BY totalPoints DESC")
     List<Object[]> findUsersRankedByPoints(Pageable pageable);
 
-    @Query("SELECT p.user, COALESCE(SUM(p.points), 0) as totalPoints FROM PointLog p GROUP BY p.user ORDER BY totalPoints DESC")
+    @Query("SELECT p.user, COALESCE(SUM(p.points), 0) as totalPoints FROM PointLog p WHERE p.user.role = com.example.demo.domain.enums.Role.MEMBER GROUP BY p.user ORDER BY totalPoints DESC")
     List<Object[]> findAllUsersRankedByPoints();
 }

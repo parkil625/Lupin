@@ -121,8 +121,8 @@ export default function FeedDetailDialogHome({
       // 일반 텍스트인 경우 BlockNote 기본 형식으로 변환
       return [
         {
-          type: "paragraph",
-          content: feedContent,
+          type: "paragraph" as const,
+          content: [{ type: "text" as const, text: feedContent, styles: {} }],
         },
       ];
     }
@@ -143,8 +143,8 @@ export default function FeedDetailDialogHome({
         // 일반 텍스트인 경우 BlockNote 기본 형식으로 변환
         const textBlocks = [
           {
-            type: "paragraph",
-            content: feed.content,
+            type: "paragraph" as const,
+            content: [{ type: "text" as const, text: feed.content, styles: {} }],
           },
         ];
         editor.replaceBlocks(editor.document, textBlocks);
@@ -444,9 +444,13 @@ export default function FeedDetailDialogHome({
       <div key={comment.id} id={`comment-${comment.id}`} className={`transition-colors duration-500 ${isReply ? "ml-8 mt-3" : ""}`}>
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="bg-white">
-              <User className="w-4 h-4 text-gray-400" />
-            </AvatarFallback>
+            {comment.avatar && comment.avatar.startsWith("http") ? (
+              <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" />
+            ) : (
+              <AvatarFallback className="bg-white">
+                <User className="w-4 h-4 text-gray-400" />
+              </AvatarFallback>
+            )}
           </Avatar>
           <div className="flex-1 min-w-0">
             {isDeleted ? (
@@ -650,9 +654,13 @@ export default function FeedDetailDialogHome({
                   {/* Author Avatar Only */}
                   <div className="absolute top-4 left-4">
                     <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
-                      <AvatarFallback className="bg-white">
-                        <User className="w-5 h-5 text-gray-400" />
-                      </AvatarFallback>
+                      {feed.writerAvatar ? (
+                        <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" />
+                      ) : (
+                        <AvatarFallback className="bg-white">
+                          <User className="w-5 h-5 text-gray-400" />
+                        </AvatarFallback>
+                      )}
                     </Avatar>
                   </div>
 
@@ -714,9 +722,13 @@ export default function FeedDetailDialogHome({
                 <div className="relative p-6 bg-transparent h-[545px]">
                   <div className="flex items-center justify-between">
                     <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg">
-                      <AvatarFallback className="bg-white">
-                        <User className="w-5 h-5 text-gray-400" />
-                      </AvatarFallback>
+                      {feed.writerAvatar ? (
+                        <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" />
+                      ) : (
+                        <AvatarFallback className="bg-white">
+                          <User className="w-5 h-5 text-gray-400" />
+                        </AvatarFallback>
+                      )}
                     </Avatar>
 
                     {/* Menu Button */}

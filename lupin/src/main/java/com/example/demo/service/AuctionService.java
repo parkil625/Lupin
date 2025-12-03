@@ -5,7 +5,9 @@ import com.example.demo.domain.entity.AuctionBid;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
+import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
+import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
 import com.example.demo.repository.UserRepository;
@@ -77,4 +79,25 @@ public class AuctionService {
 
         return OngoingAuctionResponse.from(auction);
     }
+
+    //예정인 경매 정보와 경매 물품 조회
+    public List<ScheduledAuctionResponse> scheduledAuctionWithItem() {
+        List<Auction> auctions = auctionRepository.findAllByStatusOrderByStartTimeAscWithItem(AuctionStatus.SCHEDULED);
+
+        if (auctions.isEmpty()) {
+            throw new IllegalStateException("예정 중인 경매가 없습니다.");
+        }
+
+        return auctions.stream()
+                .map(ScheduledAuctionResponse::from)
+                .toList();
+    }
+
+    //현재 경매 정보 업데이트 내용 조회
+    public AuctionStatusResponse getRealtimeStatus(){
+        return auctionRepository.findAuctionStatus().orElseThrow(() -> new IllegalStateException("진행 중인 경매가 없습니다."));
+    }
+
+
+
 }

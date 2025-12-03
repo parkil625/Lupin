@@ -3,6 +3,8 @@ package com.example.demo.repository;
 import com.example.demo.domain.entity.Auction;
 import com.example.demo.domain.entity.AuctionBid;
 import com.example.demo.domain.enums.AuctionStatus;
+import com.example.demo.dto.response.AuctionStatusResponse;
+import com.example.demo.dto.response.ScheduledAuctionResponse;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -41,8 +43,34 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     //현재 진행중인 경매 정보, 경매 물품 정보 가지고 오기
     @Query(""" 
-    select a 
+    select a
     from Auction a join fetch a.auctionItem 
     where a.status = :status """) Optional<Auction> findFirstWithItemByStatus(@Param("status") AuctionStatus status);
+
+
+    //진행 예정인 경매 정보, 경매 물품 정보 가지고 오기
+    @Query("""
+    select a
+    from Auction a join fetch a.auctionItem
+    where a.status = :status
+    order by a.startTime
+    """)
+    List<Auction> findAllByStatusOrderByStartTimeAscWithItem(@Param("status") AuctionStatus status);
+
+    //진행중인 경매 업데이트 내용만 가지고 오기
+    @Query("""
+        SELECT new com.example.demo.dto.response.AuctionStatusResponse(
+            a.id,
+            a.currentPrice,
+            w.name,
+            a.overtimeStarted,
+            a.overtimeEndTime,
+            a.totalBids
+        )
+        FROM Auction a
+        LEFT JOIN a.winner w
+        WHERE a.status = 'ACTIVE'
+    """)
+    Optional<AuctionStatusResponse> findAuctionStatus();
 
 }

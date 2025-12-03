@@ -445,7 +445,7 @@ export default function FeedDetailDialogHome({
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
             {comment.avatar && comment.avatar.startsWith("http") ? (
-              <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" />
+              <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" crossOrigin="anonymous" />
             ) : (
               <AvatarFallback className="bg-white">
                 <User className="w-4 h-4 text-gray-400" />
@@ -616,6 +616,7 @@ export default function FeedDetailDialogHome({
                     src={feed.images[currentImageIndex] || feed.images[0]}
                     alt={feed.activity}
                     className="w-full h-full object-cover"
+                    crossOrigin="anonymous"
                   />
 
                   {feed.images.length > 1 && (
@@ -655,7 +656,7 @@ export default function FeedDetailDialogHome({
                   <div className="absolute top-4 left-4">
                     <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
                       {feed.writerAvatar ? (
-                        <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" />
+                        <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" crossOrigin="anonymous" />
                       ) : (
                         <AvatarFallback className="bg-white">
                           <User className="w-5 h-5 text-gray-400" />
@@ -723,7 +724,7 @@ export default function FeedDetailDialogHome({
                   <div className="flex items-center justify-between">
                     <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg">
                       {feed.writerAvatar ? (
-                        <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" />
+                        <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" crossOrigin="anonymous" />
                       ) : (
                         <AvatarFallback className="bg-white">
                           <User className="w-5 h-5 text-gray-400" />
@@ -859,123 +860,163 @@ export default function FeedDetailDialogHome({
             </ScrollArea>
           </div>
 
-          {/* Comments Panel (Right - slides in) */}
+          {/* Comments Panel */}
           {showComments && (
-            <div className="flex-1 bg-white/50 backdrop-blur-sm border-l border-gray-200/50 flex flex-col overflow-hidden">
-              {/* Comments Header */}
-              <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-gray-900">
-                  댓글 {totalCommentCount}개
-                </h3>
-                <div className="relative">
-                  <button
-                    onClick={() => setShowSortMenu(!showSortMenu)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
-                    <ArrowUpDown className="w-4 h-4 text-gray-900" />
-                    <span className="text-sm font-semibold text-gray-900">
-                      {sortOrder === "latest" ? "최신순" : "인기순"}
-                    </span>
-                  </button>
-                  {showSortMenu && (
-                    <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+            <>
+              {/* 모바일용 전체화면 오버레이 */}
+              <div className="md:hidden fixed inset-0 z-50 bg-white flex flex-col">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h3 className="font-bold text-lg">댓글 {totalCommentCount}개</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
                       <button
-                        onClick={() => {
-                          setSortOrder("latest");
-                          setShowSortMenu(false);
-                        }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
-                          sortOrder === "latest"
-                            ? "bg-gray-50 font-semibold text-[#C93831]"
-                            : "text-gray-900"
-                        }`}
+                        onClick={() => setShowSortMenu(!showSortMenu)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                       >
-                        최신순
+                        <ArrowUpDown className="w-4 h-4 text-gray-900" />
+                        <span className="text-sm font-semibold text-gray-900">
+                          {sortOrder === "latest" ? "최신순" : "인기순"}
+                        </span>
                       </button>
-                      <button
-                        onClick={() => {
-                          setSortOrder("popular");
-                          setShowSortMenu(false);
-                        }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
-                          sortOrder === "popular"
-                            ? "bg-gray-50 font-semibold text-[#C93831]"
-                            : "text-gray-900"
-                        }`}
-                      >
-                        인기순
-                      </button>
+                      {showSortMenu && (
+                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+                          <button
+                            onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
+                            className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                          >
+                            최신순
+                          </button>
+                          <button
+                            onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
+                            className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                          >
+                            인기순
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <button
+                      onClick={() => setShowComments(false)}
+                      className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full">
+                    <div className="space-y-4 px-6 pt-4 pb-4">
+                      {comments.length === 0 ? (
+                        <div className="text-center text-gray-500 text-sm py-8">첫 댓글을 남겨보세요!</div>
+                      ) : (
+                        sortedComments.map((comment) => renderComment(comment))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+                <div className="p-4 border-t border-gray-200/50">
+                  <div className="flex gap-2 items-center">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        placeholder="댓글을 입력하세요..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
+                        className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
+                      />
+                      {commentText && (
+                        <button
+                          onClick={() => setCommentText("")}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
+                        >
+                          <X className="w-3 h-3 text-gray-600" />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleSendComment}
+                      disabled={!commentText.trim()}
+                      className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Comments List */}
-              <div className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="space-y-4 px-6 pt-4 pb-4">
-                    {comments.length === 0 ? (
-                      <div className="text-center text-gray-500 text-sm py-8">
-                        첫 댓글을 남겨보세요!
+              {/* 데스크톱용 사이드 패널 */}
+              <div className="hidden md:flex flex-1 bg-white/50 backdrop-blur-sm border-l border-gray-200/50 flex-col overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowSortMenu(!showSortMenu)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <ArrowUpDown className="w-4 h-4 text-gray-900" />
+                      <span className="text-sm font-semibold text-gray-900">{sortOrder === "latest" ? "최신순" : "인기순"}</span>
+                    </button>
+                    {showSortMenu && (
+                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+                        <button
+                          onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                        >
+                          최신순
+                        </button>
+                        <button
+                          onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                        >
+                          인기순
+                        </button>
                       </div>
-                    ) : (
-                      sortedComments.map((comment) => renderComment(comment))
                     )}
                   </div>
-                </ScrollArea>
-              </div>
-
-              {/* Comment Input - 일반 댓글 작성용 (항상 표시) */}
-              <div className="p-4 border-t border-gray-200/50">
-                <div className="flex gap-2 items-center">
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      placeholder="댓글을 입력하세요..."
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          handleSendComment();
-                        }
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "0.5rem 0",
-                        paddingRight: commentText ? "2.5rem" : "0.5rem",
-                        fontSize: "0.875rem",
-                        background: "transparent",
-                        border: "none",
-                        borderBottom: "2px solid #d1d5db",
-                        outline: "none",
-                        transition: "border-color 0.2s, padding-right 0.2s",
-                      }}
-                      onFocus={(e) =>
-                        (e.target.style.borderBottomColor = "#C93831")
-                      }
-                      onBlur={(e) =>
-                        (e.target.style.borderBottomColor = "#d1d5db")
-                      }
-                    />
-                    {commentText && (
-                      <button
-                        onClick={() => setCommentText("")}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors cursor-pointer"
-                      >
-                        <X className="w-3 h-3 text-gray-600" />
-                      </button>
-                    )}
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <ScrollArea className="h-full">
+                    <div className="space-y-4 px-6 pt-4 pb-4">
+                      {comments.length === 0 ? (
+                        <div className="text-center text-gray-500 text-sm py-8">첫 댓글을 남겨보세요!</div>
+                      ) : (
+                        sortedComments.map((comment) => renderComment(comment))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+                <div className="p-4 border-t border-gray-200/50">
+                  <div className="flex gap-2 items-center">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        placeholder="댓글을 입력하세요..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
+                        className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
+                      />
+                      {commentText && (
+                        <button
+                          onClick={() => setCommentText("")}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
+                        >
+                          <X className="w-3 h-3 text-gray-600" />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleSendComment}
+                      disabled={!commentText.trim()}
+                      className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={handleSendComment}
-                    disabled={!commentText.trim()}
-                    className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </DialogContent>

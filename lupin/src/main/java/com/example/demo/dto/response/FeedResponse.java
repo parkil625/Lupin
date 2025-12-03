@@ -24,6 +24,7 @@ public class FeedResponse {
     private List<String> images;
     private Long likes;
     private Long comments;
+    private Boolean isLiked;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -42,6 +43,28 @@ public class FeedResponse {
                         .collect(Collectors.toList()))
                 .likes(likeCount)
                 .comments(commentCount)
+                .isLiked(false)
+                .createdAt(feed.getCreatedAt())
+                .updatedAt(feed.getUpdatedAt())
+                .build();
+    }
+
+    public static FeedResponse from(Feed feed, long likeCount, long commentCount, boolean isLiked) {
+        return FeedResponse.builder()
+                .id(feed.getId())
+                .activity(feed.getActivity())
+                .content(feed.getContent())
+                .writerName(feed.getWriter().getName())
+                .writerId(feed.getWriter().getId())
+                .writerAvatar(feed.getWriter().getAvatar())
+                .points(feed.getPoints())
+                .calories(feed.getCalories())
+                .images(feed.getImages().stream()
+                        .map(FeedImage::getS3Key)
+                        .collect(Collectors.toList()))
+                .likes(likeCount)
+                .comments(commentCount)
+                .isLiked(isLiked)
                 .createdAt(feed.getCreatedAt())
                 .updatedAt(feed.getUpdatedAt())
                 .build();

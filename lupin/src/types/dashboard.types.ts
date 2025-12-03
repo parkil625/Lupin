@@ -17,6 +17,7 @@ export interface Feed {
   calories?: number;
   createdAt: string;
   updatedAt?: string;
+  isLiked?: boolean;
   // 프론트엔드 전용 (API 응답에서 계산)
   time?: string;
   author?: string; // writerName alias (하위호환)

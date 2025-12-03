@@ -83,7 +83,7 @@ public class FeedController extends BaseController {
         User user = getCurrentUser(userDetails);
         Slice<Feed> feeds = feedService.getHomeFeeds(user, page, size);
         return ResponseEntity.ok(Map.of(
-                "content", feeds.getContent().stream().map(this::toFeedResponse).toList(),
+                "content", feeds.getContent().stream().map(feed -> toFeedResponse(feed, user)).toList(),
                 "hasNext", feeds.hasNext()
         ));
     }
@@ -97,7 +97,7 @@ public class FeedController extends BaseController {
         User user = getCurrentUser(userDetails);
         Slice<Feed> feeds = feedService.getMyFeeds(user, page, size);
         return ResponseEntity.ok(Map.of(
-                "content", feeds.getContent().stream().map(this::toFeedResponse).toList(),
+                "content", feeds.getContent().stream().map(feed -> toFeedResponse(feed, user)).toList(),
                 "hasNext", feeds.hasNext()
         ));
     }
@@ -144,5 +144,12 @@ public class FeedController extends BaseController {
         long likeCount = feedLikeRepository.countByFeed(feed);
         long commentCount = commentRepository.countByFeed(feed);
         return FeedResponse.from(feed, likeCount, commentCount);
+    }
+
+    private FeedResponse toFeedResponse(Feed feed, User currentUser) {
+        long likeCount = feedLikeRepository.countByFeed(feed);
+        long commentCount = commentRepository.countByFeed(feed);
+        boolean isLiked = currentUser != null && feedLikeRepository.existsByUserAndFeed(currentUser, feed);
+        return FeedResponse.from(feed, likeCount, commentCount, isLiked);
     }
 }

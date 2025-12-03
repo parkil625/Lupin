@@ -152,7 +152,7 @@ class CommentServiceTest {
                 .content("테스트 댓글")
                 .build();
 
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(commentRepository.findByIdWithDetails(commentId)).willReturn(Optional.of(comment));
 
         // when
         Comment result = commentService.getComment(commentId);
@@ -160,7 +160,7 @@ class CommentServiceTest {
         // then
         assertThat(result.getId()).isEqualTo(commentId);
         assertThat(result.getContent()).isEqualTo("테스트 댓글");
-        verify(commentRepository).findById(commentId);
+        verify(commentRepository).findByIdWithDetails(commentId);
     }
 
     @Test
@@ -168,7 +168,7 @@ class CommentServiceTest {
     void getCommentWithNonExistentIdThrowsException() {
         // given
         Long commentId = 999L;
-        given(commentRepository.findById(commentId)).willReturn(Optional.empty());
+        given(commentRepository.findByIdWithDetails(commentId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> commentService.getComment(commentId))

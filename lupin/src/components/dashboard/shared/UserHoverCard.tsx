@@ -61,7 +61,7 @@ export function UserHoverCard({
         <div className={className}>
           <Avatar className={`${sizeClasses[size]} border-2 border-white shadow-lg cursor-pointer`}>
             {avatarUrl ? (
-              <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+              <img src={avatarUrl} alt={name} className="w-full h-full object-cover" crossOrigin="anonymous" />
             ) : (
               <AvatarFallback className="bg-white">
                 <User className={`${iconSizes[size]} text-gray-400`} />
@@ -74,7 +74,7 @@ export function UserHoverCard({
         <div className="flex gap-4">
           <Avatar className="w-14 h-14 border-2 border-white shadow-lg bg-white">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+              <img src={avatarUrl} alt={name} className="w-full h-full object-cover" crossOrigin="anonymous" />
             ) : (
               <AvatarFallback className="bg-white">
                 <User className="w-7 h-7 text-gray-400" />

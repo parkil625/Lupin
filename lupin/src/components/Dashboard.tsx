@@ -37,7 +37,7 @@ import EditFeedDialog from "./dashboard/dialogs/EditFeedDialog";
 import CreateFeedDialog from "./dashboard/dialogs/CreateFeedDialog";
 import DoctorChatPage from "./dashboard/chat/DoctorChatPage";
 import CreatePage from "./dashboard/create/CreatePage";
-import MemberProfilePage from "./dashboard/profile/MemberProfilePage";
+import ProfilePage from "./dashboard/profile/ProfilePage";
 import {
   Feed,
   Prescription,
@@ -47,6 +47,7 @@ import {
 } from "@/types/dashboard.types";
 import { feedApi, notificationApi, commentApi, userApi } from "@/api";
 import { useFeedStore, mapBackendFeed } from "@/store/useFeedStore";
+import { useNotificationSse } from "@/hooks/useNotificationSse";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -155,6 +156,17 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>(
     []
   );
+
+  // SSE로 실시간 알림 수신
+  useNotificationSse({
+    onNotificationReceived: (notification) => {
+      setNotifications((prev) => [notification, ...prev]);
+      toast.info(notification.title, {
+        description: notification.content || undefined,
+      });
+    },
+  });
+
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [targetCommentId, setTargetCommentId] = useState<number | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -523,7 +535,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           />
         )}
         {selectedNav === "profile" && (
-          <MemberProfilePage
+          <ProfilePage
             onLogout={onLogout}
             profileImage={profileImage}
             setProfileImage={setProfileImage}

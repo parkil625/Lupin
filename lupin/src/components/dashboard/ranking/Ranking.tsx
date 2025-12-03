@@ -67,8 +67,8 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
       try {
         setLoading(true);
 
-        // Top 10 사용자 조회
-        const topUsersResponse = await userApi.getTopUsersByPoints(10);
+        // 전체 랭킹 사용자 조회 (50명)
+        const topUsersResponse = await userApi.getTopUsersByPoints(50);
         const topUsers = topUsersResponse.map((user: { name?: string; points?: number; monthlyLikes?: number; profileImage?: string; department?: string; activeDays?: number; avgScore?: number }, index: number) => ({
           rank: index + 1,
           name: user.name || "이름 없음",

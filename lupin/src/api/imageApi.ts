@@ -43,6 +43,6 @@ export const imageApi = {
   },
 
   getImageUrl: (s3Key: string) => {
-    return `https://lupin-images.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
+    return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${s3Key}`;
   },
 };

@@ -168,6 +168,26 @@ export function FeedDetailContent({
         );
 
         setComments(commentsWithReplies);
+
+        // commentLikes 상태 초기화 (likeCount, isLiked 반영)
+        const likesState: Record<number, { liked: boolean; count: number }> = {};
+        commentsWithReplies.forEach((comment) => {
+          likesState[comment.id] = {
+            liked: comment.isLiked || false,
+            count: comment.likeCount || 0,
+          };
+          // 답글의 좋아요 상태도 초기화
+          if (comment.replies) {
+            comment.replies.forEach((reply: { id: number; isLiked?: boolean; likeCount?: number }) => {
+              likesState[reply.id] = {
+                liked: reply.isLiked || false,
+                count: reply.likeCount || 0,
+              };
+            });
+          }
+        });
+        setCommentLikes(likesState);
+
         if (targetCommentId) setShowComments(true);
       } catch (error) {
         console.error("댓글 로드 실패:", error);
@@ -177,6 +197,54 @@ export function FeedDetailContent({
 
     fetchComments();
   }, [feed, targetCommentId]);
+
+  // targetCommentId가 있으면 해당 댓글로 스크롤 및 하이라이트
+  useEffect(() => {
+    if (targetCommentId && comments.length > 0 && showComments) {
+      // targetCommentId가 답글인지 확인하고, 답글이면 부모 댓글 펼치기
+      let parentIdToExpand: number | null = null;
+      for (const comment of comments) {
+        // 최상위 댓글인지 확인
+        if (comment.id === targetCommentId) {
+          break; // 최상위 댓글이면 펼칠 필요 없음
+        }
+        // 답글인지 확인
+        if (comment.replies) {
+          const reply = comment.replies.find(r => r.id === targetCommentId);
+          if (reply) {
+            parentIdToExpand = comment.id;
+            break;
+          }
+        }
+      }
+
+      // 부모 댓글이 접혀있으면 펼치기
+      if (parentIdToExpand && collapsedComments.has(parentIdToExpand)) {
+        setCollapsedComments(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(parentIdToExpand);
+          return newSet;
+        });
+      }
+
+      // DOM 업데이트 후 스크롤
+      setTimeout(() => {
+        const commentElement = document.getElementById(`comment-${targetCommentId}`);
+        if (commentElement) {
+          commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // 하이라이트 효과 (3초)
+          commentElement.style.backgroundColor = '#fef3c7';
+          commentElement.style.borderRadius = '8px';
+          commentElement.style.padding = '8px';
+          setTimeout(() => {
+            commentElement.style.backgroundColor = '';
+            commentElement.style.borderRadius = '';
+            commentElement.style.padding = '';
+          }, 3000);
+        }
+      }, 300);
+    }
+  }, [targetCommentId, comments, showComments, collapsedComments]);
 
   // 댓글 전송
   const handleSendComment = async () => {

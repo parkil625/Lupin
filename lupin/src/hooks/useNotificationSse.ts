@@ -12,6 +12,13 @@ export const useNotificationSse = ({
 }: UseNotificationSseProps) => {
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 콜백을 ref로 저장하여 의존성 문제 해결
+  const onNotificationReceivedRef = useRef(onNotificationReceived);
+
+  // 콜백이 변경되면 ref 업데이트 (리렌더링 유발 없음)
+  useEffect(() => {
+    onNotificationReceivedRef.current = onNotificationReceived;
+  }, [onNotificationReceived]);
 
   const connect = useCallback(() => {
     if (!enabled) return;
@@ -45,7 +52,7 @@ export const useNotificationSse = ({
       try {
         const notification: Notification = JSON.parse(event.data);
         console.log('[SSE] 알림 수신:', notification);
-        onNotificationReceived(notification);
+        onNotificationReceivedRef.current(notification);
       } catch (error) {
         console.error('[SSE] 알림 파싱 에러:', error);
       }
@@ -62,7 +69,7 @@ export const useNotificationSse = ({
         connect();
       }, 5000);
     };
-  }, [enabled, onNotificationReceived]);
+  }, [enabled]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

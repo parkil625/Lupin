@@ -6,6 +6,9 @@ import com.example.demo.domain.entity.AuctionItem;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
+import com.example.demo.dto.response.AuctionStatusResponse;
+import com.example.demo.dto.response.OngoingAuctionResponse;
+import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
 import com.example.demo.repository.UserRepository;
@@ -21,6 +24,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -285,23 +291,75 @@ class AuctionServiceTest {
         given(auctionRepository.findFirstWithItemByStatus(AuctionStatus.ACTIVE)).willReturn(Optional.of(auction));
 
         //when
-        auctionService.getOngoingAuctionWithItem();
+        OngoingAuctionResponse response = auctionService.getOngoingAuctionWithItem();
+
+        //then
+        assertThat(response.auctionId()).isEqualTo(auction.getId());
+        assertThat(response.item().itemName()).isEqualTo(auction.getAuctionItem().getItemName());
 
     }
-//    @Test
-//    void 예정된_경매정보와_경매물품조회_처음페이지입장시(){
-//
-//    }
-//
-//    @Test
-//    void 현재진행중인_경매가_없다면_null또는_예외처리발생(){
-//
-//    }
-//
-//    @Test
-//    void 현재진행중인_경매정보_가지고오기_업데이트된내용(){
-//
-//    }
+    @Test
+    void 예정된_경매정보와_경매물품조회_처음페이지입장시(){
+        //given
+        Auction auction1 = createScheduledAuction2(1L);
+        AuctionItem item1 = createAuctionItem(auction1);
+        ReflectionTestUtils.setField(auction1, "auctionItem", item1);
+
+        Auction auction2 = createScheduledAuction2(2L);
+        AuctionItem item2 = createAuctionItem(auction2);
+        ReflectionTestUtils.setField(auction2, "auctionItem", item2);
+
+        given(auctionRepository.findAllByStatusOrderByStartTimeAscWithItem(AuctionStatus.SCHEDULED))
+                .willReturn(List.of(auction1, auction2));
+
+        //when
+        List<ScheduledAuctionResponse> response = auctionService.scheduledAuctionWithItem();
+
+        //then
+        assertThat(response).hasSize(2);
+
+        assertThat(response.get(0).auctionId()).isEqualTo(1L);
+        assertThat(response.get(0).item().itemName()).isEqualTo(item1.getItemName());
+
+        assertThat(response.get(1).auctionId()).isEqualTo(2L);
+        assertThat(response.get(1).item().itemName()).isEqualTo(item2.getItemName());
+
+    }
+
+    @Test
+    void 현재진행중인_경매정보_가지고오기_업데이트된내용(){
+
+        //given
+        AuctionStatusResponse auction = new AuctionStatusResponse(
+                1L,                 // auctionId
+                1000L,              // currentPrice
+                "테스트유저",         // winnerName
+                true,               // overtimeStarted
+                LocalDateTime.now().plusSeconds(30), // overtimeEndTime
+                5                   // totalBids
+        );
+
+        given(auctionRepository.findAuctionStatus()).willReturn(Optional.of(auction));
+
+        //when
+        AuctionStatusResponse response = auctionService.getRealtimeStatus();
+
+        //then
+        assertThat(response).isEqualTo(auction);
+
+    }
+
+    @Test
+    @DisplayName("진행중인 경매가 없으면 예외가 발생한다")
+    void getRealtimeStatus_NotFound() {
+        // given
+        given(auctionRepository.findAuctionStatus()).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> auctionService.getRealtimeStatus())
+                .isInstanceOf(IllegalStateException.class) // 혹은 정의하신 CustomException
+                .hasMessage("진행 중인 경매가 없습니다.");
+    }
 //
 //
 //    @Test
@@ -309,13 +367,6 @@ class AuctionServiceTest {
 //
 //    }
 //
-//    @Test
-//    void 입찰내역조회(){
-//
-//    }
-
-
-
 
 
 
@@ -346,6 +397,18 @@ class AuctionServiceTest {
                 .build();
     }
 
+    private Auction createScheduledAuction2(Long id) {
+        return Auction.builder()
+                .id(id)
+                .status(AuctionStatus.SCHEDULED)
+                .startTime(LocalDateTime.now().plusMinutes(10))
+                .overtimeStarted(false)
+                .currentPrice(0L)
+                .regularEndTime(LocalDateTime.now().plusMinutes(20))
+                .build();
+
+    }
+
     private Auction createEndedAuction(){
         return Auction.builder()
                 .status(AuctionStatus.ENDED)
@@ -373,6 +436,8 @@ class AuctionServiceTest {
                 .auction(auction)
                 .build();
     }
+
+
 
 
     private LocalDateTime createLocalDateNow(){

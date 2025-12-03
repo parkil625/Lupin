@@ -81,13 +81,13 @@ function CommentPanel({ feedId }: { feedId: number }) {
                 ...reply,
                 author: reply.writerName || "알 수 없음",
                 avatar: (reply.writerName || "?").charAt(0),
-                time: getRelativeTime(reply.createdAt),
+                time: getRelativeTime(reply.createdAt || new Date().toISOString()),
               }));
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
                 avatar: (comment.writerName || "?").charAt(0),
-                time: getRelativeTime(comment.createdAt),
+                time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies,
               };
             } catch {
@@ -95,7 +95,7 @@ function CommentPanel({ feedId }: { feedId: number }) {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
                 avatar: (comment.writerName || "?").charAt(0),
-                time: getRelativeTime(comment.createdAt),
+                time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: [],
               };
             }

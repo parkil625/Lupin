@@ -49,13 +49,13 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                 ...reply,
                 author: reply.writerName,
                 avatar: reply.writerAvatar || null,
-                time: getRelativeTime(reply.createdAt),
+                time: getRelativeTime(reply.createdAt || new Date().toISOString()),
               }));
               return {
                 ...comment,
                 author: comment.writerName,
                 avatar: comment.writerAvatar || null,
-                time: getRelativeTime(comment.createdAt),
+                time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: formattedReplies,
               };
             } catch {
@@ -63,7 +63,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                 ...comment,
                 author: comment.writerName,
                 avatar: comment.writerAvatar || null,
-                time: getRelativeTime(comment.createdAt),
+                time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: [],
               };
             }

@@ -91,6 +91,7 @@ export function FeedCard({
                   src={feed.images[currentImageIndex] || feed.images[0]}
                   alt={feed.activity}
                   className="w-full h-full object-cover"
+                  crossOrigin="anonymous"
                 />
 
                 {/* 이미지 네비게이션 */}

@@ -34,6 +34,13 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
+  // 아바타 URL 생성 헬퍼
+  const getAvatarUrl = (avatarUrl?: string | null): string | undefined => {
+    if (!avatarUrl) return undefined;
+    if (avatarUrl.startsWith("http")) return avatarUrl;
+    return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+  };
+
   // 댓글 로드
   useEffect(() => {
     const fetchComments = async () => {
@@ -48,13 +55,13 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
               const formattedReplies = (replies || []).map((reply: { writerName?: string; writerAvatar?: string; createdAt?: string }) => ({
                 ...reply,
                 author: reply.writerName,
-                avatar: reply.writerAvatar || null,
+                avatar: getAvatarUrl(reply.writerAvatar),
                 time: getRelativeTime(reply.createdAt || new Date().toISOString()),
               }));
               return {
                 ...comment,
                 author: comment.writerName,
-                avatar: comment.writerAvatar || null,
+                avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: formattedReplies,
               };
@@ -62,7 +69,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
               return {
                 ...comment,
                 author: comment.writerName,
-                avatar: comment.writerAvatar || null,
+                avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: [],
               };
@@ -94,7 +101,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
       const newComment: Comment = {
         id: response.id,
         author: response.writerName || currentUserName,
-        avatar: response.writerAvatar || null,
+        avatar: getAvatarUrl(response.writerAvatar),
         content: response.content,
         time: "방금 전",
         replies: [],
@@ -122,7 +129,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
       const newReply: Comment = {
         id: response.id,
         author: response.writerName || currentUserName,
-        avatar: response.writerAvatar || null,
+        avatar: getAvatarUrl(response.writerAvatar),
         content: response.content,
         time: "방금 전",
         parentId: replyingTo,

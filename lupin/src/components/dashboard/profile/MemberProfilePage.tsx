@@ -315,7 +315,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                                     <div className="relative w-full h-full">
                                         <Avatar className="w-full h-full border-4 border-white shadow-xl">
                                             {profileImage ? (
-                                                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                                             ) : (
                                                 <AvatarFallback className="bg-white">
                                                     <User className="w-10 h-10 md:w-16 md:h-16 text-gray-400" />

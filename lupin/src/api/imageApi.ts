@@ -10,6 +10,24 @@ export const imageApi = {
     return response.data;
   },
 
+  uploadProfileImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await apiClient.post('/images/upload/profile', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  uploadFeedImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await apiClient.post('/images/upload/feed', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
   uploadImages: async (files: File[]) => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));

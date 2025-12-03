@@ -21,6 +21,10 @@ public class ImageService {
     private String bucket;
 
     public String uploadImage(MultipartFile file) throws IOException {
+        return uploadImage(file, null);
+    }
+
+    public String uploadImage(MultipartFile file, String prefix) throws IOException {
         String originalFileName = file.getOriginalFilename();
         // 확장자 추출
         String extension = "";
@@ -31,6 +35,11 @@ public class ImageService {
         // 고유한 파일명 생성 (UUID)
         String fileName = UUID.randomUUID().toString() + extension;
 
+        // prefix가 있으면 폴더 경로 추가
+        if (prefix != null && !prefix.isEmpty()) {
+            fileName = prefix + "/" + fileName;
+        }
+
         // S3에 업로드
         var resource = s3Template.upload(bucket, fileName, file.getInputStream());
 
@@ -38,9 +47,13 @@ public class ImageService {
     }
 
     public List<String> uploadImages(List<MultipartFile> files) throws IOException {
+        return uploadImages(files, null);
+    }
+
+    public List<String> uploadImages(List<MultipartFile> files, String prefix) throws IOException {
         List<String> urls = new ArrayList<>();
         for (MultipartFile file : files) {
-            urls.add(uploadImage(file));
+            urls.add(uploadImage(file, prefix));
         }
         return urls;
     }

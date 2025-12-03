@@ -18,7 +18,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.writer LEFT JOIN FETCH c.feed LEFT JOIN FETCH c.parent WHERE c.id = :id")
     Optional<Comment> findByIdWithDetails(@Param("id") Long id);
 
-    @EntityGraph(attributePaths = {"writer"})
+    @EntityGraph(attributePaths = {"writer", "feed"})
     List<Comment> findByFeedOrderByIdDesc(Feed feed);
 
     @Modifying
@@ -29,7 +29,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("DELETE FROM Comment c WHERE c.feed = :feed AND c.parent IS NULL")
     void deleteParentCommentsByFeed(@Param("feed") Feed feed);
 
-    @EntityGraph(attributePaths = {"writer"})
+    @EntityGraph(attributePaths = {"writer", "feed"})
     List<Comment> findByParentOrderByIdAsc(Comment parent);
 
     long countByParent(Comment parent);

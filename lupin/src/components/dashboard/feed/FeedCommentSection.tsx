@@ -380,7 +380,7 @@ function CommentItem({
               className="flex items-center gap-1 hover:opacity-70 transition-opacity"
             >
               <Heart
-                className={`w-4 h-4 ${likeInfo.liked ? "fill-red-500 text-red-500" : "text-gray-600"}`}
+                className={`w-4 h-4 ${likeInfo.liked ? "fill-[#C93831] text-[#C93831]" : "text-gray-600"}`}
               />
               {likeInfo.count > 0 && (
                 <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>

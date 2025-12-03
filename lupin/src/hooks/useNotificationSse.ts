@@ -58,8 +58,9 @@ export const useNotificationSse = ({
       }
     });
 
-    eventSource.onerror = (error) => {
-      console.error('[SSE] 연결 에러:', error);
+    eventSource.onerror = () => {
+      // SSE 연결 끊김은 정상적인 동작 (서버/로드밸런서 타임아웃)
+      console.log('[SSE] 연결 끊김, 5초 후 재연결...');
       eventSource.close();
       eventSourceRef.current = null;
 

@@ -312,16 +312,14 @@ export default function FeedDetailDialogHome({
         console.log('[Highlight] 요소 검색:', `comment-${targetCommentId}`, commentElement ? '찾음' : '없음');
         if (commentElement) {
           commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 하이라이트 효과 (인라인 스타일 사용, 3초)
-          commentElement.style.backgroundColor = '#fef3c7';
-          commentElement.style.borderRadius = '8px';
-          commentElement.style.padding = '8px';
-          commentElement.style.transition = 'background-color 0.3s ease';
+          // 하이라이트 효과 (cssText로 !important 강제 적용)
+          const originalStyle = commentElement.getAttribute('style') || '';
+          commentElement.setAttribute('style',
+            'background-color: #fef3c7 !important; border-radius: 8px !important; padding: 8px !important; box-shadow: 0 0 0 2px #fbbf24 !important;'
+          );
           console.log('[Highlight] 스타일 적용 완료');
           setTimeout(() => {
-            commentElement.style.backgroundColor = '';
-            commentElement.style.borderRadius = '';
-            commentElement.style.padding = '';
+            commentElement.setAttribute('style', originalStyle);
           }, 3000);
         }
       }, 500);

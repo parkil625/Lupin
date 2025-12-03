@@ -31,4 +31,7 @@ public interface CommentLikeRepository extends JpaRepository<CommentLike, Long> 
     void deleteByFeed(@Param("feed") Feed feed);
 
     List<CommentLike> findByComment(Comment comment);
+
+    @Query("SELECT cl FROM CommentLike cl JOIN FETCH cl.comment WHERE cl.id = :id")
+    Optional<CommentLike> findByIdWithComment(@Param("id") Long id);
 }

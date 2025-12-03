@@ -7,6 +7,7 @@ import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedImageRepository;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedReportRepository;
@@ -44,6 +45,9 @@ class FeedReportServiceTest {
 
     @Mock
     private FeedImageRepository feedImageRepository;
+
+    @Mock
+    private CommentRepository commentRepository;
 
     @Mock
     private NotificationRepository notificationRepository;

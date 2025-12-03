@@ -151,7 +151,7 @@ public class CommentController extends BaseController {
 
     @GetMapping("/comment-likes/{commentLikeId}")
     public ResponseEntity<Map<String, Long>> getCommentLike(@PathVariable Long commentLikeId) {
-        return commentLikeRepository.findById(commentLikeId)
+        return commentLikeRepository.findByIdWithComment(commentLikeId)
                 .map(commentLike -> ResponseEntity.ok(Map.of("commentId", commentLike.getComment().getId())))
                 .orElse(ResponseEntity.notFound().build());
     }

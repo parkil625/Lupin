@@ -77,7 +77,7 @@ public class CommentController extends BaseController {
         List<CommentResponse> responses = comments.stream()
                 .map(comment -> {
                     long likeCount = commentLikeRepository.countByComment(comment);
-                    boolean isLiked = currentUser != null && commentLikeRepository.existsByUserAndComment(currentUser, comment);
+                    boolean isLiked = currentUser != null && commentLikeRepository.existsByUserIdAndCommentId(currentUser.getId(), comment.getId());
                     return CommentResponse.from(comment, likeCount, isLiked);
                 })
                 .toList();
@@ -112,7 +112,7 @@ public class CommentController extends BaseController {
         List<CommentResponse> responses = replies.stream()
                 .map(reply -> {
                     long likeCount = commentLikeRepository.countByComment(reply);
-                    boolean isLiked = currentUser != null && commentLikeRepository.existsByUserAndComment(currentUser, reply);
+                    boolean isLiked = currentUser != null && commentLikeRepository.existsByUserIdAndCommentId(currentUser.getId(), reply.getId());
                     return CommentResponse.from(reply, likeCount, isLiked);
                 })
                 .toList();

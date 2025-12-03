@@ -21,7 +21,7 @@ import { User, Heart } from "lucide-react";
 function HighlightTestComponent() {
   const [targetId, setTargetId] = useState<number | null>(null);
   const [open, setOpen] = useState(true);
-  const [showComments, setShowComments] = useState(true);
+  const [showComments] = useState(true);
 
   // 하이라이트 로직 (FeedDetailDialogHome과 동일)
   useEffect(() => {

@@ -270,17 +270,32 @@ export function FeedDetailContent({
     return sorted.sort((a, b) => b.id - a.id);
   }, [comments, sortOrder, commentLikes]);
 
-  const toggleCommentLike = (commentId: number) => {
-    setCommentLikes((prev) => {
-      const current = prev[commentId] || { liked: false, count: 0 };
-      return {
+  const toggleCommentLike = async (commentId: number) => {
+    const current = commentLikes[commentId] || { liked: false, count: 0 };
+    const newLiked = !current.liked;
+
+    // 낙관적 업데이트
+    setCommentLikes((prev) => ({
+      ...prev,
+      [commentId]: {
+        liked: newLiked,
+        count: newLiked ? current.count + 1 : Math.max(0, current.count - 1),
+      },
+    }));
+
+    try {
+      if (newLiked) {
+        await commentApi.likeComment(commentId);
+      } else {
+        await commentApi.unlikeComment(commentId);
+      }
+    } catch {
+      // 에러 시 롤백
+      setCommentLikes((prev) => ({
         ...prev,
-        [commentId]: {
-          liked: !current.liked,
-          count: current.liked ? Math.max(0, current.count - 1) : current.count + 1,
-        },
-      };
-    });
+        [commentId]: current,
+      }));
+    }
   };
 
   const toggleCollapse = (commentId: number) => {

@@ -152,7 +152,7 @@ export function FeedCard({
                   <Heart
                     className={`w-6 h-6 ${
                       liked
-                        ? "fill-red-500 text-red-500"
+                        ? "fill-[#C93831] text-[#C93831]"
                         : iconColor === "white"
                         ? "text-white"
                         : "text-black"

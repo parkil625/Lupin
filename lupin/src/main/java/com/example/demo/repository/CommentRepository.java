@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,7 +17,13 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @EntityGraph(attributePaths = {"writer"})
     List<Comment> findByFeedOrderByIdDesc(Feed feed);
 
-    void deleteByFeed(Feed feed);
+    @Modifying
+    @Query("DELETE FROM Comment c WHERE c.feed = :feed AND c.parent IS NOT NULL")
+    void deleteRepliesByFeed(@Param("feed") Feed feed);
+
+    @Modifying
+    @Query("DELETE FROM Comment c WHERE c.feed = :feed AND c.parent IS NULL")
+    void deleteParentCommentsByFeed(@Param("feed") Feed feed);
 
     @EntityGraph(attributePaths = {"writer"})
     List<Comment> findByParentOrderByIdAsc(Comment parent);

@@ -488,7 +488,7 @@ export default function FeedDetailDialogHome({
                     <Heart
                       className={`w-4 h-4 ${
                         likeInfo.liked
-                          ? "fill-red-500 text-red-500"
+                          ? "fill-[#C93831] text-[#C93831]"
                           : "text-gray-600"
                       }`}
                     />

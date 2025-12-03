@@ -51,6 +51,11 @@ type Story = StoryObj<typeof meta>;
  * 기본 SearchInput
  */
 export const Default: Story = {
+  args: {
+    value: '',
+    onChange: () => {},
+    placeholder: '검색...',
+  },
   render: () => {
     const [value, setValue] = useState('');
     return (
@@ -67,6 +72,11 @@ export const Default: Story = {
  * 초기값이 있는 SearchInput
  */
 export const WithInitialValue: Story = {
+  args: {
+    value: '러닝',
+    onChange: () => {},
+    placeholder: '운동 검색',
+  },
   render: () => {
     const [value, setValue] = useState('러닝');
     return (
@@ -83,6 +93,11 @@ export const WithInitialValue: Story = {
  * 자동완성 제안 기능
  */
 export const WithSuggestions: Story = {
+  args: {
+    value: '',
+    onChange: () => {},
+    placeholder: '운동 종류를 검색하세요',
+  },
   render: () => {
     const [value, setValue] = useState('');
     const workoutSuggestions = [
@@ -113,6 +128,11 @@ export const WithSuggestions: Story = {
  * 사용자 검색 예시
  */
 export const UserSearch: Story = {
+  args: {
+    value: '',
+    onChange: () => {},
+    placeholder: '이름 또는 이메일로 검색',
+  },
   render: () => {
     const [value, setValue] = useState('');
     const userSuggestions = [
@@ -140,6 +160,11 @@ export const UserSearch: Story = {
  * 진료 기록 검색 예시
  */
 export const MedicalRecordSearch: Story = {
+  args: {
+    value: '',
+    onChange: () => {},
+    placeholder: '증상을 입력하세요',
+  },
   render: () => {
     const [value, setValue] = useState('');
     const medicalSuggestions = [
@@ -171,6 +196,11 @@ export const MedicalRecordSearch: Story = {
  * 피드 검색 예시
  */
 export const FeedSearch: Story = {
+  args: {
+    value: '',
+    onChange: () => {},
+    placeholder: '피드 검색 (해시태그, 내용)',
+  },
   render: () => {
     const [value, setValue] = useState('');
 
@@ -197,6 +227,11 @@ export const FeedSearch: Story = {
  * 다양한 placeholder
  */
 export const DifferentPlaceholders: Story = {
+  args: {
+    value: '',
+    onChange: () => {},
+    placeholder: '검색...',
+  },
   render: () => {
     const [value1, setValue1] = useState('');
     const [value2, setValue2] = useState('');

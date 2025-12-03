@@ -290,7 +290,7 @@ export function FeedDetailContent({
   const handleDeleteComment = async (commentId: number) => {
     if (!confirm("댓글을 삭제하시겠습니까?")) return;
     try {
-      await commentApi.deleteComment(commentId, currentUserId);
+      await commentApi.deleteComment(commentId);
       setComments((prevComments) =>
         prevComments
           .map((c) => {
@@ -313,7 +313,7 @@ export function FeedDetailContent({
   const handleReportComment = async (commentId: number) => {
     if (commentReported[commentId]) return;
     try {
-      await reportApi.reportComment(commentId, currentUserId);
+      await reportApi.reportComment(commentId);
       setCommentReported((prev) => ({ ...prev, [commentId]: true }));
       toast.success("신고가 접수되었습니다.");
     } catch {

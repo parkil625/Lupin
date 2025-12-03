@@ -31,17 +31,19 @@ export default function NotificationPopup({
   onNotificationClick,
   onMarkAllAsRead,
 }: NotificationPopupProps) {
-  const popupRef = useRef<HTMLDivElement>(null);
+  const mobilePopupRef = useRef<HTMLDivElement>(null);
+  const desktopPopupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        popupRef.current &&
-        !popupRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      const isInsideMobile = mobilePopupRef.current?.contains(target);
+      const isInsideDesktop = desktopPopupRef.current?.contains(target);
+
+      if (!isInsideMobile && !isInsideDesktop) {
         // 클릭된 요소가 사이드바 영역인지 확인
-        const target = event.target as HTMLElement;
-        const sidebar = target.closest('[data-sidebar="true"]');
+        const targetElement = event.target as HTMLElement;
+        const sidebar = targetElement.closest('[data-sidebar="true"]');
 
         // 사이드바 클릭이면 사이드바는 유지, 아니면 사이드바도 닫기
         onClose(!sidebar);
@@ -58,7 +60,7 @@ export default function NotificationPopup({
     <>
       {/* 모바일용 전체 화면 알림 (하단 네비 제외) */}
       <div
-        ref={popupRef}
+        ref={mobilePopupRef}
         className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-40 bg-white flex flex-col"
       >
         <div className="p-4 pb-2 flex-shrink-0 flex items-center justify-between border-b">
@@ -139,6 +141,7 @@ export default function NotificationPopup({
 
       {/* 데스크톱용 팝업 */}
       <div
+        ref={desktopPopupRef}
         className="hidden md:block absolute left-0 ml-20 w-80 backdrop-blur-3xl bg-white/50 border border-white/60 shadow-2xl rounded-2xl z-50 overflow-hidden"
         style={{
           height: "544px",

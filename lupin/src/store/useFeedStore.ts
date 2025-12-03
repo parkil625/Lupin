@@ -9,25 +9,11 @@
  */
 import { create } from 'zustand';
 import { Feed } from '@/types/dashboard.types';
-import { feedApi } from '@/api';
+import { feedApi, FeedResponse } from '@/api';
 import { getRelativeTime } from '@/lib/utils';
 
-// 백엔드 피드 응답 타입
-interface BackendFeed {
-  id: number;
-  writerId: number;
-  writerName: string;
-  writerAvatar?: string;
-  activity: string;
-  points?: number;
-  content: string;
-  images?: string[];
-  likes?: number;
-  comments?: number;
-  calories?: number;
-  createdAt: string;
-  updatedAt?: string;
-}
+// BackendFeed 타입 (FeedResponse와 동일)
+type BackendFeed = FeedResponse;
 
 interface FeedState {
   // 피드 데이터
@@ -69,6 +55,9 @@ interface FeedState {
 
   // 피드 좋아요
   toggleLike: (feedId: number, liked: boolean) => void;
+
+  // 내 피드들의 아바타 업데이트 (프로필 사진 변경 시 호출)
+  updateMyFeedsAvatar: (newAvatarUrl: string | null) => void;
 }
 
 // 백엔드 응답을 프론트엔드 Feed 타입으로 변환 (export하여 다른 곳에서도 사용 가능)
@@ -116,7 +105,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     try {
       const currentUserId = parseInt(localStorage.getItem('userId') || '0');
       const response = await feedApi.getFeedsByUserId(currentUserId, 0, 100);
-      const feeds = response.content || response;
+      if (!response) return;
+      const feeds = (response.content || []).filter((f): f is FeedResponse => f !== null);
       const mappedFeeds = feeds.map(mapBackendFeed);
       set({ myFeeds: mappedFeeds });
     } catch (error) {
@@ -134,7 +124,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       const pageSize = 10;
       const currentUserId = parseInt(localStorage.getItem('userId') || '0');
       const response = await feedApi.getAllFeeds(page, pageSize, currentUserId, excludeFeedId);
-      const feeds = response.content || response;
+      if (!response) return;
+      const feeds = (response.content || []).filter((f): f is FeedResponse => f !== null);
       const mappedFeeds = feeds.map(mapBackendFeed);
 
       if (reset) {
@@ -212,6 +203,27 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1 }
           : feed
       ),
+    }));
+  },
+
+  // 내 피드들의 아바타 업데이트 (프로필 사진 변경 시 호출)
+  updateMyFeedsAvatar: (newAvatarUrl) => {
+    const currentUserId = parseInt(localStorage.getItem('userId') || '0');
+    set((state) => ({
+      myFeeds: state.myFeeds.map((feed) => ({
+        ...feed,
+        writerAvatar: newAvatarUrl || undefined,
+      })),
+      // allFeeds에서 내 피드도 업데이트
+      allFeeds: state.allFeeds.map((feed) =>
+        feed.writerId === currentUserId
+          ? { ...feed, writerAvatar: newAvatarUrl || undefined }
+          : feed
+      ),
+      // 선택된 피드가 내 피드면 업데이트
+      selectedFeed: state.selectedFeed && state.selectedFeed.writerId === currentUserId
+        ? { ...state.selectedFeed, writerAvatar: newAvatarUrl || undefined }
+        : state.selectedFeed,
     }));
   },
 }));

@@ -157,8 +157,8 @@ export default function Home({
       <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         {/* Profile Header */}
         <div className="p-4 md:p-8">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-8 mb-6 md:mb-8">
-            <Avatar className="w-24 h-24 md:w-40 md:h-40 border-4 border-white shadow-xl bg-gray-100">
+          <div className="flex flex-col items-center gap-4 mb-6 md:mb-8">
+            <Avatar className="w-[110px] h-[110px] border-4 border-white shadow-xl bg-gray-100">
               {profileImage ? (
                 <img
                   src={profileImage}
@@ -167,14 +167,14 @@ export default function Home({
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-white">
-                  <User className="w-10 h-10 md:w-20 md:h-20 text-gray-400" />
+                  <User className="w-12 h-12 text-gray-400" />
                 </div>
               )}
             </Avatar>
 
-            <div className="flex-1 text-center sm:text-left">
+            <div className="text-center">
               {isLoading ? (
-                <div className="mb-4 rounded-lg animate-pulse mx-auto sm:mx-0" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '89px', height: '36px' }} />
+                <div className="mb-4 rounded-lg animate-pulse mx-auto" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '89px', height: '36px' }} />
               ) : (
                 <h1 className="text-xl md:text-3xl font-black text-gray-900 mb-3 md:mb-4">
                   {userStats.name}
@@ -182,9 +182,9 @@ export default function Home({
               )}
 
               {isLoading ? (
-                <div className="mb-4 rounded-lg animate-pulse mx-auto sm:mx-0" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '280px', maxWidth: '100%', height: '24px' }} />
+                <div className="mb-4 rounded-lg animate-pulse mx-auto" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '280px', maxWidth: '100%', height: '24px' }} />
               ) : (
-                <div className="flex justify-center sm:justify-start gap-4 md:gap-8 mb-3 md:mb-4">
+                <div className="flex justify-center gap-4 md:gap-8 mb-3 md:mb-4">
                   <div>
                     <span className="text-sm text-gray-600 font-bold">피드 </span>
                     <span className="text-sm font-black text-[#C93831]">
@@ -209,12 +209,12 @@ export default function Home({
               )}
 
               {isLoading ? (
-                <div className="flex justify-center sm:justify-start gap-2">
+                <div className="flex justify-center gap-2">
                   <div className="rounded-md animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '28px' }} />
                   <div className="rounded-md animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '28px' }} />
                 </div>
               ) : (
-                <div className="flex justify-center sm:justify-start gap-2 flex-wrap">
+                <div className="flex justify-center gap-2 flex-wrap">
                   {userStats.has7DayStreak && (
                     <Badge className="bg-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
                       <Flame className="w-3 h-3 mr-1" />

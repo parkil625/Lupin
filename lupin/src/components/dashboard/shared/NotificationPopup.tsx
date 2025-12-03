@@ -61,6 +61,7 @@ export default function NotificationPopup({
       {/* 모바일용 전체 화면 알림 (하단 네비 제외) */}
       <div
         ref={mobilePopupRef}
+        onMouseDown={(e) => e.stopPropagation()}
         className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-40 bg-white flex flex-col"
       >
         <div className="p-4 pb-2 flex-shrink-0 flex items-center justify-between border-b">
@@ -143,6 +144,7 @@ export default function NotificationPopup({
       {/* 데스크톱용 팝업 */}
       <div
         ref={desktopPopupRef}
+        onMouseDown={(e) => e.stopPropagation()}
         className="hidden md:block absolute left-0 ml-20 w-80 backdrop-blur-3xl bg-white/50 border border-white/60 shadow-2xl rounded-2xl z-50 overflow-hidden"
         style={{
           height: "544px",

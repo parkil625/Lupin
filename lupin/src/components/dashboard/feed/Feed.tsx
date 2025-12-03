@@ -550,7 +550,7 @@ function FeedItem({
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={onLike}
             >
-              <Heart className={`w-6 h-6 ${iconColorClass} ${liked ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
+              <Heart className={`w-6 h-6 ${liked ? "fill-[#C93831] text-[#C93831]" : iconColorClass}`} />
               <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
             </button>
             <button

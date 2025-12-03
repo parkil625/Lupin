@@ -65,21 +65,13 @@ export const commentApi = {
   },
 
   likeComment: async (commentId: number) => {
-    try {
-      const response = await apiClient.post(`/comments/${commentId}/like`);
-      return response.data;
-    } catch {
-      return { success: true };
-    }
+    const response = await apiClient.post(`/comments/${commentId}/like`);
+    return response.data;
   },
 
   unlikeComment: async (commentId: number) => {
-    try {
-      const response = await apiClient.delete(`/comments/${commentId}/like`);
-      return response.data;
-    } catch {
-      return { success: true };
-    }
+    const response = await apiClient.delete(`/comments/${commentId}/like`);
+    return response.data;
   },
 
   reportComment: async (commentId: number) => {

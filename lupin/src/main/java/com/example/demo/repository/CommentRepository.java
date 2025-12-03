@@ -10,9 +10,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CommentRepository extends JpaRepository<Comment, Long> {
+
+    @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.writer LEFT JOIN FETCH c.feed LEFT JOIN FETCH c.parent WHERE c.id = :id")
+    Optional<Comment> findByIdWithDetails(@Param("id") Long id);
 
     @EntityGraph(attributePaths = {"writer"})
     List<Comment> findByFeedOrderByIdDesc(Feed feed);

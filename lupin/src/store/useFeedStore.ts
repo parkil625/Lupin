@@ -75,6 +75,7 @@ export const mapBackendFeed = (backendFeed: BackendFeed): Feed => ({
   calories: backendFeed.calories,
   createdAt: backendFeed.createdAt,
   updatedAt: backendFeed.updatedAt,
+  isLiked: backendFeed.isLiked || false,
   time: getRelativeTime(backendFeed.createdAt),
   author: backendFeed.writerName,
 });
@@ -195,12 +196,12 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     set((state) => ({
       allFeeds: state.allFeeds.map((feed) =>
         feed.id === feedId
-          ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1 }
+          ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1, isLiked: liked }
           : feed
       ),
       myFeeds: state.myFeeds.map((feed) =>
         feed.id === feedId
-          ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1 }
+          ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1, isLiked: liked }
           : feed
       ),
     }));

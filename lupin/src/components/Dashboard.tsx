@@ -151,7 +151,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(
     null
   );
-  const [feedLikes, setFeedLikes] = useState<{ [key: number]: string[] }>({});
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>(
     []
@@ -335,17 +334,12 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const setFeedImageIndex = (feedId: number, index: number) =>
     setFeedImageIndexes((prev) => ({ ...prev, [feedId]: index }));
   const handleLike = async (feedId: number) => {
-    const currentLikes = feedLikes[feedId] || [];
-    const hasLikedFeed = currentLikes.includes(userName);
-    const newLiked = !hasLikedFeed;
+    // 피드의 현재 좋아요 상태 확인
+    const feed = allFeeds.find(f => f.id === feedId) || myFeeds.find(f => f.id === feedId) || pivotFeed;
+    const currentIsLiked = feed?.isLiked || false;
+    const newLiked = !currentIsLiked;
 
     // 낙관적 업데이트
-    setFeedLikes({
-      ...feedLikes,
-      [feedId]: newLiked
-        ? [...currentLikes, userName]
-        : currentLikes.filter((name) => name !== userName),
-    });
     toggleLike(feedId, newLiked);
 
     try {
@@ -356,15 +350,13 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       }
     } catch {
       // 실패 시 롤백
-      setFeedLikes({
-        ...feedLikes,
-        [feedId]: currentLikes,
-      });
-      toggleLike(feedId, hasLikedFeed);
+      toggleLike(feedId, currentIsLiked);
     }
   };
-  const hasLiked = (feedId: number) =>
-    (feedLikes[feedId] || []).includes(userName);
+  const hasLiked = (feedId: number) => {
+    const feed = allFeeds.find(f => f.id === feedId) || myFeeds.find(f => f.id === feedId) || pivotFeed;
+    return feed?.isLiked || false;
+  };
 
   const handleEditFeed = (feed: Feed) => {
     setEditingFeed(feed);

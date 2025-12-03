@@ -16,6 +16,7 @@ export interface FeedResponse {
   calories?: number;
   createdAt: string;
   updatedAt?: string;
+  isLiked?: boolean;
 }
 
 // 페이지네이션 응답 타입
@@ -95,21 +96,13 @@ export const feedApi = {
   },
 
   likeFeed: async (feedId: number) => {
-    try {
-      const response = await apiClient.post(`/feeds/${feedId}/like`);
-      return response.data;
-    } catch {
-      return { success: true, feedId };
-    }
+    const response = await apiClient.post(`/feeds/${feedId}/like`);
+    return response.data;
   },
 
   unlikeFeed: async (feedId: number) => {
-    try {
-      const response = await apiClient.delete(`/feeds/${feedId}/like`);
-      return response.data;
-    } catch {
-      return { success: true, feedId };
-    }
+    const response = await apiClient.delete(`/feeds/${feedId}/like`);
+    return response.data;
   },
 
   canPostToday: async (_userId?: number) => {

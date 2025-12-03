@@ -162,3 +162,69 @@ export const ClosedInitially: Story = {
     },
   },
 };
+
+// 댓글 하이라이트 테스트용 래퍼
+function CommentHighlightWrapper() {
+  const [open, setOpen] = useState(true);
+  const [imageIndex, setImageIndex] = useState(0);
+  const [targetCommentId, setTargetCommentId] = useState<number | null>(null);
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <div className="mb-4 space-x-2">
+        <button
+          onClick={() => {
+            setTargetCommentId(null);
+            setOpen(false);
+            setTimeout(() => {
+              setTargetCommentId(1);
+              setOpen(true);
+            }, 100);
+          }}
+          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+        >
+          댓글 ID 1 하이라이트
+        </button>
+        <button
+          onClick={() => {
+            setTargetCommentId(null);
+            setOpen(false);
+            setTimeout(() => {
+              setTargetCommentId(2);
+              setOpen(true);
+            }, 100);
+          }}
+          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+        >
+          댓글 ID 2 하이라이트
+        </button>
+      </div>
+      <p className="text-sm text-gray-600 mb-4">
+        현재 targetCommentId: {targetCommentId ?? "없음"}
+      </p>
+      <FeedDetailDialogHome
+        feed={mockFeedWithImages}
+        open={open}
+        onOpenChange={setOpen}
+        currentImageIndex={imageIndex}
+        onPrevImage={() => setImageIndex(Math.max(0, imageIndex - 1))}
+        onNextImage={() => setImageIndex(Math.min(mockFeedWithImages.images.length - 1, imageIndex + 1))}
+        onEdit={(feed) => console.log("Edit:", feed)}
+        onDelete={(feedId) => console.log("Delete:", feedId)}
+        targetCommentId={targetCommentId}
+      />
+    </div>
+  );
+}
+
+// 댓글 하이라이트 테스트
+export const CommentHighlight: Story = {
+  render: () => <CommentHighlightWrapper />,
+  parameters: {
+    docs: {
+      description: {
+        story: "댓글 하이라이트 테스트. 버튼을 클릭하면 해당 댓글이 하이라이트됩니다. (실제 댓글이 로드되어야 동작)",
+      },
+    },
+  },
+};

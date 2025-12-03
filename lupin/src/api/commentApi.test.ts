@@ -172,12 +172,10 @@ describe("commentApi", () => {
       expect(result.liked).toBe(true);
     });
 
-    it("should return success on error", async () => {
-      vi.mocked(apiClient.post).mockRejectedValue(new Error("Error"));
+    it("should throw error on failure", async () => {
+      vi.mocked(apiClient.post).mockRejectedValue(new Error("Like failed"));
 
-      const result = await commentApi.likeComment(1);
-
-      expect(result).toEqual({ success: true });
+      await expect(commentApi.likeComment(1)).rejects.toThrow("Like failed");
     });
   });
 
@@ -192,12 +190,10 @@ describe("commentApi", () => {
       expect(result.unliked).toBe(true);
     });
 
-    it("should return success on error", async () => {
-      vi.mocked(apiClient.delete).mockRejectedValue(new Error("Error"));
+    it("should throw error on failure", async () => {
+      vi.mocked(apiClient.delete).mockRejectedValue(new Error("Unlike failed"));
 
-      const result = await commentApi.unlikeComment(1);
-
-      expect(result).toEqual({ success: true });
+      await expect(commentApi.unlikeComment(1)).rejects.toThrow("Unlike failed");
     });
   });
 

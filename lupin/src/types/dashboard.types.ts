@@ -37,6 +37,8 @@ export interface Comment {
   avgScore?: number;
   points?: number;
   isDeleted?: boolean;
+  likeCount?: number;
+  isLiked?: boolean;
 }
 
 export interface Prescription {

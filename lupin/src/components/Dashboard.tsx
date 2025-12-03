@@ -186,9 +186,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        // 임시 사용자 ID (추후 실제 사용자 ID로 교체 필요)
-        const userId = 1;
-        const response = await notificationApi.getAllNotifications(userId);
+        const response = await notificationApi.getAllNotifications();
         setNotifications(response);
       } catch (error) {
         console.error("알림 데이터 로드 실패:", error);
@@ -272,6 +270,10 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     if (!feed) {
       try {
         const response = await feedApi.getFeedById(feedId);
+        if (!response) {
+          console.error("피드를 찾을 수 없습니다:", feedId);
+          return;
+        }
         feed = mapBackendFeed(response);
         addFeedToAll(feed);
       } catch (error) {
@@ -478,6 +480,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             setShowFeedDetailInHome={setShowFeedDetailInHome}
             refreshTrigger={refreshTrigger}
             onCreateClick={() => setShowCreateDialog(true)}
+            unreadNotificationCount={notifications.filter((n) => !n.isRead).length}
+            onNotificationClick={() => setShowNotifications(true)}
           />
         )}
         {selectedNav === "feed" && (
@@ -545,17 +549,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               <span className="text-[10px] mt-1 font-medium">{item.label}</span>
             </button>
           ))}
-          {/* 알림 버튼 */}
-          <button
-            onClick={() => setShowNotifications(true)}
-            className="flex flex-col items-center justify-center flex-1 py-2 text-gray-500 relative"
-          >
-            <Bell className="w-5 h-5" strokeWidth={2} />
-            {notifications.filter((n) => !n.isRead).length > 0 && (
-              <div className="absolute top-1.5 right-1/4 w-2 h-2 bg-red-500 rounded-full"></div>
-            )}
-            <span className="text-[10px] mt-1 font-medium">알림</span>
-          </button>
           <button
             onClick={() => handleNavSelect("profile")}
             className={`flex flex-col items-center justify-center flex-1 py-2 ${

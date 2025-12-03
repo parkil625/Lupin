@@ -165,7 +165,9 @@ export default function FeedDetailDialogHome({
 
       try {
         const response = await commentApi.getCommentsByFeedId(feed.id, 0, 100);
-        const commentList = response.content || response;
+        const allComments = response.content || response;
+        // parentId가 있는 댓글은 답글이므로 최상위 목록에서 제외
+        const commentList = allComments.filter((c: BackendComment & { parentId?: number }) => !c.parentId);
 
         // 아바타 URL 변환 헬퍼 (S3 키 또는 전체 URL 처리)
         const getAvatarUrl = (avatarUrl?: string): string => {

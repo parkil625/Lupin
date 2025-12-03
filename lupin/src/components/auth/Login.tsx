@@ -37,8 +37,8 @@ interface GoogleInitConfig {
 interface GoogleButtonConfig {
   theme: string;
   size: string;
-  type: string;
-  shape: string;
+  type?: string;
+  shape?: string;
 }
 
 interface GoogleCredentialResponse {

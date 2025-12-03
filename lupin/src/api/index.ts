@@ -2,7 +2,7 @@
  * API 모듈 통합 export
  */
 export * from './authApi';
-export { feedApi } from './feedApi';
+export { feedApi, type FeedResponse, type PagedFeedResponse } from './feedApi';
 export { commentApi } from './commentApi';
 export { userApi } from './userApi';
 export { notificationApi } from './notificationApi';

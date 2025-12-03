@@ -38,31 +38,9 @@ import { toast } from "sonner";
 import { imageApi } from "@/api/imageApi";
 import { oauthApi, OAuthConnection } from "@/api/oauthApi";
 import { userApi } from "@/api/userApi";
+import { useFeedStore } from "@/store/useFeedStore";
 
-// 구글 타입을 위한 선언
-interface GoogleInitConfig {
-    client_id: string;
-    callback: (response: { credential: string }) => void;
-}
-
-interface GoogleButtonConfig {
-    theme: string;
-    size: string;
-    type?: string;
-}
-
-declare global {
-    interface Window {
-        google?: {
-            accounts: {
-                id: {
-                    initialize: (config: GoogleInitConfig) => void;
-                    renderButton: (element: HTMLElement, config: GoogleButtonConfig) => void;
-                };
-            };
-        };
-    }
-}
+// 구글 OAuth 타입 (Login.tsx에서 global Window에 선언됨)
 
 // Zod 스키마 정의
 const profileSchema = z.object({
@@ -109,6 +87,9 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const profileImageInputRef = useRef<HTMLInputElement>(null);
+
+    // 피드 스토어에서 아바타 업데이트 함수 가져오기
+    const updateMyFeedsAvatar = useFeedStore((state) => state.updateMyFeedsAvatar);
 
     // OAuth 연동 관련 상태
     const [oauthConnections, setOauthConnections] = useState<OAuthConnection[]>([]);
@@ -251,7 +232,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                 await imageApi.deleteImage(profileImage).catch(() => { });
             }
 
-            const s3Url = await imageApi.uploadImage(file, 'profile');
+            const s3Url = await imageApi.uploadImage(file);
 
             // DB에 아바타 URL 저장
             const userId = parseInt(localStorage.getItem("userId") || "0");
@@ -260,6 +241,8 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
             }
 
             setProfileImage(s3Url);
+            // 피드 스토어의 내 피드들 아바타도 업데이트
+            updateMyFeedsAvatar(s3Url);
             toast.success("프로필 사진이 변경되었습니다!");
         } catch (error) {
             console.error("프로필 이미지 업로드 실패:", error);
@@ -285,6 +268,8 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
             }
 
             setProfileImage(null);
+            // 피드 스토어의 내 피드들 아바타도 제거
+            updateMyFeedsAvatar(null);
             if (profileImageInputRef.current) {
                 profileImageInputRef.current.value = '';
             }

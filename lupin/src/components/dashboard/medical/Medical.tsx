@@ -212,27 +212,13 @@ MedicalProps) {
     [currentUserId]
   );
 
-  // 읽음 알림 콜백
-  const handleReadNotification = useCallback(
-    (notification: { userId: number; roomId: string }) => {
-      // 본인의 읽음 알림은 무시 (상대방이 읽었을 때만 처리)
-      if (notification.userId === currentUserId) {
-        return;
-      }
-      console.log("상대방이 메시지를 읽었습니다:", notification);
-    },
-    [currentUserId]
-  );
-
   const {
     isConnected,
     sendMessage: sendWebSocketMessage,
-    markAsRead,
   } = useWebSocket({
     roomId,
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
-    onReadNotification: handleReadNotification,
   });
 
   // 자동 스크롤
@@ -247,9 +233,9 @@ MedicalProps) {
         const loadedMessages = await chatApi.getAllMessagesByRoomId(roomId);
         setMessages(loadedMessages);
 
-        // 메시지 읽음 처리
+        // 메시지 읽음 처리 (REST API 사용)
         if (isConnected) {
-          markAsRead();
+          await chatApi.markAsRead(roomId, currentUserId);
         }
       } catch (error) {
         console.error("메시지 로드 실패:", error);
@@ -258,7 +244,7 @@ MedicalProps) {
 
     loadMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+  }, [roomId, isConnected, currentUserId]);
 
   const handleSendMessage = () => {
     if (!chatMessage.trim()) return;

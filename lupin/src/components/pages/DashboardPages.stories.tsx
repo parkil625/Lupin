@@ -14,7 +14,7 @@ import CreateFeedDialog from '../dashboard/dialogs/CreateFeedDialog';
 import EditFeedDialog from '../dashboard/dialogs/EditFeedDialog';
 import { SearchInput } from '../molecules';
 import { Home as HomeIcon, Video, Trophy, Gavel, Calendar, Bell, Heart, MessageCircle, User, Sparkles } from 'lucide-react';
-import { Feed, Notification, Comment } from '@/types/dashboard.types';
+import { Feed, Notification } from '@/types/dashboard.types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,63 +51,6 @@ const mockAvatars: Record<string, string> = {
   '강스포츠': 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop',
   '신헬시': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
   '박선일': 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop',
-};
-
-// Mock 댓글 데이터 (피드별) - 추후 스토리에서 사용 예정
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _mockFeedComments: Record<number, Comment[]> = {
-  1: [
-    {
-      id: 101,
-      author: '최건강',
-      avatar: '최',
-      profileImage: mockAvatars['최건강'],
-      content: '오늘도 열심히 하셨네요! 대단해요',
-      time: '30분 전',
-      replies: [
-        {
-          id: 1011,
-          author: '김운동',
-          avatar: '김',
-          profileImage: mockAvatars['김운동'],
-          content: '감사합니다! 화이팅!',
-          time: '25분 전',
-          replies: [],
-        },
-      ],
-    },
-    {
-      id: 102,
-      author: '정활력',
-      avatar: '정',
-      profileImage: mockAvatars['정활력'],
-      content: '저도 같이 뛰고 싶어요!',
-      time: '1시간 전',
-      replies: [],
-    },
-  ],
-  2: [
-    {
-      id: 201,
-      author: '한체력',
-      avatar: '한',
-      profileImage: mockAvatars['한체력'],
-      content: '웨이트 루틴 공유해주세요!',
-      time: '2시간 전',
-      replies: [],
-    },
-  ],
-  3: [
-    {
-      id: 301,
-      author: '오근육',
-      avatar: '오',
-      profileImage: mockAvatars['오근육'],
-      content: '수영 잘하시네요!',
-      time: '3시간 전',
-      replies: [],
-    },
-  ],
 };
 
 // Mock 피드 데이터
@@ -156,77 +99,22 @@ const mockFeeds: Feed[] = [
   },
 ];
 
-// Mock 댓글 데이터 - 추후 스토리에서 사용 예정
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _mockComments: Comment[] = [
-  {
-    id: 1,
-    author: '최건강',
-    avatar: mockAvatars['최건강'],
-    content: '오늘도 열심히 하셨네요! 대단해요 👏',
-    time: '30분 전',
-    replies: [
-      {
-        id: 11,
-        author: '김운동',
-        avatar: mockAvatars['김운동'],
-        content: '감사합니다! 화이팅!',
-        time: '25분 전',
-        replies: [],
-      },
-    ],
-  },
-  {
-    id: 2,
-    author: '정활력',
-    avatar: mockAvatars['정활력'],
-    content: '저도 같이 뛰고 싶어요!',
-    time: '1시간 전',
-    replies: [
-      {
-        id: 21,
-        author: '김운동',
-        avatar: mockAvatars['김운동'],
-        content: '다음에 같이 뛰어요! 🏃‍♂️',
-        time: '50분 전',
-        replies: [],
-      },
-      {
-        id: 22,
-        author: '이헬스',
-        avatar: mockAvatars['이헬스'],
-        content: '저도 끼워주세요~',
-        time: '45분 전',
-        replies: [],
-      },
-    ],
-  },
-  {
-    id: 3,
-    author: '한체력',
-    avatar: mockAvatars['한체력'],
-    content: '꾸준함이 중요하죠! 응원합니다!',
-    time: '2시간 전',
-    replies: [],
-  },
-];
-
 // Mock 알림 데이터
 const mockNotifications: Notification[] = [
   {
     id: 1,
-    type: 'like',
+    type: 'FEED_LIKE',
     title: '좋아요',
     content: '김운동님이 회원님의 피드를 좋아합니다.',
-    read: false,
+    isRead: false,
     createdAt: '10분 전',
   },
   {
     id: 2,
-    type: 'comment',
+    type: 'COMMENT',
     title: '댓글',
     content: '이헬스님이 댓글을 남겼습니다: "멋져요!"',
-    read: false,
+    isRead: false,
     createdAt: '30분 전',
   },
 ];
@@ -293,7 +181,7 @@ export const HomePage: Story = {
             setFeedImageIndex(0);
             setShowFeedDetail(true);
           }}
-          setFeedImageIndex={(feedId, index) => setFeedImageIndex(index)}
+          setFeedImageIndex={(_feedId, index) => setFeedImageIndex(index)}
           setShowFeedDetailInHome={setShowFeedDetail}
           onCreateClick={() => setShowCreateDialog(true)}
           refreshTrigger={0}
@@ -315,7 +203,7 @@ export const HomePage: Story = {
         <CreateFeedDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
-          onCreate={(images, content, workoutType, _startImage, _endImage) => {
+          onCreate={(images, _content, workoutType, _startImage, _endImage) => {
             alert(`피드 생성!\n운동 종류: ${workoutType}\n이미지 수: ${images.length}`);
             setShowCreateDialog(false);
           }}
@@ -326,7 +214,7 @@ export const HomePage: Story = {
           feed={editingFeed}
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
-          onSave={(feedId, images, content, workoutType, _startImage, _endImage) => {
+          onSave={(feedId, _images, _content, workoutType, _startImage, _endImage) => {
             alert(`피드 수정 완료!\nID: ${feedId}\n운동 종류: ${workoutType}`);
             setShowEditDialog(false);
           }}
@@ -347,7 +235,7 @@ export const FeedPage: Story = {
     const [showFeedDetail, setShowFeedDetail] = useState(false);
 
     const filteredFeeds = mockFeeds.filter(feed =>
-      feed.author.toLowerCase().includes(searchQuery.toLowerCase())
+      (feed.author || feed.writerName || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const handlePrevImage = () => {
@@ -372,7 +260,7 @@ export const FeedPage: Story = {
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="작성자 이름으로 검색..."
-                suggestions={mockFeeds.map(f => f.author)}
+                suggestions={mockFeeds.map(f => f.author || f.writerName).filter((name): name is string => !!name)}
               />
             </div>
           </div>
@@ -557,7 +445,7 @@ export const NotificationView: Story = {
   render: () => {
     const [expanded, setExpanded] = useState(true);
     const [showNotifications, setShowNotifications] = useState(true);
-    const unreadCount = mockNotifications.filter(n => !n.read).length;
+    const unreadCount = mockNotifications.filter(n => !n.isRead).length;
 
     return (
       <div className="h-screen w-screen overflow-hidden relative">

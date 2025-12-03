@@ -82,4 +82,13 @@ export const commentApi = {
       return { success: true };
     }
   },
+
+  getCommentLikeById: async (commentLikeId: number): Promise<{ commentId: number } | null> => {
+    try {
+      const response = await apiClient.get(`/comment-likes/${commentLikeId}`);
+      return response.data;
+    } catch {
+      return null;
+    }
+  },
 };

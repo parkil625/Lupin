@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -26,4 +27,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.refId = :refId AND n.type = :type")
     void deleteByRefIdAndType(@Param("refId") String refId, @Param("type") String type);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.refId IN :refIds AND n.type = :type")
+    void deleteByRefIdInAndType(@Param("refIds") List<String> refIds, @Param("type") String type);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.createdAt < :cutoffDate")
+    int deleteByCreatedAtBefore(@Param("cutoffDate") LocalDateTime cutoffDate);
 }

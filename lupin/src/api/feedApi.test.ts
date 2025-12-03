@@ -157,12 +157,10 @@ describe("feedApi", () => {
       expect(result.liked).toBe(true);
     });
 
-    it("should return success on error", async () => {
+    it("should throw error on failure", async () => {
       vi.mocked(apiClient.post).mockRejectedValue(new Error("Like failed"));
 
-      const result = await feedApi.likeFeed(123);
-
-      expect(result).toEqual({ success: true, feedId: 123 });
+      await expect(feedApi.likeFeed(123)).rejects.toThrow("Like failed");
     });
   });
 
@@ -177,12 +175,10 @@ describe("feedApi", () => {
       expect(result.unliked).toBe(true);
     });
 
-    it("should return success on error", async () => {
+    it("should throw error on failure", async () => {
       vi.mocked(apiClient.delete).mockRejectedValue(new Error("Unlike failed"));
 
-      const result = await feedApi.unlikeFeed(123);
-
-      expect(result).toEqual({ success: true, feedId: 123 });
+      await expect(feedApi.unlikeFeed(123)).rejects.toThrow("Unlike failed");
     });
   });
 

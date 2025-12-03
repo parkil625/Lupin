@@ -6,6 +6,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedImageRepository;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedReportRepository;
@@ -22,12 +23,11 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class FeedReportService {
 
-    private static final List<String> FEED_NOTIFICATION_TYPES = List.of("FEED_LIKE", "COMMENT");
-
     private final FeedReportRepository feedReportRepository;
     private final FeedRepository feedRepository;
     private final FeedLikeRepository feedLikeRepository;
     private final FeedImageRepository feedImageRepository;
+    private final CommentRepository commentRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
     private final UserPenaltyService userPenaltyService;
@@ -65,7 +65,22 @@ public class FeedReportService {
     }
 
     private void deleteFeedByReport(Feed feed) {
-        notificationRepository.deleteByRefIdAndTypeIn(String.valueOf(feed.getId()), FEED_NOTIFICATION_TYPES);
+        // FEED_LIKE 알림 삭제 (refId = FeedLike ID)
+        List<String> feedLikeIds = feedLikeRepository.findByFeed(feed).stream()
+                .map(fl -> String.valueOf(fl.getId()))
+                .toList();
+        if (!feedLikeIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(feedLikeIds, "FEED_LIKE");
+        }
+
+        // COMMENT 알림 삭제 (refId = Comment ID)
+        List<String> commentIds = commentRepository.findByFeedOrderByIdDesc(feed).stream()
+                .map(c -> String.valueOf(c.getId()))
+                .toList();
+        if (!commentIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(commentIds, "COMMENT");
+        }
+
         feedLikeRepository.deleteByFeed(feed);
         feedImageRepository.deleteByFeed(feed);
         feedReportRepository.deleteByFeed(feed);

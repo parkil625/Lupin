@@ -47,6 +47,8 @@ interface BackendComment {
   writerAvatar?: string;
   content: string;
   createdAt: string;
+  likeCount?: number;
+  isLiked?: boolean;
   [key: string]: unknown;
 }
 import {
@@ -182,12 +184,16 @@ export default function FeedDetailDialogHome({
                 author: reply.writerName || "알 수 없음",
                 avatar: getAvatarUrl(reply.writerAvatar),
                 time: getRelativeTime(reply.createdAt),
+                likeCount: reply.likeCount || 0,
+                isLiked: reply.isLiked || false,
               }));
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt),
+                likeCount: comment.likeCount || 0,
+                isLiked: comment.isLiked || false,
                 replies,
               };
             } catch {
@@ -196,6 +202,8 @@ export default function FeedDetailDialogHome({
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt),
+                likeCount: comment.likeCount || 0,
+                isLiked: comment.isLiked || false,
                 replies: [],
               };
             }
@@ -203,6 +211,25 @@ export default function FeedDetailDialogHome({
         );
 
         setComments(commentsWithReplies);
+
+        // commentLikes 상태 초기화
+        const likesState: { [key: number]: { liked: boolean; count: number } } = {};
+        commentsWithReplies.forEach((comment) => {
+          likesState[comment.id] = {
+            liked: comment.isLiked || false,
+            count: comment.likeCount || 0,
+          };
+          // 답글도 초기화
+          if (comment.replies) {
+            comment.replies.forEach((reply: Comment) => {
+              likesState[reply.id] = {
+                liked: reply.isLiked || false,
+                count: reply.likeCount || 0,
+              };
+            });
+          }
+        });
+        setCommentLikes(likesState);
 
         // targetCommentId가 있으면 댓글창 열기
         if (targetCommentId) {
@@ -249,6 +276,32 @@ export default function FeedDetailDialogHome({
   // targetCommentId가 있으면 해당 댓글로 스크롤
   useEffect(() => {
     if (targetCommentId && open && comments.length > 0 && showComments) {
+      // targetCommentId가 답글인지 확인하고, 답글이면 부모 댓글 펼치기
+      let parentIdToExpand: number | null = null;
+      for (const comment of comments) {
+        // 최상위 댓글인지 확인
+        if (comment.id === targetCommentId) {
+          break; // 최상위 댓글이면 펼칠 필요 없음
+        }
+        // 답글인지 확인
+        if (comment.replies) {
+          const reply = comment.replies.find(r => r.id === targetCommentId);
+          if (reply) {
+            parentIdToExpand = comment.id;
+            break;
+          }
+        }
+      }
+
+      // 부모 댓글이 접혀있으면 펼치기
+      if (parentIdToExpand && collapsedComments.has(parentIdToExpand)) {
+        setCollapsedComments(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(parentIdToExpand);
+          return newSet;
+        });
+      }
+
       // DOM 업데이트 후 스크롤
       setTimeout(() => {
         const commentElement = document.getElementById(`comment-${targetCommentId}`);
@@ -266,7 +319,7 @@ export default function FeedDetailDialogHome({
         }
       }, 300);
     }
-  }, [targetCommentId, open, comments, showComments]);
+  }, [targetCommentId, open, comments, showComments, collapsedComments]);
 
   const handleSendComment = async () => {
     if (commentText.trim() && feed) {
@@ -373,19 +426,34 @@ export default function FeedDetailDialogHome({
   if (!feed) return null;
 
   // 댓글 좋아요 토글
-  const toggleCommentLike = (commentId: number) => {
-    setCommentLikes((prev) => {
-      const current = prev[commentId] || { liked: false, count: 0 };
-      return {
+  const toggleCommentLike = async (commentId: number) => {
+    const current = commentLikes[commentId] || { liked: false, count: 0 };
+    const newLiked = !current.liked;
+
+    // 낙관적 업데이트
+    setCommentLikes((prev) => ({
+      ...prev,
+      [commentId]: {
+        liked: newLiked,
+        count: newLiked
+          ? current.count + 1
+          : Math.max(0, current.count - 1),
+      },
+    }));
+
+    try {
+      if (newLiked) {
+        await commentApi.likeComment(commentId);
+      } else {
+        await commentApi.unlikeComment(commentId);
+      }
+    } catch {
+      // 에러 시 롤백
+      setCommentLikes((prev) => ({
         ...prev,
-        [commentId]: {
-          liked: !current.liked,
-          count: current.liked
-            ? Math.max(0, current.count - 1)
-            : current.count + 1,
-        },
-      };
-    });
+        [commentId]: current,
+      }));
+    }
   };
 
   // 댓글 접기/펼치기 토글

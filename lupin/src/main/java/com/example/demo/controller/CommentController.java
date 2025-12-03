@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -148,4 +149,10 @@ public class CommentController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/comment-likes/{commentLikeId}")
+    public ResponseEntity<Map<String, Long>> getCommentLike(@PathVariable Long commentLikeId) {
+        return commentLikeRepository.findById(commentLikeId)
+                .map(commentLike -> ResponseEntity.ok(Map.of("commentId", commentLike.getComment().getId())))
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

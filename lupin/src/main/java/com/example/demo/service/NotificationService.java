@@ -68,7 +68,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createCommentNotification(User feedOwner, User commenter, Long feedId) {
+    public void createCommentNotification(User feedOwner, User commenter, Long commentId) {
         if (feedOwner.getId().equals(commenter.getId())) {
             return;
         }
@@ -77,7 +77,7 @@ public class NotificationService {
                 .user(feedOwner)
                 .type("COMMENT")
                 .title(commenter.getName() + "님이 댓글을 남겼습니다")
-                .refId(String.valueOf(feedId))
+                .refId(String.valueOf(commentId))
                 .build();
 
         Notification saved = notificationRepository.save(notification);

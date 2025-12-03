@@ -21,8 +21,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CommentReportService {
 
-    private static final List<String> COMMENT_NOTIFICATION_TYPES = List.of("COMMENT_LIKE", "REPLY");
-
     private final CommentReportRepository commentReportRepository;
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
@@ -63,7 +61,22 @@ public class CommentReportService {
     }
 
     private void deleteCommentByReport(Comment comment) {
-        notificationRepository.deleteByRefIdAndTypeIn(String.valueOf(comment.getId()), COMMENT_NOTIFICATION_TYPES);
+        // COMMENT_LIKE 알림 삭제 (refId = CommentLike ID)
+        List<String> commentLikeIds = commentLikeRepository.findByComment(comment).stream()
+                .map(cl -> String.valueOf(cl.getId()))
+                .toList();
+        if (!commentLikeIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(commentLikeIds, "COMMENT_LIKE");
+        }
+
+        // REPLY 알림 삭제 (refId = Reply Comment ID)
+        List<String> replyIds = commentRepository.findByParentOrderByIdAsc(comment).stream()
+                .map(r -> String.valueOf(r.getId()))
+                .toList();
+        if (!replyIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(replyIds, "REPLY");
+        }
+
         commentLikeRepository.deleteByComment(comment);
         commentReportRepository.deleteByComment(comment);
         commentRepository.delete(comment);

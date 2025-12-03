@@ -228,26 +228,64 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       setSidebarExpanded(false);
 
       // 피드 관련 알림 처리
-      if (notification.type === "FEED_LIKE" || notification.type === "COMMENT") {
-        // refId가 피드 ID
-        const feedId = notification.refId ? parseInt(notification.refId) : null;
-        if (feedId) {
-          await navigateToFeed(feedId, null);
+      if (notification.type === "FEED_LIKE") {
+        // refId가 FeedLike ID → FeedLike에서 feedId 조회
+        const feedLikeId = notification.refId ? parseInt(notification.refId) : null;
+        if (feedLikeId) {
+          try {
+            const feedLike = await feedApi.getFeedLikeById(feedLikeId);
+            if (feedLike?.feedId) {
+              await navigateToFeed(feedLike.feedId, null);
+            }
+          } catch (error) {
+            console.error("피드 좋아요 조회 실패:", error);
+          }
         }
-      } else if (notification.type === "COMMENT_LIKE" || notification.type === "REPLY") {
-        // refId가 댓글 ID - 댓글에서 피드 ID 조회 필요
+      } else if (notification.type === "COMMENT") {
+        // refId가 Comment ID - 댓글에서 피드 ID 조회 필요
         const commentId = notification.refId ? parseInt(notification.refId) : null;
         if (commentId) {
           try {
-            // 댓글 조회해서 feedId 가져오기
             const comment = await commentApi.getCommentById(commentId);
-            if (comment.feedId) {
+            if (comment?.feedId) {
               await navigateToFeed(comment.feedId, commentId);
             }
           } catch (error) {
             console.error("댓글 조회 실패:", error);
           }
         }
+      } else if (notification.type === "COMMENT_LIKE") {
+        // refId가 CommentLike ID → CommentLike에서 commentId 조회 → Comment에서 feedId 조회
+        const commentLikeId = notification.refId ? parseInt(notification.refId) : null;
+        if (commentLikeId) {
+          try {
+            const commentLike = await commentApi.getCommentLikeById(commentLikeId);
+            if (commentLike?.commentId) {
+              const comment = await commentApi.getCommentById(commentLike.commentId);
+              if (comment?.feedId) {
+                await navigateToFeed(comment.feedId, commentLike.commentId);
+              }
+            }
+          } catch (error) {
+            console.error("댓글 좋아요 조회 실패:", error);
+          }
+        }
+      } else if (notification.type === "REPLY") {
+        // refId가 Reply(Comment) ID - 댓글에서 피드 ID 조회 필요
+        const commentId = notification.refId ? parseInt(notification.refId) : null;
+        if (commentId) {
+          try {
+            // 댓글 조회해서 feedId 가져오기
+            const comment = await commentApi.getCommentById(commentId);
+            if (comment?.feedId) {
+              await navigateToFeed(comment.feedId, commentId);
+            }
+          } catch (error) {
+            console.error("댓글 조회 실패:", error);
+          }
+        }
+      } else if (notification.type === "FEED_DELETED" || notification.type === "COMMENT_DELETED") {
+        // 페널티 알림 - 대상이 삭제되어 이동할 곳 없음, 읽음 처리만 (위에서 이미 처리됨)
       }
     } catch (error) {
       console.error("알림 처리 실패:", error);

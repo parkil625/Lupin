@@ -114,4 +114,13 @@ export const feedApi = {
       return true;
     }
   },
+
+  getFeedLikeById: async (feedLikeId: number): Promise<{ feedId: number } | null> => {
+    try {
+      const response = await apiClient.get(`/feeds/likes/${feedLikeId}`);
+      return response.data;
+    } catch {
+      return null;
+    }
+  },
 };

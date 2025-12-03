@@ -38,7 +38,7 @@ public class CommentService {
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
-        notificationService.createCommentNotification(feed.getWriter(), writer, feed.getId());
+        notificationService.createCommentNotification(feed.getWriter(), writer, savedComment.getId());
 
         return savedComment;
     }

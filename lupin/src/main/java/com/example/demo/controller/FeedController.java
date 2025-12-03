@@ -140,6 +140,13 @@ public class FeedController extends BaseController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/likes/{feedLikeId}")
+    public ResponseEntity<Map<String, Long>> getFeedLike(@PathVariable Long feedLikeId) {
+        return feedLikeRepository.findById(feedLikeId)
+                .map(feedLike -> ResponseEntity.ok(Map.of("feedId", feedLike.getFeed().getId())))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     private FeedResponse toFeedResponse(Feed feed) {
         long likeCount = feedLikeRepository.countByFeed(feed);
         long commentCount = commentRepository.countByFeed(feed);

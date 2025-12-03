@@ -276,11 +276,14 @@ export default function FeedDetailDialogHome({
   // targetCommentId가 있으면 해당 댓글로 스크롤
   useEffect(() => {
     if (targetCommentId && open && comments.length > 0 && showComments) {
+      console.log('[Highlight] 조건 충족, targetCommentId:', targetCommentId);
+
       // targetCommentId가 답글인지 확인하고, 답글이면 부모 댓글 펼치기
       let parentIdToExpand: number | null = null;
       for (const comment of comments) {
         // 최상위 댓글인지 확인
         if (comment.id === targetCommentId) {
+          console.log('[Highlight] 최상위 댓글 찾음');
           break; // 최상위 댓글이면 펼칠 필요 없음
         }
         // 답글인지 확인
@@ -288,6 +291,7 @@ export default function FeedDetailDialogHome({
           const reply = comment.replies.find(r => r.id === targetCommentId);
           if (reply) {
             parentIdToExpand = comment.id;
+            console.log('[Highlight] 답글 찾음, 부모:', parentIdToExpand);
             break;
           }
         }
@@ -302,22 +306,25 @@ export default function FeedDetailDialogHome({
         });
       }
 
-      // DOM 업데이트 후 스크롤
+      // DOM 업데이트 후 스크롤 (500ms로 증가)
       setTimeout(() => {
         const commentElement = document.getElementById(`comment-${targetCommentId}`);
+        console.log('[Highlight] 요소 검색:', `comment-${targetCommentId}`, commentElement ? '찾음' : '없음');
         if (commentElement) {
           commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
           // 하이라이트 효과 (인라인 스타일 사용, 3초)
           commentElement.style.backgroundColor = '#fef3c7';
           commentElement.style.borderRadius = '8px';
           commentElement.style.padding = '8px';
+          commentElement.style.transition = 'background-color 0.3s ease';
+          console.log('[Highlight] 스타일 적용 완료');
           setTimeout(() => {
             commentElement.style.backgroundColor = '';
             commentElement.style.borderRadius = '';
             commentElement.style.padding = '';
           }, 3000);
         }
-      }, 300);
+      }, 500);
     }
   }, [targetCommentId, open, comments, showComments, collapsedComments]);
 

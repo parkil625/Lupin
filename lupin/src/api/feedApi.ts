@@ -1,20 +1,28 @@
 import apiClient from './client';
 import { getS3Url } from '@/lib/utils';
 
-// Feed 응답 타입
-interface FeedResponse {
-  id?: number;
-  images?: string[];
+// Feed 응답 타입 (백엔드 API 응답과 일치)
+export interface FeedResponse {
+  id: number;
+  writerId: number;
+  writerName: string;
   writerAvatar?: string;
-  [key: string]: unknown;
+  activity: string;
+  points?: number;
+  content: string;
+  images: string[];
+  likes?: number;
+  comments?: number;
+  calories?: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // 페이지네이션 응답 타입
-interface PagedFeedResponse {
-  content?: FeedResponse[];
-  totalPages?: number;
-  totalElements?: number;
-  [key: string]: unknown;
+export interface PagedFeedResponse {
+  content: FeedResponse[];
+  totalPages: number;
+  totalElements: number;
 }
 
 // Feed 응답에서 images를 S3 URL로 변환

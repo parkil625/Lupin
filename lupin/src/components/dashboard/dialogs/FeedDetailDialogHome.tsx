@@ -44,6 +44,7 @@ import { toast } from "sonner";
 interface BackendComment {
   id: number;
   writerName?: string;
+  writerAvatar?: string;
   content: string;
   createdAt: string;
   [key: string]: unknown;
@@ -164,6 +165,13 @@ export default function FeedDetailDialogHome({
         const response = await commentApi.getCommentsByFeedId(feed.id, 0, 100);
         const commentList = response.content || response;
 
+        // 아바타 URL 변환 헬퍼 (S3 키 또는 전체 URL 처리)
+        const getAvatarUrl = (avatarUrl?: string): string => {
+          if (!avatarUrl) return "";
+          if (avatarUrl.startsWith("http")) return avatarUrl;
+          return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+        };
+
         // 답글 정보도 함께 로드하고 필드 매핑
         const commentsWithReplies = await Promise.all(
           commentList.map(async (comment: BackendComment) => {
@@ -172,13 +180,13 @@ export default function FeedDetailDialogHome({
               const replies = (repliesData || []).map((reply: BackendComment) => ({
                 ...reply,
                 author: reply.writerName || "알 수 없음",
-                avatar: (reply.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(reply.writerAvatar),
                 time: getRelativeTime(reply.createdAt),
               }));
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
-                avatar: (comment.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt),
                 replies,
               };
@@ -186,7 +194,7 @@ export default function FeedDetailDialogHome({
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
-                avatar: (comment.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt),
                 replies: [],
               };

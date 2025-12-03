@@ -69,7 +69,7 @@ export default function Home({
 
     // 피드를 날짜순으로 정렬 (최신순)
     const sortedFeeds = [...feeds].sort(
-      (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+      (a, b) => new Date(b.createdAt || b.time || "").getTime() - new Date(a.createdAt || a.time || "").getTime()
     );
 
     // 최근 7일 연속 체크
@@ -79,7 +79,7 @@ export default function Home({
       targetDate.setDate(today.getDate() - i);
 
       const hasPostOnDate = sortedFeeds.some((feed) => {
-        const feedDate = new Date(feed.time);
+        const feedDate = new Date(feed.createdAt || feed.time || "");
         return feedDate.toDateString() === targetDate.toDateString();
       });
 

@@ -106,6 +106,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
                         // 랭킹 및 통계 엔드포인트 (공개)
                         .requestMatchers("/api/users/ranking", "/api/users/statistics", "/api/users/*/ranking-context").permitAll()
+                        // SSE 알림 구독 (토큰을 쿼리 파라미터로 받아 컨트롤러에서 검증)
+                        .requestMatchers("/api/notifications/subscribe").permitAll()
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )

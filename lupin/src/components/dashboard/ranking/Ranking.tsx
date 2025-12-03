@@ -48,7 +48,7 @@ interface Statistics {
 export default function Ranking({ userId, profileImage }: RankingProps) {
   const currentMonth = new Date().getMonth() + 1;
   const [topRankers, setTopRankers] = useState<RankerData[]>([]);
-  const [myRankingContext, setMyRankingContext] = useState<RankerData[]>([]);
+  const [belowRankers, setBelowRankers] = useState<RankerData[]>([]);
   const [statistics, setStatistics] = useState<Statistics>({
     totalUsers: 0,
     activeUsersThisMonth: 0,
@@ -67,25 +67,10 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
       try {
         setLoading(true);
 
-        // 전체 랭킹 사용자 조회 (50명)
-        const topUsersResponse = await userApi.getTopUsersByPoints(50);
-        const topUsers = topUsersResponse.map((user: { name?: string; points?: number; monthlyLikes?: number; profileImage?: string; department?: string; activeDays?: number; avgScore?: number }, index: number) => ({
+        // 13명 조회 (1~10등 + 11~13등)
+        const allUsersResponse = await userApi.getTopUsersByPoints(13);
+        const allUsers = allUsersResponse.map((user: { id?: number; name?: string; points?: number; monthlyLikes?: number; profileImage?: string; department?: string; activeDays?: number; avgScore?: number }, index: number) => ({
           rank: index + 1,
-          name: user.name || "이름 없음",
-          points: user.points || 0,
-          monthlyLikes: user.monthlyLikes || 0,
-          avatar: user.name ? user.name[0] : "?",
-          profileImage: user.profileImage,
-          department: user.department || "부서 미정",
-          activeDays: user.activeDays || 0,
-          avgScore: user.avgScore || 0,
-        }));
-        setTopRankers(topUsers);
-
-        // 현재 사용자 랭킹 컨텍스트 조회 (본인 + 앞뒤 1명)
-        const contextResponse = await userApi.getUserRankingContext(userId);
-        const contextUsers = contextResponse.map((user: { id?: number; rank?: number; name?: string; points?: number; monthlyLikes?: number; profileImage?: string; department?: string; activeDays?: number; avgScore?: number; streak?: number }) => ({
-          rank: user.rank || 0,
           name: user.name || "이름 없음",
           points: user.points || 0,
           monthlyLikes: user.monthlyLikes || 0,
@@ -96,15 +81,18 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
           avgScore: user.avgScore || 0,
           isMe: user.id === userId,
         }));
-        setMyRankingContext(contextUsers);
+
+        // 1~10등과 11~13등 분리
+        setTopRankers(allUsers.slice(0, 10));
+        setBelowRankers(allUsers.slice(10, 13));
 
         // 현재 사용자의 통계 설정
-        const currentUser = contextUsers.find((u: { isMe?: boolean }) => u.isMe);
+        const currentUser = allUsers.find((u: { isMe?: boolean }) => u.isMe);
         if (currentUser) {
           setMyStats({
             activeDays: currentUser.activeDays,
             avgScore: currentUser.avgScore,
-            streak: currentUser.streak || 0,
+            streak: 0,
           });
         }
 
@@ -340,10 +328,8 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
             </div>
             )}
 
-            {/* My Ranking Area */}
-            {!loading && myRankingContext
-              .filter((ranker) => ranker.rank > 10) // Top 10에 이미 표시된 사용자 제외
-              .map((ranker) => (
+            {/* 11~13등 영역 */}
+            {!loading && belowRankers.map((ranker) => (
                 <Card
                   key={ranker.rank}
                   className={`backdrop-blur-2xl border shadow-lg overflow-hidden transition-all ${

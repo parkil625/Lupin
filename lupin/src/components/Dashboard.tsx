@@ -334,17 +334,34 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   const getFeedImageIndex = (feedId: number) => feedImageIndexes[feedId] || 0;
   const setFeedImageIndex = (feedId: number, index: number) =>
     setFeedImageIndexes((prev) => ({ ...prev, [feedId]: index }));
-  const handleLike = (feedId: number) => {
+  const handleLike = async (feedId: number) => {
     const currentLikes = feedLikes[feedId] || [];
     const hasLikedFeed = currentLikes.includes(userName);
+    const newLiked = !hasLikedFeed;
+
+    // 낙관적 업데이트
     setFeedLikes({
       ...feedLikes,
-      [feedId]: hasLikedFeed
-        ? currentLikes.filter((name) => name !== userName)
-        : [...currentLikes, userName],
+      [feedId]: newLiked
+        ? [...currentLikes, userName]
+        : currentLikes.filter((name) => name !== userName),
     });
-    // Zustand 스토어 액션 사용
-    toggleLike(feedId, !hasLikedFeed);
+    toggleLike(feedId, newLiked);
+
+    try {
+      if (newLiked) {
+        await feedApi.likeFeed(feedId);
+      } else {
+        await feedApi.unlikeFeed(feedId);
+      }
+    } catch {
+      // 실패 시 롤백
+      setFeedLikes({
+        ...feedLikes,
+        [feedId]: currentLikes,
+      });
+      toggleLike(feedId, hasLikedFeed);
+    }
   };
   const hasLiked = (feedId: number) =>
     (feedLikes[feedId] || []).includes(userName);

@@ -101,7 +101,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
       const newComment: Comment = {
         id: response.id,
         author: response.writerName || currentUserName,
-        avatar: getAvatarUrl(response.writerAvatar),
+        avatar: getAvatarUrl(response.writerAvatar) || "",
         content: response.content,
         time: "방금 전",
         replies: [],
@@ -129,7 +129,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
       const newReply: Comment = {
         id: response.id,
         author: response.writerName || currentUserName,
-        avatar: getAvatarUrl(response.writerAvatar),
+        avatar: getAvatarUrl(response.writerAvatar) || "",
         content: response.content,
         time: "방금 전",
         parentId: replyingTo,

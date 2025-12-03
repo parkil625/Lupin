@@ -59,6 +59,7 @@ class CommentLikeServiceTest {
                 .name("사용자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(user, "id", 10L);
 
         writer = User.builder()
                 .userId("writer")
@@ -66,6 +67,7 @@ class CommentLikeServiceTest {
                 .name("작성자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(writer, "id", 20L);
 
         feed = Feed.builder()
                 .writer(writer)
@@ -87,7 +89,7 @@ class CommentLikeServiceTest {
         // given
         Long commentId = 1L;
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.existsByUserAndComment(user, comment)).willReturn(false);
+        given(commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)).willReturn(false);
         given(commentLikeRepository.save(any(CommentLike.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -106,7 +108,7 @@ class CommentLikeServiceTest {
         Long commentId = 1L;
         Long commentLikeId = 100L;
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.existsByUserAndComment(user, comment)).willReturn(false);
+        given(commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)).willReturn(false);
         given(commentLikeRepository.save(any(CommentLike.class))).willAnswer(invocation -> {
             CommentLike commentLike = invocation.getArgument(0);
             ReflectionTestUtils.setField(commentLike, "id", commentLikeId);
@@ -126,7 +128,7 @@ class CommentLikeServiceTest {
         // given
         Long commentId = 1L;
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.existsByUserAndComment(user, comment)).willReturn(true);
+        given(commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)).willReturn(true);
 
         // when & then
         assertThatThrownBy(() -> commentLikeService.likeComment(user, commentId))
@@ -147,7 +149,7 @@ class CommentLikeServiceTest {
         ReflectionTestUtils.setField(commentLike, "id", commentLikeId);
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.of(commentLike));
+        given(commentLikeRepository.findByUserIdAndCommentId(user.getId(), commentId)).willReturn(Optional.of(commentLike));
 
         // when
         commentLikeService.unlikeComment(user, commentId);
@@ -163,7 +165,7 @@ class CommentLikeServiceTest {
         // given
         Long commentId = 1L;
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentLikeRepository.findByUserAndComment(user, comment)).willReturn(Optional.empty());
+        given(commentLikeRepository.findByUserIdAndCommentId(user.getId(), commentId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> commentLikeService.unlikeComment(user, commentId))

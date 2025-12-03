@@ -27,7 +27,7 @@ public class CommentLikeService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
-        if (commentLikeRepository.existsByUserAndComment(user, comment)) {
+        if (commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)) {
             throw new BusinessException(ErrorCode.ALREADY_LIKED);
         }
 
@@ -47,7 +47,7 @@ public class CommentLikeService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
-        CommentLike commentLike = commentLikeRepository.findByUserAndComment(user, comment)
+        CommentLike commentLike = commentLikeRepository.findByUserIdAndCommentId(user.getId(), commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
         notificationRepository.deleteByRefIdAndType(String.valueOf(commentLike.getId()), "COMMENT_LIKE");

@@ -312,14 +312,23 @@ export default function FeedDetailDialogHome({
         console.log('[Highlight] 요소 검색:', `comment-${targetCommentId}`, commentElement ? '찾음' : '없음');
         if (commentElement) {
           commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 하이라이트 효과 (cssText로 !important 강제 적용)
+          // 하이라이트 효과 - outline 사용 (overflow에 영향받지 않음)
           const originalStyle = commentElement.getAttribute('style') || '';
           commentElement.setAttribute('style',
-            'background-color: #fef3c7 !important; border-radius: 8px !important; padding: 8px !important; box-shadow: 0 0 0 2px #fbbf24 !important;'
+            'outline: 3px solid #f59e0b !important; outline-offset: 2px !important; border-radius: 8px !important; background-color: #fffbeb !important;'
           );
+          // 내부 첫 번째 자식에도 배경색 적용
+          const innerDiv = commentElement.querySelector(':scope > div');
+          const innerOriginalStyle = innerDiv?.getAttribute('style') || '';
+          if (innerDiv) {
+            (innerDiv as HTMLElement).style.backgroundColor = '#fffbeb';
+          }
           console.log('[Highlight] 스타일 적용 완료');
           setTimeout(() => {
             commentElement.setAttribute('style', originalStyle);
+            if (innerDiv) {
+              innerDiv.setAttribute('style', innerOriginalStyle);
+            }
           }, 3000);
         }
       }, 500);

@@ -67,33 +67,62 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
       try {
         setLoading(true);
 
-        // 13명 조회 (1~10등 + 11~13등)
-        const allUsersResponse = await userApi.getTopUsersByPoints(13);
-        const allUsers = allUsersResponse.map((user: { id?: number; name?: string; points?: number; monthlyLikes?: number; profileImage?: string; department?: string; activeDays?: number; avgScore?: number }, index: number) => ({
+        // 1~10등 조회
+        const top10Response = await userApi.getTopUsersByPoints(10);
+        const top10Users = top10Response.map((user: { id?: number; name?: string; points?: number; monthlyLikes?: number; profileImage?: string; avatar?: string; department?: string; activeDays?: number; avgScore?: number }, index: number) => ({
           rank: index + 1,
           name: user.name || "이름 없음",
           points: user.points || 0,
           monthlyLikes: user.monthlyLikes || 0,
           avatar: user.name ? user.name[0] : "?",
-          profileImage: user.id === userId ? profileImage : user.profileImage,
+          profileImage: user.id === userId ? profileImage : (user.avatar || user.profileImage),
           department: user.department || "부서 미정",
           activeDays: user.activeDays || 0,
           avgScore: user.avgScore || 0,
           isMe: user.id === userId,
         }));
 
-        // 1~10등과 11~13등 분리
-        setTopRankers(allUsers.slice(0, 10));
-        setBelowRankers(allUsers.slice(10, 13));
+        setTopRankers(top10Users);
 
-        // 현재 사용자의 통계 설정
-        const currentUser = allUsers.find((u: { isMe?: boolean }) => u.isMe);
-        if (currentUser) {
-          setMyStats({
-            activeDays: currentUser.activeDays,
-            avgScore: currentUser.avgScore,
-            streak: 0,
-          });
+        // 현재 사용자가 10등 이내인지 확인
+        const isInTop10 = top10Users.some((u: { isMe?: boolean }) => u.isMe);
+
+        if (isInTop10) {
+          // 10등 이내면 belowRankers는 빈 배열
+          setBelowRankers([]);
+          const currentUser = top10Users.find((u: { isMe?: boolean }) => u.isMe);
+          if (currentUser) {
+            setMyStats({
+              activeDays: currentUser.activeDays,
+              avgScore: currentUser.avgScore,
+              streak: 0,
+            });
+          }
+        } else {
+          // 10등 밖이면 나를 중심으로 주변 3명 조회 (나-1, 나, 나+1)
+          const contextResponse = await userApi.getUserRankingContext(userId);
+          const contextUsers = contextResponse.map((user: { id?: number; name?: string; points?: number; monthlyLikes?: number; profileImage?: string; avatar?: string; department?: string; activeDays?: number; avgScore?: number; rank?: number }) => ({
+            rank: user.rank || 0,
+            name: user.name || "이름 없음",
+            points: user.points || 0,
+            monthlyLikes: user.monthlyLikes || 0,
+            avatar: user.name ? user.name[0] : "?",
+            profileImage: user.id === userId ? profileImage : (user.avatar || user.profileImage),
+            department: user.department || "부서 미정",
+            activeDays: user.activeDays || 0,
+            avgScore: user.avgScore || 0,
+            isMe: user.id === userId,
+          }));
+          setBelowRankers(contextUsers);
+
+          const currentUser = contextUsers.find((u: { isMe?: boolean }) => u.isMe);
+          if (currentUser) {
+            setMyStats({
+              activeDays: currentUser.activeDays,
+              avgScore: currentUser.avgScore,
+              streak: 0,
+            });
+          }
         }
 
         // 전체 통계 조회
@@ -317,8 +346,8 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
               </Card>
             ))}
 
-            {/* Separator */}
-            {!loading && (
+            {/* Separator - 10등 밖일 때만 표시 */}
+            {!loading && belowRankers.length > 0 && (
             <div className="flex items-center justify-center py-3">
               <div className="flex flex-col gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>

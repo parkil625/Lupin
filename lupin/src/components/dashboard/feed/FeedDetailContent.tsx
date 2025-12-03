@@ -33,10 +33,18 @@ import { toast } from "sonner";
 interface BackendComment {
   id: number;
   writerName?: string;
+  writerAvatar?: string;
   content: string;
   createdAt: string;
   [key: string]: unknown;
 }
+
+// 아바타 URL 변환 헬퍼 함수
+const getAvatarUrl = (avatarUrl?: string): string => {
+  if (!avatarUrl) return "";
+  if (avatarUrl.startsWith("http")) return avatarUrl;
+  return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+};
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -137,13 +145,13 @@ export function FeedDetailContent({
               const replies = (repliesData || []).map((reply: BackendComment) => ({
                 ...reply,
                 author: reply.writerName || "알 수 없음",
-                avatar: (reply.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(reply.writerAvatar),
                 time: getRelativeTime(reply.createdAt),
               }));
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
-                avatar: (comment.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt),
                 replies,
               };
@@ -151,7 +159,7 @@ export function FeedDetailContent({
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
-                avatar: (comment.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt),
                 replies: [],
               };
@@ -184,7 +192,7 @@ export function FeedDetailContent({
       const newComment: Comment = {
         id: response.id,
         author: authorName,
-        avatar: authorName.charAt(0),
+        avatar: getAvatarUrl(response.writerAvatar),
         content: response.content,
         time: "방금 전",
         replies: [],
@@ -212,7 +220,7 @@ export function FeedDetailContent({
       const newReply: Comment = {
         id: response.id,
         author: replyAuthorName,
-        avatar: replyAuthorName.charAt(0),
+        avatar: getAvatarUrl(response.writerAvatar),
         content: response.content,
         time: "방금 전",
         parentId: replyingTo,

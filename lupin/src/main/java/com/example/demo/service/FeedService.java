@@ -6,7 +6,10 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ImageType;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedImageRepository;
+import com.example.demo.repository.FeedLikeRepository;
+import com.example.demo.repository.FeedReportRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,9 @@ public class FeedService {
 
     private final FeedRepository feedRepository;
     private final FeedImageRepository feedImageRepository;
+    private final FeedLikeRepository feedLikeRepository;
+    private final FeedReportRepository feedReportRepository;
+    private final CommentRepository commentRepository;
     private final PointService pointService;
     private final NotificationRepository notificationRepository;
     private final ImageMetadataService imageMetadataService;
@@ -204,6 +210,11 @@ public class FeedService {
 
         validateOwnership(feed, user);
         recoverPointsIfWithinPeriod(feed);
+
+        // 관련 데이터 삭제 (외래 키 제약 조건 순서대로)
+        commentRepository.deleteByFeed(feed);
+        feedLikeRepository.deleteByFeed(feed);
+        feedReportRepository.deleteByFeed(feed);
         notificationRepository.deleteByRefIdAndTypeIn(String.valueOf(feedId), FEED_NOTIFICATION_TYPES);
         feedImageRepository.deleteByFeed(feed);
         feedRepository.delete(feed);

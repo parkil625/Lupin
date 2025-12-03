@@ -22,7 +22,11 @@ export function useImageBrightness(imageUrl: string | undefined): IconColor {
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = imageUrl;
+    // CORS 캐시 우회를 위한 타임스탬프 추가
+    const urlWithCacheBust = imageUrl.includes('?')
+      ? `${imageUrl}&_t=${Date.now()}`
+      : `${imageUrl}?_t=${Date.now()}`;
+    img.src = urlWithCacheBust;
 
     img.onload = () => {
       try {

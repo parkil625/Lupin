@@ -345,7 +345,7 @@ export function FeedDetailContent({
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
             {comment.avatar && comment.avatar.startsWith("http") ? (
-              <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" crossOrigin="anonymous" />
+              <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" />
             ) : (
               <AvatarFallback className="bg-white">
                 <User className="w-4 h-4 text-gray-400" />
@@ -443,8 +443,7 @@ export function FeedDetailContent({
                   src={feed.images[currentImageIndex] || feed.images[0]}
                   alt={feed.activity}
                   className="w-full h-full object-cover"
-                  crossOrigin="anonymous"
-                />
+                                 />
 
                 {feed.images.length > 1 && (
                   <>
@@ -476,7 +475,7 @@ export function FeedDetailContent({
             <div className="absolute top-4 left-4">
               <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
                 {feed.writerAvatar ? (
-                  <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                  <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" />
                 ) : (
                   <AvatarFallback className="bg-white">
                     <User className="w-5 h-5 text-gray-400" />

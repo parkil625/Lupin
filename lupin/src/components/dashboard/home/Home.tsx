@@ -290,8 +290,7 @@ export default function Home({
                         src={feed.images[0]}
                         alt={feed.activity}
                         className="w-full h-full object-cover"
-                        crossOrigin="anonymous"
-                      />
+                                             />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
                         <div className="text-center p-4">

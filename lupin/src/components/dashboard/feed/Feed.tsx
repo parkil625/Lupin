@@ -67,6 +67,13 @@ function CommentPanel({ feedId }: { feedId: number }) {
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
+  // 아바타 URL 생성 헬퍼
+  const getAvatarUrl = (avatarUrl?: string): string => {
+    if (!avatarUrl) return "";
+    if (avatarUrl.startsWith("http")) return avatarUrl;
+    return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+  };
+
   // 댓글 로드
   useEffect(() => {
     const fetchComments = async () => {
@@ -75,19 +82,19 @@ function CommentPanel({ feedId }: { feedId: number }) {
         const commentList = response.content || response;
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: { id: number; writerName?: string; createdAt?: string }) => {
+          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; createdAt?: string }) => {
             try {
               const repliesData = await commentApi.getRepliesByCommentId(comment.id);
-              const replies = (repliesData || []).map((reply: { writerName?: string; createdAt?: string }) => ({
+              const replies = (repliesData || []).map((reply: { writerName?: string; writerAvatar?: string; createdAt?: string }) => ({
                 ...reply,
                 author: reply.writerName || "알 수 없음",
-                avatar: (reply.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(reply.writerAvatar),
                 time: getRelativeTime(reply.createdAt || new Date().toISOString()),
               }));
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
-                avatar: (comment.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies,
               };
@@ -95,7 +102,7 @@ function CommentPanel({ feedId }: { feedId: number }) {
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
-                avatar: (comment.writerName || "?").charAt(0),
+                avatar: getAvatarUrl(comment.writerAvatar),
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: [],
               };
@@ -174,7 +181,7 @@ function CommentPanel({ feedId }: { feedId: number }) {
         const newComment: Comment = {
           id: response.id,
           author: authorName,
-          avatar: authorName.charAt(0),
+          avatar: getAvatarUrl(response.writerAvatar),
           content: response.content,
           time: "방금 전",
           replies: [],
@@ -201,7 +208,7 @@ function CommentPanel({ feedId }: { feedId: number }) {
         const newReply: Comment = {
           id: response.id,
           author: replyAuthorName,
-          avatar: replyAuthorName.charAt(0),
+          avatar: getAvatarUrl(response.writerAvatar),
           content: response.content,
           time: "방금 전",
           parentId: replyingTo,
@@ -269,9 +276,13 @@ function CommentPanel({ feedId }: { feedId: number }) {
       <div key={comment.id} className={`transition-colors duration-500 ${depth > 0 ? "ml-8 mt-3" : ""}`}>
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="bg-white">
-              <User className="w-4 h-4 text-gray-400" />
-            </AvatarFallback>
+            {comment.avatar && comment.avatar.startsWith("http") ? (
+              <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" />
+            ) : (
+              <AvatarFallback className="bg-white">
+                <User className="w-4 h-4 text-gray-400" />
+              </AvatarFallback>
+            )}
           </Avatar>
           <div className="flex-1 min-w-0">
             {isDeleted ? (
@@ -445,6 +456,14 @@ function FeedItem({
   const isFirstImage = currentImageIndex === 0;
   const isLastImage = currentImageIndex === images.length - 1;
 
+  // 아바타 URL 생성 헬퍼
+  const getAvatarUrl = (avatarUrl?: string): string => {
+    if (!avatarUrl) return "";
+    if (avatarUrl.startsWith("http")) return avatarUrl;
+    return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+  };
+  const writerAvatarUrl = getAvatarUrl(feed.writerAvatar);
+
   // 이미지 밝기에 따른 아이콘 색상 결정
   const currentImageUrl = hasImages ? images[currentImageIndex] : undefined;
   const iconColor = useImageBrightness(currentImageUrl);
@@ -516,9 +535,13 @@ function FeedItem({
 
           {/* 작성자 */}
           <Avatar className="absolute top-4 left-4 w-10 h-10 border-2 border-white shadow-lg">
-            <AvatarFallback className="bg-white">
-              <User className="w-5 h-5 text-gray-400" />
-            </AvatarFallback>
+            {writerAvatarUrl ? (
+              <img src={writerAvatarUrl} alt={feed.writerName} className="w-full h-full object-cover" />
+            ) : (
+              <AvatarFallback className="bg-white">
+                <User className="w-5 h-5 text-gray-400" />
+              </AvatarFallback>
+            )}
           </Avatar>
 
           {/* 액션 버튼 */}

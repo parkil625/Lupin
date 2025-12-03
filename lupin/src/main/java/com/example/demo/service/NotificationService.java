@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
+import com.example.demo.dto.response.NotificationResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.NotificationRepository;
@@ -17,6 +18,7 @@ import java.util.List;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationSseService notificationSseService;
 
     public List<Notification> getNotifications(User user) {
         return notificationRepository.findByUserOrderByCreatedAtDescIdDesc(user);
@@ -50,7 +52,7 @@ public class NotificationService {
 
     @Transactional
     public void createFeedLikeNotification(User feedOwner, User liker, Long feedLikeId) {
-        if (feedOwner.equals(liker)) {
+        if (feedOwner.getId().equals(liker.getId())) {
             return;
         }
 
@@ -61,12 +63,13 @@ public class NotificationService {
                 .refId(String.valueOf(feedLikeId))
                 .build();
 
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        notificationSseService.sendNotification(feedOwner.getId(), NotificationResponse.from(saved));
     }
 
     @Transactional
     public void createCommentNotification(User feedOwner, User commenter, Long feedId) {
-        if (feedOwner.equals(commenter)) {
+        if (feedOwner.getId().equals(commenter.getId())) {
             return;
         }
 
@@ -77,12 +80,13 @@ public class NotificationService {
                 .refId(String.valueOf(feedId))
                 .build();
 
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        notificationSseService.sendNotification(feedOwner.getId(), NotificationResponse.from(saved));
     }
 
     @Transactional
     public void createCommentLikeNotification(User commentOwner, User liker, Long commentLikeId) {
-        if (commentOwner.equals(liker)) {
+        if (commentOwner.getId().equals(liker.getId())) {
             return;
         }
 
@@ -93,12 +97,13 @@ public class NotificationService {
                 .refId(String.valueOf(commentLikeId))
                 .build();
 
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        notificationSseService.sendNotification(commentOwner.getId(), NotificationResponse.from(saved));
     }
 
     @Transactional
     public void createReplyNotification(User commentOwner, User replier, Long replyId) {
-        if (commentOwner.equals(replier)) {
+        if (commentOwner.getId().equals(replier.getId())) {
             return;
         }
 
@@ -109,7 +114,8 @@ public class NotificationService {
                 .refId(String.valueOf(replyId))
                 .build();
 
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        notificationSseService.sendNotification(commentOwner.getId(), NotificationResponse.from(saved));
     }
 
     @Transactional
@@ -120,7 +126,8 @@ public class NotificationService {
                 .title("신고 누적으로 피드가 삭제되었습니다")
                 .build();
 
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        notificationSseService.sendNotification(feedOwner.getId(), NotificationResponse.from(saved));
     }
 
     @Transactional
@@ -131,6 +138,7 @@ public class NotificationService {
                 .title("신고 누적으로 댓글이 삭제되었습니다")
                 .build();
 
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        notificationSseService.sendNotification(commentOwner.getId(), NotificationResponse.from(saved));
     }
 }

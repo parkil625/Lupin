@@ -13,12 +13,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -28,6 +30,9 @@ class NotificationServiceTest {
 
     @Mock
     private NotificationRepository notificationRepository;
+
+    @Mock
+    private NotificationSseService notificationSseService;
 
     @InjectMocks
     private NotificationService notificationService;
@@ -42,6 +47,7 @@ class NotificationServiceTest {
                 .name("사용자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(user, "id", 1L);
     }
 
     @Test
@@ -199,6 +205,7 @@ class NotificationServiceTest {
                 .name("피드주인")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(feedOwner, "id", 2L);
 
         User liker = User.builder()
                 .userId("liker")
@@ -206,8 +213,11 @@ class NotificationServiceTest {
                 .name("좋아요누른사람")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(liker, "id", 3L);
 
         Long feedId = 1L;
+
+        given(notificationRepository.save(any(Notification.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         notificationService.createFeedLikeNotification(feedOwner, liker, feedId);
@@ -243,6 +253,7 @@ class NotificationServiceTest {
                 .name("피드주인")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(feedOwner, "id", 2L);
 
         User commenter = User.builder()
                 .userId("commenter")
@@ -250,8 +261,11 @@ class NotificationServiceTest {
                 .name("댓글작성자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(commenter, "id", 3L);
 
         Long feedId = 1L;
+
+        given(notificationRepository.save(any(Notification.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         notificationService.createCommentNotification(feedOwner, commenter, feedId);
@@ -287,6 +301,7 @@ class NotificationServiceTest {
                 .name("댓글주인")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(commentOwner, "id", 2L);
 
         User liker = User.builder()
                 .userId("liker")
@@ -294,8 +309,11 @@ class NotificationServiceTest {
                 .name("좋아요누른사람")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(liker, "id", 3L);
 
         Long commentId = 1L;
+
+        given(notificationRepository.save(any(Notification.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         notificationService.createCommentLikeNotification(commentOwner, liker, commentId);
@@ -331,6 +349,7 @@ class NotificationServiceTest {
                 .name("댓글주인")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(commentOwner, "id", 2L);
 
         User replier = User.builder()
                 .userId("replier")
@@ -338,8 +357,11 @@ class NotificationServiceTest {
                 .name("답글작성자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(replier, "id", 3L);
 
         Long commentId = 1L;
+
+        given(notificationRepository.save(any(Notification.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         notificationService.createReplyNotification(commentOwner, replier, commentId);

@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.CommentRequest;
 import com.example.demo.dto.response.CommentResponse;
+import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.service.CommentLikeService;
 import com.example.demo.service.CommentReportService;
 import com.example.demo.service.CommentService;
@@ -24,6 +25,7 @@ public class CommentController extends BaseController {
     private final CommentService commentService;
     private final CommentLikeService commentLikeService;
     private final CommentReportService commentReportService;
+    private final CommentLikeRepository commentLikeRepository;
 
     @PostMapping("/feeds/{feedId}/comments")
     public ResponseEntity<CommentResponse> createComment(
@@ -32,7 +34,14 @@ public class CommentController extends BaseController {
             @Valid @RequestBody CommentRequest request
     ) {
         User user = getCurrentUser(userDetails);
-        Comment comment = commentService.createComment(user, feedId, request.getContent());
+        Comment comment;
+        if (request.getParentId() != null) {
+            // 답글인 경우 createReply 호출 (답글 알림만 발생)
+            comment = commentService.createReply(user, feedId, request.getParentId(), request.getContent());
+        } else {
+            // 일반 댓글인 경우
+            comment = commentService.createComment(user, feedId, request.getContent());
+        }
         return ResponseEntity.ok(CommentResponse.from(comment));
     }
 
@@ -58,10 +67,18 @@ public class CommentController extends BaseController {
     }
 
     @GetMapping("/feeds/{feedId}/comments")
-    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long feedId) {
+    public ResponseEntity<List<CommentResponse>> getComments(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long feedId
+    ) {
+        User currentUser = userDetails != null ? getCurrentUser(userDetails) : null;
         List<Comment> comments = commentService.getCommentsByFeed(feedId);
         List<CommentResponse> responses = comments.stream()
-                .map(CommentResponse::from)
+                .map(comment -> {
+                    long likeCount = commentLikeRepository.countByComment(comment);
+                    boolean isLiked = currentUser != null && commentLikeRepository.existsByUserAndComment(currentUser, comment);
+                    return CommentResponse.from(comment, likeCount, isLiked);
+                })
                 .toList();
         return ResponseEntity.ok(responses);
     }
@@ -85,10 +102,18 @@ public class CommentController extends BaseController {
     }
 
     @GetMapping("/comments/{commentId}/replies")
-    public ResponseEntity<List<CommentResponse>> getReplies(@PathVariable Long commentId) {
+    public ResponseEntity<List<CommentResponse>> getReplies(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long commentId
+    ) {
+        User currentUser = userDetails != null ? getCurrentUser(userDetails) : null;
         List<Comment> replies = commentService.getReplies(commentId);
         List<CommentResponse> responses = replies.stream()
-                .map(CommentResponse::from)
+                .map(reply -> {
+                    long likeCount = commentLikeRepository.countByComment(reply);
+                    boolean isLiked = currentUser != null && commentLikeRepository.existsByUserAndComment(currentUser, reply);
+                    return CommentResponse.from(reply, likeCount, isLiked);
+                })
                 .toList();
         return ResponseEntity.ok(responses);
     }

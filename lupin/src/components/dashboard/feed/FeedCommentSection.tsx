@@ -48,16 +48,34 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
         const response = await commentApi.getCommentsByFeedId(feedId, 0, 100);
         const commentList = response.content || response;
 
+        // 좋아요 정보 초기화
+        const likesMap: Record<number, { liked: boolean; count: number }> = {};
+
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; createdAt?: string }) => {
+          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; createdAt?: string; likeCount?: number; isLiked?: boolean }) => {
+            // 댓글 좋아요 정보 저장
+            likesMap[comment.id] = {
+              liked: comment.isLiked || false,
+              count: comment.likeCount || 0,
+            };
+
             try {
               const replies = await commentApi.getRepliesByCommentId(comment.id);
-              const formattedReplies = (replies || []).map((reply: { writerName?: string; writerAvatar?: string; createdAt?: string }) => ({
-                ...reply,
-                author: reply.writerName,
-                avatar: getAvatarUrl(reply.writerAvatar),
-                time: getRelativeTime(reply.createdAt || new Date().toISOString()),
-              }));
+              const formattedReplies = (replies || []).map((reply: { id?: number; writerName?: string; writerAvatar?: string; createdAt?: string; likeCount?: number; isLiked?: boolean }) => {
+                // 답글 좋아요 정보 저장
+                if (reply.id) {
+                  likesMap[reply.id] = {
+                    liked: reply.isLiked || false,
+                    count: reply.likeCount || 0,
+                  };
+                }
+                return {
+                  ...reply,
+                  author: reply.writerName,
+                  avatar: getAvatarUrl(reply.writerAvatar),
+                  time: getRelativeTime(reply.createdAt || new Date().toISOString()),
+                };
+              });
               return {
                 ...comment,
                 author: comment.writerName,
@@ -77,6 +95,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
           })
         );
 
+        setCommentLikes(likesMap);
         setComments(commentsWithReplies);
       } catch (error) {
         console.error("댓글 로드 실패:", error);
@@ -175,17 +194,32 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
     return count;
   }, [comments]);
 
-  const toggleCommentLike = (commentId: number) => {
-    setCommentLikes((prev) => {
-      const current = prev[commentId] || { liked: false, count: 0 };
-      return {
+  const toggleCommentLike = async (commentId: number) => {
+    const current = commentLikes[commentId] || { liked: false, count: 0 };
+    const newLiked = !current.liked;
+
+    // 낙관적 업데이트
+    setCommentLikes((prev) => ({
+      ...prev,
+      [commentId]: {
+        liked: newLiked,
+        count: newLiked ? current.count + 1 : Math.max(0, current.count - 1),
+      },
+    }));
+
+    try {
+      if (newLiked) {
+        await commentApi.likeComment(commentId);
+      } else {
+        await commentApi.unlikeComment(commentId);
+      }
+    } catch {
+      // 실패 시 롤백
+      setCommentLikes((prev) => ({
         ...prev,
-        [commentId]: {
-          liked: !current.liked,
-          count: current.liked ? Math.max(0, current.count - 1) : current.count + 1,
-        },
-      };
-    });
+        [commentId]: current,
+      }));
+    }
   };
 
   const toggleCollapse = (commentId: number) => {

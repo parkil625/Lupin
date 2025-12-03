@@ -307,13 +307,19 @@ export default function FeedDetailDialogHome({
       }
 
       // DOM 업데이트 후 스크롤 (500ms로 증가)
+      // 모바일/데스크톱 두 패널에 같은 ID가 있으므로 querySelectorAll 사용
       setTimeout(() => {
-        const commentElement = document.getElementById(`comment-${targetCommentId}`);
-        console.log('[Highlight] 요소 검색:', `comment-${targetCommentId}`, commentElement ? '찾음' : '없음');
-        if (commentElement) {
-          commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 하이라이트 효과 - 인라인 스타일 직접 설정
+        const commentElements = document.querySelectorAll(`[id="comment-${targetCommentId}"]`);
+        console.log('[Highlight] 요소 검색:', `comment-${targetCommentId}`, commentElements.length + '개 찾음');
+
+        commentElements.forEach((commentElement) => {
           const el = commentElement as HTMLElement;
+          // 보이는 요소만 스크롤
+          if (el.offsetParent !== null) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+          // 하이라이트 효과 - 인라인 스타일 직접 설정
           const originalOutline = el.style.outline;
           const originalOutlineOffset = el.style.outlineOffset;
           const originalBg = el.style.backgroundColor;
@@ -329,7 +335,7 @@ export default function FeedDetailDialogHome({
             el.style.outlineOffset = originalOutlineOffset;
             el.style.backgroundColor = originalBg;
           }, 10000);
-        }
+        });
       }, 500);
     }
   }, [targetCommentId, open, comments, showComments, collapsedComments]);

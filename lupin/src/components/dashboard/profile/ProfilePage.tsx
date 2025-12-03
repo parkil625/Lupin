@@ -1,7 +1,7 @@
 /**
- * MemberProfilePage.tsx
+ * ProfilePage.tsx
  *
- * 회원 프로필 페이지 컴포넌트
+ * 프로필 페이지 컴포넌트
  * - 개인 정보 수정
  * - 프로필 사진 변경
  * - 신체 정보 관리
@@ -58,13 +58,13 @@ const profileSchema = z.object({
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
-interface MemberProfilePageProps {
+interface ProfilePageProps {
     onLogout: () => void;
     profileImage: string | null;
     setProfileImage: (image: string | null) => void;
 }
 
-export default function MemberProfilePage({ onLogout, profileImage, setProfileImage }: MemberProfilePageProps) {
+export default function ProfilePage({ onLogout, profileImage, setProfileImage }: ProfilePageProps) {
     // React Hook Form 설정
     const {
         register,
@@ -232,7 +232,7 @@ export default function MemberProfilePage({ onLogout, profileImage, setProfileIm
                 await imageApi.deleteImage(profileImage).catch(() => { });
             }
 
-            const s3Url = await imageApi.uploadImage(file);
+            const s3Url = await imageApi.uploadProfileImage(file);
 
             // DB에 아바타 URL 저장
             const userId = parseInt(localStorage.getItem("userId") || "0");

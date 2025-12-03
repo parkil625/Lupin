@@ -159,7 +159,9 @@ export default function Home({
         <div className="p-4 md:p-8">
           <div className="flex flex-col items-center gap-4 mb-6 md:mb-8">
             <Avatar className="w-[110px] h-[110px] border-4 border-white shadow-xl bg-gray-100">
-              {profileImage ? (
+              {isLoading ? (
+                <div className="w-full h-full animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+              ) : profileImage ? (
                 <img
                   src={profileImage}
                   alt="Profile"
@@ -182,7 +184,7 @@ export default function Home({
               )}
 
               {isLoading ? (
-                <div className="mb-4 rounded-lg animate-pulse mx-auto" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '280px', maxWidth: '100%', height: '24px' }} />
+                <div className="mb-4 rounded-lg animate-pulse mx-auto" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '220px', maxWidth: '100%', height: '20px' }} />
               ) : (
                 <div className="flex justify-center gap-4 md:gap-8 mb-3 md:mb-4">
                   <div>
@@ -209,9 +211,8 @@ export default function Home({
               )}
 
               {isLoading ? (
-                <div className="flex justify-center gap-2">
-                  <div className="rounded-md animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '28px' }} />
-                  <div className="rounded-md animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '28px' }} />
+                <div className="flex justify-center">
+                  <div className="rounded-full animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)', width: '85px', height: '26px' }} />
                 </div>
               ) : (
                 <div className="flex justify-center gap-2 flex-wrap">

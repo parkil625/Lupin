@@ -34,7 +34,8 @@ public class UserService {
     }
 
     public List<Map<String, Object>> getTopUsersByPoints(int limit) {
-        List<Object[]> results = pointLogRepository.findUsersRankedByPoints(PageRequest.of(0, limit));
+        // 모든 사용자를 포함 (PointLog가 없어도 0점으로 포함)
+        List<Object[]> results = pointLogRepository.findAllUsersWithPointsRanked(PageRequest.of(0, limit));
         List<Map<String, Object>> rankings = new ArrayList<>();
         int rank = 1;
         for (Object[] row : results) {
@@ -53,7 +54,8 @@ public class UserService {
     }
 
     public List<Map<String, Object>> getUserRankingContext(Long userId) {
-        List<Object[]> allRankings = pointLogRepository.findAllUsersRankedByPoints();
+        // 모든 사용자를 포함 (PointLog가 없어도 0점으로 포함)
+        List<Object[]> allRankings = pointLogRepository.findAllUsersWithPointsRankedAll();
         int userRank = -1;
         for (int i = 0; i < allRankings.size(); i++) {
             User u = (User) allRankings.get(i)[0];
@@ -65,6 +67,7 @@ public class UserService {
 
         List<Map<String, Object>> context = new ArrayList<>();
         if (userRank == -1) {
+            // 이 경우는 발생하지 않아야 함 (모든 사용자가 포함되므로)
             User user = getUserInfo(userId);
             Map<String, Object> entry = new HashMap<>();
             entry.put("id", user.getId());

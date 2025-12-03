@@ -25,4 +25,10 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
 
     @Query("SELECT p.user, COALESCE(SUM(p.points), 0) as totalPoints FROM PointLog p GROUP BY p.user ORDER BY totalPoints DESC")
     List<Object[]> findAllUsersRankedByPoints();
+
+    @Query("SELECT u, COALESCE(SUM(p.points), 0) as totalPoints FROM User u LEFT JOIN PointLog p ON p.user = u GROUP BY u ORDER BY totalPoints DESC, u.id ASC")
+    List<Object[]> findAllUsersWithPointsRanked(Pageable pageable);
+
+    @Query("SELECT u, COALESCE(SUM(p.points), 0) as totalPoints FROM User u LEFT JOIN PointLog p ON p.user = u GROUP BY u ORDER BY totalPoints DESC, u.id ASC")
+    List<Object[]> findAllUsersWithPointsRankedAll();
 }

@@ -110,6 +110,25 @@ function CommentPanel({ feedId }: { feedId: number }) {
           })
         );
         setComments(commentsWithReplies);
+
+        // commentLikes 상태 초기화 (likeCount, isLiked 반영)
+        const likesState: { [key: number]: { liked: boolean; count: number } } = {};
+        commentsWithReplies.forEach((comment: { id: number; isLiked?: boolean; likeCount?: number; replies?: { id: number; isLiked?: boolean; likeCount?: number }[] }) => {
+          likesState[comment.id] = {
+            liked: comment.isLiked || false,
+            count: comment.likeCount || 0,
+          };
+          // 답글의 좋아요 상태도 초기화
+          if (comment.replies) {
+            comment.replies.forEach((reply) => {
+              likesState[reply.id] = {
+                liked: reply.isLiked || false,
+                count: reply.likeCount || 0,
+              };
+            });
+          }
+        });
+        setCommentLikes(likesState);
       } catch (error) {
         console.error("댓글 로드 실패:", error);
         setComments([]);

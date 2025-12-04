@@ -138,7 +138,7 @@ public class Auction {
         }
 
         for (AuctionBid bid : bids) {
-            if (bid.getUser().equals(this.winner)) {
+            if (bid.getUser().getId().equals(this.winner.getId())) {
                 bid.winBid();
             } else {
                 bid.lostBid();

@@ -171,8 +171,8 @@ class AuctionTest {
     @Test
     void 초읽기_시간_종료시_winner를_제외한_입찰상태Lost만들기() {
         // given
-        User winner = createUser("winner");
-        User loser = createUser("loser");
+        User winner = createUser2(1L,"winner");
+        User loser = createUser2(2L,"loser");
 
         Auction auction = createActiveAuction(
                 LocalDateTime.of(2025, 1, 1, 0, 0, 0),
@@ -242,6 +242,19 @@ class AuctionTest {
 
     private User createUser(String name) {
         return User.builder()
+                .name(name)
+                .role(Role.MEMBER)
+                .height(170.1)
+                .weight(100.0)
+                .gender("남")
+                .birthDate(LocalDate.of(2003, 12, 1))
+                .department("영업")
+                .build();
+    }
+
+    private User createUser2(Long id ,String name) {
+        return User.builder()
+                .id(id)
                 .name(name)
                 .role(Role.MEMBER)
                 .height(170.1)

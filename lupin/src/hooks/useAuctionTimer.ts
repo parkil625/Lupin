@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { AuctionItem } from "@/types/auction.types";
+import { AuctionData } from "@/types/auction.types";
 
-export const useAuctionTimer = (selectedAuction: AuctionItem | null) => {
+export const useAuctionTimer = (selectedAuction: AuctionData | null) => {
   const [countdown, setCountdown] = useState<number>(0);
   const [isOvertime, setIsOvertime] = useState(false);
 

@@ -1,14 +1,14 @@
 import { Card } from "@/components/ui/card"; 
 import { Badge } from "@/components/ui/badge"; 
-import { AuctionItem } from "@/types/auction.types";
+import { AuctionData } from "@/types/auction.types";
 import { Gavel, Clock, Trophy, Calendar, Users, Eye } from "lucide-react";
 // Badge 컴포넌트가 별도 파일이라면 import 경로를 수정하세요.
 // import { Badge } from "@/components/ui/badge"; 
 
 interface AuctionCardProps {
-  auction: AuctionItem;
+  auction: AuctionData;
   isSelected: boolean;
-  onSelect: (item: AuctionItem) => void;
+  onSelect: (item: AuctionData) => void;
   countdown?: number;     // 선택된 항목일 때만 전달됨
   isOvertime?: boolean;   // 선택된 항목일 때만 전달됨
 }
@@ -42,7 +42,7 @@ export const AuctionCard = ({
   };
 
   // 상태 배지 렌더링
-  const getStatusBadge = (status: AuctionItem["status"]) => {
+  const getStatusBadge = (status: AuctionData["status"]) => {
     switch (status) {
       case "ACTIVE":
         return (
@@ -85,8 +85,8 @@ export const AuctionCard = ({
           {/* Image */}
           <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 bg-gray-100 rounded-lg overflow-hidden">
             <img
-              src={auction.imageUrl || "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400"}
-              alt={auction.itemName}
+              src={auction.item.imageUrl || "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400"}
+              alt={auction.item.itemName}
               className={`w-full h-full object-cover ${isScheduled ? "grayscale" : ""}`}
             />
           </div>
@@ -96,10 +96,10 @@ export const AuctionCard = ({
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
                 <h3 className="text-xl font-black text-gray-900 mb-1">
-                  {auction.itemName}
+                  {auction.item.itemName}
                 </h3>
                 <p className="text-sm text-gray-600 font-medium">
-                  {auction.description}
+                  {auction.item.description}
                 </p>
                 <div className="flex items-center gap-2 mt-2 text-xs text-gray-500 font-bold">
                   <Calendar className="w-3 h-3" />

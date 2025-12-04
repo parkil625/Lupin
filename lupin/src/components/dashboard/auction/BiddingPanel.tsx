@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Trophy, AlertCircle } from "lucide-react";
-import { AuctionItem, BidHistory } from "@/types/auction.types";
+import { AuctionData, BidHistory } from "@/types/auction.types";
 
 interface BiddingPanelProps {
-  selectedAuction: AuctionItem | null;
+  selectedAuction: AuctionData | null;
   bidAmount: string;
   setBidAmount: (amount: string) => void;
   onPlaceBid: () => void;
@@ -56,7 +56,7 @@ export const BiddingPanel = ({
       <Card className="backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg mb-4">
         <CardHeader>
           <CardTitle className="text-lg font-black">
-            {selectedAuction.itemName}
+            {selectedAuction.item.itemName}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

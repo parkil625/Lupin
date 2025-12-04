@@ -12,15 +12,15 @@ import { Clock } from "lucide-react";
 import AnimatedBackground from "../shared/AnimatedBackground";
 
 // 분리된 컴포넌트 및 훅 import
-import { AuctionItem, BidHistory } from "@/types/auction.types";
+import { AuctionData, BidHistory } from "@/types/auction.types";
 import { useAuctionTimer } from "@/hooks/useAuctionTimer";
 import { AuctionCard } from "./AuctionCard";
 import { BiddingPanel } from "./BiddingPanel";
 
 export default function Auction() {
-  const [auctions, setAuctions] = useState<AuctionItem[]>([]);
-  const [scheduledAuctions, setScheduledAuctions] = useState<AuctionItem[]>([]);
-  const [selectedAuction, setSelectedAuction] = useState<AuctionItem | null>(null);
+  const [auctions, setAuctions] = useState<AuctionData[]>([]);
+  const [scheduledAuctions, setScheduledAuctions] = useState<AuctionData[]>([]);
+  const [selectedAuction, setSelectedAuction] = useState<AuctionData | null>(null);
   const [bidAmount, setBidAmount] = useState("");
   const [bidHistory, setBidHistory] = useState<BidHistory[]>([]);
   const [userPoints, setUserPoints] = useState(0);
@@ -37,7 +37,7 @@ export default function Auction() {
 
   useEffect(() => {
     if (selectedAuction) {
-      fetchBidHistory(selectedAuction.id);
+      fetchBidHistory(selectedAuction.auctionId);
       // 입찰 금액 자동 설정 (현재가 + 1P)
       setBidAmount((selectedAuction.currentPrice + 1).toString());
     }
@@ -49,12 +49,9 @@ export default function Auction() {
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 22, 0, 0);
 
-      const activeAuctions: AuctionItem[] = [
+      const activeAuctions: AuctionData[] = [
         {
-          id: 1,
-          itemName: "Apple Watch Series 9 (45mm)",
-          description: "애플워치 시리즈9 GPS 45mm 미드나이트 알루미늄 케이스 (정가 599,000원)",
-          imageUrl: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop",
+          auctionId: 1,
           currentPrice: 45,
           startTime: todayStart.toISOString(),
           regularEndTime: new Date(Date.now() + 1 * 60 * 1000).toISOString(),
@@ -63,6 +60,12 @@ export default function Auction() {
           status: "ACTIVE",
           totalBids: 8,
           viewers: 15,
+          item: {
+            itemId: 1,
+            itemName: "Apple Watch Series 9 (45mm)",
+            description: "애플워치 시리즈9 GPS 45mm 미드나이트 알루미늄 케이스 (정가 599,000원)",
+            imageUrl: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop",
+          },
         },
       ];
 
@@ -70,11 +73,9 @@ export default function Auction() {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
       
-      const scheduled: AuctionItem[] = [
+      const scheduled: AuctionData[] = [
         {
-          id: 2,
-          itemName: "LG 스탠바이미 Go (27인치)",
-          description: "LG 스탠바이미 Go 포터블 터치스크린 TV",
+          auctionId: 2,
           currentPrice: 0,
           startTime: tomorrow.toISOString(),
           regularEndTime: tomorrow.toISOString(),
@@ -83,6 +84,12 @@ export default function Auction() {
           status: "SCHEDULED",
           totalBids: 0,
           viewers: 0,
+          item: {
+            itemId: 2,
+            itemName: "LG 스탠바이미 Go (27인치)",
+            description: "LG 스탠바이미 Go 포터블 터치스크린 TV",
+            imageUrl: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop",
+          },
         },
          // ... 다른 예정 항목들
       ];
@@ -140,7 +147,7 @@ export default function Auction() {
       // API call placeholder
       alert("입찰이 완료되었습니다!");
       fetchAuctions();
-      fetchBidHistory(selectedAuction.id);
+      fetchBidHistory(selectedAuction.auctionId);
       fetchUserPoints();
     } catch (error) {
       console.error("입찰 실패:", error);
@@ -158,7 +165,7 @@ export default function Auction() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-4xl font-black text-gray-900 mb-2">경매</h1>
+                <h1 className="text-5xl font-black text-gray-900 mb-2">경매</h1>
                 <p className="text-gray-600 font-bold">
                   매일 밤 10시, 포인트로 입찰하고 상품을 획득하세요
                 </p>
@@ -192,9 +199,9 @@ export default function Auction() {
                     <div className="space-y-4">
                       {auctions.map((auction) => (
                         <AuctionCard
-                          key={auction.id}
+                          key={auction.auctionId}
                           auction={auction}
-                          isSelected={selectedAuction?.id === auction.id}
+                          isSelected={selectedAuction?.item === auction.item}
                           onSelect={setSelectedAuction}
                           countdown={countdown}
                           isOvertime={isOvertime}
@@ -220,7 +227,7 @@ export default function Auction() {
                     <div className="space-y-4">
                       {scheduledAuctions.map((auction) => (
                         <AuctionCard
-                          key={auction.id}
+                          key={auction.auctionId}
                           auction={auction}
                           isSelected={false}
                           onSelect={() => {}} // 예정된 경매는 선택 불가

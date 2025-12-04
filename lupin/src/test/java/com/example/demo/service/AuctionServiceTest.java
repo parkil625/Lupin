@@ -1,9 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.entity.Auction;
-import com.example.demo.domain.entity.AuctionBid;
-import com.example.demo.domain.entity.AuctionItem;
-import com.example.demo.domain.entity.User;
+import com.example.demo.domain.entity.*;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
 import com.example.demo.dto.response.AuctionStatusResponse;
@@ -11,6 +8,7 @@ import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
+import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +43,9 @@ class AuctionServiceTest {
 
     @Mock
     AuctionBidRepository auctionBidRepository;
+
+    @Mock
+    PointLogRepository pointLogRepository;
 
     @InjectMocks
     AuctionService auctionService;
@@ -360,13 +361,25 @@ class AuctionServiceTest {
                 .isInstanceOf(IllegalStateException.class) // 혹은 정의하신 CustomException
                 .hasMessage("진행 중인 경매가 없습니다.");
     }
-//
-//
-//    @Test
-//    void 낙찰자_낙찰금액만큼_차감(){
-//
-//    }
-//
+
+    @Test
+    void 사용자_포인트_잔액_조회(){
+        //given
+
+        //when
+
+        //then
+
+    }
+
+
+    @Test
+    void 낙찰자_낙찰금액만큼_차감(){
+
+   }
+
+
+
 
 
 

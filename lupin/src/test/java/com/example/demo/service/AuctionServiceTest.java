@@ -8,7 +8,6 @@ import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
-import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,11 +43,11 @@ class AuctionServiceTest {
     @Mock
     AuctionBidRepository auctionBidRepository;
 
-    @Mock
-    PointLogRepository pointLogRepository;
-
     @InjectMocks
     AuctionService auctionService;
+
+    @Mock
+    PointService pointService;
 
 
     @Test
@@ -59,6 +58,8 @@ class AuctionServiceTest {
 
         given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(10L)).willReturn(Optional.of(user));
+        given(pointService.getTotalPoints(user)).willReturn(200L);
+
 
         auctionService.placeBid(1L, 10L, 200L, LocalDateTime.now());
         assertEquals(200L, auction.getCurrentPrice());
@@ -217,6 +218,8 @@ class AuctionServiceTest {
                 .findTopByAuctionAndStatusOrderByBidAmountDescBidTimeDesc(auction, BidStatus.ACTIVE)
         ).willReturn(Optional.of(prevBid));
 
+        given(pointService.getTotalPoints(newUser)).willReturn(200L);
+
         LocalDateTime bidTime = now.plusMinutes(1); // 00:01, 정규시간 안
         auctionService.placeBid(1L, 2L, 200L, bidTime);
 
@@ -362,19 +365,34 @@ class AuctionServiceTest {
                 .hasMessage("진행 중인 경매가 없습니다.");
     }
 
-    @Test
-    void 사용자_포인트_잔액_조회(){
-        //given
-
-        //when
-
-        //then
-
-    }
-
 
     @Test
     void 낙찰자_낙찰금액만큼_차감(){
+// given
+        Long auctionId = 1L;
+        Long userId = 10L;
+        Long bidAmount = 1000L;
+        LocalDateTime now = LocalDateTime.now();
+
+        Auction auction = createActiveAuction(500L); // 현재가 500원
+        User user = createUser(userId, "입찰자");
+
+        given(auctionRepository.findByIdForUpdate(auctionId)).willReturn(Optional.of(auction));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // 유저의 잔액이 충분하다고 가정 (2000원 보유)
+        given(pointService.getTotalPoints(user)).willReturn(2000L);
+
+        // when
+        auctionService.placeBid(auctionId, userId, bidAmount, now);
+
+        // then
+        // 1. 포인트 차감 메서드가 호출되었는지 검증
+        verify(pointService).deductPoints(user, bidAmount);
+
+        // 2. 입찰 기록이 저장되었는지 검증
+        verify(auctionBidRepository).save(any(AuctionBid.class));
+
 
    }
 

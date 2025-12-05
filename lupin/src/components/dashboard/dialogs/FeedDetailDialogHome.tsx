@@ -685,7 +685,7 @@ export default function FeedDetailDialogHome({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`p-0 w-full h-[calc(100vh-60px)] max-h-[calc(100vh-60px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 fixed bottom-[60px] md:bottom-auto md:top-1/2 md:-translate-y-1/2 ${
+        className={`p-0 w-fit max-w-[calc(100vw-32px)] h-fit max-h-[calc(100vh-130px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 ${
           showComments
             ? "md:!w-[825px] md:!max-w-[825px]"
             : "md:!w-[475px] md:!max-w-[475px]"
@@ -698,12 +698,12 @@ export default function FeedDetailDialogHome({
           </DialogDescription>
         </DialogHeader>
         <div className="relative h-full flex flex-col md:flex-row overflow-hidden">
-          {/* Main Feed Content (Left) */}
-          <div className="w-full md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
+          {/* Main Feed Content (Left) - 모바일에서 aspect-[9/16] 적용 */}
+          <div className="w-full aspect-[9/16] md:aspect-auto md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
             {feed.images && feed.images.length > 0 ? (
               <>
-                {/* Image Carousel */}
-                <div className="relative h-[50vh] md:h-[545px] w-full md:max-w-[475px] overflow-hidden flex-shrink-0">
+                {/* Image Carousel - 모바일에서 57% 높이 (Feed.tsx와 동일) */}
+                <div className="relative h-[57%] md:h-[545px] w-full md:max-w-[475px] overflow-hidden flex-shrink-0">
                   <img
                     src={feed.images[currentImageIndex] || feed.images[0]}
                     alt={feed.activity}

@@ -53,7 +53,7 @@ interface FeedViewProps {
 /**
  * 댓글 패널 컴포넌트
  */
-function CommentPanel({ feedId }: { feedId: number }) {
+function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => void }) {
   const [commentText, setCommentText] = useState("");
   const [replyCommentText, setReplyCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
@@ -396,26 +396,36 @@ function CommentPanel({ feedId }: { feedId: number }) {
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
         <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
-        <div className="relative">
-          <button onClick={() => setShowSortMenu(!showSortMenu)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-            <ArrowUpDown className="w-4 h-4 text-gray-900" />
-            <span className="text-sm font-semibold text-gray-900">{sortOrder === "latest" ? "최신순" : "인기순"}</span>
-          </button>
-          {showSortMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
-              <button
-                onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
-                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
-              >
-                최신순
-              </button>
-              <button
-                onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
-                className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
-              >
-                인기순
-              </button>
-            </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <button onClick={() => setShowSortMenu(!showSortMenu)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+              <ArrowUpDown className="w-4 h-4 text-gray-900" />
+              <span className="text-sm font-semibold text-gray-900">{sortOrder === "latest" ? "최신순" : "인기순"}</span>
+            </button>
+            {showSortMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+                <button
+                  onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                >
+                  최신순
+                </button>
+                <button
+                  onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                >
+                  인기순
+                </button>
+              </div>
+            )}
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           )}
         </div>
       </div>
@@ -635,20 +645,9 @@ function FeedItem({
       {/* 댓글 패널 - 모바일: 전체화면 오버레이, 데스크톱: 옆에 표시 */}
       {showComments && (
         <>
-          {/* 모바일용 전체화면 오버레이 */}
-          <div className="md:hidden fixed inset-0 z-50 bg-white flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-bold text-lg">댓글</h3>
-              <button
-                onClick={() => setShowComments(false)}
-                className="p-2 hover:bg-gray-100 rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <CommentPanel feedId={feed.id} />
-            </div>
+          {/* 모바일용 전체화면 오버레이 (하단 네비 제외) */}
+          <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
+            <CommentPanel feedId={feed.id} onClose={() => setShowComments(false)} />
           </div>
           {/* 데스크톱용 사이드 패널 */}
           <div className="hidden md:block h-full aspect-[7/16] border-l border-gray-200/50 flex-shrink-0">

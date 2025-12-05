@@ -10,12 +10,13 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock } from "lucide-react";
 import AnimatedBackground from "../shared/AnimatedBackground";
-
+import { getActiveAuction } from "@/api/auctionApi";
 // 분리된 컴포넌트 및 훅 import
 import { AuctionData, BidHistory } from "@/types/auction.types";
 import { useAuctionTimer } from "@/hooks/useAuctionTimer";
 import { AuctionCard } from "./AuctionCard";
 import { BiddingPanel } from "./BiddingPanel";
+
 
 export default function Auction() {
   const [auctions, setAuctions] = useState<AuctionData[]>([]);
@@ -29,6 +30,9 @@ export default function Auction() {
   // 타이머 로직 훅 사용
   const { countdown, isOvertime } = useAuctionTimer(selectedAuction);
 
+
+
+  
   useEffect(() => {
     fetchAuctions();
     fetchUserPoints();
@@ -45,70 +49,33 @@ export default function Auction() {
 
   const fetchAuctions = async () => {
     try {
-      // API 연동 전 Mock Data (기존 로직 유지)
-      const today = new Date();
-      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 22, 0, 0);
+    setIsLoading(true); // 로딩 시작
+    
+    // 1. 실제 백엔드 API 호출
+    const auctionData = await getActiveAuction();
 
-      const activeAuctions: AuctionData[] = [
-        {
-          auctionId: 1,
-          currentPrice: 45,
-          startTime: todayStart.toISOString(),
-          regularEndTime: new Date(Date.now() + 1 * 60 * 1000).toISOString(),
-          overtimeStarted: false,
-          overtimeSeconds: 30,
-          status: "ACTIVE",
-          totalBids: 8,
-          viewers: 15,
-          item: {
-            itemId: 1,
-            itemName: "Apple Watch Series 9 (45mm)",
-            description: "애플워치 시리즈9 GPS 45mm 미드나이트 알루미늄 케이스 (정가 599,000원)",
-            imageUrl: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop",
-          },
-        },
-      ];
+    // 2. 데이터 상태 업데이트
+    if (auctionData) {
+      // 백엔드는 객체 1개를 주지만, UI는 배열([])을 기대하므로 배열로 감쌉니다.
+      setAuctions([auctionData]);
 
-      // Scheduled Mock Data... (생략하거나 간소화해도 되지만 기존 데이터 유지)
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      const scheduled: AuctionData[] = [
-        {
-          auctionId: 2,
-          currentPrice: 0,
-          startTime: tomorrow.toISOString(),
-          regularEndTime: tomorrow.toISOString(),
-          overtimeStarted: false,
-          overtimeSeconds: 30,
-          status: "SCHEDULED",
-          totalBids: 0,
-          viewers: 0,
-          item: {
-            itemId: 2,
-            itemName: "LG 스탠바이미 Go (27인치)",
-            description: "LG 스탠바이미 Go 포터블 터치스크린 TV",
-            imageUrl: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop",
-          },
-        },
-         // ... 다른 예정 항목들
-      ];
-
-      setAuctions(activeAuctions);
-      setScheduledAuctions(scheduled);
-
-      if (activeAuctions.length > 0 && !selectedAuction) {
-        setSelectedAuction(activeAuctions[0]);
+      // 3. 현재 선택된 경매가 없다면, 가져온 경매를 자동으로 선택
+      if (!selectedAuction) {
+        setSelectedAuction(auctionData);
       }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("경매 목록 조회 실패:", error);
-      setIsLoading(false);
+    } else {
+      setAuctions([]); // 데이터가 없으면 빈 배열
     }
+  } catch (error) {
+    console.error("경매 목록 조회 실패:", error);
+    setAuctions([]); // 에러 발생 시 목록 초기화
+  } finally {
+    setIsLoading(false); // 로딩 종료 (성공하든 실패하든)
+  }
   };
 
   const fetchUserPoints = async () => {
-    setUserPoints(120); // Mock data
+    setUserPoints(100); // Mock data
   };
 
   const fetchBidHistory = async (auctionId: number) => {
@@ -201,7 +168,7 @@ export default function Auction() {
                         <AuctionCard
                           key={auction.auctionId}
                           auction={auction}
-                          isSelected={selectedAuction?.item === auction.item}
+                          isSelected={selectedAuction?.auctionId === auction.auctionId}
                           onSelect={setSelectedAuction}
                           countdown={countdown}
                           isOvertime={isOvertime}

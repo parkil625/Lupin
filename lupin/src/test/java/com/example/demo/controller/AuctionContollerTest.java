@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.Auction;
 import com.example.demo.domain.entity.AuctionItem;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.dto.response.OngoingAuctionResponse;
+import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.service.AuctionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -70,6 +72,35 @@ class AuctionContollerTest {
                 .andExpect(jsonPath("$.currentPrice").value(1000))
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.item.itemName").value("아이패드 프로"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser") // 가짜 인증 유저 주입
+    @DisplayName("GET /api/auction/active - 진행 중인 경매 조회 성공")
+    void getScheduledAuctions_Success() throws Exception {
+        // given: 서비스가 반환할 가짜 데이터 설정
+        AuctionItem item = AuctionItem.builder()
+                .itemName("아이패드 프로")
+                .description("미개봉 새상품")
+                .build();
+
+        Auction auction = Auction.builder()
+                .id(1L)
+                .auctionItem(item)
+                .status(AuctionStatus.SCHEDULED)
+                .startTime(LocalDateTime.now().plusHours(1))
+                .build();
+
+        ScheduledAuctionResponse response = ScheduledAuctionResponse.from(auction);
+
+        // 서비스가 호출되면 위 response를 리턴하도록 설정 (Mocking)
+        given(auctionService.scheduledAuctionWithItem()).willReturn(List.of(response));
+
+        // when & then: API 호출 및 검증
+        mockMvc.perform(get("/api/auction/scheduled"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].auctionId").value(1L))
+                .andExpect(jsonPath("$[0].item.itemName").value("아이패드 프로"));
     }
 
 

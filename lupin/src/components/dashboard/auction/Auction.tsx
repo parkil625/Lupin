@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock } from "lucide-react";
 import AnimatedBackground from "../shared/AnimatedBackground";
-import { getActiveAuction } from "@/api/auctionApi";
+import { getActiveAuction, getScheduledAuctions } from "@/api/auctionApi";
 // 분리된 컴포넌트 및 훅 import
 import { AuctionData, BidHistory } from "@/types/auction.types";
 import { useAuctionTimer } from "@/hooks/useAuctionTimer";
@@ -30,48 +30,52 @@ export default function Auction() {
   // 타이머 로직 훅 사용
   const { countdown, isOvertime } = useAuctionTimer(selectedAuction);
 
-
-
-  
   useEffect(() => {
     fetchAuctions();
     fetchUserPoints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (selectedAuction) {
+useEffect(() => {
+    if (selectedAuction?.auctionId) {
       fetchBidHistory(selectedAuction.auctionId);
-      // 입찰 금액 자동 설정 (현재가 + 1P)
+      // 가격이 바뀔 때만 입찰 금액 업데이트
       setBidAmount((selectedAuction.currentPrice + 1).toString());
     }
-  }, [selectedAuction]);
+}, [selectedAuction?.auctionId, selectedAuction?.currentPrice]);
 
-  const fetchAuctions = async () => {
+
+const fetchAuctions = async () => {
     try {
-    setIsLoading(true); // 로딩 시작
-    
-    // 1. 실제 백엔드 API 호출
-    const auctionData = await getActiveAuction();
+      setIsLoading(true); 
+      
+      // 2. 진행 중인 경매와 예정된 경매를 병렬로 동시에 조회 (Promise.all 사용 권장)
+      const [activeAuctionData, scheduledAuctionList] = await Promise.all([
+        getActiveAuction().catch(() => null),       // 에러 발생 시 null 처리 (개별 에러 핸들링)
+        getScheduledAuctions().catch(() => [])      // 에러 발생 시 빈 배열 처리
+      ]);
 
-    // 2. 데이터 상태 업데이트
-    if (auctionData) {
-      // 백엔드는 객체 1개를 주지만, UI는 배열([])을 기대하므로 배열로 감쌉니다.
-      setAuctions([auctionData]);
-
-      // 3. 현재 선택된 경매가 없다면, 가져온 경매를 자동으로 선택
-      if (!selectedAuction) {
-        setSelectedAuction(auctionData);
+      // 3. 진행 중인 경매 상태 업데이트
+      if (activeAuctionData) {
+        setAuctions([activeAuctionData]);
+        if (!selectedAuction) {
+          setSelectedAuction(activeAuctionData);
+        }
+      } else {
+        setAuctions([]);
       }
-    } else {
-      setAuctions([]); // 데이터가 없으면 빈 배열
+
+      // 4. 예정된 경매 상태 업데이트 (이 부분이 빠져있었음)
+      if (scheduledAuctionList) {
+        setScheduledAuctions(scheduledAuctionList);
+      }
+
+    } catch (error) {
+      console.error("경매 목록 조회 실패:", error);
+      // 필요 시 에러 상태 처리
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("경매 목록 조회 실패:", error);
-    setAuctions([]); // 에러 발생 시 목록 초기화
-  } finally {
-    setIsLoading(false); // 로딩 종료 (성공하든 실패하든)
-  }
   };
 
   const fetchUserPoints = async () => {

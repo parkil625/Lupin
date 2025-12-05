@@ -1,8 +1,10 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.Appointment;
+import com.example.demo.domain.entity.ChatMessage;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AppointmentStatus;
+import com.example.demo.dto.request.AppointmentRequest;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +20,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.ArgumentMatchers.*;
 
 /**
  * AppointmentService TDD 테스트
@@ -31,6 +34,9 @@ class AppointmentServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ChatService chatService;
 
     @InjectMocks
     private AppointmentService appointmentService;
@@ -60,6 +66,33 @@ class AppointmentServiceTest {
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
+    }
+
+    @Test
+    @DisplayName("예약 생성 시 채팅방이 자동으로 생성됨")
+    void createAppointment_ShouldCreateChatRoomAutomatically() {
+        // Given
+        AppointmentRequest request = AppointmentRequest.builder()
+                .patientId(1L)
+                .doctorId(21L)
+                .date(LocalDateTime.of(2025, 12, 10, 15, 0))
+                .build();
+
+        given(userRepository.findById(1L)).willReturn(Optional.of(patient));
+        given(userRepository.findById(21L)).willReturn(Optional.of(doctor));
+        given(appointmentRepository.existsByDoctorIdAndDate(anyLong(), any())).willReturn(false);
+        given(appointmentRepository.existsByPatientIdAndDate(anyLong(), any())).willReturn(false);
+        given(appointmentRepository.save(any(Appointment.class))).willReturn(appointment);
+        given(chatService.createChatRoomForAppointment(anyLong())).willReturn("appointment_1");
+
+        // When
+        Long appointmentId = appointmentService.createAppointment(request);
+
+        // Then
+        assertThat(appointmentId).isNotNull();
+        verify(appointmentRepository, times(1)).save(any(Appointment.class));
+        verify(chatService, times(1)).createChatRoomForAppointment(anyLong());
+        verify(chatService, times(1)).saveMessage(eq("appointment_1"), eq(21L), anyString());
     }
 
     @Test

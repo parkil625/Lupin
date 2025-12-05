@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.domain.entity.Appointment;
+import com.example.demo.domain.entity.ChatMessage;
 import com.example.demo.dto.response.ChatMessageResponse;
 import com.example.demo.service.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +12,9 @@ import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -51,6 +55,48 @@ public class ChatController {
     ) {
         chatService.markAsRead(roomId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 의사의 채팅방 목록 조회
+     * GET /api/chat/rooms?userId={userId}
+     */
+    @GetMapping("/rooms")
+    public ResponseEntity<List<Map<String, Object>>> getChatRooms(@RequestParam Long userId) {
+        List<String> roomIds = chatService.getAllChatRoomsIncludingEmpty(userId);
+
+        List<Map<String, Object>> chatRooms = roomIds.stream()
+                .map(roomId -> {
+                    Map<String, Object> room = new HashMap<>();
+                    room.put("roomId", roomId);
+
+                    // 예약 정보에서 환자 정보 가져오기
+                    try {
+                        Appointment appointment = chatService.getAppointmentFromRoomId(roomId);
+                        room.put("patientId", appointment.getPatient().getId());
+                        room.put("patientName", appointment.getPatient().getName());
+                        room.put("doctorId", appointment.getDoctor().getId());
+                    } catch (Exception e) {
+                        log.warn("채팅방 {}에 대한 예약 정보를 찾을 수 없습니다", roomId);
+                        room.put("patientId", 0);
+                        room.put("patientName", "알 수 없음");
+                        room.put("doctorId", userId);
+                    }
+
+                    // 마지막 메시지
+                    ChatMessage lastMessage = chatService.getLatestMessageInRoom(roomId);
+                    room.put("lastMessage", lastMessage != null ? lastMessage.getContent() : "");
+                    room.put("lastMessageTime", lastMessage != null ? lastMessage.getTime().toString() : "");
+
+                    // 읽지 않은 메시지 개수
+                    int unreadCount = chatService.getUnreadMessageCount(roomId, userId);
+                    room.put("unreadCount", unreadCount);
+
+                    return room;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(chatRooms);
     }
 
 }

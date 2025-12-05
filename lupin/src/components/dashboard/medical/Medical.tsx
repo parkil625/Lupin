@@ -25,6 +25,7 @@ import { Clock, FileText, XCircle, Send } from "lucide-react"; // CalendarIcon �
 import { Prescription } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
+import { appointmentApi } from "@/api/appointmentApi";
 import { toast } from "sonner";
 
 interface MedicalProps {
@@ -159,7 +160,7 @@ MedicalProps) {
   const hasActiveChat = activeAppointment !== null && !isChatEnded;
 
   // 예약 확인 핸들러
-  const handleConfirmAppointment = () => {
+  const handleConfirmAppointment = async () => {
     if (!selectedDepartment || !selectedDate || !selectedTime) return;
 
     const departmentNames: Record<string, string> = {
@@ -169,25 +170,44 @@ MedicalProps) {
       dermatology: "피부과",
     };
 
-    setActiveAppointment({
-      id: Date.now(),
-      doctorId: 21,
-      doctorName: "김민준",
-      type: `${departmentNames[selectedDepartment]} 상담`,
-    });
-    setIsChatEnded(false);
-    setShowAppointmentView(false);
+    try {
+      // 날짜 + 시간 조합 (ISO 8601 형식)
+      const [hours, minutes] = selectedTime.split(":").map(Number);
+      const appointmentDateTime = new Date(selectedDate);
+      appointmentDateTime.setHours(hours, minutes, 0, 0);
 
-    toast.success(
-      `${selectedDate.toLocaleDateString(
-        "ko-KR"
-      )} ${selectedTime} 예약이 완료되었습니다`
-    );
+      // 백엔드 API 호출
+      const appointmentId = await appointmentApi.createAppointment({
+        patientId: currentPatientId,
+        doctorId: doctorId,
+        date: appointmentDateTime.toISOString(),
+      });
 
-    // 상태 초기화
-    setSelectedDepartment("");
-    setSelectedDate(undefined);
-    setSelectedTime("");
+      console.log("✅ 예약 생성 성공:", appointmentId);
+
+      setActiveAppointment({
+        id: appointmentId,
+        doctorId: doctorId,
+        doctorName: "김민준",
+        type: `${departmentNames[selectedDepartment]} 상담`,
+      });
+      setIsChatEnded(false);
+      setShowAppointmentView(false);
+
+      toast.success(
+        `${selectedDate.toLocaleDateString(
+          "ko-KR"
+        )} ${selectedTime} 예약이 완료되었습니다`
+      );
+
+      // 상태 초기화
+      setSelectedDepartment("");
+      setSelectedDate(undefined);
+      setSelectedTime("");
+    } catch (error) {
+      console.error("❌ 예약 생성 실패:", error);
+      toast.error("예약 생성에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   // -------------------------------------------------------------------------

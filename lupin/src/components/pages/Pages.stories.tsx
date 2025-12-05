@@ -17,7 +17,7 @@ import FeedDetailDialogHome from '../dashboard/dialogs/FeedDetailDialogHome';
 import CreateFeedDialog from '../dashboard/dialogs/CreateFeedDialog';
 import EditFeedDialog from '../dashboard/dialogs/EditFeedDialog';
 import NotFoundPage from '../errors/NotFoundPage';
-import ServerErrorPage from '../errors/ServerErrorPage';
+import ErrorPage from '../errors/ErrorPage';
 
 // UI 컴포넌트
 import { SearchInput } from '../molecules';
@@ -560,5 +560,5 @@ export const 에러404: Story = {
  * 서버 오류 발생 시 표시됩니다.
  */
 export const 에러500: Story = {
-  render: () => <ServerErrorPage />,
+  render: () => <ErrorPage />,
 };

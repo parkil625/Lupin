@@ -101,11 +101,7 @@ public class AuctionService {
     //예정인 경매 정보와 경매 물품 조회
     public List<ScheduledAuctionResponse> scheduledAuctionWithItem() {
         List<Auction> auctions = auctionRepository.findAllByStatusOrderByStartTimeAscWithItem(AuctionStatus.SCHEDULED);
-
-        if (auctions.isEmpty()) {
-            throw new IllegalStateException("예정 중인 경매가 없습니다.");
-        }
-
+        
         return auctions.stream()
                 .map(ScheduledAuctionResponse::from)
                 .toList();

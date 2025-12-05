@@ -885,7 +885,7 @@ export default function FeedDetailDialogHome({
 
             {/* Feed Content (Always visible) */}
             <ScrollArea
-              className="bg-white/50 backdrop-blur-sm w-full md:w-[475px] md:max-w-[475px] flex-1"
+              className="w-full md:w-[475px] md:max-w-[475px] flex-1"
             >
               <div className="p-4 md:p-6 space-y-3">
                 <style>{`

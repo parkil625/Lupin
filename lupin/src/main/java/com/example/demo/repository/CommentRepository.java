@@ -19,7 +19,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     Optional<Comment> findByIdWithDetails(@Param("id") Long id);
 
     @EntityGraph(attributePaths = {"writer", "feed"})
-    List<Comment> findByFeedOrderByIdDesc(Feed feed);
+    List<Comment> findByFeedAndParentIsNullOrderByIdDesc(Feed feed);
+
+    List<Comment> findByFeed(Feed feed);
 
     @Modifying
     @Query("DELETE FROM Comment c WHERE c.feed = :feed AND c.parent IS NOT NULL")

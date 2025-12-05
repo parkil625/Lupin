@@ -185,7 +185,7 @@ class CommentServiceTest {
         Comment comment2 = Comment.builder().id(2L).writer(writer).feed(feed).content("두번째").build();
 
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
-        given(commentRepository.findByFeedOrderByIdDesc(feed)).willReturn(List.of(comment2, comment1));
+        given(commentRepository.findByFeedAndParentIsNullOrderByIdDesc(feed)).willReturn(List.of(comment2, comment1));
 
         // when
         List<Comment> result = commentService.getCommentsByFeed(feedId);
@@ -193,7 +193,7 @@ class CommentServiceTest {
         // then
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getContent()).isEqualTo("두번째");
-        verify(commentRepository).findByFeedOrderByIdDesc(feed);
+        verify(commentRepository).findByFeedAndParentIsNullOrderByIdDesc(feed);
     }
 
     @Test

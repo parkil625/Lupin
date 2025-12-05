@@ -78,7 +78,7 @@ public class CommentService {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
-        return commentRepository.findByFeedOrderByIdDesc(feed);
+        return commentRepository.findByFeedAndParentIsNullOrderByIdDesc(feed);
     }
 
     public List<Comment> getCommentsByFeedOrderByPopular(Long feedId) {

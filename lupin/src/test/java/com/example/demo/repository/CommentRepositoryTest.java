@@ -18,20 +18,21 @@ class CommentRepositoryTest extends BaseRepositoryTest {
     private CommentLikeRepository commentLikeRepository;
 
     @Test
-    @DisplayName("피드의 댓글을 최신순으로 조회한다")
-    void findByFeedOrderByIdDescTest() {
+    @DisplayName("피드의 루트 댓글만 최신순으로 조회한다 (대댓글 제외)")
+    void findByFeedAndParentIsNullOrderByIdDescTest() {
         // given
         User user = createAndSaveUser("user1");
         Feed feed = createAndSaveFeed(user, "running");
 
-        createAndSaveComment(user, feed, "첫 번째 댓글");
+        Comment parent = createAndSaveComment(user, feed, "첫 번째 댓글");
         createAndSaveComment(user, feed, "두 번째 댓글");
         createAndSaveComment(user, feed, "세 번째 댓글");
+        createAndSaveReply(user, feed, parent, "대댓글");
 
         // when
-        List<Comment> comments = commentRepository.findByFeedOrderByIdDesc(feed);
+        List<Comment> comments = commentRepository.findByFeedAndParentIsNullOrderByIdDesc(feed);
 
-        // then
+        // then - 대댓글은 제외되어 3개만 반환
         assertThat(comments).hasSize(3);
         assertThat(comments.get(0).getContent()).isEqualTo("세 번째 댓글");
         assertThat(comments.get(1).getContent()).isEqualTo("두 번째 댓글");
@@ -55,7 +56,7 @@ class CommentRepositoryTest extends BaseRepositoryTest {
         commentRepository.deleteParentCommentsByFeed(feed);
 
         // then
-        List<Comment> comments = commentRepository.findByFeedOrderByIdDesc(feed);
+        List<Comment> comments = commentRepository.findByFeed(feed);
         assertThat(comments).isEmpty();
     }
 

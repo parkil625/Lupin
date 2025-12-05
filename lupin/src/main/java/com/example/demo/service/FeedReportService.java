@@ -74,7 +74,7 @@ public class FeedReportService {
         }
 
         // COMMENT 알림 삭제 (refId = Comment ID)
-        List<String> commentIds = commentRepository.findByFeedOrderByIdDesc(feed).stream()
+        List<String> commentIds = commentRepository.findByFeed(feed).stream()
                 .map(c -> String.valueOf(c.getId()))
                 .toList();
         if (!commentIds.isEmpty()) {

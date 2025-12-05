@@ -685,7 +685,7 @@ export default function FeedDetailDialogHome({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`p-0 w-full h-[calc(100%-70px)] max-h-[calc(100vh-70px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 ${
+        className={`p-0 w-full h-[calc(100vh-60px)] max-h-[calc(100vh-60px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 fixed bottom-[60px] md:bottom-auto md:top-1/2 md:-translate-y-1/2 ${
           showComments
             ? "md:!w-[825px] md:!max-w-[825px]"
             : "md:!w-[475px] md:!max-w-[475px]"
@@ -954,8 +954,8 @@ export default function FeedDetailDialogHome({
           {/* Comments Panel */}
           {showComments && (
             <>
-              {/* 모바일용 전체화면 오버레이 */}
-              <div className="md:hidden fixed inset-0 z-50 bg-white flex flex-col">
+              {/* 모바일용 전체화면 오버레이 (하단 네비 제외) */}
+              <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
                 <div className="flex items-center justify-between p-4 border-b">
                   <h3 className="font-bold text-lg">댓글 {totalCommentCount}개</h3>
                   <div className="flex items-center gap-2">

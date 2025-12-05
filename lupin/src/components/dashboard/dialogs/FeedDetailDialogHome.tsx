@@ -885,7 +885,7 @@ export default function FeedDetailDialogHome({
 
             {/* Feed Content (Always visible) */}
             <ScrollArea
-              className="bg-white/50 backdrop-blur-sm w-full md:w-[475px] md:max-w-[475px] flex-1"
+              className="bg-transparent w-full md:w-[475px] md:max-w-[475px] flex-1"
             >
               <div className="p-4 md:p-6 space-y-3">
                 <style>{`
@@ -1037,7 +1037,7 @@ export default function FeedDetailDialogHome({
               </div>
 
               {/* 데스크톱용 사이드 패널 */}
-              <div className="hidden md:flex flex-1 bg-white/50 backdrop-blur-sm border-l border-gray-200/50 flex-col overflow-hidden">
+              <div className="hidden md:flex flex-1 bg-transparent border-l border-gray-200/30 flex-col overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
                   <div className="relative">

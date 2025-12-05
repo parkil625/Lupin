@@ -683,14 +683,99 @@ export default function FeedDetailDialogHome({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className={`p-0 w-fit max-w-[calc(100vw-32px)] h-fit max-h-[calc(100vh-130px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 ${
-          showComments
-            ? "md:!w-[825px] md:!max-w-[825px]"
-            : "md:!w-[475px] md:!max-w-[475px]"
-        }`}
-      >
+    <>
+      {/* 모바일용 전체화면 댓글 오버레이 - Dialog 밖에 위치하여 fixed positioning 작동 */}
+      {open && showComments && (
+        <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-[60] bg-white flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="font-bold text-lg">댓글 {totalCommentCount}개</h3>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <ArrowUpDown className="w-4 h-4 text-gray-900" />
+                  <span className="text-sm font-semibold text-gray-900">
+                    {sortOrder === "latest" ? "최신순" : "인기순"}
+                  </span>
+                </button>
+                {showSortMenu && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+                    <button
+                      onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                    >
+                      최신순
+                    </button>
+                    <button
+                      onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                    >
+                      인기순
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setShowComments(false)}
+                className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full">
+              <div className="space-y-4 px-6 pt-4 pb-4">
+                {comments.length === 0 ? (
+                  <div className="text-center text-gray-500 text-sm py-8">첫 댓글을 남겨보세요!</div>
+                ) : (
+                  sortedComments.map((comment) => renderComment(comment))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+          <div className="p-4 border-t border-gray-200/50">
+            <div className="flex gap-2 items-center">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="댓글을 입력하세요..."
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
+                  className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
+                />
+                {commentText && (
+                  <button
+                    onClick={() => setCommentText("")}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
+                  >
+                    <X className="w-3 h-3 text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={handleSendComment}
+                disabled={!commentText.trim()}
+                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          className={`p-0 h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 ${
+            showComments
+              ? "md:!w-[825px] md:!max-w-[825px]"
+              : "md:!w-[475px] md:!max-w-[475px]"
+          }`}
+        >
         <DialogHeader className="sr-only">
           <DialogTitle>피드 상세보기</DialogTitle>
           <DialogDescription>
@@ -698,12 +783,12 @@ export default function FeedDetailDialogHome({
           </DialogDescription>
         </DialogHeader>
         <div className="relative h-full flex flex-col md:flex-row overflow-hidden">
-          {/* Main Feed Content (Left) - 모바일에서 aspect-[9/16] 적용 */}
-          <div className="w-full aspect-[9/16] md:aspect-auto md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
+          {/* Main Feed Content (Left) - 모바일에서 h-full aspect-[9/16] (Feed.tsx와 동일) */}
+          <div className="h-full aspect-[9/16] md:aspect-auto md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
             {feed.images && feed.images.length > 0 ? (
               <>
                 {/* Image Carousel - 모바일에서 57% 높이 (Feed.tsx와 동일) */}
-                <div className="relative h-[57%] md:h-[545px] w-full md:max-w-[475px] overflow-hidden flex-shrink-0">
+                <div className="relative h-[57%] md:h-[545px] w-full md:max-w-[475px] overflow-hidden">
                   <img
                     src={feed.images[currentImageIndex] || feed.images[0]}
                     alt={feed.activity}
@@ -883,9 +968,9 @@ export default function FeedDetailDialogHome({
               </>
             )}
 
-            {/* Feed Content (Always visible) */}
+            {/* Feed Content (Always visible) - 모바일에서 43% 높이 (Feed.tsx와 동일) */}
             <ScrollArea
-              className="bg-transparent w-full md:w-[475px] md:max-w-[475px] flex-1"
+              className="h-[43%] md:flex-1 bg-transparent w-full md:w-[475px] md:max-w-[475px]"
             >
               <div className="p-4 md:p-6 space-y-3">
                 <style>{`
@@ -951,92 +1036,8 @@ export default function FeedDetailDialogHome({
             </ScrollArea>
           </div>
 
-          {/* Comments Panel */}
+          {/* Comments Panel - 데스크톱용 사이드 패널 (모바일은 Dialog 밖에 위치) */}
           {showComments && (
-            <>
-              {/* 모바일용 전체화면 오버레이 (하단 네비 제외) */}
-              <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
-                <div className="flex items-center justify-between p-4 border-b">
-                  <h3 className="font-bold text-lg">댓글 {totalCommentCount}개</h3>
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowSortMenu(!showSortMenu)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                      >
-                        <ArrowUpDown className="w-4 h-4 text-gray-900" />
-                        <span className="text-sm font-semibold text-gray-900">
-                          {sortOrder === "latest" ? "최신순" : "인기순"}
-                        </span>
-                      </button>
-                      {showSortMenu && (
-                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
-                          <button
-                            onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
-                            className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
-                          >
-                            최신순
-                          </button>
-                          <button
-                            onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
-                            className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
-                          >
-                            인기순
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => setShowComments(false)}
-                      className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <ScrollArea className="h-full">
-                    <div className="space-y-4 px-6 pt-4 pb-4">
-                      {comments.length === 0 ? (
-                        <div className="text-center text-gray-500 text-sm py-8">첫 댓글을 남겨보세요!</div>
-                      ) : (
-                        sortedComments.map((comment) => renderComment(comment))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </div>
-                <div className="p-4 border-t border-gray-200/50">
-                  <div className="flex gap-2 items-center">
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        placeholder="댓글을 입력하세요..."
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
-                        className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
-                      />
-                      {commentText && (
-                        <button
-                          onClick={() => setCommentText("")}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
-                        >
-                          <X className="w-3 h-3 text-gray-600" />
-                        </button>
-                      )}
-                    </div>
-                    <button
-                      onClick={handleSendComment}
-                      disabled={!commentText.trim()}
-                      className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* 데스크톱용 사이드 패널 */}
               <div className="hidden md:flex flex-1 bg-transparent border-l border-gray-200/30 flex-col overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
@@ -1107,10 +1108,10 @@ export default function FeedDetailDialogHome({
                   </div>
                 </div>
               </div>
-            </>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

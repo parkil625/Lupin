@@ -8,6 +8,7 @@ import Login from '../auth/Login';
 import Sidebar from '../dashboard/shared/Sidebar';
 import AnimatedBackground from '../dashboard/shared/AnimatedBackground';
 import Home from '../dashboard/home/Home';
+import FeedView from '../dashboard/feed/Feed';
 import Ranking from '../dashboard/ranking/Ranking';
 import Auction from '../dashboard/auction/Auction';
 import Medical from '../dashboard/medical/Medical';
@@ -274,117 +275,53 @@ export const 홈페이지: Story = {
 /**
  * 피드 페이지
  *
- * 전체 피드를 스냅 스크롤로 탐색합니다. 클릭하면 상세보기가 열립니다.
+ * 실제 FeedView 컴포넌트를 사용합니다.
+ * 피드를 스냅 스크롤로 탐색하고, 댓글 버튼을 누르면 댓글 패널이 열립니다.
  */
 export const 피드페이지: Story = {
   render: () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
-    const [feedImageIndex, setFeedImageIndex] = useState(0);
-    const [showFeedDetail, setShowFeedDetail] = useState(false);
+    const [showSearch, setShowSearch] = useState(false);
+    const [feedImageIndices, setFeedImageIndices] = useState<Record<number, number>>({});
+    const [likedFeeds, setLikedFeeds] = useState<Set<number>>(new Set());
+    const feedContainerRef = React.useRef<HTMLDivElement>(null);
+    const [scrollToFeedId, setScrollToFeedId] = useState<number | null>(null);
 
-    const filteredFeeds = mockFeeds.filter(feed =>
-      (feed.author || feed.writerName || '').toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const getFeedImageIndex = (feedId: number) => feedImageIndices[feedId] || 0;
+    const setFeedImageIndex = (feedId: number, index: number) => {
+      setFeedImageIndices(prev => ({ ...prev, [feedId]: index }));
+    };
+    const hasLiked = (feedId: number) => likedFeeds.has(feedId);
+    const handleLike = (feedId: number) => {
+      setLikedFeeds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(feedId)) {
+          newSet.delete(feedId);
+        } else {
+          newSet.add(feedId);
+        }
+        return newSet;
+      });
+    };
 
     return (
       <DashboardWrapper selectedNav="feed">
-        <div className="h-full flex flex-col">
-          <div className="sticky top-0 z-30 flex justify-center px-4 py-3 bg-gradient-to-b from-gray-50 to-transparent">
-            <div className="w-full max-w-md">
-              <SearchInput
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="작성자 이름으로 검색..."
-                suggestions={mockFeeds.map(f => f.author || f.writerName).filter((name): name is string => !!name)}
-              />
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto snap-y snap-mandatory" style={{ scrollSnapType: 'y mandatory' }}>
-            {filteredFeeds.map(feed => {
-              const hasImages = feed.images && feed.images.length > 0;
-
-              return (
-                <div
-                  key={feed.id}
-                  className="h-full snap-start snap-always flex items-center justify-center cursor-pointer"
-                  style={{ scrollSnapAlign: 'start', minHeight: '100%' }}
-                  onClick={() => {
-                    setSelectedFeed(feed);
-                    setFeedImageIndex(0);
-                    setShowFeedDetail(true);
-                  }}
-                >
-                  <div className="h-[95vh] max-h-[800px] w-[475px] overflow-hidden rounded-lg backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl flex flex-col">
-                    {hasImages ? (
-                      <div className="relative h-[545px] w-full overflow-hidden rounded-t-lg">
-                        <img src={feed.images[0]} alt={feed.activity} className="w-full h-full object-cover" />
-                        {feed.images.length > 1 && (
-                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                            {feed.images.map((_, idx) => (
-                              <div key={idx} className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-white' : 'bg-white/50'}`} />
-                            ))}
-                          </div>
-                        )}
-                        <div className="absolute top-4 left-4">
-                          <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
-                            {mockAvatars[feed.author || ''] ? (
-                              <img src={mockAvatars[feed.author || '']} alt={feed.author} className="w-full h-full object-cover rounded-full" />
-                            ) : (
-                              <AvatarFallback className="bg-white"><User className="w-5 h-5 text-gray-400" /></AvatarFallback>
-                            )}
-                          </Avatar>
-                        </div>
-                        <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                          <div className="flex flex-col items-center gap-1">
-                            <Heart className="w-6 h-6 fill-red-500 text-red-500" />
-                            <span className="text-xs font-bold text-white">{feed.likes}</span>
-                          </div>
-                          <div className="flex flex-col items-center gap-1">
-                            <MessageCircle className="w-6 h-6 text-white" />
-                            <span className="text-xs font-bold text-white">{feed.comments}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="relative h-[545px] w-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-t-lg">
-                        <Sparkles className="w-16 h-16 text-gray-300" />
-                      </div>
-                    )}
-                    <ScrollArea className="flex-1 bg-transparent">
-                      <div className="p-6 space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 font-bold border-0">
-                              <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
-                            </Badge>
-                            <Badge className="bg-white text-blue-700 px-3 py-1 font-bold text-xs border-0">{feed.activity}</Badge>
-                          </div>
-                          <Badge className="bg-white text-gray-700 px-3 py-1 font-bold text-xs border-0">{feed.time}</Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-gray-900">{feed.author}</span>
-                        </div>
-                        <p className="text-sm text-gray-700">{typeof feed.content === 'string' ? feed.content : ''}</p>
-                      </div>
-                    </ScrollArea>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <FeedDetailDialogHome
-          feed={selectedFeed}
-          open={showFeedDetail}
-          onOpenChange={setShowFeedDetail}
-          currentImageIndex={feedImageIndex}
-          onPrevImage={() => feedImageIndex > 0 && setFeedImageIndex(feedImageIndex - 1)}
-          onNextImage={() => selectedFeed?.images && feedImageIndex < selectedFeed.images.length - 1 && setFeedImageIndex(feedImageIndex + 1)}
-          onEdit={(feed) => alert(`피드 수정: ${feed.id}`)}
-          onDelete={(feedId) => alert(`피드 삭제: ${feedId}`)}
+        <FeedView
+          allFeeds={mockFeeds}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          showSearch={showSearch}
+          setShowSearch={setShowSearch}
+          getFeedImageIndex={getFeedImageIndex}
+          setFeedImageIndex={setFeedImageIndex}
+          hasLiked={hasLiked}
+          handleLike={handleLike}
+          feedContainerRef={feedContainerRef}
+          scrollToFeedId={scrollToFeedId}
+          setScrollToFeedId={setScrollToFeedId}
+          loadMoreFeeds={() => {}}
+          hasMoreFeeds={false}
+          isLoadingFeeds={false}
         />
       </DashboardWrapper>
     );

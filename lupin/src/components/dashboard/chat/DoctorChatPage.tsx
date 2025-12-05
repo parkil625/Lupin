@@ -4,6 +4,9 @@
  * [수정 완료]
  * 1. 미사용 import (ScrollArea) 제거 -> 에러 해결
  * 2. 채팅 자동 스크롤, 이름 표시 오류 수정, 예약 취소 등 모든 기능 정상 동작
+ * 3. roomId 형식 수정: {patientId}:{doctorId} → appointment_{appointmentId}
+ *    - 백엔드와 일치하는 형식 사용 (AppointmentService에서 생성)
+ *    - chatRooms에서 올바른 roomId를 가져와 사용
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -67,9 +70,11 @@ export default function DoctorChatPage() {
     { name: "항히스타민제", quantity: 0 },
   ]);
 
-  const roomId = selectedChatMember
-    ? `${selectedChatMember.id}:${currentDoctorId}`
-    : "";
+  // 🔧 수정: roomId를 chatRooms에서 가져오기 (appointment_{id} 형식)
+  const selectedRoom = chatRooms.find(
+    (room) => room.patientId === selectedChatMember?.id
+  );
+  const roomId = selectedRoom?.roomId || "";
 
   const handleMessageReceived = useCallback(
     (message: ChatMessageResponse) => {
@@ -112,14 +117,12 @@ export default function DoctorChatPage() {
   }, [currentUserId]);
 
   useEffect(() => {
-    if (!selectedChatMember) return;
+    if (!selectedChatMember || !roomId) return;
 
     const loadMessages = async () => {
       try {
-        const targetRoomId = `${selectedChatMember.id}:${currentDoctorId}`;
-        const loadedMessages = await chatApi.getAllMessagesByRoomId(
-          targetRoomId
-        );
+        // 🔧 수정: roomId를 직접 사용 (이미 올바른 appointment_{id} 형식)
+        const loadedMessages = await chatApi.getAllMessagesByRoomId(roomId);
         setMessages(loadedMessages);
       } catch (error) {
         console.error("메시지 로드 실패:", error);
@@ -128,7 +131,7 @@ export default function DoctorChatPage() {
 
     loadMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedChatMember?.id, currentDoctorId]);
+  }, [roomId]);
 
   // 🔧 수정: REST API로 읽음 처리
   useEffect(() => {
@@ -241,8 +244,7 @@ export default function DoctorChatPage() {
 
                       const isSelected =
                         selectedChatMember &&
-                        `${selectedChatMember.id}:${currentDoctorId}` ===
-                          room.roomId;
+                        room.patientId === selectedChatMember.id;
 
                       return (
                         <div

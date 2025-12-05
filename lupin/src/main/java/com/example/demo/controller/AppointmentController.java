@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping()
+@RequestMapping("/api/appointment")
 public class AppointmentController {
 
     private final  AppointmentService appointmentService;

@@ -770,7 +770,7 @@ export default function FeedDetailDialogHome({
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className={`p-0 h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 ${
+          className={`block p-0 gap-0 h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 ${
             showComments
               ? "md:!w-[825px] md:!max-w-[825px]"
               : "md:!w-[475px] md:!max-w-[475px]"

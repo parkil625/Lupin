@@ -1,6 +1,10 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+
+// 페이지 컴포넌트
+import LandingPage from '../LandingPage';
+import Login from '../auth/Login';
 import Sidebar from '../dashboard/shared/Sidebar';
 import AnimatedBackground from '../dashboard/shared/AnimatedBackground';
 import Home from '../dashboard/home/Home';
@@ -12,16 +16,29 @@ import NotificationPopup from '../dashboard/shared/NotificationPopup';
 import FeedDetailDialogHome from '../dashboard/dialogs/FeedDetailDialogHome';
 import CreateFeedDialog from '../dashboard/dialogs/CreateFeedDialog';
 import EditFeedDialog from '../dashboard/dialogs/EditFeedDialog';
+import NotFoundPage from '../errors/NotFoundPage';
+import ServerErrorPage from '../errors/ServerErrorPage';
+
+// UI 컴포넌트
 import { SearchInput } from '../molecules';
-import { Home as HomeIcon, Video, Trophy, Gavel, Calendar, Bell, Heart, MessageCircle, User, Sparkles } from 'lucide-react';
-import { Feed, Notification } from '@/types/dashboard.types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
+// 아이콘
+import { Home as HomeIcon, Video, Trophy, Gavel, Calendar, Bell, Heart, MessageCircle, User, Sparkles } from 'lucide-react';
+
+// 타입
+import { Feed, Notification } from '@/types/dashboard.types';
+
+/**
+ * 페이지 스토리북
+ *
+ * 실제 서비스에서 보이는 전체 화면들입니다.
+ */
 const meta = {
-  title: 'Pages/Dashboard',
+  title: 'Pages',
   parameters: {
     layout: 'fullscreen',
     backgrounds: { default: 'light' },
@@ -31,6 +48,10 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
+// ============================================
+// Mock 데이터
+// ============================================
+
 const memberNavItems = [
   { id: 'home', icon: HomeIcon, label: '홈' },
   { id: 'feed', icon: Video, label: '피드' },
@@ -39,21 +60,12 @@ const memberNavItems = [
   { id: 'medical', icon: Calendar, label: '진료' },
 ];
 
-// Mock 프로필 이미지 - 유효한 Unsplash 이미지 URL
 const mockAvatars: Record<string, string> = {
   '김운동': 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop',
   '이헬스': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
   '박피트': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-  '최건강': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-  '정활력': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
-  '한체력': 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=100&h=100&fit=crop',
-  '오근육': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-  '강스포츠': 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop',
-  '신헬시': 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-  '박선일': 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop',
 };
 
-// Mock 피드 데이터
 const mockFeeds: Feed[] = [
   {
     id: 1,
@@ -99,7 +111,6 @@ const mockFeeds: Feed[] = [
   },
 ];
 
-// Mock 알림 데이터
 const mockNotifications: Notification[] = [
   {
     id: 1,
@@ -119,7 +130,10 @@ const mockNotifications: Notification[] = [
   },
 ];
 
+// ============================================
 // 공통 레이아웃 래퍼
+// ============================================
+
 const DashboardWrapper = ({ children, selectedNav }: { children: React.ReactNode; selectedNav: string }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -141,10 +155,42 @@ const DashboardWrapper = ({ children, selectedNav }: { children: React.ReactNode
   );
 };
 
+// ============================================
+// 1. 소개 페이지 (Landing)
+// ============================================
+
 /**
- * 홈 페이지 - 프로필 및 내 피드 (기존 FeedDetailDialogHome, CreateFeedDialog, EditFeedDialog 사용)
+ * 소개 페이지
+ *
+ * 서비스 첫 화면입니다. "로그인" 버튼을 클릭하면 로그인 페이지로 이동합니다.
  */
-export const HomePage: Story = {
+export const 소개페이지: Story = {
+  render: () => <LandingPage />,
+};
+
+// ============================================
+// 2. 로그인 페이지
+// ============================================
+
+/**
+ * 로그인 페이지
+ *
+ * 사용자 인증 화면입니다. 사내 아이디/비밀번호 또는 SNS 간편 로그인을 지원합니다.
+ */
+export const 로그인페이지: Story = {
+  render: () => <Login />,
+};
+
+// ============================================
+// 3. 홈 페이지
+// ============================================
+
+/**
+ * 홈 페이지
+ *
+ * 프로필 및 내 피드를 확인하고, 새 피드를 작성할 수 있습니다.
+ */
+export const 홈페이지: Story = {
   render: () => {
     const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
     const [feedImageIndex, setFeedImageIndex] = useState(0);
@@ -187,7 +233,6 @@ export const HomePage: Story = {
           refreshTrigger={0}
         />
 
-        {/* 기존 피드 상세 다이얼로그 사용 */}
         <FeedDetailDialogHome
           feed={selectedFeed}
           open={showFeedDetail}
@@ -199,22 +244,20 @@ export const HomePage: Story = {
           onDelete={(feedId) => alert(`피드 삭제: ${feedId}`)}
         />
 
-        {/* 기존 피드 만들기 다이얼로그 사용 */}
         <CreateFeedDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
-          onCreate={(images, _content, workoutType, _startImage, _endImage) => {
+          onCreate={(images, _content, workoutType) => {
             alert(`피드 생성!\n운동 종류: ${workoutType}\n이미지 수: ${images.length}`);
             setShowCreateDialog(false);
           }}
         />
 
-        {/* 기존 피드 수정 다이얼로그 사용 */}
         <EditFeedDialog
           feed={editingFeed}
           open={showEditDialog}
           onOpenChange={setShowEditDialog}
-          onSave={(feedId, _images, _content, workoutType, _startImage, _endImage) => {
+          onSave={(feedId, _images, _content, workoutType) => {
             alert(`피드 수정 완료!\nID: ${feedId}\n운동 종류: ${workoutType}`);
             setShowEditDialog(false);
           }}
@@ -224,10 +267,16 @@ export const HomePage: Story = {
   },
 };
 
+// ============================================
+// 4. 피드 페이지
+// ============================================
+
 /**
- * 피드 페이지 - FeedDetailDialogHome과 동일한 스타일 (스냅 스크롤)
+ * 피드 페이지
+ *
+ * 전체 피드를 스냅 스크롤로 탐색합니다. 클릭하면 상세보기가 열립니다.
  */
-export const FeedPage: Story = {
+export const 피드페이지: Story = {
   render: () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFeed, setSelectedFeed] = useState<Feed | null>(null);
@@ -238,22 +287,9 @@ export const FeedPage: Story = {
       (feed.author || feed.writerName || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handlePrevImage = () => {
-      if (selectedFeed && feedImageIndex > 0) {
-        setFeedImageIndex(feedImageIndex - 1);
-      }
-    };
-
-    const handleNextImage = () => {
-      if (selectedFeed && selectedFeed.images && feedImageIndex < selectedFeed.images.length - 1) {
-        setFeedImageIndex(feedImageIndex + 1);
-      }
-    };
-
     return (
       <DashboardWrapper selectedNav="feed">
         <div className="h-full flex flex-col">
-          {/* 검색창 */}
           <div className="sticky top-0 z-30 flex justify-center px-4 py-3 bg-gradient-to-b from-gray-50 to-transparent">
             <div className="w-full max-w-md">
               <SearchInput
@@ -265,7 +301,6 @@ export const FeedPage: Story = {
             </div>
           </div>
 
-          {/* 스냅 스크롤 피드 목록 - 클릭하면 FeedDetailDialogHome 열림 */}
           <div className="flex-1 overflow-y-auto snap-y snap-mandatory" style={{ scrollSnapType: 'y mandatory' }}>
             {filteredFeeds.map(feed => {
               const hasImages = feed.images && feed.images.length > 0;
@@ -281,13 +316,10 @@ export const FeedPage: Story = {
                     setShowFeedDetail(true);
                   }}
                 >
-                  {/* 피드 미리보기 카드 */}
                   <div className="h-[95vh] max-h-[800px] w-[475px] overflow-hidden rounded-lg backdrop-blur-2xl bg-white/60 border border-gray-200/30 shadow-2xl flex flex-col">
-                    {/* 이미지 영역 */}
                     {hasImages ? (
                       <div className="relative h-[545px] w-full overflow-hidden rounded-t-lg">
                         <img src={feed.images[0]} alt={feed.activity} className="w-full h-full object-cover" />
-                        {/* 이미지 인디케이터 */}
                         {feed.images.length > 1 && (
                           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                             {feed.images.map((_, idx) => (
@@ -295,7 +327,6 @@ export const FeedPage: Story = {
                             ))}
                           </div>
                         )}
-                        {/* 아바타 */}
                         <div className="absolute top-4 left-4">
                           <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
                             {mockAvatars[feed.author || ''] ? (
@@ -305,18 +336,13 @@ export const FeedPage: Story = {
                             )}
                           </Avatar>
                         </div>
-                        {/* 액션 버튼 */}
                         <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
                           <div className="flex flex-col items-center gap-1">
-                            <div className="w-12 h-12 rounded-full flex items-center justify-center">
-                              <Heart className="w-6 h-6 fill-red-500 text-red-500" />
-                            </div>
+                            <Heart className="w-6 h-6 fill-red-500 text-red-500" />
                             <span className="text-xs font-bold text-white">{feed.likes}</span>
                           </div>
                           <div className="flex flex-col items-center gap-1">
-                            <div className="w-12 h-12 rounded-full flex items-center justify-center">
-                              <MessageCircle className="w-6 h-6 text-white" />
-                            </div>
+                            <MessageCircle className="w-6 h-6 text-white" />
                             <span className="text-xs font-bold text-white">{feed.comments}</span>
                           </div>
                         </div>
@@ -324,24 +350,8 @@ export const FeedPage: Story = {
                     ) : (
                       <div className="relative h-[545px] w-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-t-lg">
                         <Sparkles className="w-16 h-16 text-gray-300" />
-                        <div className="absolute top-4 left-4">
-                          <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg">
-                            <AvatarFallback className="bg-white"><User className="w-5 h-5 text-gray-400" /></AvatarFallback>
-                          </Avatar>
-                        </div>
-                        <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                          <div className="flex flex-col items-center gap-1">
-                            <Heart className="w-6 h-6 fill-red-500 text-red-500" />
-                            <span className="text-xs font-bold text-gray-700">{feed.likes}</span>
-                          </div>
-                          <div className="flex flex-col items-center gap-1">
-                            <MessageCircle className="w-6 h-6 text-gray-700" />
-                            <span className="text-xs font-bold text-gray-700">{feed.comments}</span>
-                          </div>
-                        </div>
                       </div>
                     )}
-                    {/* 피드 내용 */}
                     <ScrollArea className="flex-1 bg-transparent">
                       <div className="p-6 space-y-3">
                         <div className="flex items-start justify-between gap-3">
@@ -366,14 +376,13 @@ export const FeedPage: Story = {
           </div>
         </div>
 
-        {/* FeedDetailDialogHome - 실제 컴포넌트 사용 */}
         <FeedDetailDialogHome
           feed={selectedFeed}
           open={showFeedDetail}
           onOpenChange={setShowFeedDetail}
           currentImageIndex={feedImageIndex}
-          onPrevImage={handlePrevImage}
-          onNextImage={handleNextImage}
+          onPrevImage={() => feedImageIndex > 0 && setFeedImageIndex(feedImageIndex - 1)}
+          onNextImage={() => selectedFeed?.images && feedImageIndex < selectedFeed.images.length - 1 && setFeedImageIndex(feedImageIndex + 1)}
           onEdit={(feed) => alert(`피드 수정: ${feed.id}`)}
           onDelete={(feedId) => alert(`피드 삭제: ${feedId}`)}
         />
@@ -382,21 +391,33 @@ export const FeedPage: Story = {
   },
 };
 
+// ============================================
+// 5. 랭킹 페이지
+// ============================================
+
 /**
- * 랭킹 페이지 - 점수 순위 (23등 가정, 22/23/24등 표시)
+ * 랭킹 페이지
+ *
+ * 포인트 순위를 확인합니다. 현재 사용자는 23등으로 가정합니다.
  */
-export const RankingPage: Story = {
+export const 랭킹페이지: Story = {
   render: () => (
     <DashboardWrapper selectedNav="ranking">
-      <Ranking userId={23} profileImage="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop" />
+      <Ranking userId={23} profileImage={mockAvatars['김운동']} />
     </DashboardWrapper>
   ),
 };
 
+// ============================================
+// 6. 경매 페이지
+// ============================================
+
 /**
- * 경매 페이지 - 포인트 경매
+ * 경매 페이지
+ *
+ * 포인트로 상품을 경매합니다.
  */
-export const AuctionPage: Story = {
+export const 경매페이지: Story = {
   render: () => (
     <DashboardWrapper selectedNav="auction">
       <Auction />
@@ -404,10 +425,16 @@ export const AuctionPage: Story = {
   ),
 };
 
+// ============================================
+// 7. 진료 페이지
+// ============================================
+
 /**
- * 진료 페이지 - 예약 및 채팅
+ * 진료 페이지
+ *
+ * 예약 및 비대면 진료 채팅을 관리합니다.
  */
-export const MedicalPage: Story = {
+export const 진료페이지: Story = {
   render: () => (
     <DashboardWrapper selectedNav="medical">
       <Medical
@@ -419,10 +446,16 @@ export const MedicalPage: Story = {
   ),
 };
 
+// ============================================
+// 8. 마이페이지
+// ============================================
+
 /**
- * 마이페이지 - 프로필 설정 (프로필 이미지 포함)
+ * 마이페이지
+ *
+ * 프로필 설정 및 계정 관리를 합니다.
  */
-export const ProfilePage: Story = {
+export const 마이페이지: Story = {
   render: () => {
     const [profileImage, setProfileImage] = useState<string | null>(mockAvatars['김운동']);
 
@@ -438,10 +471,16 @@ export const ProfilePage: Story = {
   },
 };
 
+// ============================================
+// 9. 알림 팝업
+// ============================================
+
 /**
- * 알림 팝업 - 사이드바에서 알림 확인 (기존 프론트엔드 스타일)
+ * 알림 팝업
+ *
+ * 사이드바에서 알림 버튼 클릭 시 나타나는 팝업입니다.
  */
-export const NotificationView: Story = {
+export const 알림팝업: Story = {
   render: () => {
     const [expanded, setExpanded] = useState(true);
     const [showNotifications, setShowNotifications] = useState(true);
@@ -464,7 +503,6 @@ export const NotificationView: Story = {
               className="relative w-full flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors"
               style={{ paddingLeft: '10px' }}
             >
-              {/* 기존 프론트엔드와 동일한 스타일 */}
               <div className="relative flex-shrink-0">
                 <Bell className="w-7 h-7 text-gray-700" />
                 {unreadCount > 0 && (
@@ -490,11 +528,37 @@ export const NotificationView: Story = {
             <Card className="p-8 text-center max-w-md">
               <Bell className="w-16 h-16 mx-auto text-gray-300 mb-4" />
               <h3 className="text-xl font-bold text-gray-700 mb-2">알림 팝업</h3>
-              <p className="text-gray-500">← 사이드바의 알림 버튼을 클릭하여 알림을 확인하세요</p>
+              <p className="text-gray-500">사이드바의 알림 버튼을 클릭하세요</p>
             </Card>
           </div>
         </div>
       </div>
     );
   },
+};
+
+// ============================================
+// 10. 에러 페이지 (404)
+// ============================================
+
+/**
+ * 404 에러 페이지
+ *
+ * 페이지를 찾을 수 없을 때 표시됩니다.
+ */
+export const 에러404: Story = {
+  render: () => <NotFoundPage />,
+};
+
+// ============================================
+// 11. 에러 페이지 (500)
+// ============================================
+
+/**
+ * 500 에러 페이지
+ *
+ * 서버 오류 발생 시 표시됩니다.
+ */
+export const 에러500: Story = {
+  render: () => <ServerErrorPage />,
 };

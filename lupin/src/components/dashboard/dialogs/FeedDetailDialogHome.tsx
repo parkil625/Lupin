@@ -879,7 +879,7 @@ export default function FeedDetailDialogHome({
                   {/* Right Actions */}
                   <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
                     <button className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
-                      <Heart className={`w-6 h-6 ${iconColorClass} ${iconColor === "white" ? "fill-white" : "fill-gray-900"}`} />
+                      <Heart className="w-6 h-6 text-[#C93831] fill-[#C93831]" />
                       <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
                     </button>
 
@@ -945,7 +945,7 @@ export default function FeedDetailDialogHome({
                   {/* Right Actions for No-Image Posts */}
                   <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
                     <button className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
-                      <Heart className={`w-6 h-6 ${iconColorClass} ${iconColor === "white" ? "fill-white" : "fill-gray-900"}`} />
+                      <Heart className="w-6 h-6 text-[#C93831] fill-[#C93831]" />
                       <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
                     </button>
 

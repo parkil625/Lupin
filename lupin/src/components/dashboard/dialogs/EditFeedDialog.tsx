@@ -62,6 +62,7 @@ export default function EditFeedDialog({
   const [endExifTime, setEndExifTime] = useState<Date | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<"none" | "verified" | "invalid">("none");
   const [imagesChanged, setImagesChanged] = useState(false);
+  const firstButtonRef = useRef<HTMLButtonElement>(null);
 
   const initialDataRef = useRef<{
     startImage: string | null;
@@ -452,7 +453,13 @@ export default function EditFeedDialog({
 
       {/* 데스크톱용 다이얼로그 */}
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="hidden md:flex w-[500px] max-w-[500px] h-[80vh] max-h-[80vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex-col fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl">
+        <DialogContent
+          className="hidden md:flex w-[500px] max-w-[500px] h-[80vh] max-h-[80vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex-col fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl"
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            firstButtonRef.current?.focus();
+          }}
+        >
           <DialogTitle className="sr-only">피드 수정</DialogTitle>
           <DialogDescription className="sr-only">
             기존 피드 내용을 수정합니다. 운동 종류, 시작/끝 사진, 그리고 내용을 수정할 수 있습니다.
@@ -472,6 +479,7 @@ export default function EditFeedDialog({
             {/* 탭 버튼 */}
             <div className="flex gap-1.5">
               <button
+                ref={firstButtonRef}
                 onClick={() => setActiveTab("photo")}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeTab === "photo"

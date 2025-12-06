@@ -7,7 +7,7 @@
  * - 운동 시작/끝 사진 업로드
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -57,6 +57,7 @@ export default function CreateFeedDialog({
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
+  const firstButtonRef = useRef<HTMLButtonElement>(null);
 
   // EXIF 시간 및 검증 상태
   const [startExifTime, setStartExifTime] = useState<Date | null>(null);
@@ -490,7 +491,13 @@ export default function CreateFeedDialog({
 
       {/* 데스크톱용 다이얼로그 */}
       <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="hidden md:flex w-[500px] max-w-[500px] h-[80vh] max-h-[80vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex-col fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl">
+      <DialogContent
+        className="hidden md:flex w-[500px] max-w-[500px] h-[80vh] max-h-[80vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex-col fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          firstButtonRef.current?.focus();
+        }}
+      >
         <DialogHeader className="sr-only">
           <DialogTitle>피드 작성</DialogTitle>
           <DialogDescription>
@@ -512,6 +519,7 @@ export default function CreateFeedDialog({
           {/* 탭 버튼 */}
           <div className="flex gap-1.5">
             <button
+              ref={firstButtonRef}
               onClick={() => setActiveTab("photo")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                 activeTab === "photo"

@@ -526,7 +526,7 @@ function FeedItem({
   return (
     <div className={`h-full max-h-[calc(100vh-130px)] md:max-h-full w-fit mx-auto flex shadow-xl rounded-2xl overflow-hidden transition-all duration-300 relative`}>
       {/* 피드 카드 (왼쪽) */}
-      <div className="h-full aspect-[9/16] flex flex-col flex-shrink-0">
+      <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
         {/* 이미지 영역 - 57% */}
         <div className="relative h-[57%]">
           {hasImages ? (

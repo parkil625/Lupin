@@ -784,7 +784,7 @@ export default function FeedDetailDialogHome({
         </DialogHeader>
         <div className="relative h-full flex flex-col md:flex-row overflow-hidden">
           {/* Main Feed Content (Left) - 모바일에서 h-full aspect-[9/16] (Feed.tsx와 동일) */}
-          <div className="h-full aspect-[9/16] md:aspect-auto md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
+          <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] md:aspect-auto md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
             {feed.images && feed.images.length > 0 ? (
               <>
                 {/* Image Carousel - 모바일에서 57% 높이 (Feed.tsx와 동일) */}

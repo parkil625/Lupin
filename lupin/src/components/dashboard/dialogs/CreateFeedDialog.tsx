@@ -59,6 +59,7 @@ export default function CreateFeedDialog({
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
   const [isDesktop, setIsDesktop] = useState(false);
   const firstButtonRef = useRef<HTMLButtonElement>(null);
+  const prevOpenRef = useRef(open);
 
   // 데스크톱 여부 감지
   useEffect(() => {
@@ -82,12 +83,42 @@ export default function CreateFeedDialog({
     ],
   });
 
-  // 다이얼로그가 닫히면 상태 초기화
+  // 에디터에 실제 콘텐츠가 있는지 확인하는 함수
+  const checkHasEditorContent = () => {
+    return editor.document.some(block => {
+      if (block.type === 'paragraph' && Array.isArray(block.content)) {
+        return block.content.some((item: unknown) => {
+          if (typeof item === 'string') return item.trim().length > 0;
+          if (item && typeof item === 'object' && 'text' in item) {
+            return String((item as { text: string }).text || '').trim().length > 0;
+          }
+          return false;
+        });
+      }
+      return block.type !== 'paragraph';
+    });
+  };
+
+  // 변경사항이 있는지 확인하는 함수
+  const checkHasChanges = () => {
+    return startImage !== null ||
+      endImage !== null ||
+      otherImages.length > 0 ||
+      workoutType !== "헬스" ||
+      checkHasEditorContent();
+  };
+
+  // 외부에서 open이 false로 변경되면 확인 다이얼로그 표시
   useEffect(() => {
-    if (!open) {
-      setShowCloseConfirm(false);
+    // open이 true에서 false로 바뀔 때
+    if (prevOpenRef.current && !open) {
+      if (checkHasChanges()) {
+        // 변경사항이 있으면 확인 다이얼로그 표시
+        setShowCloseConfirm(true);
+      }
     }
-  }, [open]);
+    prevOpenRef.current = open;
+  }, [open, startImage, endImage, otherImages, workoutType]);
 
   // 다이얼로그 열릴 때 localStorage에서 불러오기
   useEffect(() => {
@@ -309,12 +340,13 @@ export default function CreateFeedDialog({
     }, 0);
   };
 
-  if (!open) return null;
+  // open이 false이고 확인 다이얼로그도 안 보이면 렌더링 안 함
+  if (!open && !showCloseConfirm) return null;
 
   return (
     <>
-      {/* 모바일용 전체 화면 (하단 네비 제외) */}
-      <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
+      {/* 모바일용 전체 화면 (하단 네비 제외) - open일 때만 표시 */}
+      {open && <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
         {/* 헤더 */}
         <div className="p-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
@@ -496,10 +528,10 @@ export default function CreateFeedDialog({
             {isUploading ? "사진 올리는 중..." : canSubmit ? "작성" : "시작/끝 사진 필요"}
           </Button>
         </div>
-      </div>
+      </div>}
 
       {/* 데스크톱용 다이얼로그 - 모바일에서는 렌더링하지 않음 */}
-      {isDesktop && (
+      {open && isDesktop && (
         <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
           className="hidden md:flex w-[500px] max-w-[500px] h-[80vh] max-h-[80vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex-col fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl"

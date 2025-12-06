@@ -58,6 +58,7 @@ export default function EditFeedDialog({
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
   const [isDesktop, setIsDesktop] = useState(false);
   const [editorContent, setEditorContent] = useState<string>("");
+  const prevOpenRef = useRef(open);
 
   // 데스크톱 여부 감지
   useEffect(() => {
@@ -84,15 +85,23 @@ export default function EditFeedDialog({
 
   const editor = useCreateBlockNote();
 
-  // 다이얼로그가 닫히면 상태 초기화
+  // 외부에서 open이 false로 변경되면 확인 다이얼로그 표시
   useEffect(() => {
-    if (!open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 다이얼로그 닫힐 때 상태 초기화 필요
-      setShowCloseConfirm(false);
-      setHasChanges(false);
-      initialDataRef.current = null;
+    // open이 true에서 false로 바뀔 때
+    if (prevOpenRef.current && !open) {
+      if (hasChanges) {
+        // 변경사항이 있으면 확인 다이얼로그 표시
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 닫기 감지
+        setShowCloseConfirm(true);
+      } else {
+        // 변경사항 없으면 상태 초기화
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 다이얼로그 닫힐 때 상태 초기화 필요
+        setHasChanges(false);
+        initialDataRef.current = null;
+      }
     }
-  }, [open]);
+    prevOpenRef.current = open;
+  }, [open, hasChanges]);
 
   // Feed가 변경되면 기존 데이터로 초기화
   useEffect(() => {
@@ -276,12 +285,13 @@ export default function EditFeedDialog({
     onOpenChange(false);
   };
 
-  if (!feed || !open) return null;
+  // open이 false이고 확인 다이얼로그도 안 보이면 렌더링 안 함
+  if ((!feed || !open) && !showCloseConfirm) return null;
 
   return (
     <>
-      {/* 모바일용 전체 화면 (하단 네비 제외) */}
-      <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
+      {/* 모바일용 전체 화면 (하단 네비 제외) - open일 때만 표시 */}
+      {open && feed && <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
         {/* 헤더 */}
         <div className="p-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
@@ -463,10 +473,10 @@ export default function EditFeedDialog({
             {canSubmit ? '수정 완료' : '시작/끝 사진 필요'}
           </Button>
         </div>
-      </div>
+      </div>}
 
       {/* 데스크톱용 다이얼로그 - 모바일에서는 렌더링하지 않음 */}
-      {isDesktop && (
+      {open && feed && isDesktop && (
         <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogContent
             className="hidden md:flex w-[500px] max-w-[500px] h-[80vh] max-h-[80vh] p-0 overflow-hidden backdrop-blur-3xl bg-white/60 border border-gray-200 shadow-2xl flex-col fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl"

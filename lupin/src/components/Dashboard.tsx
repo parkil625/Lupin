@@ -355,6 +355,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
   // 네비게이션 선택 핸들러 - 피드 직접 클릭 시 pivot 초기화
   const handleNavSelect = (navId: string) => {
+    // 네비게이션 시 열린 다이얼로그 모두 닫기
+    setShowCreateDialog(false);
+    setShowEditDialog(false);
+    setShowFeedDetailInHome(false);
+
     if (navId === "feed" && pivotFeedId) {
       // 피드 메뉴 직접 클릭 시 pivot 초기화하고 일반 피드 로드
       setPivotFeed(null, null);

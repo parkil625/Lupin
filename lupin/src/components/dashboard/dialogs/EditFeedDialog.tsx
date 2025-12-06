@@ -57,6 +57,7 @@ export default function EditFeedDialog({
   const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [editorContent, setEditorContent] = useState<string>("");
 
   // 데스크톱 여부 감지
   useEffect(() => {
@@ -130,13 +131,15 @@ export default function EditFeedDialog({
       // 에디터가 콘텐츠를 정규화한 후 초기 데이터 저장
       // BlockNote는 콘텐츠 로드 시 내부적으로 정규화하므로, 로드 후 저장해야 정확한 비교 가능
       setTimeout(() => {
+        const normalizedContent = JSON.stringify(editor.document);
         initialDataRef.current = {
           startImage: initialStartImage,
           endImage: initialEndImage,
           otherImages: initialOtherImages,
           workoutType: initialWorkoutType,
-          content: JSON.stringify(editor.document),
+          content: normalizedContent,
         };
+        setEditorContent(normalizedContent);
       }, 100);
     }
   }, [feed, editor, open]);
@@ -145,17 +148,16 @@ export default function EditFeedDialog({
   useEffect(() => {
     if (!initialDataRef.current) return;
 
-    const currentContent = JSON.stringify(editor.document);
     const changed =
       startImage !== initialDataRef.current.startImage ||
       endImage !== initialDataRef.current.endImage ||
       JSON.stringify(otherImages) !== JSON.stringify(initialDataRef.current.otherImages) ||
       workoutType !== initialDataRef.current.workoutType ||
-      currentContent !== initialDataRef.current.content;
+      editorContent !== initialDataRef.current.content;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 변경사항 감지를 위한 상태 업데이트
     setHasChanges(changed);
-  }, [startImage, endImage, otherImages, workoutType, editor]);
+  }, [startImage, endImage, otherImages, workoutType, editorContent]);
 
   // EXIF 시간 검증 (이미지가 변경된 경우에만)
   useEffect(() => {
@@ -445,7 +447,7 @@ export default function EditFeedDialog({
                 .ProseMirror { background: transparent !important; min-height: 300px !important; }
               `}</style>
               <div className="p-4">
-                <BlockNoteView editor={editor} theme="light" />
+                <BlockNoteView editor={editor} theme="light" onChange={() => setEditorContent(JSON.stringify(editor.document))} />
               </div>
             </ScrollArea>
           )}
@@ -636,7 +638,7 @@ export default function EditFeedDialog({
                   .ProseMirror { background: transparent !important; min-height: 300px !important; }
                 `}</style>
                 <div className="p-4">
-                  <BlockNoteView editor={editor} theme="light" />
+                  <BlockNoteView editor={editor} theme="light" onChange={() => setEditorContent(JSON.stringify(editor.document))} />
                 </div>
               </ScrollArea>
             )}

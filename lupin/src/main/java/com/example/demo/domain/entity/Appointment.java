@@ -1,10 +1,11 @@
 package com.example.demo.domain.entity;
 
 import com.example.demo.domain.enums.AppointmentStatus;
+import com.example.demo.exception.BusinessException; 
+import com.example.demo.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
-import com.example.demo.exception.BusinessException;
-import com.example.demo.exception.ErrorCode;
+
 import java.time.LocalDateTime;
 
 @Entity

@@ -43,7 +43,45 @@ useEffect(() => {
       setBidAmount((selectedAuction.currentPrice + 1).toString());
     }
 }, [selectedAuction?.auctionId, selectedAuction?.currentPrice]);
+const handlePlaceBid = async () => {
+    if (!selectedAuction) return;
 
+    // 1. 입력값 검증 (숫자 변환)
+    const amount = parseInt(bidAmount.replace(/[^0-9]/g, "")); // 콤마 등 제거 후 변환 권장
+
+    if (isNaN(amount)) {
+      alert("올바른 금액을 입력해주세요.");
+      return;
+    }
+    if (amount <= selectedAuction.currentPrice) {
+      alert("현재가보다 높은 금액을 입찰해주세요.");
+      return;
+    }
+    if (amount > userPoints) {
+      alert("보유 포인트가 부족합니다.");
+      return;
+    }
+
+    try {
+      // 2. 실제 API 호출 연결
+      await placeBid(selectedAuction.auctionId, amount);
+
+      alert("입찰이 완료되었습니다!");
+
+      // 3. 데이터 갱신 (잔액, 입찰 내역 등)
+      fetchAuctions(); // 현재가 갱신 확인
+      fetchBidHistory(selectedAuction.auctionId); // 입찰 내역 갱신
+      fetchUserPoints(); // 내 잔액 갱신 (차감 반영)
+
+      setBidAmount(""); // 입력창 초기화
+
+    } catch (error: any) {
+      console.error("입찰 실패:", error);
+      // 백엔드 에러 메시지가 있다면 보여주기
+      const errorMessage = error.response?.data?.message || "입찰에 실패했습니다.";
+      alert(errorMessage);
+    }
+  };
 
 const fetchAuctions = async () => {
     try {

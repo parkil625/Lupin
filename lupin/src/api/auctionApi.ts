@@ -23,8 +23,8 @@ export const getScheduledAuctions = async () => { // 이름 변경: Auction -> A
 };
 
 
-// export const placeBid = async (auctionId: number, amount: number) => {
-//     const response = await client.post(`/auction/${auctionId}/bids`, { amount });
-//     return response.data;
-// };
+ export const placeBid = async (auctionId: number, amount: number) => {
+     const response = await client.post(`/auction/${auctionId}/bids`, { amount });
+     return response.data;
+ };
 

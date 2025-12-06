@@ -10,7 +10,7 @@
 -- $2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO
 
 -- 1. 일반 직원 (MEMBER) - 박선일
-INSERT INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
+INSERT IGNORE INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
     'user01',
     '$2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO',
@@ -25,7 +25,7 @@ VALUES (
 );
 
 -- 2. 의사 (DOCTOR) - 홍세민
-INSERT INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
+INSERT IGNORE INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
     'doctor01',
     '$2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO',
@@ -40,7 +40,7 @@ VALUES (
 );
 
 -- 3. 의사 프로필 생성 (doctor01용)
-INSERT INTO doctor_profiles (user_id, specialty, license_number, medical_experience, phone, birth_date, gender, address, created_at)
+INSERT IGNORE INTO doctor_profiles (user_id, specialty, license_number, medical_experience, phone, birth_date, gender, address, created_at)
 SELECT
     id,
     '가정의학과',

@@ -10,13 +10,13 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock } from "lucide-react";
 import AnimatedBackground from "../shared/AnimatedBackground";
-import { getActiveAuction, getScheduledAuctions } from "@/api/auctionApi";
+// [수정 1] placeBid 추가 import
+import { getActiveAuction, getScheduledAuctions, placeBid } from "@/api/auctionApi";
 // 분리된 컴포넌트 및 훅 import
 import { AuctionData, BidHistory } from "@/types/auction.types";
 import { useAuctionTimer } from "@/hooks/useAuctionTimer";
 import { AuctionCard } from "./AuctionCard";
 import { BiddingPanel } from "./BiddingPanel";
-
 
 export default function Auction() {
   const [auctions, setAuctions] = useState<AuctionData[]>([]);
@@ -30,24 +30,95 @@ export default function Auction() {
   // 타이머 로직 훅 사용
   const { countdown, isOvertime } = useAuctionTimer(selectedAuction);
 
+  // 초기 데이터 로드
   useEffect(() => {
     fetchAuctions();
     fetchUserPoints();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-useEffect(() => {
+  // 경매 선택 시 입찰 기록 조회 및 금액 초기화
+  useEffect(() => {
     if (selectedAuction?.auctionId) {
       fetchBidHistory(selectedAuction.auctionId);
-      // 가격이 바뀔 때만 입찰 금액 업데이트
+      // 가격이 바뀔 때만 입찰 금액 업데이트 (현재가 + 1원)
       setBidAmount((selectedAuction.currentPrice + 1).toString());
     }
-}, [selectedAuction?.auctionId, selectedAuction?.currentPrice]);
-const handlePlaceBid = async () => {
+  }, [selectedAuction?.auctionId, selectedAuction?.currentPrice]);
+
+  /**
+   * 경매 목록 조회 (진행 중 & 예정)
+   */
+  const fetchAuctions = async () => {
+    try {
+      setIsLoading(true);
+
+      // 2. 진행 중인 경매와 예정된 경매를 병렬로 동시에 조회 (Promise.all 사용 권장)
+      const [activeAuctionData, scheduledAuctionList] = await Promise.all([
+        getActiveAuction().catch(() => null),       // 에러 발생 시 null 처리
+        getScheduledAuctions().catch(() => [])      // 에러 발생 시 빈 배열 처리
+      ]);
+
+      // 3. 진행 중인 경매 상태 업데이트
+      if (activeAuctionData) {
+        setAuctions([activeAuctionData]);
+        // 선택된 경매가 없으면 기본값으로 설정
+        if (!selectedAuction) {
+          setSelectedAuction(activeAuctionData);
+        }
+      } else {
+        setAuctions([]);
+      }
+
+      // 4. 예정된 경매 상태 업데이트
+      if (scheduledAuctionList) {
+        setScheduledAuctions(scheduledAuctionList);
+      }
+
+    } catch (error) {
+      console.error("경매 목록 조회 실패:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * 유저 포인트 조회
+   */
+  const fetchUserPoints = async () => {
+    // TODO: 실제 유저 포인트 API로 교체 필요 (UserController의 /api/users/points)
+    // const response = await getUserPoints();
+    // setUserPoints(response.data.totalPoints);
+    setUserPoints(100); // Mock data
+  };
+
+  /**
+   * 입찰 내역 조회
+   */
+  const fetchBidHistory = async (auctionId: number) => {
+    console.log(`Fetching history for auction ID: ${auctionId}`);
+    // Mock history data (추후 API 연동 필요)
+    setBidHistory([
+      {
+        id: 1,
+        userId: 2,
+        userName: "김건강",
+        bidAmount: 45,
+        bidTime: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        status: "ACTIVE",
+      },
+      // ... 추가 데이터
+    ]);
+  };
+
+  /**
+   * 입찰 처리 핸들러
+   */
+  const handlePlaceBid = async () => {
     if (!selectedAuction) return;
 
-    // 1. 입력값 검증 (숫자 변환)
-    const amount = parseInt(bidAmount.replace(/[^0-9]/g, "")); // 콤마 등 제거 후 변환 권장
+    // 1. 입력값 검증 (숫자 변환 및 콤마 제거)
+    const amount = parseInt(bidAmount.replace(/[^0-9]/g, ""));
 
     if (isNaN(amount)) {
       alert("올바른 금액을 입력해주세요.");
@@ -68,10 +139,10 @@ const handlePlaceBid = async () => {
 
       alert("입찰이 완료되었습니다!");
 
-      // 3. 데이터 갱신 (잔액, 입찰 내역 등)
-      fetchAuctions(); // 현재가 갱신 확인
+      // 3. 데이터 갱신 (경매 정보, 입찰 내역, 포인트)
+      fetchAuctions(); // 현재가 갱신
       fetchBidHistory(selectedAuction.auctionId); // 입찰 내역 갱신
-      fetchUserPoints(); // 내 잔액 갱신 (차감 반영)
+      fetchUserPoints(); // 내 잔액 갱신
 
       setBidAmount(""); // 입력창 초기화
 
@@ -80,87 +151,6 @@ const handlePlaceBid = async () => {
       // 백엔드 에러 메시지가 있다면 보여주기
       const errorMessage = error.response?.data?.message || "입찰에 실패했습니다.";
       alert(errorMessage);
-    }
-  };
-
-const fetchAuctions = async () => {
-    try {
-      setIsLoading(true); 
-      
-      // 2. 진행 중인 경매와 예정된 경매를 병렬로 동시에 조회 (Promise.all 사용 권장)
-      const [activeAuctionData, scheduledAuctionList] = await Promise.all([
-        getActiveAuction().catch(() => null),       // 에러 발생 시 null 처리 (개별 에러 핸들링)
-        getScheduledAuctions().catch(() => [])      // 에러 발생 시 빈 배열 처리
-      ]);
-
-      // 3. 진행 중인 경매 상태 업데이트
-      if (activeAuctionData) {
-        setAuctions([activeAuctionData]);
-        if (!selectedAuction) {
-          setSelectedAuction(activeAuctionData);
-        }
-      } else {
-        setAuctions([]);
-      }
-
-      // 4. 예정된 경매 상태 업데이트 (이 부분이 빠져있었음)
-      if (scheduledAuctionList) {
-        setScheduledAuctions(scheduledAuctionList);
-      }
-
-    } catch (error) {
-      console.error("경매 목록 조회 실패:", error);
-      // 필요 시 에러 상태 처리
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchUserPoints = async () => {
-    setUserPoints(100); // Mock data
-  };
-
-  const fetchBidHistory = async (auctionId: number) => {
-    console.log(`Fetching history for auction ID: ${auctionId}`);
-    // Mock history data
-    setBidHistory([
-      {
-        id: 1,
-        userId: 2,
-        userName: "김건강",
-        bidAmount: 45,
-        bidTime: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-        status: "ACTIVE",
-      },
-      // ... 추가 데이터
-    ]);
-  };
-
-  const handlePlaceBid = async () => {
-    if (!selectedAuction) return;
-    const amount = parseInt(bidAmount);
-    if (isNaN(amount)) {
-      alert("올바른 금액을 입력해주세요.");
-      return;
-    }
-    if (amount <= selectedAuction.currentPrice) {
-      alert("현재가보다 높은 금액을 입찰해주세요.");
-      return;
-    }
-    if (amount > userPoints) {
-      alert("보유 포인트가 부족합니다.");
-      return;
-    }
-
-    try {
-      // API call placeholder
-      alert("입찰이 완료되었습니다!");
-      fetchAuctions();
-      fetchBidHistory(selectedAuction.auctionId);
-      fetchUserPoints();
-    } catch (error) {
-      console.error("입찰 실패:", error);
-      alert("입찰에 실패했습니다.");
     }
   };
 
@@ -196,7 +186,7 @@ const fetchAuctions = async () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column: Auction List */}
               <div className="lg:col-span-2 space-y-6">
-                
+
                 {/* 1. 진행 중인 경매 섹션 */}
                 <div>
                   <h2 className="text-2xl font-black text-gray-900 mb-4">

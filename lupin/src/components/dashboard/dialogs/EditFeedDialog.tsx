@@ -108,15 +108,6 @@ export default function EditFeedDialog({
       setWorkoutType(initialWorkoutType);
       setHasChanges(false);
 
-      // 초기 데이터 저장
-      initialDataRef.current = {
-        startImage: initialStartImage,
-        endImage: initialEndImage,
-        otherImages: initialOtherImages,
-        workoutType: initialWorkoutType,
-        content: JSON.stringify(feed.content),
-      };
-
       // 기존 내용을 에디터에 로드
       try {
         let blocks;
@@ -135,6 +126,18 @@ export default function EditFeedDialog({
           { type: "paragraph", content: feed.content || "" }
         ]);
       }
+
+      // 에디터가 콘텐츠를 정규화한 후 초기 데이터 저장
+      // BlockNote는 콘텐츠 로드 시 내부적으로 정규화하므로, 로드 후 저장해야 정확한 비교 가능
+      setTimeout(() => {
+        initialDataRef.current = {
+          startImage: initialStartImage,
+          endImage: initialEndImage,
+          otherImages: initialOtherImages,
+          workoutType: initialWorkoutType,
+          content: JSON.stringify(editor.document),
+        };
+      }, 100);
     }
   }, [feed, editor, open]);
 

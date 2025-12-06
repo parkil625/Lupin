@@ -854,7 +854,10 @@ export default function FeedDetailDialogHome({
                         className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
                       >
                         <DropdownMenuItem
-                          onClick={() => onEdit?.(feed)}
+                          onClick={() => {
+                            onOpenChange(false);
+                            onEdit?.(feed);
+                          }}
                           className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
                         >
                           <Edit className="w-4 h-4" />
@@ -920,7 +923,10 @@ export default function FeedDetailDialogHome({
                         className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
                       >
                         <DropdownMenuItem
-                          onClick={() => onEdit?.(feed)}
+                          onClick={() => {
+                            onOpenChange(false);
+                            onEdit?.(feed);
+                          }}
                           className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
                         >
                           <Edit className="w-4 h-4" />

@@ -775,6 +775,18 @@ export default function FeedDetailDialogHome({
               ? "md:!w-[825px] md:!max-w-[825px]"
               : "md:!w-[475px] md:!max-w-[475px]"
           }`}
+          onPointerDownOutside={(e) => {
+            // 모바일 댓글 오버레이 클릭 시 다이얼로그 닫힘 방지
+            if (showComments) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            // 모바일 댓글 오버레이와 상호작용 시 다이얼로그 닫힘 방지
+            if (showComments) {
+              e.preventDefault();
+            }
+          }}
         >
         <DialogHeader className="sr-only">
           <DialogTitle>피드 상세보기</DialogTitle>

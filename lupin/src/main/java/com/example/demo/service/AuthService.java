@@ -34,7 +34,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String, String> redisTemplate;
 
-    @Value("${GOOGLE_CLIENT_ID}")
+    @Value("${GOOGLE_CLIENT_ID:dummy}")
     private String googleClientId;
 
     // Refresh Token 만료 시간 (7일)

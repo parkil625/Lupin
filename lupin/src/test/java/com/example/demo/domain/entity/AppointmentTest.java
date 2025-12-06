@@ -1,6 +1,7 @@
 package com.example.demo.domain.entity;
 
 import com.example.demo.domain.enums.AppointmentStatus;
+import com.example.demo.exception.BusinessException; // [추가] BusinessException 임포트
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -93,7 +94,7 @@ class AppointmentTest {
 
         // when & then
         assertThatThrownBy(appointment::startConsultation)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessException.class) // [수정] IllegalStateException -> BusinessException
                 .hasMessage("취소된 예약은 시작할 수 없습니다.");
     }
 
@@ -110,7 +111,7 @@ class AppointmentTest {
 
         // when & then
         assertThatThrownBy(appointment::startConsultation)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessException.class) // [수정]
                 .hasMessage("이미 진행 중인 예약입니다.");
     }
 
@@ -127,7 +128,7 @@ class AppointmentTest {
 
         // when & then
         assertThatThrownBy(appointment::startConsultation)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessException.class) // [수정]
                 .hasMessage("이미 완료된 예약입니다.");
     }
 
@@ -144,7 +145,7 @@ class AppointmentTest {
 
         // when & then
         assertThatThrownBy(appointment::complete)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessException.class) // [수정]
                 .hasMessage("취소된 예약은 완료할 수 없습니다.");
     }
 
@@ -161,7 +162,7 @@ class AppointmentTest {
 
         // when & then
         assertThatThrownBy(appointment::complete)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessException.class) // [수정]
                 .hasMessage("이미 완료된 예약입니다.");
     }
 
@@ -178,7 +179,7 @@ class AppointmentTest {
 
         // when & then
         assertThatThrownBy(appointment::cancel)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessException.class) // [수정]
                 .hasMessage("완료된 예약은 취소할 수 없습니다.");
     }
 
@@ -195,7 +196,7 @@ class AppointmentTest {
 
         // when & then
         assertThatThrownBy(appointment::cancel)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessException.class) // [수정]
                 .hasMessage("이미 취소된 예약입니다.");
     }
 

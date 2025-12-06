@@ -43,33 +43,36 @@ public class Appointment {
 
     public void startConsultation() {
         if (this.status == AppointmentStatus.CANCELLED) {
-            throw new BusinessException("취소된 예약은 시작할 수 없습니다.");
+            // [수정] ErrorCode를 첫 번째 인자로 전달
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "취소된 예약은 시작할 수 없습니다.");
         }
         if (this.status == AppointmentStatus.IN_PROGRESS) {
-            throw new BusinessException("이미 진행 중인 예약입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 진행 중인 예약입니다.");
         }
         if (this.status == AppointmentStatus.COMPLETED) {
-            throw new BusinessException("이미 완료된 예약입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 완료된 예약입니다.");
         }
         this.status = AppointmentStatus.IN_PROGRESS;
     }
 
     public void complete() {
         if (this.status == AppointmentStatus.CANCELLED) {
-            throw new BusinessException("취소된 예약은 완료할 수 없습니다.");
+            // [수정] ErrorCode 추가
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "취소된 예약은 완료할 수 없습니다.");
         }
         if (this.status == AppointmentStatus.COMPLETED) {
-            throw new BusinessException("이미 완료된 예약입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 완료된 예약입니다.");
         }
         this.status = AppointmentStatus.COMPLETED;
     }
 
     public void cancel() {
         if (this.status == AppointmentStatus.COMPLETED) {
-            throw new BusinessException("완료된 예약은 취소할 수 없습니다.");
+            // [수정] ErrorCode 추가
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "완료된 예약은 취소할 수 없습니다.");
         }
         if (this.status == AppointmentStatus.CANCELLED) {
-            throw new BusinessException("이미 취소된 예약입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "이미 취소된 예약입니다.");
         }
         this.status = AppointmentStatus.CANCELLED;
     }

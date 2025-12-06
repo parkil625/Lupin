@@ -3,7 +3,8 @@ package com.example.demo.domain.entity;
 import com.example.demo.domain.enums.AppointmentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-
+import com.example.demo.exception.BusinessException;
+import com.example.demo.exception.ErrorCode;
 import java.time.LocalDateTime;
 
 @Entity
@@ -41,33 +42,33 @@ public class Appointment {
 
     public void startConsultation() {
         if (this.status == AppointmentStatus.CANCELLED) {
-            throw new IllegalStateException("취소된 예약은 시작할 수 없습니다.");
+            throw new BusinessException("취소된 예약은 시작할 수 없습니다.");
         }
         if (this.status == AppointmentStatus.IN_PROGRESS) {
-            throw new IllegalStateException("이미 진행 중인 예약입니다.");
+            throw new BusinessException("이미 진행 중인 예약입니다.");
         }
         if (this.status == AppointmentStatus.COMPLETED) {
-            throw new IllegalStateException("이미 완료된 예약입니다.");
+            throw new BusinessException("이미 완료된 예약입니다.");
         }
         this.status = AppointmentStatus.IN_PROGRESS;
     }
 
     public void complete() {
         if (this.status == AppointmentStatus.CANCELLED) {
-            throw new IllegalStateException("취소된 예약은 완료할 수 없습니다.");
+            throw new BusinessException("취소된 예약은 완료할 수 없습니다.");
         }
         if (this.status == AppointmentStatus.COMPLETED) {
-            throw new IllegalStateException("이미 완료된 예약입니다.");
+            throw new BusinessException("이미 완료된 예약입니다.");
         }
         this.status = AppointmentStatus.COMPLETED;
     }
 
     public void cancel() {
         if (this.status == AppointmentStatus.COMPLETED) {
-            throw new IllegalStateException("완료된 예약은 취소할 수 없습니다.");
+            throw new BusinessException("완료된 예약은 취소할 수 없습니다.");
         }
         if (this.status == AppointmentStatus.CANCELLED) {
-            throw new IllegalStateException("이미 취소된 예약입니다.");
+            throw new BusinessException("이미 취소된 예약입니다.");
         }
         this.status = AppointmentStatus.CANCELLED;
     }

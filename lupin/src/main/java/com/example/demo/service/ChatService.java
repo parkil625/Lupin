@@ -7,6 +7,7 @@ import com.example.demo.repository.ChatRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Propagation;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -28,7 +29,7 @@ public class ChatService {
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ChatMessage saveMessage(String roomId, Long senderId, String content) {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));

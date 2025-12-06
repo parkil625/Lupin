@@ -40,6 +40,10 @@ public enum ErrorCode {
     // Notification
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
 
+    // Appointment
+    APPOINTMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 예약된 시간입니다."),
+    APPOINTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "예약을 찾을 수 없습니다."),
+
     // OAuth
     OAUTH_NOT_LINKED(HttpStatus.BAD_REQUEST, "연동된 소셜 계정이 아닙니다."),
     OAUTH_TOKEN_ERROR(HttpStatus.UNAUTHORIZED, "소셜 인증 토큰 오류가 발생했습니다."),

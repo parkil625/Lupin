@@ -75,10 +75,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // React 핵심 라이브러리 분리
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // 아이콘 라이브러리 분리 (랜딩페이지 용량 감소)
-          'ui-vendor': ['lucide-react']
+          // 1. React 핵심 라이브러리 분리
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // 2. 가장 무거운 아이콘 라이브러리 분리
+          'vendor-icons': ['lucide-react'],
+          // 3. 기타 UI 라이브러리 분리
+          'vendor-ui': ['@radix-ui/react-slot', 'class-variance-authority', 'clsx', 'tailwind-merge']
         }
       }
     }

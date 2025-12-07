@@ -5,19 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Health Management Platform</title>
 
-    <!-- 🚀 [LCP 최적화] 반응형 Hero 이미지 프리로드 -->
+    <!-- 🚀 [LCP 최적화] srcSet과 일치하는 스마트 프리로드 -->
     <link
       rel="preload"
       as="image"
-      href="/hero-mobile.webp"
-      media="(max-width: 768px)"
-      fetchpriority="high"
-    />
-    <link
-      rel="preload"
-      as="image"
-      href="/hero-desktop.webp"
-      media="(min-width: 769px)"
+      imagesrcset="/hero-mobile.webp 400w, /hero-desktop.webp 800w"
+      imagesizes="(max-width: 768px) 100vw, 800px"
       fetchpriority="high"
     />
 
@@ -26,10 +19,37 @@
     <link rel="icon" type="image/png" sizes="36x36" href="/android-icon-36x36.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
+
+    <!-- 🚀 [FCP 최적화] 초기 로딩 스피너 (React 로딩 전 즉시 표시) -->
+    <style>
+      body { margin: 0; padding: 0; background-color: #ffffff; }
+      .initial-loader {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+      }
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #C93831;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- React 로딩 전 즉시 보여줄 스피너 -->
+      <div class="initial-loader">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

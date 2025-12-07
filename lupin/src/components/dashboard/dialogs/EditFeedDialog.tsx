@@ -89,7 +89,16 @@ export default function EditFeedDialog({
   useEffect(() => {
     // open이 true에서 false로 바뀔 때
     if (prevOpenRef.current && !open) {
-      if (hasChanges) {
+      // 실제 변경사항이 있는지 확인
+      const hasActualChanges = initialDataRef.current && (
+        startImage !== initialDataRef.current.startImage ||
+        endImage !== initialDataRef.current.endImage ||
+        JSON.stringify(otherImages) !== JSON.stringify(initialDataRef.current.otherImages) ||
+        workoutType !== initialDataRef.current.workoutType ||
+        editorContent !== initialDataRef.current.content
+      );
+
+      if (hasActualChanges) {
         // 변경사항이 있으면 확인 다이얼로그 표시
         // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 닫기 감지
         setShowCloseConfirm(true);
@@ -101,7 +110,7 @@ export default function EditFeedDialog({
       }
     }
     prevOpenRef.current = open;
-  }, [open, hasChanges]);
+  }, [open, startImage, endImage, otherImages, workoutType, editorContent]);
 
   // Feed가 변경되면 기존 데이터로 초기화
   useEffect(() => {
@@ -266,14 +275,36 @@ export default function EditFeedDialog({
     const contentJson = JSON.stringify(blocks);
 
     onSave(feed.id, images, contentJson, workoutType, startImage, endImage);
+    // 저장 완료 후 hasChanges를 false로 설정하여 컨펌창 방지
+    setHasChanges(false);
+    initialDataRef.current = null;
     onOpenChange(false);
+  };
+
+  // 실제 변경사항이 있는지 확인하는 함수
+  const checkHasActualChanges = () => {
+    if (!initialDataRef.current) return false;
+
+    const currentContent = JSON.stringify(editor.document);
+    return (
+      startImage !== initialDataRef.current.startImage ||
+      endImage !== initialDataRef.current.endImage ||
+      JSON.stringify(otherImages) !== JSON.stringify(initialDataRef.current.otherImages) ||
+      workoutType !== initialDataRef.current.workoutType ||
+      currentContent !== initialDataRef.current.content
+    );
   };
 
   // 다이얼로그 닫기 시 검증
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && hasChanges) {
-      setShowCloseConfirm(true);
-      return;
+    if (!newOpen) {
+      // 실제 변경사항이 있는지 직접 확인
+      if (checkHasActualChanges()) {
+        setShowCloseConfirm(true);
+        return;
+      }
+      // 변경사항 없으면 바로 닫기
+      initialDataRef.current = null;
     }
     onOpenChange(newOpen);
   };

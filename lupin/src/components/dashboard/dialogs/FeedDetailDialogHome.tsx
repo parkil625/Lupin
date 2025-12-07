@@ -484,35 +484,25 @@ export default function FeedDetailDialogHome({
 
   // 댓글 삭제
   const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("댓글을 삭제하시겠습니까?")) return;
+    // 루트 댓글인지 확인
+    const isRootComment = comments.some(c => c.id === commentId);
+    const confirmMessage = isRootComment && comments.find(c => c.id === commentId)?.replies?.length
+      ? "이 댓글과 모든 답글이 삭제됩니다. 삭제하시겠습니까?"
+      : "댓글을 삭제하시겠습니까?";
+
+    if (!confirm(confirmMessage)) return;
 
     try {
       await commentApi.deleteComment(commentId);
 
       // 로컬 상태에서 댓글 처리
       setComments(prevComments => {
-        return prevComments.map(c => {
-          // 최상위 댓글인 경우
-          if (c.id === commentId) {
-            // 답글이 있으면 "삭제된 댓글"로 표시
-            if (c.replies && c.replies.length > 0) {
-              return {
-                ...c,
-                author: "",
-                content: "삭제된 댓글입니다.",
-                isDeleted: true,
-              };
-            }
-            // 답글이 없으면 완전히 제거
-            return null;
-          }
-
-          // 답글에서 삭제
-          return {
+        return prevComments
+          .filter(c => c.id !== commentId) // 루트 댓글 완전 삭제 (답글도 함께 삭제)
+          .map(c => ({
             ...c,
-            replies: c.replies?.filter(r => r.id !== commentId) || []
-          };
-        }).filter(Boolean) as Comment[];
+            replies: c.replies?.filter(r => r.id !== commentId) || [] // 다른 루트 댓글의 답글에서 삭제
+          }));
       });
     } catch (error) {
       console.error("댓글 삭제 실패:", error);
@@ -893,10 +883,10 @@ export default function FeedDetailDialogHome({
 
                   {/* Right Actions */}
                   <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                    <button className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
+                    <div className="flex flex-col items-center gap-1">
                       <Heart className="w-6 h-6 text-[#C93831] fill-[#C93831]" />
                       <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
-                    </button>
+                    </div>
 
                     <button
                       className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
@@ -962,10 +952,10 @@ export default function FeedDetailDialogHome({
 
                   {/* Right Actions for No-Image Posts */}
                   <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                    <button className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform">
+                    <div className="flex flex-col items-center gap-1">
                       <Heart className="w-6 h-6 text-[#C93831] fill-[#C93831]" />
                       <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
-                    </button>
+                    </div>
 
                     <button
                       className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"

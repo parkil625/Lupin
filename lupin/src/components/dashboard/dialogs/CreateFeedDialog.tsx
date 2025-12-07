@@ -762,8 +762,16 @@ export default function CreateFeedDialog({
               비우고 닫기
             </AlertDialogCancel>
             <AlertDialogAction onClick={() => {
+              // 명시적으로 localStorage에 저장
+              const draft = {
+                startImage,
+                endImage,
+                otherImages,
+                workoutType,
+                content: editor.document,
+              };
+              localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
               setShowCloseConfirm(false);
-              onOpenChange(false);
             }}>
               저장 후 닫기
             </AlertDialogAction>

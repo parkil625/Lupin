@@ -68,7 +68,7 @@ public class Appointment {
             throw new BusinessException(ErrorCode.APPOINTMENT_COMPLETED, "완료된 예약은 취소할 수 없습니다.");
         }
         if (this.status == AppointmentStatus.CANCELLED) {
-            throw new BusinessException(ErrorCode.APPOINTMENT_CANCELLED);
+            throw new BusinessException(ErrorCode.APPOINTMENT_CANCELLED, "이미 취소된 예약입니다.");
         }
         this.status = AppointmentStatus.CANCELLED;
     }

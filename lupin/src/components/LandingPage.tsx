@@ -12,6 +12,13 @@ export default function LandingPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // 🚀 [Overlay 전략] 리액트 렌더링 완료! 덮개(Overlay)를 부드럽게 제거
+        const shell = document.getElementById("app-shell-overlay");
+        if (shell) {
+            shell.style.opacity = "0";
+            setTimeout(() => shell.remove(), 400);
+        }
+
         const observerOptions = {
             threshold: 0.1,
             // 모바일 스크롤 속도를 고려하여 미리 로드되도록 마진 조정

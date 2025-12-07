@@ -20,7 +20,6 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
 
-    <!-- 🚀 [App Shell] React 로딩 전 즉시 보여줄 Hero 레이아웃 -->
     <style>
       body {
         margin: 0;
@@ -38,8 +37,27 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
 
-      /* App Shell - LandingPage Hero 섹션 미리 렌더링 */
-      .app-shell {
+      /* 🚀 [Overlay 전략] 리액트 로딩 전까지 화면을 덮고 있을 '가짜 화면' */
+      #app-shell-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        overflow-y: auto;
+        background:
+          linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%),
+          radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
+          radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%),
+          radial-gradient(circle at 25% 80%, rgba(253, 224, 71, 0.3) 0%, transparent 20%),
+          radial-gradient(circle at 65% 90%, rgba(167, 243, 208, 0.25) 0%, transparent 25%),
+          radial-gradient(circle at 75% 40%, rgba(252, 165, 165, 0.2) 0%, transparent 20%);
+        transition: opacity 0.4s ease-out;
+      }
+
+      /* App Shell 컨테이너 */
+      .shell-container {
         max-width: 72rem;
         margin: 0 auto;
         padding: 6rem 1rem 3rem 1rem;
@@ -63,7 +81,7 @@
 
       /* PC 화면 (md: 768px 이상) */
       @media (min-width: 768px) {
-        .app-shell {
+        .shell-container {
           padding-top: 8rem;
           grid-template-columns: 1fr 1fr;
           gap: 3rem;
@@ -76,9 +94,12 @@
   </head>
 
   <body>
-    <div id="root">
-      <!-- 🚀 App Shell: React 로딩 전 즉시 보여줄 Hero 콘텐츠 -->
-      <div class="app-shell">
+    <!-- React가 렌더링할 빈 컨테이너 -->
+    <div id="root"></div>
+
+    <!-- 🚀 Overlay: React 로딩 전 즉시 보여줄 Hero 콘텐츠 (root 밖에 배치!) -->
+    <div id="app-shell-overlay">
+      <div class="shell-container">
         <div class="shell-text">
           <div style="font-size: 12px; font-weight: bold; color: #C93831; margin-bottom: 10px;">직원 전용 헬스케어 플랫폼</div>
           <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0;">
@@ -100,6 +121,8 @@
             class="shell-img"
             width="800"
             height="600"
+            fetchpriority="high"
+            decoding="async"
           />
         </div>
       </div>

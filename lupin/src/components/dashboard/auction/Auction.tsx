@@ -146,10 +146,11 @@ export default function Auction() {
 
       setBidAmount(""); // 입력창 초기화
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("입찰 실패:", error);
       // 백엔드 에러 메시지가 있다면 보여주기
-      const errorMessage = error.response?.data?.message || "입찰에 실패했습니다.";
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const errorMessage = axiosError.response?.data?.message || "입찰에 실패했습니다.";
       alert(errorMessage);
     }
   };

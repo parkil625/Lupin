@@ -43,6 +43,9 @@ public enum ErrorCode {
     // Appointment
     APPOINTMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 예약된 시간입니다."),
     APPOINTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "예약을 찾을 수 없습니다."),
+    APPOINTMENT_CANCELLED(HttpStatus.BAD_REQUEST, "취소된 예약입니다."),
+    APPOINTMENT_IN_PROGRESS(HttpStatus.BAD_REQUEST, "이미 진행 중인 예약입니다."),
+    APPOINTMENT_COMPLETED(HttpStatus.BAD_REQUEST, "이미 완료된 예약입니다."),
 
     // OAuth
     OAUTH_NOT_LINKED(HttpStatus.BAD_REQUEST, "연동된 소셜 계정이 아닙니다."),

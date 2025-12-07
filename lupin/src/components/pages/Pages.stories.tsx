@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
 // 페이지 컴포넌트
@@ -21,14 +21,10 @@ import NotFoundPage from '../errors/NotFoundPage';
 import ErrorPage from '../errors/ErrorPage';
 
 // UI 컴포넌트
-import { SearchInput } from '../molecules';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 // 아이콘
-import { Home as HomeIcon, Video, Trophy, Gavel, Calendar, Bell, Heart, MessageCircle, User, Sparkles } from 'lucide-react';
+import { Home as HomeIcon, Video, Trophy, Gavel, Calendar, Bell } from 'lucide-react';
 
 // 타입
 import { Feed, Notification } from '@/types/dashboard.types';

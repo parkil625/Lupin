@@ -37,19 +37,26 @@ export default function LandingPage() {
 
     return (
         <div className="min-h-screen relative overflow-hidden bg-white">
-            {/* 
-               [배경 최적화]
-               1. pointer-events-none: 마우스 이벤트 차단하여 스크롤 성능 확보
-               2. will-change-transform: GPU 가속 힌트 제공
+            {/*
+               [배경 최적화 - FCP 개선]
+               blur-3xl 요소 대신 CSS radial-gradient 사용
+               - blur 필터는 리페인트 비용이 높아 FCP 저하
+               - radial-gradient는 GPU에서 한 번에 렌더링되어 성능 우수
             */}
-            <div className="fixed inset-0 -z-10 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 pointer-events-none" aria-hidden="true">
-                <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full blur-3xl opacity-40 animate-float will-change-transform"></div>
-                <div className="absolute top-60 right-20 w-80 h-80 bg-gradient-to-br from-blue-300 to-cyan-300 rounded-full blur-3xl opacity-40 animate-float-delayed will-change-transform"></div>
-                <div className="absolute bottom-40 left-1/4 w-72 h-72 bg-gradient-to-br from-yellow-200 to-orange-300 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-                {/* 모바일 성능(TBT)을 위해 과도한 블러 요소는 데스크탑에서만 표시 */}
-                <div className="hidden md:block absolute bottom-20 right-1/3 w-96 h-96 bg-gradient-to-br from-green-200 to-emerald-300 rounded-full blur-3xl opacity-30 animate-float will-change-transform"></div>
-                <div className="hidden md:block absolute top-1/3 right-1/4 w-80 h-80 bg-gradient-to-br from-red-200 to-pink-200 rounded-full blur-3xl opacity-25 animate-float will-change-transform"></div>
-            </div>
+            <div
+                className="fixed inset-0 -z-10 pointer-events-none"
+                aria-hidden="true"
+                style={{
+                    background: `
+                        linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%),
+                        radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
+                        radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%),
+                        radial-gradient(circle at 25% 80%, rgba(253, 224, 71, 0.3) 0%, transparent 20%),
+                        radial-gradient(circle at 65% 90%, rgba(167, 243, 208, 0.25) 0%, transparent 25%),
+                        radial-gradient(circle at 75% 40%, rgba(252, 165, 165, 0.2) 0%, transparent 20%)
+                    `
+                }}
+            />
 
             {/* Header */}
             <header className="fixed top-0 w-full backdrop-blur-md bg-white/80 border-b border-gray-200 z-50 transition-all">

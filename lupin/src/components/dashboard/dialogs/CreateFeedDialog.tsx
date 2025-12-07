@@ -99,12 +99,11 @@ export default function CreateFeedDialog({
     });
   };
 
-  // 변경사항이 있는지 확인하는 함수
-  const checkHasChanges = () => {
+  // 실제 저장할 가치가 있는 변경사항이 있는지 확인 (이미지 또는 글)
+  const checkHasMeaningfulChanges = () => {
     return startImage !== null ||
       endImage !== null ||
       otherImages.length > 0 ||
-      workoutType !== "헬스" ||
       checkHasEditorContent();
   };
 
@@ -112,13 +111,13 @@ export default function CreateFeedDialog({
   useEffect(() => {
     // open이 true에서 false로 바뀔 때
     if (prevOpenRef.current && !open) {
-      if (checkHasChanges()) {
-        // 변경사항이 있으면 확인 다이얼로그 표시
+      if (checkHasMeaningfulChanges()) {
+        // 실제 저장할 내용이 있으면 확인 다이얼로그 표시
         setShowCloseConfirm(true);
       }
     }
     prevOpenRef.current = open;
-  }, [open, startImage, endImage, otherImages, workoutType]);
+  }, [open, startImage, endImage, otherImages]);
 
   // 다이얼로그 열릴 때 localStorage에서 불러오기
   useEffect(() => {
@@ -296,17 +295,16 @@ export default function CreateFeedDialog({
     return block.type !== 'paragraph';
   });
 
-  // 변경사항이 있는지 확인
-  const hasChanges =
+  // 실제 저장할 가치가 있는 변경사항이 있는지 확인 (이미지 또는 글)
+  const hasMeaningfulChanges =
     startImage !== null ||
     endImage !== null ||
     otherImages.length > 0 ||
-    workoutType !== "헬스" ||
     hasEditorContent;
 
   // 다이얼로그 닫기 핸들러
   const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && hasChanges) {
+    if (!newOpen && hasMeaningfulChanges) {
       setShowCloseConfirm(true);
       return;
     }

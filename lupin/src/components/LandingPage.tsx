@@ -126,14 +126,16 @@ export default function LandingPage() {
                         {/* Hero Image - LCP 핵심 요소 */}
                         <div className="relative order-1 md:order-2">
                             <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
-                            {/* 
-                                [이미지 최적화]
-                                1. fetchpriority="high": 브라우저에게 최우선 다운로드 지시
-                                2. fm=webp: WebP 포맷 변환 (용량 감소)
-                                3. width/height 명시: 레이아웃 시프트(CLS) 방지
+                            {/*
+                                [최종 최적화]
+                                1. src: 기본 이미지 (PC용)
+                                2. srcSet: 화면 너비에 따라 모바일/PC 이미지 자동 선택
+                                3. sizes: 브라우저에게 이미지 출력 크기 힌트 제공
                             */}
                             <img
-                                src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80&fm=webp"
+                                src="/hero-desktop.webp"
+                                srcSet="/hero-mobile.webp 400w, /hero-desktop.webp 800w"
+                                sizes="(max-width: 768px) 100vw, 800px"
                                 alt="운동하는 여성"
                                 width="800"
                                 height="600"

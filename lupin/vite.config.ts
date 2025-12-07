@@ -70,6 +70,17 @@ export default defineConfig({
     outDir: 'dist',
     commonjsOptions: {
       transformMixedEsModules: true
+    },
+    // 🚀 [FCP 최적화] 번들 분할로 초기 로딩 속도 개선
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React 핵심 라이브러리 분리
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // 아이콘 라이브러리 분리 (랜딩페이지 용량 감소)
+          'ui-vendor': ['lucide-react']
+        }
+      }
     }
   },
   server: {

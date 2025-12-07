@@ -121,7 +121,7 @@ export default function LandingPage() {
                                 width="800"
                                 height="600"
                                 fetchPriority="high"
-                                decoding="sync"
+                                decoding="async"
                                 className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
                             />
                         </div>

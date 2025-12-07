@@ -20,13 +20,13 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
 
-    <!-- 🚀 [FCP 최적화] 초기 로딩 스피너 + 배경 그라디언트 (React 로딩 전 즉시 표시) -->
+    <!-- 🚀 [App Shell] React 로딩 전 즉시 보여줄 Hero 레이아웃 -->
     <style>
       body {
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        /* ⚡️ 핵심: 리액트 로딩 전에 브라우저가 배경부터 칠하게 합니다 */
+        /* 배경 그라디언트 */
         background:
           linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%),
           radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
@@ -35,31 +35,73 @@
           radial-gradient(circle at 65% 90%, rgba(167, 243, 208, 0.25) 0%, transparent 25%),
           radial-gradient(circle at 75% 40%, rgba(252, 165, 165, 0.2) 0%, transparent 20%);
         background-attachment: fixed;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
-      .initial-loader {
-        display: flex;
-        justify-content: center;
+
+      /* App Shell - LandingPage Hero 섹션 미리 렌더링 */
+      .app-shell {
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 6rem 1rem 3rem 1rem;
+        display: grid;
+        gap: 2rem;
         align-items: center;
-        height: 100vh;
-        width: 100vw;
       }
-      .spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid #f3f4f6;
-        border-top: 4px solid #C93831;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
+
+      .shell-text { order: 2; text-align: center; }
+      .shell-img-wrap { order: 1; position: relative; }
+
+      .shell-img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 4/3;
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: 4px solid rgba(255, 255, 255, 0.5);
+        object-fit: cover;
       }
-      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+      /* PC 화면 (md: 768px 이상) */
+      @media (min-width: 768px) {
+        .app-shell {
+          padding-top: 8rem;
+          grid-template-columns: 1fr 1fr;
+          gap: 3rem;
+        }
+        .shell-text { order: 1; text-align: left; }
+        .shell-img-wrap { order: 2; }
+        .shell-img { border-radius: 1.5rem; border-width: 8px; }
+      }
     </style>
   </head>
 
   <body>
     <div id="root">
-      <!-- React 로딩 전 즉시 보여줄 스피너 -->
-      <div class="initial-loader">
-        <div class="spinner"></div>
+      <!-- 🚀 App Shell: React 로딩 전 즉시 보여줄 Hero 콘텐츠 -->
+      <div class="app-shell">
+        <div class="shell-text">
+          <div style="font-size: 12px; font-weight: bold; color: #C93831; margin-bottom: 10px;">직원 전용 헬스케어 플랫폼</div>
+          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0;">
+            건강한 습관,<br>
+            <span style="color: #C93831;">함께 만들어가요</span>
+          </h1>
+          <p style="font-size: 1.125rem; color: #374151; margin: 0;">
+            운동을 기록하고 점수를 모으세요.<br>
+            동료들과 함께 건강한 습관을 만들어가요!
+          </p>
+        </div>
+
+        <div class="shell-img-wrap">
+          <img
+            src="/hero-desktop.webp"
+            srcset="/hero-mobile.webp 400w, /hero-desktop.webp 800w"
+            sizes="(max-width: 768px) 100vw, 800px"
+            alt="운동하는 여성"
+            class="shell-img"
+            width="800"
+            height="600"
+          />
+        </div>
       </div>
     </div>
 

@@ -1,7 +1,6 @@
 /**
  * Login.tsx
- * 원형 아이콘 소셜 로그인 스타일 적용
- * React Hook Form + Zod 적용
+ * Lighthouse Performance Optimized
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -17,7 +16,7 @@ import { ArrowLeft, Lock, User, AlertCircle, X, Eye, EyeOff } from "lucide-react
 import { authApi, oauthApi } from "../../api";
 import { useAuthStore } from "../../store/useAuthStore";
 
-// Zod 스키마 정의
+// Zod 스키마
 const loginSchema = z.object({
   employeeId: z.string().min(1, "아이디를 입력해주세요"),
   password: z.string().min(1, "비밀번호를 입력해주세요"),
@@ -28,6 +27,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
 
+// 타입 정의
 interface GoogleInitConfig {
   client_id: string;
   callback: (response: GoogleCredentialResponse) => void;
@@ -74,6 +74,7 @@ export default function Login() {
       employeeId: "",
       password: "",
     },
+    mode: "onSubmit", // 불필요한 리렌더링 방지
   });
 
   const employeeId = watch("employeeId");
@@ -83,39 +84,61 @@ export default function Login() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // handleGoogleLogin을 useEffect보다 먼저 선언해야 함 (temporal dead zone 방지)
+  // Google 로그인 핸들러 (메모이제이션)
   const handleGoogleLogin = useCallback(async (response: GoogleCredentialResponse) => {
     setError("");
     setIsLoading(true);
     try {
-        const result = await authApi.googleLogin(response.credential);
+      const result = await authApi.googleLogin(response.credential);
+      const safeId = result.id || result.userId;
 
-        const safeId = result.id || result.userId;
-        if (safeId) {
-            localStorage.setItem("userId", safeId.toString());
-        }
+      if (safeId) localStorage.setItem("userId", safeId.toString());
+      if (result.email) localStorage.setItem("userEmail", result.email);
+      if (result.name) localStorage.setItem("userName", result.name);
 
-        if (result.email) localStorage.setItem("userEmail", result.email);
-        if (result.name) localStorage.setItem("userName", result.name);
-
-        login(result.accessToken, result.role);
+      login(result.accessToken, result.role);
     } catch (err: unknown) {
-        const axiosError = err as { response?: { status?: number } };
-        if (axiosError.response?.status === 404) {
-            setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
-        } else {
-            setError("구글 로그인 중 오류가 발생했습니다.");
-        }
+      const axiosError = err as { response?: { status?: number } };
+      if (axiosError.response?.status === 404) {
+        setError("등록된 직원이 아닙니다. 인사팀에 문의해주세요.");
+      } else {
+        setError("구글 로그인 중 오류가 발생했습니다.");
+      }
     } finally {
       setIsLoading(false);
     }
   }, [login]);
 
+  // [성능 최적화] Google Script 로드 로직 개선 (SPA 대응)
   useEffect(() => {
+    const SCRIPT_ID = 'google-jssdk';
+
+    // 1. 이미 스크립트가 로드되어 있는지 확인
+    if (document.getElementById(SCRIPT_ID)) {
+      // 이미 로드된 상태라면 초기화만 다시 수행
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleLogin,
+          use_fedcm_for_prompt: false,
+        });
+        const googleButton = document.getElementById("google-signin-button");
+        if (googleButton) {
+          window.google.accounts.id.renderButton(googleButton, {
+            theme: "outline", size: "large", type: "icon", shape: "circle",
+          });
+        }
+      }
+      return;
+    }
+
+    // 2. 스크립트가 없다면 새로 로드
     const script = document.createElement("script");
+    script.id = SCRIPT_ID;
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
-    script.defer = true;
+    script.defer = true; // 렌더링 차단 방지
+
     script.onload = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
@@ -137,35 +160,27 @@ export default function Login() {
     };
     document.body.appendChild(script);
 
-    return () => {
-      document.body.removeChild(script);
-    };
   }, [handleGoogleLogin]);
 
   const handleNaverLogin = () => {
     const state = Math.random().toString(36).substring(7);
     sessionStorage.setItem("naver_oauth_state", state);
     const redirectUri = `${window.location.origin}/oauth/naver/callback`;
-    const naverAuthUrl = oauthApi.getNaverAuthUrl(redirectUri, state);
-    window.location.href = naverAuthUrl;
+    window.location.href = oauthApi.getNaverAuthUrl(redirectUri, state);
   };
 
   const handleKakaoLogin = () => {
     const state = Math.random().toString(36).substring(7);
     sessionStorage.setItem("kakao_oauth_state", state);
     const redirectUri = `${window.location.origin}/oauth/kakao/callback`;
-    const kakaoAuthUrl = oauthApi.getKakaoAuthUrl(redirectUri, state);
-    window.location.href = kakaoAuthUrl;
+    window.location.href = oauthApi.getKakaoAuthUrl(redirectUri, state);
   };
 
   const handleGoogleLoginClick = () => {
-    // Google GSI 버튼 클릭 트리거
     const googleButton = document.querySelector(
       '#google-signin-button div[role="button"]'
     ) as HTMLElement;
-    if (googleButton) {
-      googleButton.click();
-    }
+    if (googleButton) googleButton.click();
   };
 
   const onSubmit = async (data: LoginFormData) => {
@@ -173,15 +188,13 @@ export default function Login() {
     setIsLoading(true);
     try {
       const response = await authApi.login(data.employeeId, data.password);
-        const safeId = response.id || response.userId;
-        if (safeId) {
-            localStorage.setItem("userId", safeId.toString());
-        }
+      const safeId = response.id || response.userId;
 
-        localStorage.setItem("userEmail", response.email);
-        localStorage.setItem("userName", response.name);
+      if (safeId) localStorage.setItem("userId", safeId.toString());
+      localStorage.setItem("userEmail", response.email);
+      localStorage.setItem("userName", response.name);
 
-        login(response.accessToken, response.role);
+      login(response.accessToken, response.role);
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number } };
       if (axiosError.response?.status === 401) {
@@ -197,18 +210,23 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-screen overflow-hidden relative flex items-center justify-center px-4 py-16 md:py-8">
-      {/* 배경 효과 */}
-      <div className="absolute inset-0 -z-10 bg-white">
-        <div className="absolute top-20 left-10 w-64 md:w-96 h-64 md:h-96 bg-red-50 rounded-full blur-3xl opacity-40"></div>
-        <div className="absolute bottom-20 right-10 w-64 md:w-96 h-64 md:h-96 bg-pink-50 rounded-full blur-3xl opacity-40"></div>
-        <div className="absolute top-1/2 left-1/3 w-48 md:w-80 h-48 md:h-80 bg-purple-50 rounded-full blur-3xl opacity-30"></div>
+    <div className="min-h-screen w-screen overflow-hidden relative flex items-center justify-center px-4 py-16 md:py-8 bg-white">
+      {/* 
+         [렌더링 성능 최적화] 
+         - will-change-transform: GPU 가속 유도하여 메인 스레드 부하 감소
+         - pointer-events-none: 불필요한 레이어 인터랙션 제거하여 스크롤/입력 반응성 향상
+      */}
+      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div className="absolute top-20 left-10 w-64 md:w-96 h-64 md:h-96 bg-red-50 rounded-full blur-3xl opacity-40 will-change-transform"></div>
+        <div className="absolute bottom-20 right-10 w-64 md:w-96 h-64 md:h-96 bg-pink-50 rounded-full blur-3xl opacity-40 will-change-transform"></div>
+        <div className="absolute top-1/2 left-1/3 w-48 md:w-80 h-48 md:h-80 bg-purple-50 rounded-full blur-3xl opacity-30 will-change-transform"></div>
       </div>
 
       {/* 메인으로 돌아가기 버튼 */}
       <button
         onClick={() => navigate("/")}
-        className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-1 md:gap-2 px-4 md:px-6 py-2 md:py-3 rounded-full backdrop-blur-3xl bg-white/40 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:bg-white/50 group"
+        className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-1 md:gap-2 px-4 md:px-6 py-2 md:py-3 rounded-full backdrop-blur-3xl bg-white/40 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:bg-white/50 group z-10"
+        aria-label="메인 페이지로 이동"
       >
         <ArrowLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-700 group-hover:text-[#C93831] transition-colors" />
         <span className="text-sm md:text-base text-gray-700 group-hover:text-[#C93831] transition-colors font-medium">
@@ -221,9 +239,17 @@ export default function Login() {
           {/* 로고 & 타이틀 */}
           <div className="text-center space-y-4">
             <div className="flex justify-center mb-6">
+              {/* 
+                 [LCP & CLS 최적화]
+                 - width/height 명시: 이미지 로딩 전 영역 확보 (레이아웃 이동 방지)
+                 - fetchPriority="high": LCP 요소 우선 로드
+              */}
               <img
                 src="/Lupin.png"
                 alt="Lupin Logo"
+                width="120"
+                height="80"
+                fetchPriority="high"
                 className="h-20 w-auto object-contain"
               />
             </div>
@@ -235,10 +261,7 @@ export default function Login() {
           {/* 로그인 폼 */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label
-                htmlFor="employeeId"
-                className="text-sm font-bold text-gray-700"
-              >
+              <Label htmlFor="employeeId" className="text-sm font-bold text-gray-700">
                 사내 아이디
               </Label>
               <div className="relative">
@@ -246,31 +269,34 @@ export default function Login() {
                 <Input
                   id="employeeId"
                   type="text"
+                  // [UX 개선] 자동완성 지원
+                  autoComplete="username"
                   placeholder="아이디"
                   {...register("employeeId")}
-                  className={`pl-12 pr-10 h-14 rounded-2xl border-2 bg-white transition-all shadow-sm ${
-                    errors.employeeId ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-[#C93831]"
-                  }`}
+                  className={`pl-12 pr-10 h-14 rounded-2xl border-2 bg-white transition-all shadow-sm ${errors.employeeId ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-[#C93831]"
+                    }`}
                 />
                 {employeeId && (
                   <button
                     type="button"
                     onClick={() => setValue("employeeId", "")}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                    aria-label="아이디 지우기"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 )}
               </div>
-              {errors.employeeId && (
-                <p className="text-xs text-red-500 mt-1">{errors.employeeId.message}</p>
-              )}
+              {/* [CLS 방지] 에러 메시지 공간 미리 확보 */}
+              <div className="min-h-[20px]">
+                {errors.employeeId && (
+                  <p className="text-xs text-red-500 pl-1">{errors.employeeId.message}</p>
+                )}
+              </div>
             </div>
+
             <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-sm font-bold text-gray-700"
-              >
+              <Label htmlFor="password" className="text-sm font-bold text-gray-700">
                 비밀번호
               </Label>
               <div className="relative">
@@ -278,47 +304,56 @@ export default function Login() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  // [UX 개선] 비밀번호 자동완성 지원
+                  autoComplete="current-password"
                   placeholder="비밀번호"
                   {...register("password")}
-                  className={`pl-12 pr-20 h-14 rounded-2xl border-2 bg-white transition-all shadow-sm ${
-                    errors.password ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-[#C93831]"
-                  }`}
+                  className={`pl-12 pr-20 h-14 rounded-2xl border-2 bg-white transition-all shadow-sm ${errors.password ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-[#C93831]"
+                    }`}
                 />
                 {password && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                      aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 표시"}
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                     <button
                       type="button"
                       onClick={() => setValue("password", "")}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                      aria-label="비밀번호 지우기"
                     >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
                 )}
               </div>
-              {errors.password && (
-                <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>
-              )}
+              {/* [CLS 방지] 에러 메시지 공간 미리 확보 */}
+              <div className="min-h-[20px]">
+                {errors.password && (
+                  <p className="text-xs text-red-500 pl-1">{errors.password.message}</p>
+                )}
+              </div>
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 p-4 rounded-xl bg-red-50 border border-red-200">
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-700 font-medium">{error}</p>
-              </div>
-            )}
+            {/* 서버 에러 메시지 */}
+            <div className="min-h-[3.5rem] flex items-center justify-center">
+              {error && (
+                <div className="w-full flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 animate-in fade-in slide-in-from-top-2">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <p className="text-sm text-red-700 font-medium">{error}</p>
+                </div>
+              )}
+            </div>
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all border-0 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
             >
               {isLoading ? "로그인 중..." : "로그인"}
             </Button>
@@ -338,17 +373,21 @@ export default function Login() {
 
           {/* 소셜 로그인 버튼 영역 */}
           <div className="flex justify-center items-center gap-6 pb-2">
-            {/* 1. 네이버 버튼 */}
+            {/* 1. 네이버 버튼 - 이미지 사이즈 명시로 CLS 방지 */}
             <button
               type="button"
               onClick={isLoading ? undefined : handleNaverLogin}
-              className="w-[44px] h-[44px] min-w-[44px] min-h-[44px] max-w-[44px] max-h-[44px] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-md border border-transparent overflow-hidden relative flex-none"
+              className="w-[44px] h-[44px] min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-md border border-transparent overflow-hidden relative flex-none"
               title="네이버로 로그인"
+              aria-label="네이버 로그인"
             >
               <img
                 src="/naver-logo.png"
                 alt="Naver"
+                width="40"
+                height="40"
                 className="w-10 h-10 object-contain cursor-pointer"
+                decoding="async"
               />
             </button>
 
@@ -356,13 +395,17 @@ export default function Login() {
             <button
               type="button"
               onClick={isLoading ? undefined : handleKakaoLogin}
-              className="w-[44px] h-[44px] min-w-[44px] min-h-[44px] max-w-[44px] max-h-[44px] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-md border border-transparent overflow-hidden relative flex-none"
+              className="w-[44px] h-[44px] min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-md border border-transparent overflow-hidden relative flex-none"
               title="카카오로 로그인"
+              aria-label="카카오 로그인"
             >
               <img
                 src="/kakao-logo.png"
                 alt="Kakao"
-                className="w-10 h-10 object-contain cursor-pointer "
+                width="40"
+                height="40"
+                className="w-10 h-10 object-contain cursor-pointer"
+                decoding="async"
               />
             </button>
 
@@ -370,17 +413,21 @@ export default function Login() {
             <button
               type="button"
               onClick={isLoading ? undefined : handleGoogleLoginClick}
-              className="w-[44px] h-[44px] min-w-[44px] min-h-[44px] max-w-[44px] max-h-[44px] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-md border border-[#dadce0] overflow-hidden relative bg-white hover:bg-gray-50 flex-none"
+              className="w-[44px] h-[44px] min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all hover:scale-110 shadow-md border border-[#dadce0] overflow-hidden relative bg-white hover:bg-gray-50 flex-none"
               title="구글 계정으로 로그인"
+              aria-label="구글 로그인"
             >
               <img
                 src="/google-logo.png"
                 alt="Google"
-                className="w-10 h-10 object-contain cursor-pointer "
+                width="40"
+                height="40"
+                className="w-10 h-10 object-contain cursor-pointer"
+                decoding="async"
               />
             </button>
             {/* 숨겨진 구글 GSI 버튼 */}
-            <div id="google-signin-button" className="hidden"></div>
+            <div id="google-signin-button" className="hidden" aria-hidden="true"></div>
           </div>
 
           <div className="text-center">
@@ -389,9 +436,15 @@ export default function Login() {
             </p>
           </div>
         </div>
-
         <div className="h-2 bg-gradient-to-r from-[#C93831] via-pink-500 to-purple-500"></div>
       </Card>
+
+      <style>{`
+        /* will-change 유틸리티 클래스 */
+        .will-change-transform {
+          will-change: transform;
+        }
+      `}</style>
     </div>
   );
 }

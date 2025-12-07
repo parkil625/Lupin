@@ -36,27 +36,8 @@ export default function LandingPage() {
     }, []);
 
     return (
-        <div className="min-h-screen relative overflow-hidden bg-white">
-            {/*
-               [배경 최적화 - FCP 개선]
-               blur-3xl 요소 대신 CSS radial-gradient 사용
-               - blur 필터는 리페인트 비용이 높아 FCP 저하
-               - radial-gradient는 GPU에서 한 번에 렌더링되어 성능 우수
-            */}
-            <div
-                className="fixed inset-0 -z-10 pointer-events-none"
-                aria-hidden="true"
-                style={{
-                    background: `
-                        linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%),
-                        radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
-                        radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%),
-                        radial-gradient(circle at 25% 80%, rgba(253, 224, 71, 0.3) 0%, transparent 20%),
-                        radial-gradient(circle at 65% 90%, rgba(167, 243, 208, 0.25) 0%, transparent 25%),
-                        radial-gradient(circle at 75% 40%, rgba(252, 165, 165, 0.2) 0%, transparent 20%)
-                    `
-                }}
-            />
+        <div className="min-h-screen relative overflow-hidden">
+            {/* 배경 그라디언트는 index.html body에서 처리 (FCP 최적화) */}
 
             {/* Header */}
             <header className="fixed top-0 w-full backdrop-blur-md bg-white/80 border-b border-gray-200 z-50 transition-all">
@@ -140,6 +121,7 @@ export default function LandingPage() {
                                 width="800"
                                 height="600"
                                 fetchPriority="high"
+                                decoding="sync"
                                 className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
                             />
                         </div>

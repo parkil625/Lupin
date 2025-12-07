@@ -1,21 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Health Management Platform</title>
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Health Management Platform</title>
+    <!-- 🚀 [LCP 최적화] Hero 이미지 미리 로드 -->
+    <link
+      rel="preload"
+      as="image"
+      href="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80&fm=webp"
+      fetchpriority="high"
+    />
 
-      <!-- Favicon -->
-      <link rel="icon" type="image/png" sizes="48x48" href="/android-icon-48x48.png" />
-      <link rel="icon" type="image/png" sizes="36x36" href="/android-icon-36x36.png" />
-      <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
-      <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
-    </head>
+    <!-- 🚀 [네트워크 최적화] Unsplash 서버와 미리 연결 -->
+    <link rel="preconnect" href="https://images.unsplash.com" />
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/android-icon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="36x36" href="/android-icon-36x36.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

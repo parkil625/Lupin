@@ -766,14 +766,16 @@ export default function FeedDetailDialogHome({
               : "md:!w-[475px] md:!max-w-[475px]"
           }`}
           onPointerDownOutside={(e) => {
-            // 모바일 댓글 오버레이 클릭 시 다이얼로그 닫힘 방지
-            if (showComments) {
+            // 모바일에서만 댓글 오버레이 클릭 시 다이얼로그 닫힘 방지
+            const isMobile = window.innerWidth < 768;
+            if (showComments && isMobile) {
               e.preventDefault();
             }
           }}
           onInteractOutside={(e) => {
-            // 모바일 댓글 오버레이와 상호작용 시 다이얼로그 닫힘 방지
-            if (showComments) {
+            // 모바일에서만 댓글 오버레이와 상호작용 시 다이얼로그 닫힘 방지
+            const isMobile = window.innerWidth < 768;
+            if (showComments && isMobile) {
               e.preventDefault();
             }
           }}

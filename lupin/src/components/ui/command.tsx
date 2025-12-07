@@ -83,9 +83,24 @@ function CommandList({
     <CommandPrimitive.List
       data-slot="command-list"
       className={cn(
-        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto",
+        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto overscroll-contain",
         className,
       )}
+      onWheel={(e) => {
+        // cmdk 기본 동작이 wheel 이벤트를 막는 경우가 있어 수동으로 스크롤 처리
+        const target = e.currentTarget;
+        const { scrollTop, scrollHeight, clientHeight } = target;
+        const isScrollable = scrollHeight > clientHeight;
+        const isAtTop = scrollTop === 0;
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight;
+
+        // 스크롤 가능한 영역 내에서만 이벤트 전파 중지
+        if (isScrollable) {
+          if ((e.deltaY < 0 && !isAtTop) || (e.deltaY > 0 && !isAtBottom)) {
+            e.stopPropagation();
+          }
+        }
+      }}
       {...props}
     />
   );

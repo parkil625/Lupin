@@ -54,7 +54,6 @@ export default function EditFeedDialog({
   const [otherImages, setOtherImages] = useState<string[]>([]);
   const [workoutType, setWorkoutType] = useState<string>("");
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
   const [isDesktop, setIsDesktop] = useState(false);
   const [editorContent, setEditorContent] = useState<string>("");
@@ -104,8 +103,6 @@ export default function EditFeedDialog({
         setShowCloseConfirm(true);
       } else {
         // 변경사항 없으면 상태 초기화
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- 다이얼로그 닫힐 때 상태 초기화 필요
-        setHasChanges(false);
         initialDataRef.current = null;
       }
     }
@@ -125,7 +122,6 @@ export default function EditFeedDialog({
       setEndImage(initialEndImage);
       setOtherImages(initialOtherImages);
       setWorkoutType(initialWorkoutType);
-      setHasChanges(false);
 
       // 기존 내용을 에디터에 로드
       try {
@@ -161,21 +157,6 @@ export default function EditFeedDialog({
       }, 100);
     }
   }, [feed, editor, open]);
-
-  // 변경사항 감지
-  useEffect(() => {
-    if (!initialDataRef.current) return;
-
-    const changed =
-      startImage !== initialDataRef.current.startImage ||
-      endImage !== initialDataRef.current.endImage ||
-      JSON.stringify(otherImages) !== JSON.stringify(initialDataRef.current.otherImages) ||
-      workoutType !== initialDataRef.current.workoutType ||
-      editorContent !== initialDataRef.current.content;
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 변경사항 감지를 위한 상태 업데이트
-    setHasChanges(changed);
-  }, [startImage, endImage, otherImages, workoutType, editorContent]);
 
   // EXIF 시간 검증 (이미지가 변경된 경우에만)
   useEffect(() => {
@@ -275,8 +256,7 @@ export default function EditFeedDialog({
     const contentJson = JSON.stringify(blocks);
 
     onSave(feed.id, images, contentJson, workoutType, startImage, endImage);
-    // 저장 완료 후 hasChanges를 false로 설정하여 컨펌창 방지
-    setHasChanges(false);
+    // 저장 완료 후 상태 초기화
     initialDataRef.current = null;
     onOpenChange(false);
   };
@@ -312,7 +292,7 @@ export default function EditFeedDialog({
   // 확인 없이 닫기
   const handleCloseWithoutSaving = () => {
     setShowCloseConfirm(false);
-    setHasChanges(false);
+    initialDataRef.current = null;
     onOpenChange(false);
   };
 

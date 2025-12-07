@@ -4,22 +4,8 @@ import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import {
-    Heart,
-    Sparkles,
-    Trophy,
-    Users,
-    Dumbbell,
-    Award,
-    ArrowRight,
-    Check,
-    BarChart3,
-    Search,
-    Zap,
-    Calendar,
-    Target,
-    MessageCircle,
-    FileText,
-    UserCircle
+    Heart, Sparkles, Trophy, Users, Dumbbell, Award, ArrowRight,
+    Check, BarChart3, Search, Zap, Calendar, Target, MessageCircle, FileText, UserCircle
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -28,17 +14,21 @@ export default function LandingPage() {
     useEffect(() => {
         const observerOptions = {
             threshold: 0.1,
-            rootMargin: "0px 0px -100px 0px"
+            // 모바일 스크롤 속도를 고려하여 미리 로드되도록 마진 조정
+            rootMargin: "0px 0px -50px 0px"
         };
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add("animate-in");
+                    // ⚡️ 성능 최적화: 한 번 애니메이션 실행된 요소는 관찰 중단 (메모리 절약)
+                    observer.unobserve(entry.target);
                 }
             });
         }, observerOptions);
 
+        // Hero 섹션을 제외한 나머지 스크롤 애니메이션 요소만 관찰
         const elements = document.querySelectorAll("[class*='scroll-']");
         elements.forEach((el) => observer.observe(el));
 
@@ -46,26 +36,37 @@ export default function LandingPage() {
     }, []);
 
     return (
-        <div className="min-h-screen relative overflow-hidden">
-            {/* Colorful Stained Background */}
-            <div className="fixed inset-0 -z-10 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100">
-                <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full blur-3xl opacity-40 animate-float"></div>
-                <div className="absolute top-60 right-20 w-80 h-80 bg-gradient-to-br from-blue-300 to-cyan-300 rounded-full blur-3xl opacity-40 animate-float-delayed"></div>
+        <div className="min-h-screen relative overflow-hidden bg-white">
+            {/* 
+               [배경 최적화]
+               1. pointer-events-none: 마우스 이벤트 차단하여 스크롤 성능 확보
+               2. will-change-transform: GPU 가속 힌트 제공
+            */}
+            <div className="fixed inset-0 -z-10 bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 pointer-events-none" aria-hidden="true">
+                <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-300 rounded-full blur-3xl opacity-40 animate-float will-change-transform"></div>
+                <div className="absolute top-60 right-20 w-80 h-80 bg-gradient-to-br from-blue-300 to-cyan-300 rounded-full blur-3xl opacity-40 animate-float-delayed will-change-transform"></div>
                 <div className="absolute bottom-40 left-1/4 w-72 h-72 bg-gradient-to-br from-yellow-200 to-orange-300 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-                <div className="absolute bottom-20 right-1/3 w-96 h-96 bg-gradient-to-br from-green-200 to-emerald-300 rounded-full blur-3xl opacity-30 animate-float"></div>
-                <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-gradient-to-br from-red-200 to-pink-200 rounded-full blur-3xl opacity-25 animate-float"></div>
-                <div className="absolute bottom-10 left-1/2 w-96 h-96 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full blur-3xl opacity-30 animate-float-delayed"></div>
+                {/* 모바일 성능(TBT)을 위해 과도한 블러 요소는 데스크탑에서만 표시 */}
+                <div className="hidden md:block absolute bottom-20 right-1/3 w-96 h-96 bg-gradient-to-br from-green-200 to-emerald-300 rounded-full blur-3xl opacity-30 animate-float will-change-transform"></div>
+                <div className="hidden md:block absolute top-1/3 right-1/4 w-80 h-80 bg-gradient-to-br from-red-200 to-pink-200 rounded-full blur-3xl opacity-25 animate-float will-change-transform"></div>
             </div>
 
-            {/* Header - Glassmorphism */}
-            <header className="fixed top-0 w-full backdrop-blur-2xl bg-white/80 border-b border-gray-200 z-50">
-                <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            {/* Header */}
+            <header className="fixed top-0 w-full backdrop-blur-md bg-white/80 border-b border-gray-200 z-50 transition-all">
+                <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <img src="/Lupin.png" alt="Lupin Logo" className="h-10 w-auto object-contain" />
+                        {/* [CLS 방지] 로고 이미지에 width/height 명시 */}
+                        <img
+                            src="/Lupin.png"
+                            alt="Lupin Logo"
+                            width="100"
+                            height="40"
+                            className="h-8 md:h-10 w-auto object-contain"
+                        />
                     </div>
                     <Button
                         onClick={() => navigate('/login')}
-                        className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold border-0 shadow-xl rounded-2xl px-6"
+                        className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold border-0 shadow-xl rounded-2xl px-6 transition-transform active:scale-95"
                     >
                         로그인
                     </Button>
@@ -73,19 +74,20 @@ export default function LandingPage() {
             </header>
 
             {/* Hero Section */}
-            <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 scroll-fade-up">
+            {/* [LCP 최적화] Hero 섹션은 애니메이션 없이 즉시 렌더링되도록 'scroll-fade-up' 클래스 제거 */}
+            <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4">
                 <div className="container mx-auto max-w-6xl">
                     <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                         <div className="space-y-4 md:space-y-6 order-2 md:order-1">
-                            <Badge className="bg-[#C93831] text-white hover:bg-[#B02F28] border-0 px-3 md:px-4 py-1.5 md:py-2 font-bold shadow-lg text-xs md:text-sm">
+                            <Badge className="bg-[#C93831] text-white hover:bg-[#B02F28] border-0 px-3 md:px-4 py-1.5 md:py-2 font-bold shadow-lg text-xs md:text-sm inline-flex items-center">
                                 <Sparkles className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                                 직원 전용 헬스케어 플랫폼
                             </Badge>
-                            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 leading-tight">
+                            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 leading-tight tracking-tight">
                                 건강한 습관,<br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C93831] to-pink-500">함께 만들어가요</span>
                             </h1>
-                            <p className="text-base md:text-xl text-gray-700 font-medium">
+                            <p className="text-base md:text-xl text-gray-700 font-medium leading-relaxed">
                                 운동을 기록하고 점수를 모으세요.<br />
                                 동료들과 함께 건강한 습관을 만들어가요!
                             </p>
@@ -99,35 +101,45 @@ export default function LandingPage() {
                                     <ArrowRight className="w-4 h-4 md:w-5 md:h-5 ml-2" />
                                 </Button>
                             </div>
+
                             <div className="flex gap-3 md:gap-8 pt-2 md:pt-4">
-                                <div className="backdrop-blur-xl bg-white/40 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/60">
-                                    <div className="text-xl md:text-3xl font-black text-[#C93831]">피드</div>
-                                    <div className="text-xs md:text-sm text-gray-600 font-bold">하루 1회</div>
-                                </div>
-                                <div className="backdrop-blur-xl bg-white/40 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/60">
-                                    <div className="text-xl md:text-3xl font-black text-[#C93831]">실시간</div>
-                                    <div className="text-xs md:text-sm text-gray-600 font-bold">랭킹</div>
-                                </div>
-                                <div className="backdrop-blur-xl bg-white/40 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/60">
-                                    <div className="text-xl md:text-3xl font-black text-[#C93831]">비대면</div>
-                                    <div className="text-xs md:text-sm text-gray-600 font-bold">진료</div>
-                                </div>
+                                {[
+                                    { title: "피드", sub: "하루 1회" },
+                                    { title: "실시간", sub: "랭킹" },
+                                    { title: "비대면", sub: "진료" }
+                                ].map((item, idx) => (
+                                    <div key={idx} className="backdrop-blur-xl bg-white/40 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/60">
+                                        <div className="text-xl md:text-3xl font-black text-[#C93831]">{item.title}</div>
+                                        <div className="text-xs md:text-sm text-gray-600 font-bold">{item.sub}</div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
+
+                        {/* Hero Image - LCP 핵심 요소 */}
                         <div className="relative order-1 md:order-2">
                             <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
+                            {/* 
+                                [이미지 최적화]
+                                1. fetchpriority="high": 브라우저에게 최우선 다운로드 지시
+                                2. fm=webp: WebP 포맷 변환 (용량 감소)
+                                3. width/height 명시: 레이아웃 시프트(CLS) 방지
+                            */}
                             <img
-                                src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=75"
-                                alt="운동 활동"
-                                className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full"
+                                src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80&fm=webp"
+                                alt="운동하는 여성"
+                                width="800"
+                                height="600"
+                                fetchPriority="high"
+                                className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
                             />
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Service Introduction */}
-            <section className="py-12 md:py-20 px-4 scroll-slide-right">
+            {/* Service Introduction - 여기서부터 Lazy Loading 및 애니메이션 적용 */}
+            <section className="py-12 md:py-20 px-4 scroll-fade-up">
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">Lupin이 특별한 이유</h2>
@@ -135,44 +147,23 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
-                        <Card className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
-                            <CardContent className="p-6 md:p-8 space-y-3 md:space-y-4">
-                                <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg">
-                                    <Target className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                                </div>
-                                <h3 className="text-xl md:text-2xl font-black text-gray-900">점수 획득 시스템</h3>
-                                <p className="text-sm md:text-base text-gray-700 font-medium">
-                                    운동을 완료하고 점수를 획득하세요.
-                                    점수에 따라 실시간 랭킹이 변동됩니다!
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
-                            <CardContent className="p-6 md:p-8 space-y-3 md:space-y-4">
-                                <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg">
-                                    <MessageCircle className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                                </div>
-                                <h3 className="text-xl md:text-2xl font-black text-gray-900">비대면 진료</h3>
-                                <p className="text-sm md:text-base text-gray-700 font-medium">
-                                    전문 의료진과 1:1 채팅으로
-                                    간편하게 비대면 진료를 받으세요!
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
-                            <CardContent className="p-6 md:p-8 space-y-3 md:space-y-4">
-                                <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg">
-                                    <BarChart3 className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                                </div>
-                                <h3 className="text-xl md:text-2xl font-black text-gray-900">실시간 랭킹</h3>
-                                <p className="text-sm md:text-base text-gray-700 font-medium">
-                                    점수 기반 실시간 랭킹에서
-                                    다른 동료들과 경쟁하고 성장하세요!
-                                </p>
-                            </CardContent>
-                        </Card>
+                        {[
+                            { icon: Target, title: "점수 획득 시스템", desc: "운동을 완료하고 점수를 획득하세요. 점수에 따라 실시간 랭킹이 변동됩니다!", color: "from-[#C93831] to-pink-500" },
+                            { icon: MessageCircle, title: "비대면 진료", desc: "전문 의료진과 1:1 채팅으로 간편하게 비대면 진료를 받으세요!", color: "from-purple-500 to-pink-500" },
+                            { icon: BarChart3, title: "실시간 랭킹", desc: "점수 기반 실시간 랭킹에서 다른 동료들과 경쟁하고 성장하세요!", color: "from-blue-500 to-cyan-500" }
+                        ].map((card, i) => (
+                            <Card key={i} className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
+                                <CardContent className="p-6 md:p-8 space-y-3 md:space-y-4">
+                                    <div className={`w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br ${card.color} rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg`}>
+                                        <card.icon className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                                    </div>
+                                    <h3 className="text-xl md:text-2xl font-black text-gray-900">{card.title}</h3>
+                                    <p className="text-sm md:text-base text-gray-700 font-medium break-keep">
+                                        {card.desc}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -186,39 +177,37 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+                        {/* 
+                            [성능 최적화] 스크롤 하단 이미지:
+                            1. loading="lazy": 초기 로딩에서 제외
+                            2. decoding="async": 메인 스레드 차단 방지
+                        */}
                         <img
-                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=75"
-                            alt="운동 기록"
-                            className="rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full"
+                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80&fm=webp"
+                            alt="운동 기록 화면"
+                            width="800"
+                            height="600"
+                            loading="lazy"
+                            decoding="async"
+                            className="rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
                         />
                         <div className="space-y-4 md:space-y-6">
                             <div className="flex items-center gap-2 md:gap-3">
                                 <Dumbbell className="w-8 h-8 md:w-10 md:h-10 text-[#C93831]" />
                                 <h3 className="text-2xl md:text-4xl font-black text-gray-900">간편한 운동 기록</h3>
                             </div>
-                            <p className="text-base md:text-xl text-gray-700 font-medium">
-                                운동이 끝나면 바로 기록하세요.
-                                운동 시간과 종류에 따라 점수를 받을 수 있습니다.
+                            <p className="text-base md:text-xl text-gray-700 font-medium break-keep">
+                                운동이 끝나면 바로 기록하세요. 운동 시간과 종류에 따라 점수를 받을 수 있습니다.
                             </p>
                             <div className="space-y-4">
-                                <div className="flex items-center gap-3 backdrop-blur-xl bg-white/40 p-4 rounded-2xl border border-white/60">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Check className="w-5 h-5 text-white" />
+                                {["운동 종류와 시간 입력", "즉시 점수 획득", "실시간 랭킹 반영"].map((text, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 backdrop-blur-xl bg-white/40 p-4 rounded-2xl border border-white/60">
+                                        <div className="w-8 h-8 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <Check className="w-5 h-5 text-white" />
+                                        </div>
+                                        <span className="text-gray-900 font-bold">{text}</span>
                                     </div>
-                                    <span className="text-gray-900 font-bold">운동 종류와 시간 입력</span>
-                                </div>
-                                <div className="flex items-center gap-3 backdrop-blur-xl bg-white/40 p-4 rounded-2xl border border-white/60">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Check className="w-5 h-5 text-white" />
-                                    </div>
-                                    <span className="text-gray-900 font-bold">즉시 점수 획득</span>
-                                </div>
-                                <div className="flex items-center gap-3 backdrop-blur-xl bg-white/40 p-4 rounded-2xl border border-white/60">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Check className="w-5 h-5 text-white" />
-                                    </div>
-                                    <span className="text-gray-900 font-bold">실시간 랭킹 반영</span>
-                                </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -252,7 +241,7 @@ export default function LandingPage() {
                                         <feature.icon className="w-5 h-5 md:w-7 md:h-7 text-white" />
                                     </div>
                                     <h3 className="text-base md:text-xl font-black text-gray-900">{feature.title}</h3>
-                                    <p className="text-xs md:text-sm text-gray-700 font-medium hidden sm:block">{feature.desc}</p>
+                                    <p className="text-xs md:text-sm text-gray-700 font-medium hidden sm:block break-keep">{feature.desc}</p>
                                 </CardContent>
                             </Card>
                         ))}
@@ -307,18 +296,16 @@ export default function LandingPage() {
                             </Button>
                         </div>
                         <div className="pt-4 md:pt-8 flex items-center justify-center gap-6 md:gap-12">
-                            <div className="text-center">
-                                <Award className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 text-red-200" />
-                                <div className="text-xs md:text-sm text-red-100 font-bold">직원 전용</div>
-                            </div>
-                            <div className="text-center">
-                                <Heart className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 text-red-200" />
-                                <div className="text-xs md:text-sm text-red-100 font-bold">무료 서비스</div>
-                            </div>
-                            <div className="text-center">
-                                <Trophy className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 text-red-200" />
-                                <div className="text-xs md:text-sm text-red-100 font-bold">실시간 랭킹</div>
-                            </div>
+                            {[
+                                { Icon: Award, text: "직원 전용" },
+                                { Icon: Heart, text: "무료 서비스" },
+                                { Icon: Trophy, text: "실시간 랭킹" }
+                            ].map((badge, idx) => (
+                                <div key={idx} className="text-center">
+                                    <badge.Icon className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 text-red-200" />
+                                    <div className="text-xs md:text-sm text-red-100 font-bold">{badge.text}</div>
+                                </div>
+                            ))}
                         </div>
                     </CardContent>
                 </Card>
@@ -329,10 +316,8 @@ export default function LandingPage() {
                 <div className="container mx-auto max-w-6xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
                         <div className="space-y-3 md:space-y-4 text-center md:text-left">
-                            <img src="/Lupin.png" alt="Lupin Logo" className="h-8 md:h-10 w-auto object-contain mx-auto md:mx-0" />
-                            <p className="text-xs md:text-sm font-medium">
-                                건강한 습관, 함께 만들어가요
-                            </p>
+                            <img src="/Lupin.png" alt="Lupin Logo" width="100" height="32" className="h-8 md:h-10 w-auto object-contain mx-auto md:mx-0" />
+                            <p className="text-xs md:text-sm font-medium">건강한 습관, 함께 만들어가요</p>
                         </div>
                         <div className="text-center md:text-left">
                             <h3 className="text-white font-black mb-2 md:mb-4 text-sm md:text-base">회원 기능</h3>
@@ -377,8 +362,13 @@ export default function LandingPage() {
         .animate-float-delayed {
           animation: float-delayed 8s ease-in-out infinite;
         }
+        
+        /* 성능을 위해 will-change 추가 */
+        .will-change-transform {
+            will-change: transform;
+        }
 
-        /* Sudden Appear Animations */
+        /* Sudden Appear Animations - 초기 opacity 0 때문에 LCP가 늦어지는 것 방지 */
         .scroll-fade-up,
         .scroll-slide-right,
         .scroll-slide-left,
@@ -386,6 +376,7 @@ export default function LandingPage() {
         .scroll-bounce-in,
         .scroll-zoom-in {
           opacity: 0;
+          will-change: opacity, transform; /* 브라우저 힌트 제공 */
         }
 
         /* Fade Up */

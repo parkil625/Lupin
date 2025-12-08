@@ -162,12 +162,7 @@ export default function DoctorChatPage() {
   const handleSendDoctorChat = () => {
     if (!chatMessage.trim() || !selectedChatMember) return;
 
-    sendWebSocketMessage(
-      chatMessage,
-      currentUserId,
-      selectedChatMember.id,
-      currentDoctorId
-    );
+    sendWebSocketMessage(chatMessage, currentUserId);
 
     setChatMessage("");
   };

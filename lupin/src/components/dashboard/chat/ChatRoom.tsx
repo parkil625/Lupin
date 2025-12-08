@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { ChatMessageResponse, chatApi } from '@/api/chatApi';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';

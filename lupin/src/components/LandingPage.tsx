@@ -194,10 +194,10 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-                        {/* 🚀 [최적화] srcSet으로 모바일에서 작은 이미지 다운로드 (~64KB 절약) */}
+                        {/* 🚀 [최적화] srcSet + 품질 q=60으로 용량 절감 */}
                         <img
-                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80&fm=webp"
-                            srcSet="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80&fm=webp 400w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80&fm=webp 800w"
+                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp"
+                            srcSet="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60&fm=webp 400w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp 800w"
                             sizes="(max-width: 768px) 100vw, 800px"
                             alt="운동 기록 화면"
                             width="800"

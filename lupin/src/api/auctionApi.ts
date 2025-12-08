@@ -30,7 +30,7 @@ export const getScheduledAuctions = async (): Promise<AuctionData[]> => {
 
 
  export const placeBid = async (auctionId: number, amount: number) => {
-     const response = await client.post(`/auction/${auctionId}/bids`, { amount });
+     const response = await client.post(`/auction/${auctionId}/bid`, { amount });
      return response.data;
  };
 

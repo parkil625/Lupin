@@ -73,25 +73,24 @@ export const useWebSocket = ({
         };
     }, [roomId, userId, onMessageReceived]);
 
-    const sendMessage = useCallback((content: string, senderId: number, patientId: number, doctorId: number) => {
+    const sendMessage = useCallback((content: string, senderId: number) => {
         if (!clientRef.current?.connected) {
             console.error('WebSocket이 연결되지 않았습니다.');
             return;
         }
 
-        // 🔧 수정: 백엔드 ChatMessageRequest와 일치하도록 수정
+        // 🔧 수정: props로 받은 roomId를 그대로 사용하여 일관성 유지
         const messageRequest = {
-            roomId: `${patientId}:${doctorId}`,  // roomId 추가
+            roomId: roomId,  // Props로 받은 roomId 사용
             senderId,
             content,
         };
 
-        // 🔧 수정: 백엔드 @MessageMapping과 일치하도록 /app/chat.send로 변경
         clientRef.current.publish({
             destination: '/app/chat.send',
             body: JSON.stringify(messageRequest),
         });
-    }, []);
+    }, [roomId]);
 
     // 🔧 제거: markAsRead는 REST API로만 처리 (WebSocket 미사용)
     // REST API: PUT /api/chat/rooms/{roomId}/read?userId={userId}

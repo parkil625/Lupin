@@ -15,31 +15,12 @@
     <link rel="preload" as="image" href="/hero-desktop.webp" media="(min-width: 769px)" fetchpriority="high" />
 
     <style>
-      /* Critical CSS - LCP 요소에 필요한 스타일만 인라인 */
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
       body {
+        margin: 0;
+        padding: 0;
         min-height: 100vh;
         background: linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%);
         font-family: 'NanumSquare', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        -webkit-font-smoothing: antialiased;
-      }
-
-      /* Hero 이미지 Critical CSS (Tailwind 클래스 매칭) */
-      .relative { position: relative; }
-      .w-full { width: 100%; }
-      .h-auto { height: auto; }
-      .object-cover { object-fit: cover; }
-      .rounded-2xl { border-radius: 1rem; }
-      .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
-      .border-4 { border-width: 4px; }
-      .border-white\/50 { border-color: rgba(255, 255, 255, 0.5); }
-      .backdrop-blur-sm { backdrop-filter: blur(4px); }
-      .aspect-\[4\/3\] { aspect-ratio: 4 / 3; }
-
-      @media (min-width: 768px) {
-        .md\:rounded-3xl { border-radius: 1.5rem; }
-        .md\:border-8 { border-width: 8px; }
       }
     </style>
   </head>
@@ -59,16 +40,10 @@
       <section style="padding: 96px 16px 48px; max-width: 1152px; margin: 0 auto;">
         <div style="display: grid; gap: 32px; align-items: center;">
           <!-- 이미지 (모바일에서 먼저 보임) -->
-          <div class="relative">
+          <div style="position: relative;">
             <picture>
               <source srcset="/hero-mobile.webp" media="(max-width: 768px)" />
-              <img
-                src="/hero-desktop.webp"
-                alt="운동하는 여성"
-                class="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
-                fetchpriority="high"
-                decoding="async"
-              />
+              <img src="/hero-desktop.webp" alt="운동하는 여성" style="width: 100%; height: auto; aspect-ratio: 4/3; object-fit: cover; border-radius: 16px; border: 4px solid rgba(255,255,255,0.5); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);" fetchpriority="high" />
             </picture>
           </div>
           <!-- 텍스트 -->

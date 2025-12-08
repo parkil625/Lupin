@@ -48,6 +48,8 @@ public class AppointmentService {
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
+        chatService.createChatRoomForAppointment(savedAppointment.getId());
+
         log.info("예약 생성 완료 - ID: {}, 환자: {}, 의사: {}, 날짜: {}",
                 savedAppointment.getId(),
                 savedAppointment.getPatient().getName(),

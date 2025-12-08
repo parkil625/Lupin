@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Health Management Platform</title>
 
-    <!-- 🚀 [폰트 최적화] 빠른 CDN에서 폰트 미리 로드 -->
+    <!-- 🚀 [폰트 최적화] woff2만 preload (font-display: swap은 fonts.css에서 처리) -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/nanumsquare.css"
-    />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareR.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareB.woff2" />
 
     <!-- 🚀 [LCP 최적화] srcSet과 일치하는 스마트 프리로드 -->
     <link

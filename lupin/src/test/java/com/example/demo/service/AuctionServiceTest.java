@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.*;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
+import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
@@ -394,6 +395,38 @@ class AuctionServiceTest {
         verify(auctionBidRepository).save(any(AuctionBid.class));
 
 
+   }
+
+   @Test
+   void 현재_경매_정보_리스트_조회(){
+       // given
+       User user = createUser(1L, "홍길동");
+       Auction auction = createActiveAuction(100L);
+
+       // 1. 가짜 반환값(엔티티 리스트) 만들기
+       AuctionBid bid = AuctionBid.builder()
+               .user(user)
+               .bidAmount(1000L)
+               .auction(auction)
+               .status(BidStatus.ACTIVE)
+               .bidTime(LocalDateTime.now())
+               .build();
+       List<AuctionBid> mockBids = List.of(bid);
+
+       // 2. Mock 설정: "레포지토리에 find...라고 물어보면 mockBids를 줘라!" (Stubbing)
+       given(auctionBidRepository.findBidsByActiveAuction()).willReturn(mockBids);
+
+       // when
+       // 서비스 메소드 호출 (서비스는 내부에서 레포지토리의 find...를 부르고, 위에서 정한 mockBids를 받음)
+       List<AuctionBidResponse> result = auctionService.getAuctionStatus();
+
+       // then
+       assertThat(result).hasSize(1);
+       assertThat(result.get(0).getBidAmount()).isEqualTo(1000L);
+       assertThat(result.get(0).getUserName()).isEqualTo("홍길동");
+
+       // 레포지토리가 실제로 호출되었는지 확인
+       verify(auctionBidRepository).findBidsByActiveAuction();
    }
 
 

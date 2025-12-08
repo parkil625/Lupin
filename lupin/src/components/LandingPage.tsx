@@ -150,7 +150,7 @@ export default function LandingPage() {
                             <img
                                 src="/hero-desktop.webp"
                                 srcSet="/hero-mobile.webp 400w, /hero-desktop.webp 800w"
-                                sizes="(max-width: 768px) 100vw, 800px"
+                                sizes="(max-width: 600px) 400px, 800px"
                                 alt="운동하는 여성"
                                 width="800"
                                 height="600"

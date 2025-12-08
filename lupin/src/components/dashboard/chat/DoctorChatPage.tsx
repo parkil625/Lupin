@@ -39,7 +39,6 @@ interface MedicineQuantity {
 
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-  const currentDoctorId = currentUserId;
 
   const [selectedChatMember, setSelectedChatMember] = useState<Member | null>(
     null
@@ -162,12 +161,7 @@ export default function DoctorChatPage() {
   const handleSendDoctorChat = () => {
     if (!chatMessage.trim() || !selectedChatMember) return;
 
-    sendWebSocketMessage(
-      chatMessage,
-      currentUserId,
-      selectedChatMember.id,
-      currentDoctorId
-    );
+    sendWebSocketMessage(chatMessage, currentUserId);
 
     setChatMessage("");
   };

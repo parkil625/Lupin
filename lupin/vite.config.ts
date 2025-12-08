@@ -77,8 +77,7 @@ export default defineConfig({
         manualChunks: {
           // 1. React 핵심 라이브러리 분리
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // 2. 가장 무거운 아이콘 라이브러리 분리
-          'vendor-icons': ['lucide-react'],
+          // 2. lucide-react는 Tree-shaking에 맡김 (필요한 아이콘만 로딩)
           // 3. 기타 UI 라이브러리 분리
           'vendor-ui': ['@radix-ui/react-slot', 'class-variance-authority', 'clsx', 'tailwind-merge']
         }

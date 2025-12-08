@@ -3,59 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="하루 1회 피드 작성, 실시간 랭킹, 비대면 진료까지. 루팡(Lupin)과 함께 건강한 습관을 만들어보세요." />
     <title>Health Management Platform</title>
 
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-        background:
-          linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%),
-          radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
-          radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%);
-        background-attachment: fixed;
-        /* 시스템 폰트 우선 적용 (폰트 다운로드 없이 즉시 렌더링) */
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      }
-
-      #app-shell-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 9999;
-        overflow-y: auto;
-        background: inherit;
-        transition: opacity 0.4s ease-out;
-      }
-      .shell-container {
-        max-width: 72rem;
-        margin: 0 auto;
-        padding: 6rem 1rem 3rem 1rem;
-        display: grid;
-        gap: 2rem;
-        align-items: center;
-      }
-      .shell-text { order: 2; text-align: center; }
-      .shell-img-wrap { order: 1; position: relative; }
-      .shell-img {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 4/3;
-        border-radius: 1rem;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        border: 4px solid rgba(255, 255, 255, 0.5);
-        object-fit: cover;
-      }
-      @media (min-width: 768px) {
-        .shell-container { padding-top: 8rem; grid-template-columns: 1fr 1fr; gap: 3rem; }
-        .shell-text { order: 1; text-align: left; }
-        .shell-img-wrap { order: 2; }
-        .shell-img { border-radius: 1.5rem; border-width: 8px; }
-      }
-    </style>
+    <link rel="preload" href="/fonts/NanumSquareR.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/NanumSquareB.woff2" as="font" type="font/woff2" crossorigin />
 
     <link
       rel="preload"
@@ -71,43 +23,236 @@
       media="(min-width: 769px)"
       fetchpriority="high"
     />
+
+    <style>
+      /* [초기화] React/Tailwind 기본 스타일과 일치시킴 */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'NanumSquare', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* [App Shell CSS] Tailwind 클래스를 픽셀 단위로 정확히 변환 */
+
+      /* 1. Header (fixed) */
+      .shell-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+        z-index: 50;
+      }
+
+      .shell-header-inner {
+        width: 100%;
+        padding-left: 16px;
+        padding-right: 16px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      /* 모바일 헤더 높이: py-3(12px*2) + h-8(32px) = 56px */
+      .shell-header-inner { height: 56px; }
+      .shell-logo { height: 32px; width: auto; }
+
+      .shell-btn {
+        background: linear-gradient(to right, #C93831, #B02F28);
+        color: white;
+        font-weight: 700;
+        border: 0;
+        border-radius: 16px;
+        padding: 8px 24px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      /* 2. Hero Section */
+      .shell-hero {
+        width: 100%;
+        max-width: 1152px;
+        margin: 0 auto;
+        padding-left: 16px;
+        padding-right: 16px;
+        padding-top: 96px;
+        padding-bottom: 48px;
+      }
+
+      .shell-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 32px;
+        align-items: center;
+      }
+
+      /* 모바일: 텍스트가 아래(order-2), 이미지가 위(order-1) */
+      .shell-text-col { order: 2; }
+      .shell-img-col { order: 1; position: relative; }
+
+      /* Hero Text Styles (Mobile) */
+      .shell-badge {
+        display: inline-flex;
+        align-items: center;
+        background-color: #C93831;
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 9999px;
+        margin-bottom: 16px;
+      }
+
+      .shell-title {
+        color: #111827;
+        font-weight: 900;
+        font-size: 30px;
+        line-height: 1.25;
+        margin-bottom: 16px;
+      }
+
+      .shell-desc {
+        color: #374151;
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 1.625;
+        margin-bottom: 24px;
+      }
+
+      .shell-cta-btn {
+        background: linear-gradient(to right, #C93831, #B02F28);
+        color: white;
+        font-weight: 700;
+        font-size: 14px;
+        padding: 16px 24px;
+        border-radius: 16px;
+        border: 0;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      /* Hero Image Styles */
+      .shell-img-wrap {
+        position: relative;
+        width: 100%;
+        padding-bottom: 75%;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: 4px solid rgba(255, 255, 255, 0.5);
+      }
+
+      .shell-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* 3. Desktop Media Query (md: 768px 이상) */
+      @media (min-width: 768px) {
+        .shell-header-inner {
+            height: 72px;
+            max-width: 1280px;
+        }
+        .shell-logo { height: 40px; }
+
+        .shell-hero {
+            padding-top: 128px;
+            padding-bottom: 80px;
+        }
+
+        .shell-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 48px;
+        }
+
+        /* 데스크톱: 순서 반대로 복구 */
+        .shell-text-col { order: 1; }
+        .shell-img-col { order: 2; }
+
+        .shell-badge {
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+        .shell-title { font-size: 48px; }
+        .shell-desc { font-size: 20px; }
+        .shell-cta-btn {
+            font-size: 18px;
+            padding: 24px 32px;
+        }
+
+        .shell-img-wrap {
+            border-width: 8px;
+        }
+      }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
 
-    <div id="app-shell-overlay">
-      <div class="shell-container">
-        <div class="shell-text">
-          <div style="font-size: 12px; font-weight: bold; color: #C93831; margin-bottom: 10px; font-family: sans-serif;">직원 전용 헬스케어 플랫폼</div>
-          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0; font-family: sans-serif;">
-            건강한 습관,<br>
-            <span style="color: #C93831;">함께 만들어가요</span>
-          </h1>
-          <p style="font-size: 1.125rem; color: #374151; margin: 0; font-family: sans-serif;">
-            운동을 기록하고 점수를 모으세요.<br>
-            동료들과 함께 건강한 습관을 만들어가요!
-          </p>
+      <header class="shell-header">
+        <div class="shell-header-inner">
+          <img src="/Lupin.webp" alt="Lupin Logo" class="shell-logo" />
+          <button class="shell-btn">로그인</button>
         </div>
+      </header>
 
-        <div class="shell-img-wrap">
-          <picture>
-            <source media="(max-width: 768px)" srcset="/hero-mobile.webp" />
-            <source media="(min-width: 769px)" srcset="/hero-desktop.webp" />
-            <img
-              src="/hero-desktop.webp"
-              alt="운동하는 여성"
-              class="shell-img"
-              width="800"
-              height="600"
-              fetchpriority="high"
-              decoding="async"
-            />
-          </picture>
+      <section class="shell-hero">
+        <div class="shell-grid">
+
+          <div class="shell-text-col">
+            <div class="shell-badge">
+              ✨ 직원 전용 헬스케어 플랫폼
+            </div>
+            <h1 class="shell-title">
+              건강한 습관,<br />
+              <span style="background: linear-gradient(to right, #C93831, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">함께 만들어가요</span>
+            </h1>
+            <p class="shell-desc">
+              운동을 기록하고 점수를 모으세요.<br />
+              동료들과 함께 건강한 습관을 만들어가요!
+            </p>
+            <button class="shell-cta-btn">
+              시작하기
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+
+            <div style="display: flex; gap: 12px; margin-top: 16px; opacity: 0.5;">
+               <div style="width: 80px; height: 60px; background: rgba(255,255,255,0.4); border-radius: 12px;"></div>
+               <div style="width: 80px; height: 60px; background: rgba(255,255,255,0.4); border-radius: 12px;"></div>
+               <div style="width: 80px; height: 60px; background: rgba(255,255,255,0.4); border-radius: 12px;"></div>
+            </div>
+          </div>
+
+          <div class="shell-img-col">
+            <div class="shell-img-wrap">
+              <picture>
+                <source srcset="/hero-mobile.webp" media="(max-width: 768px)" />
+                <img
+                  src="/hero-desktop.webp"
+                  alt="운동하는 여성"
+                  class="shell-img"
+                  fetchpriority="high"
+                />
+              </picture>
+            </div>
+          </div>
+
         </div>
-      </div>
+      </section>
+
     </div>
-
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

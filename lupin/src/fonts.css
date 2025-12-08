@@ -1,32 +1,25 @@
-/* ⚡️ [최적화] @import 제거 + font-display: swap 적용 */
+/* ⚡️ [최적화] 폰트 로컬 호스팅 - CDN 제거로 DNS 조회/연결 시간 절약 */
 
-/* 🚀 [모바일 최적화] font-display: swap으로 폰트 로딩 전 시스템 폰트 표시 (LCP 개선) */
+/* Regular (400) - 본문용 */
 @font-face {
   font-family: 'NanumSquare';
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareR.woff2') format('woff2'),
-       url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareR.woff') format('woff');
+  src: url('/fonts/NanumSquareR.woff2') format('woff2');
 }
 
+/* Bold (700) - 제목/강조용 */
 @font-face {
   font-family: 'NanumSquare';
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-  src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareB.woff2') format('woff2'),
-       url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareB.woff') format('woff');
+  src: url('/fonts/NanumSquareB.woff2') format('woff2');
 }
 
-@font-face {
-  font-family: 'NanumSquare';
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-  src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareEB.woff2') format('woff2'),
-       url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareEB.woff') format('woff');
-}
+/* ExtraBold(800) 제거됨 - 158KB 절약 */
+/* font-weight: 800/900은 700(Bold)로 대체됨 */
 
 /* 전역 폰트 설정 */
 * {

@@ -266,12 +266,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     if (!chatMessage.trim()) return;
 
     // WebSocket으로 메시지 전송
-    sendWebSocketMessage(
-      chatMessage,
-      currentUserId,
-      currentPatientId,
-      doctorId
-    );
+    sendWebSocketMessage(chatMessage, currentUserId);
 
     setChatMessage("");
   };

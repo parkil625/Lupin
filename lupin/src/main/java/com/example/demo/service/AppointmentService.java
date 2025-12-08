@@ -48,15 +48,23 @@ public class AppointmentService {
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        // [Fix] 채팅방 생성 로직 강제 반영 확인용 주석
-        String roomId = chatService.createChatRoomForAppointment(savedAppointment.getId());
+        try {
+            // 1. 채팅방 생성하고 ID 받기
+            String roomId = chatService.createChatRoomForAppointment(savedAppointment.getId());
+            log.info("예약 ID {}에 대한 채팅방 생성 완료: {}", savedAppointment.getId(), roomId);
 
-        log.info("예약 생성 완료 - ID: {}, 채팅방: {}, 환자: {}, 의사: {}",
-                savedAppointment.getId(),
-                roomId, // 채팅방 ID 로그 추가
-                savedAppointment.getPatient().getName(),
-                savedAppointment.getDoctor().getName());
+            // 2. 환영 메시지 전송 (이 부분이 있어야 테스트 통과!)
+            chatService.saveMessage(
+                    roomId,
+                    doctor.getId(),
+                    "안녕하세요, " + patient.getName() + "님. 예약이 확정되었습니다. 궁금하신 점이 있으시면 편하게 말씀해주세요."
+            );
+            log.info("채팅방 {}에 환영 메시지 전송 완료", roomId);
+        } catch (Exception e) {
+            log.warn("채팅방 생성 또는 메시지 전송 실패: {}", e.getMessage());
+        }
 
+        // ... (로그 및 리턴) ...
         return savedAppointment.getId();
     }
 

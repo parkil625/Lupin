@@ -118,12 +118,21 @@ public class ChatService {
         throw new IllegalArgumentException("유효하지 않은 채팅방 ID 형식입니다.");
     }
 
+    /**
+     * 예약 ID로 채팅방 ID 생성
+     * @param appointmentId 예약 ID
+     * @return 채팅방 ID (appointment_{id} 형식)
+     */
     public String createRoomIdForAppointment(Long appointmentId) {
         return "appointment_" + appointmentId;
     }
 
+    /**
+     * 의사의 모든 예약에 대한 채팅방 목록 조회
+     * @param doctorId 의사 ID
+     * @return 채팅방 ID 목록 (appointment_ID 형식)
+     */
     public List<String> getAllChatRoomsIncludingEmpty(Long doctorId) {
-        // 의사의 모든 예약에 대한 채팅방 목록 반환 (appointment_ID 형식)
         List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
         return appointments.stream()
                 .map(appointment -> createRoomIdForAppointment(appointment.getId()))

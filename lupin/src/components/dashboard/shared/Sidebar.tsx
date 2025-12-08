@@ -52,7 +52,7 @@ export default function Sidebar({
       <div className="relative h-full flex flex-col p-4">
         <div className="mb-8 flex items-center justify-center">
           <img
-            src="/Lupin.png"
+            src="/Lupin.webp"
             alt="Lupin Logo"
             className="h-14 w-auto object-contain"
           />

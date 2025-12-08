@@ -90,7 +90,7 @@ export default function LandingPage() {
                 <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <img
-                            src="/Lupin.png"
+                            src="/Lupin.webp"
                             alt="Lupin Logo"
                             width="100"
                             height="40"
@@ -317,7 +317,7 @@ export default function LandingPage() {
                 <div className="container mx-auto max-w-6xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
                         <div className="space-y-3 md:space-y-4 text-center md:text-left">
-                            <img src="/Lupin.png" alt="Lupin Logo" width="100" height="32" className="h-8 md:h-10 w-auto object-contain mx-auto md:mx-0" />
+                            <img src="/Lupin.webp" alt="Lupin Logo" width="100" height="32" className="h-8 md:h-10 w-auto object-contain mx-auto md:mx-0" />
                             <p className="text-xs md:text-sm font-medium">건강한 습관, 함께 만들어가요</p>
                         </div>
                         <div className="text-center md:text-left">

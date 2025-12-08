@@ -245,7 +245,7 @@ export default function Login() {
                  - fetchPriority="high": LCP 요소 우선 로드
               */}
               <img
-                src="/Lupin.png"
+                src="/Lupin.webp"
                 alt="Lupin Logo"
                 width="120"
                 height="80"

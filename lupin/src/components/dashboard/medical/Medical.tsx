@@ -217,8 +217,10 @@ MedicalProps) {
   // 스크롤 제어용 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // WebSocket 연결
-  const roomId = `${currentPatientId}:${doctorId}`;
+  // WebSocket 연결 (예약 ID 기반)
+  const roomId = activeAppointment
+    ? `appointment_${activeAppointment.id}`
+    : `temp_${currentPatientId}_${doctorId}`;
 
   // 메시지 수신 콜백 (HEAD의 로직 유지: 본인이 보낸 메시지는 알림 표시 안함)
   const handleMessageReceived = useCallback(

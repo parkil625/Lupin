@@ -6,9 +6,6 @@ import com.example.demo.dto.response.ChatMessageResponse;
 import com.example.demo.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -70,14 +67,18 @@ public class ChatController {
                     Map<String, Object> room = new HashMap<>();
                     room.put("roomId", roomId);
 
-                    // 예약 정보에서 환자 정보 가져오기
+                    // appointment_ID 형식에서 예약 정보 추출
                     try {
                         Appointment appointment = chatService.getAppointmentFromRoomId(roomId);
+                        room.put("appointmentId", appointment.getId());
                         room.put("patientId", appointment.getPatient().getId());
                         room.put("patientName", appointment.getPatient().getName());
                         room.put("doctorId", appointment.getDoctor().getId());
+                        room.put("appointmentDate", appointment.getDate().toString());
+                        room.put("appointmentStatus", appointment.getStatus().toString());
                     } catch (Exception e) {
-                        log.warn("채팅방 {}에 대한 예약 정보를 찾을 수 없습니다", roomId);
+                        log.warn("채팅방 {}의 예약 정보를 찾을 수 없습니다", roomId);
+                        room.put("appointmentId", 0);
                         room.put("patientId", 0);
                         room.put("patientName", "알 수 없음");
                         room.put("doctorId", userId);

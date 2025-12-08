@@ -27,7 +27,7 @@ export default function ChatRoom({
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // roomId는 예약 건별로 생성 (appointment_ID 형식)
+  // roomId는 예약별로 생성 (appointment_ID 형식)
   const roomId = `appointment_${appointmentId}`;
 
   // 1. 이전 채팅 기록 불러오기

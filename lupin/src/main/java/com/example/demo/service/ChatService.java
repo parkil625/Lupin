@@ -100,26 +100,13 @@ public class ChatService {
     }
 
     public User getPatientFromRoomId(String roomId) {
-        String[] parts = roomId.split(":");
-        Long patientId = Long.parseLong(parts[0]);
-        return userRepository.findById(patientId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 환자입니다."));
-    }
-
-    public List<Appointment> getAppointmentsFromRoomId(String roomId) {
-        String[] parts = roomId.split(":");
-        Long patientId = Long.parseLong(parts[0]);
-        return appointmentRepository.findByPatientIdOrderByDateDesc(patientId);
-    }
-
-    public String createChatRoomForAppointment(Long appointmentId) {
-        return "appointment_" + appointmentId;
-    }
-
-    public boolean chatRoomExists(Long appointmentId) {
-        String roomId = "appointment_" + appointmentId;
-        List<ChatMessage> messages = chatRepository.findByRoomIdOrderByTimeAsc(roomId);
-        return !messages.isEmpty();
+        if (roomId.startsWith("appointment_")) {
+            Long appointmentId = Long.parseLong(roomId.substring("appointment_".length()));
+            Appointment appointment = appointmentRepository.findById(appointmentId)
+                    .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+            return appointment.getPatient();
+        }
+        throw new IllegalArgumentException("유효하지 않은 채팅방 ID 형식입니다.");
     }
 
     public Appointment getAppointmentFromRoomId(String roomId) {
@@ -131,14 +118,15 @@ public class ChatService {
         throw new IllegalArgumentException("유효하지 않은 채팅방 ID 형식입니다.");
     }
 
-    public String getRoomIdByAppointmentId(Long appointmentId) {
+    public String createRoomIdForAppointment(Long appointmentId) {
         return "appointment_" + appointmentId;
     }
 
     public List<String> getAllChatRoomsIncludingEmpty(Long doctorId) {
+        // 의사의 모든 예약에 대한 채팅방 목록 반환 (appointment_ID 형식)
         List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
         return appointments.stream()
-                .map(appointment -> getRoomIdByAppointmentId(appointment.getId()))
+                .map(appointment -> createRoomIdForAppointment(appointment.getId()))
                 .collect(Collectors.toList());
     }
 

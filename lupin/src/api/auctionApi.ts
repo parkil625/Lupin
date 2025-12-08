@@ -40,7 +40,7 @@ export const getUserPoints = async () => {
 }
 
 export const getBidHistory= async () => {
-    const response = await client.get('/auction/history')
+    const response = await client.get('/auction/active/history')
     return response.data;
 }
 

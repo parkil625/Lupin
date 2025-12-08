@@ -12,6 +12,12 @@
 -- 1. [진행 중] 아이패드 프로 12.9
 -- (테스트를 위해 앞으로 7일 동안 계속 '진행 중' 상태로 유지됩니다)
 -- --------------------------------------------
+-- 기존 경매 데이터 초기화 (재실행 시 중복 방지)
+-- 외래 키 제약 조건 때문에 자식 테이블(auction_items)을 먼저 삭제해야 합니다.
+DELETE FROM auction_items WHERE id > 0;
+DELETE FROM auctions WHERE id > 0;
+
+
 INSERT INTO auctions (
     current_price,
     start_time,
@@ -22,7 +28,7 @@ INSERT INTO auctions (
     total_bids,
     winner_id
 ) VALUES (
-             45000,
+             100,
              NOW() - INTERVAL 1 DAY,   -- 어제 시작함
              NOW() + INTERVAL 7 DAY,   -- 앞으로 7일 뒤 종료
              false,
@@ -73,7 +79,7 @@ INSERT INTO auction_items (item_name, description, item_image, auction_id)
 VALUES (
            'MacBook Air 15 미드나이트',
            '가볍지만 강력한 M3 칩 탑재. 15인치 대화면으로 즐기는 쾌적한 작업 환경. 램 16GB 업그레이드 모델.',
-           'https://images.unsplash.com/photo-1517336714731-489689fd1ca4?q=80&w=1000&auto=format&fit=crop',
+           'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1026&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
            @scheduled_id_1
        );
 

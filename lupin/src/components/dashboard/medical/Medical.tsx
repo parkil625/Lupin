@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, FileText, XCircle, Send } from "lucide-react"; // CalendarIcon 대신 Calendar 사용
+import { Clock, FileText, XCircle, Send } from "lucide-react";
 import { Prescription } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
@@ -34,10 +34,7 @@ interface MedicalProps {
   setSelectedPrescription: (prescription: Prescription | null) => void;
 }
 
-export default function Medical({
-  setSelectedPrescription,
-}: // 원격의 props는 제거 (로컬의 인라인 예약 기능으로 대체)
-MedicalProps) {
+export default function Medical({ setSelectedPrescription }: MedicalProps) {
   // 현재 로그인한 환자 정보 (localStorage에서 가져오기)
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
   const currentPatientId = currentUserId; // 환자의 경우 userId와 patientId가 동일
@@ -234,10 +231,7 @@ MedicalProps) {
     [currentUserId]
   );
 
-  const {
-    isConnected,
-    sendMessage: sendWebSocketMessage,
-  } = useWebSocket({
+  const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
     roomId,
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
@@ -618,9 +612,7 @@ MedicalProps) {
                         mode="single"
                         selected={selectedDate}
                         onSelect={setSelectedDate}
-                        disabled={(date) =>
-                          isPastDate(date) || isHoliday(date)
-                        }
+                        disabled={(date) => isPastDate(date) || isHoliday(date)}
                         modifiers={{
                           holiday: holidays,
                         }}

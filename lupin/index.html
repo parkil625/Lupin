@@ -6,28 +6,6 @@
     <title>Health Management Platform</title>
 
     <style>
-      @font-face {
-        font-family: 'NanumSquare';
-        font-weight: 400;
-        font-style: normal;
-        font-display: swap;
-        src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareR.woff2') format('woff2');
-      }
-      @font-face {
-        font-family: 'NanumSquare';
-        font-weight: 700;
-        font-style: normal;
-        font-display: swap;
-        src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareB.woff2') format('woff2');
-      }
-      @font-face {
-        font-family: 'NanumSquare';
-        font-weight: 800;
-        font-style: normal;
-        font-display: swap;
-        src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareEB.woff2') format('woff2');
-      }
-
       body {
         margin: 0;
         padding: 0;
@@ -37,7 +15,8 @@
           radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
           radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%);
         background-attachment: fixed;
-        font-family: 'NanumSquare', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        /* 시스템 폰트 우선 적용 (폰트 다운로드 없이 즉시 렌더링) */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
 
       #app-shell-overlay {
@@ -78,7 +57,6 @@
       }
     </style>
 
-    <!-- 🚀 [LCP 최적화] 미디어 쿼리로 분리된 이미지 프리로드 -->
     <link
       rel="preload"
       as="image"
@@ -93,12 +71,6 @@
       media="(min-width: 769px)"
       fetchpriority="high"
     />
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="48x48" href="/android-icon-48x48.png" />
-    <link rel="icon" type="image/png" sizes="36x36" href="/android-icon-36x36.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
   </head>
 
   <body>
@@ -107,19 +79,18 @@
     <div id="app-shell-overlay">
       <div class="shell-container">
         <div class="shell-text">
-          <div style="font-size: 12px; font-weight: bold; color: #C93831; margin-bottom: 10px;">직원 전용 헬스케어 플랫폼</div>
-          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0;">
+          <div style="font-size: 12px; font-weight: bold; color: #C93831; margin-bottom: 10px; font-family: sans-serif;">직원 전용 헬스케어 플랫폼</div>
+          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0; font-family: sans-serif;">
             건강한 습관,<br>
             <span style="color: #C93831;">함께 만들어가요</span>
           </h1>
-          <p style="font-size: 1.125rem; color: #374151; margin: 0;">
+          <p style="font-size: 1.125rem; color: #374151; margin: 0; font-family: sans-serif;">
             운동을 기록하고 점수를 모으세요.<br>
             동료들과 함께 건강한 습관을 만들어가요!
           </p>
         </div>
 
         <div class="shell-img-wrap">
-          <!-- 🚀 [최적화] Picture 태그로 고해상도 모바일에서 데스크탑 이미지 다운로드 방지 -->
           <picture>
             <source media="(max-width: 768px)" srcset="/hero-mobile.webp" />
             <source media="(min-width: 769px)" srcset="/hero-desktop.webp" />

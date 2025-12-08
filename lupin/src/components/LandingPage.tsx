@@ -52,13 +52,6 @@ export default function LandingPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // 오버레이 제거 로직
-        const shell = document.getElementById("app-shell-overlay");
-        if (shell) {
-            shell.style.opacity = "0";
-            setTimeout(() => shell.remove(), 400);
-        }
-
         // 스크롤 애니메이션 관찰자
         const observerOptions = {
             threshold: 0.1,

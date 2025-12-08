@@ -8,7 +8,7 @@ import {
     Check, BarChart3, Search, Zap, Calendar, Target, MessageCircle, FileText, UserCircle
 } from "lucide-react";
 
-// ⚡️ [성능 최적화] 정적 데이터는 컴포넌트 밖으로 추출하여 메모리 할당 비용 감소
+// 데이터 정의 (메모리 최적화 유지)
 const HERO_STATS = [
     { title: "피드", sub: "하루 1회" },
     { title: "실시간", sub: "랭킹" },
@@ -52,15 +52,14 @@ export default function LandingPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // 🚀 [Overlay 전략] 리액트 렌더링 완료! 덮개(Overlay)를 부드럽게 제거
+        // 오버레이 제거 로직
         const shell = document.getElementById("app-shell-overlay");
         if (shell) {
             shell.style.opacity = "0";
-            // 안전하게 제거 (메모리 누수 방지)
-            const timer = setTimeout(() => shell.remove(), 400);
-            return () => clearTimeout(timer);
+            setTimeout(() => shell.remove(), 400);
         }
 
+        // 스크롤 애니메이션 관찰자
         const observerOptions = {
             threshold: 0.1,
             rootMargin: "0px 0px -50px 0px"
@@ -84,9 +83,10 @@ export default function LandingPage() {
     const handleLogin = () => navigate('/login');
 
     return (
-        <div className="min-h-screen relative overflow-hidden bg-white">
+        <div className="min-h-screen relative overflow-hidden">
+
             {/* Header */}
-            <header className="fixed top-0 w-full backdrop-blur-md bg-white/80 border-b border-gray-200 z-50 transition-all will-change-transform">
+            <header className="fixed top-0 w-full backdrop-blur-md bg-white/70 border-b border-gray-200/50 z-50 transition-all">
                 <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <img
@@ -164,11 +164,7 @@ export default function LandingPage() {
             </section>
 
             {/* Service Introduction */}
-            {/* ⚡️ [성능 최적화] content-visibility: auto 적용으로 화면 밖 렌더링 비용 절감 */}
-            <section
-                className="py-12 md:py-20 px-4 scroll-fade-up"
-                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 500px" }}
-            >
+            <section className="py-12 md:py-20 px-4 scroll-fade-up">
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">Lupin이 특별한 이유</h2>
@@ -194,10 +190,7 @@ export default function LandingPage() {
             </section>
 
             {/* Activity Recording */}
-            <section
-                className="py-12 md:py-20 px-4 scroll-slide-left"
-                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 600px" }}
-            >
+            <section className="py-12 md:py-20 px-4 scroll-slide-left">
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">활동 기록</h2>
@@ -239,10 +232,7 @@ export default function LandingPage() {
             </section>
 
             {/* Key Features */}
-            <section
-                className="py-12 md:py-20 px-4 scroll-scale-in"
-                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 800px" }}
-            >
+            <section className="py-12 md:py-20 px-4 scroll-scale-in">
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">핵심 기능</h2>
@@ -266,10 +256,7 @@ export default function LandingPage() {
             </section>
 
             {/* How it Works */}
-            <section
-                className="py-12 md:py-20 px-4 scroll-bounce-in"
-                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 400px" }}
-            >
+            <section className="py-12 md:py-20 px-4 scroll-bounce-in">
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">어떻게 작동하나요?</h2>
@@ -292,10 +279,7 @@ export default function LandingPage() {
             </section>
 
             {/* CTA Section */}
-            <section
-                className="py-12 md:py-20 px-4 scroll-zoom-in"
-                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 400px" }}
-            >
+            <section className="py-12 md:py-20 px-4 scroll-zoom-in">
                 <Card className="container mx-auto max-w-5xl backdrop-blur-2xl bg-gradient-to-br from-[#C93831]/90 to-[#B02F28]/90 border border-white/40 shadow-2xl">
                     <CardContent className="p-8 md:p-16 text-center space-y-4 md:space-y-8 text-white">
                         <h2 className="text-3xl md:text-6xl font-black">지금 바로 시작하세요</h2>
@@ -326,10 +310,7 @@ export default function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer
-                className="backdrop-blur-2xl bg-gray-900/95 text-gray-400 py-8 md:py-12 px-4 mt-12 md:mt-20"
-                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 300px" }}
-            >
+            <footer className="backdrop-blur-2xl bg-gray-900/95 text-gray-400 py-8 md:py-12 px-4 mt-12 md:mt-20">
                 <div className="container mx-auto max-w-6xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
                         <div className="space-y-3 md:space-y-4 text-center md:text-left">
@@ -362,11 +343,6 @@ export default function LandingPage() {
             </footer>
 
             <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-
         .will-change-transform {
             will-change: transform;
         }

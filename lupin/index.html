@@ -26,6 +26,29 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
 
     <style>
+      /* ⚡️ 폰트 최적화: 외부 CSS 요청 없이 직접 정의 + swap 속성 적용 */
+      @font-face {
+        font-family: 'NanumSquare';
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap; /* 🚀 핵심: 폰트 로딩 전엔 시스템 폰트로 즉시 글씨를 보여줌 */
+        src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareR.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'NanumSquare';
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+        src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareB.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'NanumSquare';
+        font-weight: 800;
+        font-style: normal;
+        font-display: swap;
+        src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareEB.woff2') format('woff2');
+      }
+
       body {
         margin: 0;
         padding: 0;

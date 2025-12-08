@@ -12,18 +12,9 @@
     <!-- SEO meta description -->
     <meta name="description" content="직원 건강관리를 위한 스마트 헬스케어 플랫폼. 운동 기록, 건강 상담, 포인트 리워드로 건강한 직장 문화를 만들어갑니다." />
 
-    <!-- Hero 이미지 스마트 프리로드 (DPR 1.75 대응, q=50) -->
-    <link
-      rel="preload"
-      as="image"
-      imagesrcset="
-        https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=50&fm=webp 400w,
-        https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=50&fm=webp 600w,
-        https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=700&q=50&fm=webp 700w,
-        https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp 800w"
-      imagesizes="(max-width: 768px) calc(100vw - 32px), 800px"
-      fetchpriority="high"
-    />
+    <!-- Hero 이미지 로컬 프리로드 (외부 네트워크 연결 제거) -->
+    <link rel="preload" as="image" href="/hero-mobile.webp" media="(max-width: 768px)" fetchpriority="high" />
+    <link rel="preload" as="image" href="/hero-desktop.webp" media="(min-width: 769px)" fetchpriority="high" />
 
     <style>
       body {

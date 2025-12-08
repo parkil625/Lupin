@@ -140,18 +140,19 @@ export default function LandingPage() {
                         {/* Hero Image */}
                         <div className="relative order-1 md:order-2">
                             <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
-                            {/* 🚀 [심화 최적화] sizes 정밀 조정, 700w 추가, q=50 */}
-                            <img
-                                src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp"
-                                srcSet="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=50&fm=webp 400w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=50&fm=webp 600w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=700&q=50&fm=webp 700w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp 800w"
-                                sizes="(max-width: 768px) calc(100vw - 32px), 800px"
-                                alt="운동하는 여성"
-                                width="800"
-                                height="600"
-                                fetchPriority="high"
-                                decoding="async"
-                                className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
-                            />
+                            {/* 🚀 [근본 최적화] 로컬 이미지로 외부 네트워크 연결 제거 */}
+                            <picture>
+                                <source srcSet="/hero-mobile.webp" media="(max-width: 768px)" />
+                                <img
+                                    src="/hero-desktop.webp"
+                                    alt="운동하는 여성"
+                                    width="800"
+                                    height="600"
+                                    fetchPriority="high"
+                                    decoding="async"
+                                    className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
+                                />
+                            </picture>
                         </div>
                     </div>
                 </div>
@@ -192,18 +193,19 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-                        {/* 🚀 [심화 최적화] sizes 정밀 조정, 700w 추가, q=50 */}
-                        <img
-                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp"
-                            srcSet="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=50&fm=webp 400w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=50&fm=webp 600w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=700&q=50&fm=webp 700w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp 800w"
-                            sizes="(max-width: 768px) calc(100vw - 32px), 800px"
-                            alt="운동 기록 화면"
-                            width="800"
-                            height="600"
-                            loading="lazy"
-                            decoding="async"
-                            className="rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
-                        />
+                        {/* 🚀 [근본 최적화] 로컬 이미지 사용 */}
+                        <picture>
+                            <source srcSet="/hero-mobile.webp" media="(max-width: 768px)" />
+                            <img
+                                src="/hero-desktop.webp"
+                                alt="운동 기록 화면"
+                                width="800"
+                                height="600"
+                                loading="lazy"
+                                decoding="async"
+                                className="rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
+                            />
+                        </picture>
                         <div className="space-y-4 md:space-y-6">
                             <div className="flex items-center gap-2 md:gap-3">
                                 <Dumbbell className="w-8 h-8 md:w-10 md:h-10 text-[#C93831]" />

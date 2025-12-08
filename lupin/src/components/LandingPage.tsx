@@ -140,11 +140,11 @@ export default function LandingPage() {
                         {/* Hero Image */}
                         <div className="relative order-1 md:order-2">
                             <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
-                            {/* 🚀 [최적화] index.html 프리로드와 동일한 srcset으로 캐시 활용 */}
+                            {/* 🚀 [심화 최적화] sizes 정밀 조정, 700w 추가, q=50 */}
                             <img
-                                src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp"
-                                srcSet="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60&fm=webp 400w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=60&fm=webp 600w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp 800w"
-                                sizes="(max-width: 768px) 100vw, 800px"
+                                src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp"
+                                srcSet="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=50&fm=webp 400w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=50&fm=webp 600w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=700&q=50&fm=webp 700w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp 800w"
+                                sizes="(max-width: 768px) calc(100vw - 32px), 800px"
                                 alt="운동하는 여성"
                                 width="800"
                                 height="600"
@@ -192,11 +192,11 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-                        {/* 🚀 [최적화] srcSet + 품질 q=60으로 용량 절감, 600w DPR 최적화 */}
+                        {/* 🚀 [심화 최적화] sizes 정밀 조정, 700w 추가, q=50 */}
                         <img
-                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp"
-                            srcSet="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60&fm=webp 400w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=60&fm=webp 600w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp 800w"
-                            sizes="(max-width: 768px) 100vw, 800px"
+                            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp"
+                            srcSet="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=50&fm=webp 400w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=50&fm=webp 600w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=700&q=50&fm=webp 700w, https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=50&fm=webp 800w"
+                            sizes="(max-width: 768px) calc(100vw - 32px), 800px"
                             alt="운동 기록 화면"
                             width="800"
                             height="600"

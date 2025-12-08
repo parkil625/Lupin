@@ -147,17 +147,20 @@ export default function LandingPage() {
                         {/* Hero Image */}
                         <div className="relative order-1 md:order-2">
                             <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
-                            <img
-                                src="/hero-desktop.webp"
-                                srcSet="/hero-mobile.webp 400w, /hero-desktop.webp 800w"
-                                sizes="(max-width: 600px) 400px, 800px"
-                                alt="운동하는 여성"
-                                width="800"
-                                height="600"
-                                fetchPriority="high"
-                                decoding="async"
-                                className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
-                            />
+                            {/* 🚀 [최적화] Picture 태그로 고해상도 모바일에서 데스크탑 이미지 다운로드 방지 */}
+                            <picture>
+                                <source media="(max-width: 768px)" srcSet="/hero-mobile.webp" />
+                                <source media="(min-width: 769px)" srcSet="/hero-desktop.webp" />
+                                <img
+                                    src="/hero-desktop.webp"
+                                    alt="운동하는 여성"
+                                    width="800"
+                                    height="600"
+                                    fetchPriority="high"
+                                    decoding="async"
+                                    className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
+                                />
+                            </picture>
                         </div>
                     </div>
                 </div>

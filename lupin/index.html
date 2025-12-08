@@ -5,33 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Health Management Platform</title>
 
-    <!-- 🚀 [폰트 최적화] woff2만 preload (font-display: swap은 fonts.css에서 처리) -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareR.woff2" />
-    <link rel="preload" as="font" type="font/woff2" crossorigin href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareB.woff2" />
-
-    <!-- 🚀 [LCP 최적화] srcSet과 일치하는 스마트 프리로드 -->
-    <link
-      rel="preload"
-      as="image"
-      imagesrcset="/hero-mobile.webp 400w, /hero-desktop.webp 800w"
-      imagesizes="(max-width: 600px) 400px, 800px"
-      fetchpriority="high"
-    />
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="48x48" href="/android-icon-48x48.png" />
-    <link rel="icon" type="image/png" sizes="36x36" href="/android-icon-36x36.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
-
     <style>
-      /* ⚡️ 폰트 최적화: 외부 CSS 요청 없이 직접 정의 + swap 속성 적용 */
       @font-face {
         font-family: 'NanumSquare';
         font-weight: 400;
         font-style: normal;
-        font-display: swap; /* 🚀 핵심: 폰트 로딩 전엔 시스템 폰트로 즉시 글씨를 보여줌 */
+        font-display: swap;
         src: url('https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/NanumSquareR.woff2') format('woff2');
       }
       @font-face {
@@ -53,19 +32,14 @@
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        /* 배경 그라디언트 */
         background:
           linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%),
           radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
-          radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%),
-          radial-gradient(circle at 25% 80%, rgba(253, 224, 71, 0.3) 0%, transparent 20%),
-          radial-gradient(circle at 65% 90%, rgba(167, 243, 208, 0.25) 0%, transparent 25%),
-          radial-gradient(circle at 75% 40%, rgba(252, 165, 165, 0.2) 0%, transparent 20%);
+          radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%);
         background-attachment: fixed;
         font-family: 'NanumSquare', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
 
-      /* 🚀 [Overlay 전략] 리액트 로딩 전까지 화면을 덮고 있을 '가짜 화면' */
       #app-shell-overlay {
         position: fixed;
         top: 0;
@@ -77,8 +51,6 @@
         background: inherit;
         transition: opacity 0.4s ease-out;
       }
-
-      /* App Shell 컨테이너 */
       .shell-container {
         max-width: 72rem;
         margin: 0 auto;
@@ -87,10 +59,8 @@
         gap: 2rem;
         align-items: center;
       }
-
       .shell-text { order: 2; text-align: center; }
       .shell-img-wrap { order: 1; position: relative; }
-
       .shell-img {
         width: 100%;
         height: auto;
@@ -100,52 +70,69 @@
         border: 4px solid rgba(255, 255, 255, 0.5);
         object-fit: cover;
       }
-
-      /* PC 화면 (md: 768px 이상) */
       @media (min-width: 768px) {
-        .shell-container {
-          padding-top: 8rem;
-          grid-template-columns: 1fr 1fr;
-          gap: 3rem;
-        }
+        .shell-container { padding-top: 8rem; grid-template-columns: 1fr 1fr; gap: 3rem; }
         .shell-text { order: 1; text-align: left; }
         .shell-img-wrap { order: 2; }
         .shell-img { border-radius: 1.5rem; border-width: 8px; }
       }
     </style>
+
+    <!-- 🚀 [LCP 최적화] 미디어 쿼리로 분리된 이미지 프리로드 -->
+    <link
+      rel="preload"
+      as="image"
+      href="/hero-mobile.webp"
+      media="(max-width: 768px)"
+      fetchpriority="high"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="/hero-desktop.webp"
+      media="(min-width: 769px)"
+      fetchpriority="high"
+    />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/android-icon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="36x36" href="/android-icon-36x36.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
   </head>
 
   <body>
-    <!-- React가 렌더링할 빈 컨테이너 -->
     <div id="root"></div>
 
-    <!-- 🚀 Overlay: React 로딩 전 즉시 보여줄 Hero 콘텐츠 (root 밖에 배치!) -->
     <div id="app-shell-overlay">
       <div class="shell-container">
         <div class="shell-text">
           <div style="font-size: 12px; font-weight: bold; color: #C93831; margin-bottom: 10px;">직원 전용 헬스케어 플랫폼</div>
-          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0; font-family: 'NanumSquare', sans-serif;">
+          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0;">
             건강한 습관,<br>
             <span style="color: #C93831;">함께 만들어가요</span>
           </h1>
-          <p style="font-size: 1.125rem; color: #374151; margin: 0; font-family: 'NanumSquare', sans-serif;">
+          <p style="font-size: 1.125rem; color: #374151; margin: 0;">
             운동을 기록하고 점수를 모으세요.<br>
             동료들과 함께 건강한 습관을 만들어가요!
           </p>
         </div>
 
         <div class="shell-img-wrap">
-          <img
-            src="/hero-desktop.webp"
-            srcset="/hero-mobile.webp 400w, /hero-desktop.webp 800w"
-            sizes="(max-width: 600px) 400px, 800px"
-            alt="운동하는 여성"
-            class="shell-img"
-            width="800"
-            height="600"
-            fetchpriority="high"
-            decoding="async"
-          />
+          <!-- 🚀 [최적화] Picture 태그로 고해상도 모바일에서 데스크탑 이미지 다운로드 방지 -->
+          <picture>
+            <source media="(max-width: 768px)" srcset="/hero-mobile.webp" />
+            <source media="(min-width: 769px)" srcset="/hero-desktop.webp" />
+            <img
+              src="/hero-desktop.webp"
+              alt="운동하는 여성"
+              class="shell-img"
+              width="800"
+              height="600"
+              fetchpriority="high"
+              decoding="async"
+            />
+          </picture>
         </div>
       </div>
     </div>

@@ -39,7 +39,6 @@ interface MedicineQuantity {
 
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-  const currentDoctorId = currentUserId;
 
   const [selectedChatMember, setSelectedChatMember] = useState<Member | null>(
     null

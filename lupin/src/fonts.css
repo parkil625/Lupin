@@ -1,5 +1,4 @@
-/* 나눔스퀘어 웹폰트 */
-@import url('https://cdn.rawgit.com/moonspam/NanumSquare/master/nanumsquare.css');
+/* ⚡️ [최적화] @import 제거함 (index.html link 태그로 대체하여 로딩 속도 향상) */
 
 /* 전역 폰트 설정 */
 * {

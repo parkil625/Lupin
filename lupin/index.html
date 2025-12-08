@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Health Management Platform</title>
 
+    <!-- 🚀 [폰트 최적화] 빠른 CDN에서 폰트 미리 로드 -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/nanumsquare.css"
+    />
+
     <!-- 🚀 [LCP 최적화] srcSet과 일치하는 스마트 프리로드 -->
     <link
       rel="preload"
@@ -34,7 +41,7 @@
           radial-gradient(circle at 65% 90%, rgba(167, 243, 208, 0.25) 0%, transparent 25%),
           radial-gradient(circle at 75% 40%, rgba(252, 165, 165, 0.2) 0%, transparent 20%);
         background-attachment: fixed;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-family: 'NanumSquare', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
 
       /* 🚀 [Overlay 전략] 리액트 로딩 전까지 화면을 덮고 있을 '가짜 화면' */
@@ -46,13 +53,7 @@
         height: 100%;
         z-index: 9999;
         overflow-y: auto;
-        background:
-          linear-gradient(135deg, rgb(243, 232, 255) 0%, rgb(253, 242, 248) 50%, rgb(219, 234, 254) 100%),
-          radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
-          radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%),
-          radial-gradient(circle at 25% 80%, rgba(253, 224, 71, 0.3) 0%, transparent 20%),
-          radial-gradient(circle at 65% 90%, rgba(167, 243, 208, 0.25) 0%, transparent 25%),
-          radial-gradient(circle at 75% 40%, rgba(252, 165, 165, 0.2) 0%, transparent 20%);
+        background: inherit;
         transition: opacity 0.4s ease-out;
       }
 
@@ -102,11 +103,11 @@
       <div class="shell-container">
         <div class="shell-text">
           <div style="font-size: 12px; font-weight: bold; color: #C93831; margin-bottom: 10px;">직원 전용 헬스케어 플랫폼</div>
-          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0;">
+          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0; font-family: 'NanumSquare', sans-serif;">
             건강한 습관,<br>
             <span style="color: #C93831;">함께 만들어가요</span>
           </h1>
-          <p style="font-size: 1.125rem; color: #374151; margin: 0;">
+          <p style="font-size: 1.125rem; color: #374151; margin: 0; font-family: 'NanumSquare', sans-serif;">
             운동을 기록하고 점수를 모으세요.<br>
             동료들과 함께 건강한 습관을 만들어가요!
           </p>

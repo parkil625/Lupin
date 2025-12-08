@@ -8,6 +8,46 @@ import {
     Check, BarChart3, Search, Zap, Calendar, Target, MessageCircle, FileText, UserCircle
 } from "lucide-react";
 
+// ⚡️ [성능 최적화] 정적 데이터는 컴포넌트 밖으로 추출하여 메모리 할당 비용 감소
+const HERO_STATS = [
+    { title: "피드", sub: "하루 1회" },
+    { title: "실시간", sub: "랭킹" },
+    { title: "비대면", sub: "진료" }
+];
+
+const SERVICE_CARDS = [
+    { icon: Target, title: "점수 획득 시스템", desc: "운동을 완료하고 점수를 획득하세요. 점수에 따라 실시간 랭킹이 변동됩니다!", color: "from-[#C93831] to-pink-500" },
+    { icon: MessageCircle, title: "비대면 진료", desc: "전문 의료진과 1:1 채팅으로 간편하게 비대면 진료를 받으세요!", color: "from-purple-500 to-pink-500" },
+    { icon: BarChart3, title: "실시간 랭킹", desc: "점수 기반 실시간 랭킹에서 다른 동료들과 경쟁하고 성장하세요!", color: "from-blue-500 to-cyan-500" }
+];
+
+const ACTIVITY_STEPS = ["운동 종류와 시간 입력", "즉시 점수 획득", "실시간 랭킹 반영"];
+
+const KEY_FEATURES = [
+    { icon: Users, title: "데일리 피드", desc: "하루 한 번 운동 관련 피드를 작성하고 공유하세요", color: "from-[#C93831] to-pink-500" },
+    { icon: Heart, title: "좋아요", desc: "다른 사용자의 피드에 좋아요를 누르고 응원하세요", color: "from-pink-500 to-purple-500" },
+    { icon: BarChart3, title: "랭킹", desc: "점수에 따른 실시간 랭킹을 확인하세요", color: "from-purple-500 to-blue-500" },
+    { icon: Trophy, title: "배지", desc: "7일 연속 기록, TOP 10 등 특별 배지를 획득하세요", color: "from-yellow-400 to-orange-500" },
+    { icon: Search, title: "피드 검색", desc: "피드를 검색하고 필터링할 수 있습니다", color: "from-blue-500 to-cyan-500" },
+    { icon: Calendar, title: "진료 예약", desc: "비대면 진료를 예약하고 관리할 수 있습니다", color: "from-cyan-500 to-teal-500" },
+    { icon: MessageCircle, title: "비대면 진료", desc: "1:1 채팅을 통해 비대면으로 진료를 받을 수 있습니다", color: "from-teal-500 to-green-500" },
+    { icon: FileText, title: "처방전 확인", desc: "받은 처방전을 확인하고 관리할 수 있습니다", color: "from-green-500 to-lime-500" },
+    { icon: Zap, title: "포인트 시스템", desc: "활동에 따라 포인트를 획득하고 순위에 도전하세요", color: "from-orange-500 to-red-500" },
+    { icon: UserCircle, title: "마이페이지", desc: "개인 건강 정보를 수정하고 관리할 수 있습니다", color: "from-indigo-500 to-purple-500" }
+];
+
+const HOW_IT_WORKS = [
+    { step: "1", title: "운동하기", desc: "좋아하는 운동을 하세요", icon: Dumbbell, color: "from-[#C93831] to-pink-500" },
+    { step: "2", title: "활동 기록", desc: "운동 내역을 기록하세요", icon: Target, color: "from-purple-500 to-pink-500" },
+    { step: "3", title: "랭킹 경쟁", desc: "점수를 모아 순위에 도전!", icon: Trophy, color: "from-yellow-400 to-orange-500" }
+];
+
+const CTA_BADGES = [
+    { Icon: Award, text: "직원 전용" },
+    { Icon: Heart, text: "무료 서비스" },
+    { Icon: Trophy, text: "실시간 랭킹" }
+];
+
 export default function LandingPage() {
     const navigate = useNavigate();
 
@@ -16,12 +56,13 @@ export default function LandingPage() {
         const shell = document.getElementById("app-shell-overlay");
         if (shell) {
             shell.style.opacity = "0";
-            setTimeout(() => shell.remove(), 400);
+            // 안전하게 제거 (메모리 누수 방지)
+            const timer = setTimeout(() => shell.remove(), 400);
+            return () => clearTimeout(timer);
         }
 
         const observerOptions = {
             threshold: 0.1,
-            // 모바일 스크롤 속도를 고려하여 미리 로드되도록 마진 조정
             rootMargin: "0px 0px -50px 0px"
         };
 
@@ -29,28 +70,25 @@ export default function LandingPage() {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add("animate-in");
-                    // ⚡️ 성능 최적화: 한 번 애니메이션 실행된 요소는 관찰 중단 (메모리 절약)
                     observer.unobserve(entry.target);
                 }
             });
         }, observerOptions);
 
-        // Hero 섹션을 제외한 나머지 스크롤 애니메이션 요소만 관찰
         const elements = document.querySelectorAll("[class*='scroll-']");
         elements.forEach((el) => observer.observe(el));
 
         return () => observer.disconnect();
     }, []);
 
-    return (
-        <div className="min-h-screen relative overflow-hidden">
-            {/* 배경 그라디언트는 index.html body에서 처리 (FCP 최적화) */}
+    const handleLogin = () => navigate('/login');
 
+    return (
+        <div className="min-h-screen relative overflow-hidden bg-white">
             {/* Header */}
-            <header className="fixed top-0 w-full backdrop-blur-md bg-white/80 border-b border-gray-200 z-50 transition-all">
+            <header className="fixed top-0 w-full backdrop-blur-md bg-white/80 border-b border-gray-200 z-50 transition-all will-change-transform">
                 <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        {/* [CLS 방지] 로고 이미지에 width/height 명시 */}
                         <img
                             src="/Lupin.png"
                             alt="Lupin Logo"
@@ -60,7 +98,7 @@ export default function LandingPage() {
                         />
                     </div>
                     <Button
-                        onClick={() => navigate('/login')}
+                        onClick={handleLogin}
                         className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold border-0 shadow-xl rounded-2xl px-6 transition-transform active:scale-95"
                     >
                         로그인
@@ -69,7 +107,6 @@ export default function LandingPage() {
             </header>
 
             {/* Hero Section */}
-            {/* [LCP 최적화] Hero 섹션은 애니메이션 없이 즉시 렌더링되도록 'scroll-fade-up' 클래스 제거 */}
             <section className="pt-24 md:pt-32 pb-12 md:pb-20 px-4">
                 <div className="container mx-auto max-w-6xl">
                     <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
@@ -89,7 +126,7 @@ export default function LandingPage() {
                             <div className="flex gap-4">
                                 <Button
                                     size="lg"
-                                    onClick={() => navigate('/login')}
+                                    onClick={handleLogin}
                                     className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold text-sm md:text-lg px-6 md:px-8 py-4 md:py-6 rounded-2xl border-0 shadow-2xl hover:scale-105 transition-transform"
                                 >
                                     시작하기
@@ -98,11 +135,7 @@ export default function LandingPage() {
                             </div>
 
                             <div className="flex gap-3 md:gap-8 pt-2 md:pt-4">
-                                {[
-                                    { title: "피드", sub: "하루 1회" },
-                                    { title: "실시간", sub: "랭킹" },
-                                    { title: "비대면", sub: "진료" }
-                                ].map((item, idx) => (
+                                {HERO_STATS.map((item, idx) => (
                                     <div key={idx} className="backdrop-blur-xl bg-white/40 rounded-xl md:rounded-2xl p-3 md:p-4 border border-white/60">
                                         <div className="text-xl md:text-3xl font-black text-[#C93831]">{item.title}</div>
                                         <div className="text-xs md:text-sm text-gray-600 font-bold">{item.sub}</div>
@@ -111,15 +144,9 @@ export default function LandingPage() {
                             </div>
                         </div>
 
-                        {/* Hero Image - LCP 핵심 요소 */}
+                        {/* Hero Image */}
                         <div className="relative order-1 md:order-2">
                             <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 rounded-full blur-3xl opacity-30"></div>
-                            {/*
-                                [최종 최적화]
-                                1. src: 기본 이미지 (PC용)
-                                2. srcSet: 화면 너비에 따라 모바일/PC 이미지 자동 선택
-                                3. sizes: 브라우저에게 이미지 출력 크기 힌트 제공
-                            */}
                             <img
                                 src="/hero-desktop.webp"
                                 srcSet="/hero-mobile.webp 400w, /hero-desktop.webp 800w"
@@ -136,8 +163,12 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Service Introduction - 여기서부터 Lazy Loading 및 애니메이션 적용 */}
-            <section className="py-12 md:py-20 px-4 scroll-fade-up">
+            {/* Service Introduction */}
+            {/* ⚡️ [성능 최적화] content-visibility: auto 적용으로 화면 밖 렌더링 비용 절감 */}
+            <section
+                className="py-12 md:py-20 px-4 scroll-fade-up"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 500px" }}
+            >
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">Lupin이 특별한 이유</h2>
@@ -145,11 +176,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
-                        {[
-                            { icon: Target, title: "점수 획득 시스템", desc: "운동을 완료하고 점수를 획득하세요. 점수에 따라 실시간 랭킹이 변동됩니다!", color: "from-[#C93831] to-pink-500" },
-                            { icon: MessageCircle, title: "비대면 진료", desc: "전문 의료진과 1:1 채팅으로 간편하게 비대면 진료를 받으세요!", color: "from-purple-500 to-pink-500" },
-                            { icon: BarChart3, title: "실시간 랭킹", desc: "점수 기반 실시간 랭킹에서 다른 동료들과 경쟁하고 성장하세요!", color: "from-blue-500 to-cyan-500" }
-                        ].map((card, i) => (
+                        {SERVICE_CARDS.map((card, i) => (
                             <Card key={i} className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
                                 <CardContent className="p-6 md:p-8 space-y-3 md:space-y-4">
                                     <div className={`w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br ${card.color} rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg`}>
@@ -167,7 +194,10 @@ export default function LandingPage() {
             </section>
 
             {/* Activity Recording */}
-            <section className="py-12 md:py-20 px-4 scroll-slide-left">
+            <section
+                className="py-12 md:py-20 px-4 scroll-slide-left"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 600px" }}
+            >
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">활동 기록</h2>
@@ -175,16 +205,12 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-                        {/* 
-                            [성능 최적화] 스크롤 하단 이미지:
-                            1. loading="lazy": 초기 로딩에서 제외
-                            2. decoding="async": 메인 스레드 차단 방지
-                        */}
                         <img
                             src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80&fm=webp"
                             alt="운동 기록 화면"
                             width="800"
                             height="600"
+                            sizes="(max-width: 768px) 100vw, 800px"
                             loading="lazy"
                             decoding="async"
                             className="rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
@@ -198,7 +224,7 @@ export default function LandingPage() {
                                 운동이 끝나면 바로 기록하세요. 운동 시간과 종류에 따라 점수를 받을 수 있습니다.
                             </p>
                             <div className="space-y-4">
-                                {["운동 종류와 시간 입력", "즉시 점수 획득", "실시간 랭킹 반영"].map((text, idx) => (
+                                {ACTIVITY_STEPS.map((text, idx) => (
                                     <div key={idx} className="flex items-center gap-3 backdrop-blur-xl bg-white/40 p-4 rounded-2xl border border-white/60">
                                         <div className="w-8 h-8 bg-gradient-to-br from-[#C93831] to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
                                             <Check className="w-5 h-5 text-white" />
@@ -213,7 +239,10 @@ export default function LandingPage() {
             </section>
 
             {/* Key Features */}
-            <section className="py-12 md:py-20 px-4 scroll-scale-in">
+            <section
+                className="py-12 md:py-20 px-4 scroll-scale-in"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 800px" }}
+            >
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">핵심 기능</h2>
@@ -221,18 +250,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-                        {[
-                            { icon: Users, title: "데일리 피드", desc: "하루 한 번 운동 관련 피드를 작성하고 공유하세요", color: "from-[#C93831] to-pink-500" },
-                            { icon: Heart, title: "좋아요", desc: "다른 사용자의 피드에 좋아요를 누르고 응원하세요", color: "from-pink-500 to-purple-500" },
-                            { icon: BarChart3, title: "랭킹", desc: "점수에 따른 실시간 랭킹을 확인하세요", color: "from-purple-500 to-blue-500" },
-                            { icon: Trophy, title: "배지", desc: "7일 연속 기록, TOP 10 등 특별 배지를 획득하세요", color: "from-yellow-400 to-orange-500" },
-                            { icon: Search, title: "피드 검색", desc: "피드를 검색하고 필터링할 수 있습니다", color: "from-blue-500 to-cyan-500" },
-                            { icon: Calendar, title: "진료 예약", desc: "비대면 진료를 예약하고 관리할 수 있습니다", color: "from-cyan-500 to-teal-500" },
-                            { icon: MessageCircle, title: "비대면 진료", desc: "1:1 채팅을 통해 비대면으로 진료를 받을 수 있습니다", color: "from-teal-500 to-green-500" },
-                            { icon: FileText, title: "처방전 확인", desc: "받은 처방전을 확인하고 관리할 수 있습니다", color: "from-green-500 to-lime-500" },
-                            { icon: Zap, title: "포인트 시스템", desc: "활동에 따라 포인트를 획득하고 순위에 도전하세요", color: "from-orange-500 to-red-500" },
-                            { icon: UserCircle, title: "마이페이지", desc: "개인 건강 정보를 수정하고 관리할 수 있습니다", color: "from-indigo-500 to-purple-500" }
-                        ].map((feature, index) => (
+                        {KEY_FEATURES.map((feature, index) => (
                             <Card key={index} className="backdrop-blur-2xl bg-white/40 border border-white/60 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2">
                                 <CardContent className="p-4 md:p-6 text-center space-y-2 md:space-y-4">
                                     <div className={`w-10 h-10 md:w-14 md:h-14 bg-gradient-to-br ${feature.color} rounded-xl md:rounded-2xl flex items-center justify-center mx-auto shadow-lg`}>
@@ -248,7 +266,10 @@ export default function LandingPage() {
             </section>
 
             {/* How it Works */}
-            <section className="py-12 md:py-20 px-4 scroll-bounce-in">
+            <section
+                className="py-12 md:py-20 px-4 scroll-bounce-in"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 400px" }}
+            >
                 <div className="container mx-auto max-w-6xl">
                     <div className="text-center mb-8 md:mb-16">
                         <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-2 md:mb-4">어떻게 작동하나요?</h2>
@@ -256,11 +277,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 md:gap-6">
-                        {[
-                            { step: "1", title: "운동하기", desc: "좋아하는 운동을 하세요", icon: Dumbbell, color: "from-[#C93831] to-pink-500" },
-                            { step: "2", title: "활동 기록", desc: "운동 내역을 기록하세요", icon: Target, color: "from-purple-500 to-pink-500" },
-                            { step: "3", title: "랭킹 경쟁", desc: "점수를 모아 순위에 도전!", icon: Trophy, color: "from-yellow-400 to-orange-500" }
-                        ].map((item, index) => (
+                        {HOW_IT_WORKS.map((item, index) => (
                             <div key={index} className="text-center space-y-2 md:space-y-4">
                                 <div className={`w-14 h-14 md:w-20 md:h-20 bg-gradient-to-br ${item.color} text-white rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto text-xl md:text-3xl font-black shadow-2xl`}>
                                     {item.step}
@@ -275,7 +292,10 @@ export default function LandingPage() {
             </section>
 
             {/* CTA Section */}
-            <section className="py-12 md:py-20 px-4 scroll-zoom-in">
+            <section
+                className="py-12 md:py-20 px-4 scroll-zoom-in"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 400px" }}
+            >
                 <Card className="container mx-auto max-w-5xl backdrop-blur-2xl bg-gradient-to-br from-[#C93831]/90 to-[#B02F28]/90 border border-white/40 shadow-2xl">
                     <CardContent className="p-8 md:p-16 text-center space-y-4 md:space-y-8 text-white">
                         <h2 className="text-3xl md:text-6xl font-black">지금 바로 시작하세요</h2>
@@ -286,7 +306,7 @@ export default function LandingPage() {
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Button
                                 size="lg"
-                                onClick={() => navigate('/login')}
+                                onClick={handleLogin}
                                 className="bg-white text-[#C93831] hover:bg-gray-50 font-bold text-base md:text-xl px-6 md:px-10 py-4 md:py-7 rounded-2xl shadow-xl hover:scale-105 transition-transform"
                             >
                                 <Sparkles className="w-5 h-5 md:w-6 md:h-6 mr-2" />
@@ -294,11 +314,7 @@ export default function LandingPage() {
                             </Button>
                         </div>
                         <div className="pt-4 md:pt-8 flex items-center justify-center gap-6 md:gap-12">
-                            {[
-                                { Icon: Award, text: "직원 전용" },
-                                { Icon: Heart, text: "무료 서비스" },
-                                { Icon: Trophy, text: "실시간 랭킹" }
-                            ].map((badge, idx) => (
+                            {CTA_BADGES.map((badge, idx) => (
                                 <div key={idx} className="text-center">
                                     <badge.Icon className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 text-red-200" />
                                     <div className="text-xs md:text-sm text-red-100 font-bold">{badge.text}</div>
@@ -310,7 +326,10 @@ export default function LandingPage() {
             </section>
 
             {/* Footer */}
-            <footer className="backdrop-blur-2xl bg-gray-900/95 text-gray-400 py-8 md:py-12 px-4 mt-12 md:mt-20">
+            <footer
+                className="backdrop-blur-2xl bg-gray-900/95 text-gray-400 py-8 md:py-12 px-4 mt-12 md:mt-20"
+                style={{ contentVisibility: "auto", containIntrinsicSize: "auto 300px" }}
+            >
                 <div className="container mx-auto max-w-6xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
                         <div className="space-y-3 md:space-y-4 text-center md:text-left">
@@ -348,25 +367,10 @@ export default function LandingPage() {
           50% { transform: translateY(-20px); }
         }
 
-        @keyframes float-delayed {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-30px); }
-        }
-
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-
-        .animate-float-delayed {
-          animation: float-delayed 8s ease-in-out infinite;
-        }
-        
-        /* 성능을 위해 will-change 추가 */
         .will-change-transform {
             will-change: transform;
         }
 
-        /* Sudden Appear Animations - 초기 opacity 0 때문에 LCP가 늦어지는 것 방지 */
         .scroll-fade-up,
         .scroll-slide-right,
         .scroll-slide-left,
@@ -374,65 +378,45 @@ export default function LandingPage() {
         .scroll-bounce-in,
         .scroll-zoom-in {
           opacity: 0;
-          will-change: opacity, transform; /* 브라우저 힌트 제공 */
+          will-change: opacity, transform;
         }
 
-        /* Fade Up */
         .scroll-fade-up.animate-in {
           animation: fadeUpSudden 0.6s ease-out forwards;
         }
-
         @keyframes fadeUpSudden {
           0% { opacity: 0; transform: translateY(80px); }
           100% { opacity: 1; transform: translateY(0); }
         }
 
-        /* Slide from Right */
-        .scroll-slide-right.animate-in {
-          animation: slideRightSudden 0.6s ease-out forwards;
-        }
-
-        @keyframes slideRightSudden {
-          0% { opacity: 0; transform: translateX(-100px); }
-          100% { opacity: 1; transform: translateX(0); }
-        }
-
-        /* Slide from Left */
         .scroll-slide-left.animate-in {
           animation: slideLeftSudden 0.6s ease-out forwards;
         }
-
         @keyframes slideLeftSudden {
           0% { opacity: 0; transform: translateX(100px); }
           100% { opacity: 1; transform: translateX(0); }
         }
 
-        /* Scale In */
         .scroll-scale-in.animate-in {
           animation: scaleInSudden 0.5s ease-out forwards;
         }
-
         @keyframes scaleInSudden {
           0% { opacity: 0; transform: scale(0.7); }
           100% { opacity: 1; transform: scale(1); }
         }
 
-        /* Bounce In */
         .scroll-bounce-in.animate-in {
           animation: bounceInSudden 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
         }
-
         @keyframes bounceInSudden {
           0% { opacity: 0; transform: scale(0.3) translateY(100px); }
           50% { opacity: 1; transform: scale(1.05); }
           100% { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        /* Zoom In */
         .scroll-zoom-in.animate-in {
           animation: zoomInSudden 0.8s ease-out forwards;
         }
-
         @keyframes zoomInSudden {
           0% { opacity: 0; transform: scale(0.5); }
           100% { opacity: 1; transform: scale(1); }

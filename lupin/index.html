@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Health Management Platform</title>
 
+    <!-- 폰트 프리로드 -->
     <link rel="preload" href="/fonts/NanumSquareR.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/NanumSquareB.woff2" as="font" type="font/woff2" crossorigin />
 
+    <!-- Hero 이미지 프리로드 -->
     <link
       rel="preload"
       as="image"
@@ -35,90 +37,11 @@
         background-attachment: fixed;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
-
-      #app-shell-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 9999;
-        overflow-y: auto;
-        background: inherit;
-        transition: opacity 0.4s ease-out;
-      }
-      .shell-container {
-        max-width: 72rem;
-        margin: 0 auto;
-        padding: 6rem 1rem 3rem 1rem;
-        display: grid;
-        gap: 2rem;
-        align-items: center;
-      }
-      .shell-text { order: 2; text-align: center; }
-      .shell-img-wrap { order: 1; position: relative; }
-      .shell-img {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 4/3;
-        border-radius: 1rem;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        border: 4px solid rgba(255, 255, 255, 0.5);
-        object-fit: cover;
-      }
-      @media (min-width: 768px) {
-        .shell-container { padding-top: 8rem; grid-template-columns: 1fr 1fr; gap: 3rem; }
-        .shell-text { order: 1; text-align: left; }
-        .shell-img-wrap { order: 2; }
-        .shell-img { border-radius: 1.5rem; border-width: 8px; }
-      }
     </style>
   </head>
 
   <body>
     <div id="root"></div>
-
-    <div id="app-shell-overlay">
-      <!-- App Shell 헤더 -->
-      <header style="position: fixed; top: 0; width: 100%; backdrop-filter: blur(12px); background: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(229,231,235,0.5); z-index: 50; padding: 12px 16px;">
-        <div style="max-width: 72rem; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;">
-          <img src="/Lupin.webp" alt="Lupin Logo" width="100" height="40" style="height: 32px; width: auto; object-fit: contain;" />
-          <button style="background: linear-gradient(to right, #C93831, #B02F28); color: white; font-weight: bold; border: none; padding: 8px 24px; border-radius: 16px; cursor: pointer; font-size: 14px;">로그인</button>
-        </div>
-      </header>
-
-      <div class="shell-container">
-        <div class="shell-text">
-          <div style="font-size: 12px; font-weight: bold; color: #C93831; margin-bottom: 10px; font-family: sans-serif;">직원 전용 헬스케어 플랫폼</div>
-          <h1 style="font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1; color: #111827; margin: 0 0 20px 0; font-family: sans-serif;">
-            건강한 습관,<br>
-            <span style="color: #C93831;">함께 만들어가요</span>
-          </h1>
-          <p style="font-size: 1.125rem; color: #374151; margin: 0; font-family: sans-serif;">
-            운동을 기록하고 점수를 모으세요.<br>
-            동료들과 함께 건강한 습관을 만들어가요!
-          </p>
-        </div>
-
-        <div class="shell-img-wrap">
-          <img
-            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp"
-            srcset="
-                https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60&fm=webp 400w,
-                https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp 800w
-            "
-            sizes="(max-width: 768px) 100vw, 800px"
-            alt="운동하는 여성"
-            class="shell-img"
-            width="800"
-            height="600"
-            fetchpriority="high"
-            decoding="async"
-          />
-        </div>
-      </div>
-    </div>
-
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock } from "lucide-react";
 import AnimatedBackground from "../shared/AnimatedBackground";
 // [수정 1] placeBid 추가 import
-import { getActiveAuction, getScheduledAuctions, placeBid, getUserPoints } from "@/api/auctionApi";
+import { getActiveAuction, getScheduledAuctions, placeBid, getUserPoints, getBidHistory } from "@/api/auctionApi";
 // 분리된 컴포넌트 및 훅 import
 import { AuctionData, BidHistory } from "@/types/auction.types";
 import { useAuctionTimer } from "@/hooks/useAuctionTimer";
@@ -40,7 +40,7 @@ export default function Auction() {
   // 경매 선택 시 입찰 기록 조회 및 금액 초기화
   useEffect(() => {
     if (selectedAuction?.auctionId) {
-      fetchBidHistory(selectedAuction.auctionId);
+      fetchBidHistory();
       // 가격이 바뀔 때만 입찰 금액 업데이트 (현재가 + 1원)
       setBidAmount((selectedAuction.currentPrice + 1).toString());
     }
@@ -63,7 +63,7 @@ export default function Auction() {
       if (activeAuctionData) {
         setAuctions([activeAuctionData]);
         // 선택된 경매가 없으면 기본값으로 설정
-        if (!selectedAuction) {
+        if (!selectedAuction || selectedAuction.auctionId === activeAuctionData.auctionId) {
           setSelectedAuction(activeAuctionData);
         }
       } else {
@@ -102,20 +102,16 @@ const fetchUserPoints = async () => {
   /**
    * 입찰 내역 조회
    */
-  const fetchBidHistory = async (auctionId: number) => {
-    console.log(`Fetching history for auction ID: ${auctionId}`);
-    // Mock history data (추후 API 연동 필요)
-    setBidHistory([
-      {
-        id: 1,
-        userId: 2,
-        userName: "김건강",
-        bidAmount: 45,
-        bidTime: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-        status: "ACTIVE",
-      },
-      // ... 추가 데이터
-    ]);
+  const fetchBidHistory = async () => {
+try {
+    const historyData = await getBidHistory();
+    // API 데이터로 상태 업데이트
+    setBidHistory(historyData); 
+  } catch (error) {
+    console.error("입찰 내역 조회 실패:", error);
+    // 에러 발생 시 빈 배열 처리 (Mock Data가 남아있으면 안 됨)
+    setBidHistory([]); 
+  }
   };
 
   /**
@@ -148,7 +144,7 @@ const fetchUserPoints = async () => {
 
       // 3. 데이터 갱신 (경매 정보, 입찰 내역, 포인트)
       fetchAuctions(); // 현재가 갱신
-      fetchBidHistory(selectedAuction.auctionId); // 입찰 내역 갱신
+      fetchBidHistory(); // 입찰 내역 갱신
       fetchUserPoints(); // 내 잔액 갱신
 
       setBidAmount(""); // 입력창 초기화

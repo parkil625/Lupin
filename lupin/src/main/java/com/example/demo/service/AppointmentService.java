@@ -48,13 +48,14 @@ public class AppointmentService {
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        chatService.createChatRoomForAppointment(savedAppointment.getId());
+        // [Fix] 채팅방 생성 로직 강제 반영 확인용 주석
+        String roomId = chatService.createChatRoomForAppointment(savedAppointment.getId());
 
-        log.info("예약 생성 완료 - ID: {}, 환자: {}, 의사: {}, 날짜: {}",
+        log.info("예약 생성 완료 - ID: {}, 채팅방: {}, 환자: {}, 의사: {}",
                 savedAppointment.getId(),
+                roomId, // 채팅방 ID 로그 추가
                 savedAppointment.getPatient().getName(),
-                savedAppointment.getDoctor().getName(),
-                savedAppointment.getDate());
+                savedAppointment.getDoctor().getName());
 
         return savedAppointment.getId();
     }

@@ -14,9 +14,14 @@
 -- --------------------------------------------
 -- 기존 경매 데이터 초기화 (재실행 시 중복 방지)
 -- 외래 키 제약 조건 때문에 자식 테이블(auction_items)을 먼저 삭제해야 합니다.
-DELETE FROM auction_items WHERE id > 0;
-DELETE FROM auctions WHERE id > 0;
+-- 1. 입찰 내역(자식의 자식/참조 테이블) 먼저 삭제
+DELETE FROM auction_bids WHERE id > 0;
 
+-- 2. 경매 물품(자식 테이블) 삭제
+DELETE FROM auction_items WHERE id > 0;
+
+-- 3. 경매(부모 테이블) 삭제
+DELETE FROM auctions WHERE id > 0;
 
 INSERT INTO auctions (
     current_price,

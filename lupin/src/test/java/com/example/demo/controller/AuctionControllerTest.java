@@ -7,6 +7,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.AuctionRequest;
+import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.UserRepository;
@@ -30,7 +31,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils; // 필수 Import
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +41,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -151,7 +153,7 @@ class AuctionControllerTest {
         mockMvc.perform(post("/api/auction/{auctionId}/bid", auctionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf()))
+                        .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk());
 
@@ -164,5 +166,46 @@ class AuctionControllerTest {
         );
     }
 
+    @Test
+    @WithMockUser(username = "testuser")
+    @DisplayName("GET /active/history")
+    void getBidHistory_Success() throws Exception {
+        // Given
+        // 1. 가짜 응답 데이터 생성
+        AuctionBidResponse bid1 = AuctionBidResponse.builder()
+                .id(1L)
+                .userId(10L)
+                .userName("입찰왕")
+                .bidAmount(50000L)
+                .bidTime(LocalDateTime.now().minusMinutes(1))
+                .status("ACTIVE")
+                .build();
+
+        AuctionBidResponse bid2 = AuctionBidResponse.builder()
+                .id(2L)
+                .userId(11L)
+                .userName("도전자")
+                .bidAmount(45000L)
+                .bidTime(LocalDateTime.now().minusMinutes(5))
+                .status("ACTIVE")
+                .build();
+
+        List<AuctionBidResponse> responseList = List.of(bid1, bid2);
+
+        // 2. 서비스 메소드 호출 시 가짜 데이터 반환하도록 설정 (Stubbing)
+        given(auctionService.getAuctionStatus()).willReturn(responseList);
+
+        // When & Then
+        mockMvc.perform(get("/api/auction/active/history") // 3. 요청 전송
+                        .with(csrf()) // Spring Security 사용 시 필요할 수 있음
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print()) // 로그 출력
+                .andExpect(status().isOk()) // 4. 상태 코드 200 검증
+                .andExpect(jsonPath("$.size()").value(2)) // 리스트 크기 검증
+                .andExpect(jsonPath("$[0].userName").value("입찰왕")) // 첫 번째 데이터 검증
+                .andExpect(jsonPath("$[0].bidAmount").value(50000))
+                .andExpect(jsonPath("$[1].userName").value("도전자"));
+
+    }
 
 }

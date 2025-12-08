@@ -1,7 +1,10 @@
 package com.example.demo.controller;
 
+import com.example.demo.domain.entity.AuctionBid;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.AuctionRequest;
+import com.example.demo.dto.response.AuctionBidResponse;
+import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.service.AuctionService;
@@ -23,7 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Auction Controller", description = "경매 관련 API")
 
-public class AuctionController extends BaseController {
+public class          AuctionController extends BaseController {
 
     private final AuctionService auctionService;
 
@@ -54,4 +57,11 @@ public class AuctionController extends BaseController {
 
         return ResponseEntity.ok().build();
     }
+
+    @Operation(summary = "진행 중인 경매 입찰 기록", description = "현재 ACTIVE 상태인 경매의 입찰 내역을 가격순으로 조회합니다.")
+    @GetMapping("/active/history") // 경로 변경: /{auctionId}/history -> /active/history
+    public ResponseEntity<List<AuctionBidResponse>> getBidHistory() {
+        return ResponseEntity.ok(auctionService.getAuctionStatus());
+    }
+
 }

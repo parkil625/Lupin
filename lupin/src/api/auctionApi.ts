@@ -34,3 +34,13 @@ export const getScheduledAuctions = async (): Promise<AuctionData[]> => {
      return response.data;
  };
 
+export const getUserPoints = async () => {
+    const response = await client.get('/users/points');
+    return response.data;
+}
+
+export const getBidHistory= async () => {
+    const response = await client.get('/auction/status')
+    return response.data;
+}
+

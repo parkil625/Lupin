@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock } from "lucide-react";
 import AnimatedBackground from "../shared/AnimatedBackground";
 // [수정 1] placeBid 추가 import
-import { getActiveAuction, getScheduledAuctions, placeBid } from "@/api/auctionApi";
+import { getActiveAuction, getScheduledAuctions, placeBid, getUserPoints } from "@/api/auctionApi";
 // 분리된 컴포넌트 및 훅 import
 import { AuctionData, BidHistory } from "@/types/auction.types";
 import { useAuctionTimer } from "@/hooks/useAuctionTimer";
@@ -85,12 +85,19 @@ export default function Auction() {
   /**
    * 유저 포인트 조회
    */
-  const fetchUserPoints = async () => {
-    // TODO: 실제 유저 포인트 API로 교체 필요 (UserController의 /api/users/points)
-    // const response = await getUserPoints();
-    // setUserPoints(response.data.totalPoints);
-    setUserPoints(100); // Mock data
-  };
+const fetchUserPoints = async () => {
+    // 1. 에러 처리를 위해 try-catch 사용 권장
+    try {
+        const data = await getUserPoints(); 
+        
+        if (data) {
+            setUserPoints(data.totalPoints); 
+        }
+    } catch (error) {
+        console.error("포인트 조회 실패", error);
+        setUserPoints(0);
+    }
+};
 
   /**
    * 입찰 내역 조회

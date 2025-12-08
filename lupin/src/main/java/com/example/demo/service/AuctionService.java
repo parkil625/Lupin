@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.AuctionBid;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
+import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
@@ -110,6 +111,17 @@ public class AuctionService {
     //현재 경매 정보 업데이트 내용 조회
     public AuctionStatusResponse getRealtimeStatus(){
         return auctionRepository.findAuctionStatus().orElseThrow(() -> new IllegalStateException("진행 중인 경매가 없습니다."));
+    }
+
+    //현재 경매 정보 내역 리스트 조회
+    public List<AuctionBidResponse> getAuctionStatus(){
+        // 1. 엔티티 리스트 조회 (User 정보 포함됨)
+        List<AuctionBid> bids = auctionBidRepository.findBidsByActiveAuction();
+
+        // 2. DTO로 변환 (이미 만든 from 메서드 활용)
+        return bids.stream()
+                .map(AuctionBidResponse::from)
+                .toList();
     }
 
 

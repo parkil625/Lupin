@@ -5,9 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Health Management Platform</title>
 
-    <!-- ⚡️ [최적화] 폰트 프리로드 - CSS 파싱 전에 폰트 다운로드 시작 -->
     <link rel="preload" href="/fonts/NanumSquareR.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/NanumSquareB.woff2" as="font" type="font/woff2" crossorigin />
+
+    <link
+      rel="preload"
+      as="image"
+      href="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60&fm=webp"
+      media="(max-width: 768px)"
+      fetchpriority="high"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp"
+      media="(min-width: 769px)"
+      fetchpriority="high"
+    />
 
     <style>
       body {
@@ -19,7 +33,6 @@
           radial-gradient(circle at 5% 10%, rgba(216, 180, 254, 0.4) 0%, transparent 25%),
           radial-gradient(circle at 85% 20%, rgba(147, 197, 253, 0.4) 0%, transparent 25%);
         background-attachment: fixed;
-        /* 시스템 폰트 우선 적용 (폰트 다운로드 없이 즉시 렌더링) */
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       }
 
@@ -60,21 +73,6 @@
         .shell-img { border-radius: 1.5rem; border-width: 8px; }
       }
     </style>
-
-    <link
-      rel="preload"
-      as="image"
-      href="/hero-mobile.webp"
-      media="(max-width: 768px)"
-      fetchpriority="high"
-    />
-    <link
-      rel="preload"
-      as="image"
-      href="/hero-desktop.webp"
-      media="(min-width: 769px)"
-      fetchpriority="high"
-    />
   </head>
 
   <body>
@@ -95,19 +93,20 @@
         </div>
 
         <div class="shell-img-wrap">
-          <picture>
-            <source media="(max-width: 768px)" srcset="/hero-mobile.webp" />
-            <source media="(min-width: 769px)" srcset="/hero-desktop.webp" />
-            <img
-              src="/hero-desktop.webp"
-              alt="운동하는 여성"
-              class="shell-img"
-              width="800"
-              height="600"
-              fetchpriority="high"
-              decoding="async"
-            />
-          </picture>
+          <img
+            src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp"
+            srcset="
+                https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=60&fm=webp 400w,
+                https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=60&fm=webp 800w
+            "
+            sizes="(max-width: 768px) 100vw, 800px"
+            alt="운동하는 여성"
+            class="shell-img"
+            width="800"
+            height="600"
+            fetchpriority="high"
+            decoding="async"
+          />
         </div>
       </div>
     </div>

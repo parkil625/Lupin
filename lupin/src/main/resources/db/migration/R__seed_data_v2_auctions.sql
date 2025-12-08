@@ -1,28 +1,21 @@
 -- ============================================
--- Auction & AuctionItem Mock Data (Long Life Version)
--- Date: 2025-11-27
+-- Auction Mock Data (Entity Matched Version)
 -- Description:
---   - 데이터 수명을 넉넉하게 늘려 테스트 중 데이터가 사라지는 것을 방지함
---   - 1. 진행 중인 경매 (ACTIVE) : 시작 1일 전 ~ 종료 7일 후 (일주일간 유지됨)
---   - 2. 예정된 경매 1 (SCHEDULED) : 8일 뒤 시작
---   - 3. 예정된 경매 2 (SCHEDULED) : 9일 뒤 시작
+--   - Java Entity(Auction.java, AuctionItem.java) 구조와 100% 일치
+--   - Flyway 실행 시점 문제 해결을 위해 테이블 생성 구문(DDL) 포함
 -- ============================================
+
+-- 기존 데이터 초기화 (순서 중요: 자식 -> 부모)
+-- (auctions 테이블의 PK는 'id'가 아니라 'auction_id' 입니다)
+DELETE FROM auction_bids;  -- WHERE 절 없이 전체 삭제
+DELETE FROM auction_items;
+DELETE FROM auctions;
+
+-- 3. 데이터 입력 시작
 
 -- --------------------------------------------
 -- 1. [진행 중] 아이패드 프로 12.9
--- (테스트를 위해 앞으로 7일 동안 계속 '진행 중' 상태로 유지됩니다)
 -- --------------------------------------------
--- 기존 경매 데이터 초기화 (재실행 시 중복 방지)
--- 외래 키 제약 조건 때문에 자식 테이블(auction_items)을 먼저 삭제해야 합니다.
--- 1. 입찰 내역(자식의 자식/참조 테이블) 먼저 삭제
-DELETE FROM auction_bids WHERE id > 0;
-
--- 2. 경매 물품(자식 테이블) 삭제
-DELETE FROM auction_items WHERE id > 0;
-
--- 3. 경매(부모 테이블) 삭제
-DELETE FROM auctions WHERE id > 0;
-
 INSERT INTO auctions (
     current_price,
     start_time,
@@ -34,14 +27,14 @@ INSERT INTO auctions (
     winner_id
 ) VALUES (
              100,
-             NOW() - INTERVAL 1 DAY,   -- 어제 시작함
-             NOW() + INTERVAL 7 DAY,   -- 앞으로 7일 뒤 종료
+             NOW() - INTERVAL 1 DAY,
+             NOW() + INTERVAL 7 DAY,
              false,
              30,
              'ACTIVE',
              15,
-             (SELECT id FROM users WHERE user_id = 'user01')
-         );
+             (SELECT id FROM users WHERE user_id = 'user01' LIMIT 1) -- LIMIT 1로 안전성 확보
+    );
 
 SET @active_auction_id = LAST_INSERT_ID();
 
@@ -53,10 +46,8 @@ VALUES (
            @active_auction_id
        );
 
-
 -- --------------------------------------------
 -- 2. [예정] 맥북 에어 15인치
--- (진행 중인 경매가 끝난 다음 날인, 8일 뒤에 시작됩니다)
 -- --------------------------------------------
 INSERT INTO auctions (
     current_price,
@@ -69,8 +60,8 @@ INSERT INTO auctions (
     winner_id
 ) VALUES (
              0,
-             NOW() + INTERVAL 8 DAY, -- 8일 뒤 시작
-             NOW() + INTERVAL 9 DAY, -- 9일 뒤 종료 (하루 동안 진행)
+             NOW() + INTERVAL 8 DAY,
+             NOW() + INTERVAL 9 DAY,
              false,
              30,
              'SCHEDULED',
@@ -84,14 +75,12 @@ INSERT INTO auction_items (item_name, description, item_image, auction_id)
 VALUES (
            'MacBook Air 15 미드나이트',
            '가볍지만 강력한 M3 칩 탑재. 15인치 대화면으로 즐기는 쾌적한 작업 환경. 램 16GB 업그레이드 모델.',
-           'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1026&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+           'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1026&auto=format&fit=crop',
            @scheduled_id_1
        );
 
-
 -- --------------------------------------------
 -- 3. [예정] 플레이스테이션 5 프로
--- (9일 뒤에 시작됩니다)
 -- --------------------------------------------
 INSERT INTO auctions (
     current_price,
@@ -104,8 +93,8 @@ INSERT INTO auctions (
     winner_id
 ) VALUES (
              0,
-             NOW() + INTERVAL 9 DAY,  -- 9일 뒤 시작
-             NOW() + INTERVAL 10 DAY, -- 10일 뒤 종료
+             NOW() + INTERVAL 9 DAY,
+             NOW() + INTERVAL 10 DAY,
              false,
              30,
              'SCHEDULED',

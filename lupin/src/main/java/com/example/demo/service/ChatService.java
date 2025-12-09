@@ -101,16 +101,13 @@ public class ChatService {
     }
 
     public User getPatientFromRoomId(String roomId) {
-        String[] parts = roomId.split(":");
-        Long patientId = Long.parseLong(parts[0]);
-        return userRepository.findById(patientId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 환자입니다."));
+        Appointment appointment = getAppointmentFromRoomId(roomId);
+        return appointment.getPatient();
     }
 
     public List<Appointment> getAppointmentsFromRoomId(String roomId) {
-        String[] parts = roomId.split(":");
-        Long patientId = Long.parseLong(parts[0]);
-        return appointmentRepository.findByPatientIdOrderByDateDesc(patientId);
+        Appointment appointment = getAppointmentFromRoomId(roomId);
+        return List.of(appointment);
     }
 
     public String createChatRoomForAppointment(Long appointmentId) {

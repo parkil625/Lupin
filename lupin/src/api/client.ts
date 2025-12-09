@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { useAuthStore } from '../store/useAuthStore';
 
 /**
  * Axios 인스턴스 생성
@@ -95,10 +96,16 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null);
 
-        // 재발급 실패 시 로그아웃 처리
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('auth-storage');
-        window.location.href = '/';
+        // 에러 코드 확인하여 적절한 메시지 표시
+        const axiosError = refreshError as AxiosError<{ code?: string; message?: string }>;
+        const errorCode = axiosError.response?.data?.code;
+
+        if (errorCode === 'SESSION_EXPIRED_BY_OTHER_LOGIN') {
+          alert('다른 기기에서 로그인하여 현재 세션이 만료되었습니다.\n다시 로그인해주세요.');
+        }
+
+        // 재발급 실패 시 zustand store를 통한 로그아웃 처리
+        useAuthStore.getState().logout();
 
         return Promise.reject(refreshError);
       } finally {

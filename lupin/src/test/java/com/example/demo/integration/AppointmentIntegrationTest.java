@@ -1,5 +1,6 @@
 package com.example.demo.integration;
 
+import com.example.demo.config.TestRedisConfiguration;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.AppointmentRequest;
@@ -14,8 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Import;
 
-import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest // 실제 서버 환경을 띄움
 @AutoConfigureMockMvc // API 요청을 보낼 수 있는 MockMvc 설정
 @Transactional // 테스트 끝나면 데이터 롤백 (DB 오염 방지)
+@Import(TestRedisConfiguration.class)
 class AppointmentIntegrationTest {
 
     @Autowired

@@ -60,6 +60,7 @@ interface UserStats {
  * 개별 피드 아이템
  * - React.memo로 감싸 불필요한 리렌더링 방지
  * - index < 4 인 경우 Eager 로딩 적용 (LCP 최적화)
+ * - onClick에 feedId만 전달받아 memoization 유지
  */
 const FeedItem = memo(({
   feed,
@@ -68,7 +69,7 @@ const FeedItem = memo(({
 }: {
   feed: Feed;
   index: number;
-  onClick: () => void;
+  onClick: (feedId: number) => void;
 }) => {
   // 모바일 뷰포트 기준 상위 4개는 즉시 로딩, 나머지는 레이지 로딩
   const isPriority = index < 4;
@@ -76,7 +77,7 @@ const FeedItem = memo(({
   return (
     <div
       className="cursor-pointer group relative aspect-[3/4] w-full touch-manipulation will-change-transform"
-      onClick={onClick}
+      onClick={() => onClick(feed.id)}
       role="button"
       aria-label={`${feed.activity} 피드, 포인트 ${feed.points}점`}
     >
@@ -212,12 +213,19 @@ export default function Home({
 }: HomeProps) {
   const { stats, canPost, loading } = useHomeData(myFeeds, refreshTrigger);
 
-  // 핸들러 메모이제이션
-  const handleFeedClick = useCallback((feed: Feed) => {
+  // [최적화] 피드 ID -> 피드 객체 빠른 조회를 위한 Map (O(1) 접근)
+  const feedMap = useMemo(() => {
+    return new Map(myFeeds.map(feed => [feed.id, feed]));
+  }, [myFeeds]);
+
+  // [최적화] 핸들러 메모이제이션 - feedId만 받아서 처리 (진짜 memoization 작동)
+  const handleFeedClick = useCallback((feedId: number) => {
+    const feed = feedMap.get(feedId);
+    if (!feed) return;
     setSelectedFeed(feed);
-    setFeedImageIndex(feed.id, 0);
+    setFeedImageIndex(feedId, 0);
     setShowFeedDetailInHome(true);
-  }, [setSelectedFeed, setFeedImageIndex, setShowFeedDetailInHome]);
+  }, [feedMap, setSelectedFeed, setFeedImageIndex, setShowFeedDetailInHome]);
 
   return (
     <div className="h-full w-full overflow-y-auto overflow-x-hidden p-4 md:p-8 relative bg-white/50 scroll-smooth">
@@ -362,7 +370,7 @@ export default function Home({
                   key={feed.id}
                   feed={feed}
                   index={index}
-                  onClick={() => handleFeedClick(feed)}
+                  onClick={handleFeedClick}
                 />
               ))
             ) : (

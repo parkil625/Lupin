@@ -9,6 +9,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { userApi } from "@/api";
 import { toast } from "sonner";
+import { DEFAULT_VALUES } from "@/constants/rankingConstants";
 
 export interface RankerData {
   rank: number;
@@ -92,15 +93,15 @@ export function useRankingViewModel(
             index: number
           ) => ({
             rank: index + 1,
-            name: user.name || "이름 없음",
+            name: user.name || DEFAULT_VALUES.NAME,
             points: user.points || 0,
             monthlyLikes: user.monthlyLikes || 0,
-            avatar: user.name ? user.name[0] : "?",
+            avatar: user.name ? user.name[0] : DEFAULT_VALUES.AVATAR_FALLBACK,
             profileImage:
               user.id === userId
                 ? profileImage
                 : user.avatar || user.profileImage,
-            department: user.department || "부서 미정",
+            department: user.department || DEFAULT_VALUES.DEPARTMENT,
             activeDays: user.activeDays || 0,
             avgScore: user.avgScore || 0,
             isMe: user.id === userId,
@@ -142,15 +143,15 @@ export function useRankingViewModel(
               rank?: number;
             }) => ({
               rank: user.rank || 0,
-              name: user.name || "이름 없음",
+              name: user.name || DEFAULT_VALUES.NAME,
               points: user.points || 0,
               monthlyLikes: user.monthlyLikes || 0,
-              avatar: user.name ? user.name[0] : "?",
+              avatar: user.name ? user.name[0] : DEFAULT_VALUES.AVATAR_FALLBACK,
               profileImage:
                 user.id === userId
                   ? profileImage
                   : user.avatar || user.profileImage,
-              department: user.department || "부서 미정",
+              department: user.department || DEFAULT_VALUES.DEPARTMENT,
               activeDays: user.activeDays || 0,
               avgScore: user.avgScore || 0,
               isMe: user.id === userId,

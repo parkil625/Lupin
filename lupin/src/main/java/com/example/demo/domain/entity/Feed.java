@@ -26,9 +26,6 @@ public class Feed {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Version
-    private Long version;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "writer_id", nullable = false)
     private User writer;
@@ -65,7 +62,6 @@ public class Feed {
         this.points = points;
         this.calories = calories;
         this.images = new HashSet<>(); // Builder로 생성 시에도 초기화
-        this.version = 0L; // @Version 필드 초기화 (테스트에서 ReflectionTestUtils 사용 시 필요)
     }
 
     public void update(String content, String activity) {

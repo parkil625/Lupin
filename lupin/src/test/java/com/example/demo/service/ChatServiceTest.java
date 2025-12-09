@@ -426,8 +426,8 @@ class ChatServiceTest {
                 .build();
 
         // 읽기 전: 2개
-        given(chatRepository.findUnreadMessages(roomId, userId))
-                .willReturn(Arrays.asList(unread1, unread2));
+        given(chatRepository.countUnreadMessages(roomId, userId))
+                .willReturn(2);
 
         int countBefore = chatService.getUnreadMessageCount(roomId, userId);
 
@@ -435,8 +435,8 @@ class ChatServiceTest {
         chatService.markAsRead(roomId, userId);
 
         // 읽음 처리 후: 0개
-        given(chatRepository.findUnreadMessages(roomId, userId))
-                .willReturn(List.of());
+        given(chatRepository.countUnreadMessages(roomId, userId))
+                .willReturn(0);
 
         int countAfter = chatService.getUnreadMessageCount(roomId, userId);
 

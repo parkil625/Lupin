@@ -129,11 +129,11 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("채팅 기록 조회 - 시간순 정렬")
+    @DisplayName("채팅 기록 조회 - 시간순 정렬 (Eager Loading)")
     void getChatHistory_OrderByTimeAsc() {
         // Given
         List<ChatMessage> messages = Arrays.asList(message1, message2);
-        given(chatRepository.findByRoomIdOrderByTimeAsc(roomId))
+        given(chatRepository.findByRoomIdWithSenderEagerly(roomId))
                 .willReturn(messages);
 
         // When
@@ -143,7 +143,7 @@ class ChatServiceTest {
         assertThat(result).hasSize(2);
         assertThat(result.get(0).getContent()).isEqualTo("안녕하세요, 마음이 아파서 왔습니다.");
 
-        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId);
+        verify(chatRepository, times(1)).findByRoomIdWithSenderEagerly(roomId);
     }
 
     @Test
@@ -212,7 +212,7 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("각 채팅방의 최근 메시지 조회")
+    @DisplayName("각 채팅방의 최근 메시지 조회 (성능 최적화)")
     void getLatestMessageForEachRoom() {
         // Given
         String roomId1 = "appointment_1";
@@ -234,9 +234,10 @@ class ChatServiceTest {
                 .time(LocalDateTime.now().minusMinutes(5))
                 .build();
 
-        given(chatRepository.findByRoomIdOrderByTimeAsc(roomId1))
-                .willReturn(Arrays.asList(message1, latestMessage1));
-        given(chatRepository.findByRoomIdOrderByTimeAsc(roomId2))
+        // DESC 정렬이므로 최신 메시지가 첫 번째
+        given(chatRepository.findTopByRoomIdOrderByTimeDesc(roomId1))
+                .willReturn(List.of(latestMessage1));
+        given(chatRepository.findTopByRoomIdOrderByTimeDesc(roomId2))
                 .willReturn(List.of(latestMessage2));
 
         // When
@@ -246,8 +247,8 @@ class ChatServiceTest {
         // Then
         assertThat(result1.getContent()).isEqualTo("네, 환자분");
         assertThat(result2.getContent()).isEqualTo("안녕하세요");
-        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId1);
-        verify(chatRepository, times(1)).findByRoomIdOrderByTimeAsc(roomId2);
+        verify(chatRepository, times(1)).findTopByRoomIdOrderByTimeDesc(roomId1);
+        verify(chatRepository, times(1)).findTopByRoomIdOrderByTimeDesc(roomId2);
     }
 
     @Test
@@ -295,6 +296,11 @@ class ChatServiceTest {
         given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_2")).willReturn(List.of(room2Message));
         given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_3")).willReturn(List.of(room3Message));
 
+        // 최신 메시지 조회 모킹 (성능 최적화)
+        given(chatRepository.findTopByRoomIdOrderByTimeDesc("appointment_1")).willReturn(List.of(room1Message));
+        given(chatRepository.findTopByRoomIdOrderByTimeDesc("appointment_2")).willReturn(List.of(room2Message));
+        given(chatRepository.findTopByRoomIdOrderByTimeDesc("appointment_3")).willReturn(List.of(room3Message));
+
         // When
         List<String> sortedRoomIds = chatService.getChatRoomsSortedByLatestMessage(doctorId);
 
@@ -306,38 +312,22 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("특정 채팅방의 읽지 않은 메시지 개수")
+    @DisplayName("특정 채팅방의 읽지 않은 메시지 개수 (COUNT 최적화)")
     void getUnreadMessageCount() {
         // Given
         // roomId는 setUp에서 "appointment_1"로 설정됨
         Long userId = 21L;  // doctor ID
 
-        ChatMessage unreadMessage1 = ChatMessage.builder()
-                .id(1L)
-                .roomId(roomId)
-                .sender(patient)
-                .content("안읽은 메시지1")
-                .isRead(false)
-                .build();
-
-        ChatMessage unreadMessage2 = ChatMessage.builder()
-                .id(2L)
-                .roomId(roomId)
-                .sender(patient)
-                .content("안읽은 메시지2")
-                .isRead(false)
-                .build();
-
-        List<ChatMessage> unreadMessages = Arrays.asList(unreadMessage1, unreadMessage2);
-        given(chatRepository.findUnreadMessages(roomId, userId))
-                .willReturn(unreadMessages);
+        // COUNT 쿼리로 직접 개수 반환
+        given(chatRepository.countUnreadMessages(roomId, userId))
+                .willReturn(2);
 
         // When
         int count = chatService.getUnreadMessageCount(roomId, userId);
 
         // Then
         assertThat(count).isEqualTo(2);
-        verify(chatRepository, times(1)).findUnreadMessages(roomId, userId);
+        verify(chatRepository, times(1)).countUnreadMessages(roomId, userId);
     }
 
     @Test
@@ -399,11 +389,11 @@ class ChatServiceTest {
         given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_2"))
                 .willReturn(List.of(unread3));
 
-        // 읽지 않은 메시지 조회 모킹
-        given(chatRepository.findUnreadMessages("appointment_1", doctorId))
-                .willReturn(Arrays.asList(unread1, unread2));
-        given(chatRepository.findUnreadMessages("appointment_2", doctorId))
-                .willReturn(List.of(unread3));
+        // COUNT 쿼리로 최적화된 모킹
+        given(chatRepository.countUnreadMessages("appointment_1", doctorId))
+                .willReturn(2);
+        given(chatRepository.countUnreadMessages("appointment_2", doctorId))
+                .willReturn(1);
 
         // When
         int totalCount = chatService.getTotalUnreadMessageCountForDoctor(doctorId);
@@ -436,8 +426,8 @@ class ChatServiceTest {
                 .build();
 
         // 읽기 전: 2개
-        given(chatRepository.findUnreadMessages(roomId, userId))
-                .willReturn(Arrays.asList(unread1, unread2));
+        given(chatRepository.countUnreadMessages(roomId, userId))
+                .willReturn(2);
 
         int countBefore = chatService.getUnreadMessageCount(roomId, userId);
 
@@ -445,8 +435,8 @@ class ChatServiceTest {
         chatService.markAsRead(roomId, userId);
 
         // 읽음 처리 후: 0개
-        given(chatRepository.findUnreadMessages(roomId, userId))
-                .willReturn(List.of());
+        given(chatRepository.countUnreadMessages(roomId, userId))
+                .willReturn(0);
 
         int countAfter = chatService.getUnreadMessageCount(roomId, userId);
 

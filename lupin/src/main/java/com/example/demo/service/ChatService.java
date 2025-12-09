@@ -46,7 +46,8 @@ public class ChatService {
     }
 
     public List<ChatMessage> getChatHistory(String roomId){
-        return chatRepository.findByRoomIdOrderByTimeAsc(roomId);
+        // Eager loading을 사용하여 LazyInitializationException 방지
+        return chatRepository.findByRoomIdWithSenderEagerly(roomId);
     }
 
     public List<ChatMessage> getUnreadHistory(String roomId, Long userId) {
@@ -68,11 +69,12 @@ public class ChatService {
     }
 
     public ChatMessage getLatestMessageInRoom(String roomId) {
-        List<ChatMessage> messages = chatRepository.findByRoomIdOrderByTimeAsc(roomId);
+        // 최신 메시지 1개만 조회 (성능 최적화)
+        List<ChatMessage> messages = chatRepository.findTopByRoomIdOrderByTimeDesc(roomId);
         if (messages.isEmpty()) {
             return null;
         }
-        return messages.get(messages.size() - 1);
+        return messages.get(0);  // DESC 정렬이므로 첫 번째가 최신
     }
 
     public List<String> getChatRoomsSortedByLatestMessage(Long doctorId) {
@@ -90,7 +92,8 @@ public class ChatService {
     }
 
     public int getUnreadMessageCount(String roomId, Long userId) {
-        return chatRepository.findUnreadMessages(roomId, userId).size();
+        // COUNT 쿼리로 성능 최적화 (전체 목록 대신 개수만 조회)
+        return chatRepository.countUnreadMessages(roomId, userId);
     }
 
     public int getTotalUnreadMessageCountForDoctor(Long doctorId) {

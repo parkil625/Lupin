@@ -244,54 +244,58 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("채팅방 목록이 최근 메시지 시간순 정렬")
+    @DisplayName("채팅방 목록이 최근 메시지 시간순 정렬 (appointment 기반)")
     void getChatRoomsSortedByLatestMessage() {
         // Given
         Long doctorId = 21L;
         LocalDateTime now = LocalDateTime.now();
 
-        // roomId1의 최근 메시지는 5분 전
+        // appointment_1의 최근 메시지는 5분 전
         ChatMessage room1Message = ChatMessage.builder()
                 .id(1L)
-                .roomId("1:21")
+                .roomId("appointment_1")
                 .sender(patient)
                 .content("메시지1")
                 .time(now.minusMinutes(5))
                 .build();
 
-        // roomId2의 최근 메시지는 지금
+        // appointment_2의 최근 메시지는 지금
         ChatMessage room2Message = ChatMessage.builder()
                 .id(2L)
-                .roomId("2:21")
+                .roomId("appointment_2")
                 .sender(patient)
                 .content("메시지2")
                 .time(now)
                 .build();
 
-        // roomId3의 최근 메시지는 10분 전
+        // appointment_3의 최근 메시지는 10분 전
         ChatMessage room3Message = ChatMessage.builder()
                 .id(3L)
-                .roomId("3:21")
+                .roomId("appointment_3")
                 .sender(patient)
                 .content("메시지3")
                 .time(now.minusMinutes(10))
                 .build();
 
-        List<ChatMessage> allMessages = Arrays.asList(room1Message, room2Message, room3Message);
-        given(chatRepository.findAll()).willReturn(allMessages);
+        Appointment appointment1 = Appointment.builder().id(1L).patient(patient).doctor(doctor).status(AppointmentStatus.SCHEDULED).build();
+        Appointment appointment2 = Appointment.builder().id(2L).patient(patient).doctor(doctor).status(AppointmentStatus.SCHEDULED).build();
+        Appointment appointment3 = Appointment.builder().id(3L).patient(patient).doctor(doctor).status(AppointmentStatus.SCHEDULED).build();
 
-        given(chatRepository.findByRoomIdOrderByTimeAsc("1:21")).willReturn(List.of(room1Message));
-        given(chatRepository.findByRoomIdOrderByTimeAsc("2:21")).willReturn(List.of(room2Message));
-        given(chatRepository.findByRoomIdOrderByTimeAsc("3:21")).willReturn(List.of(room3Message));
+        given(appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId))
+                .willReturn(Arrays.asList(appointment1, appointment2, appointment3));
+
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_1")).willReturn(List.of(room1Message));
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_2")).willReturn(List.of(room2Message));
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_3")).willReturn(List.of(room3Message));
 
         // When
         List<String> sortedRoomIds = chatService.getChatRoomsSortedByLatestMessage(doctorId);
 
         // Then
         assertThat(sortedRoomIds).hasSize(3);
-        assertThat(sortedRoomIds.get(0)).isEqualTo("2:21");  // 가장 최근
-        assertThat(sortedRoomIds.get(1)).isEqualTo("1:21");  // 5분 전
-        assertThat(sortedRoomIds.get(2)).isEqualTo("3:21");  // 10분 전
+        assertThat(sortedRoomIds.get(0)).isEqualTo("appointment_2");  // 가장 최근
+        assertThat(sortedRoomIds.get(1)).isEqualTo("appointment_1");  // 5분 전
+        assertThat(sortedRoomIds.get(2)).isEqualTo("appointment_3");  // 10분 전
     }
 
     @Test
@@ -330,15 +334,36 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("의사의 모든 채팅방 읽지 않은 메시지 총합")
+    @DisplayName("의사의 모든 채팅방 읽지 않은 메시지 총합 (appointment 기반)")
     void getTotalUnreadMessageCountForDoctor() {
         // Given
         Long doctorId = 21L;
 
-        // Room 1:21 - 2개 안읽음
+        // Appointment 객체 생성
+        Appointment appointment1 = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.now())
+                .status(AppointmentStatus.PENDING)
+                .build();
+
+        Appointment appointment2 = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.now())
+                .status(AppointmentStatus.PENDING)
+                .build();
+
+        // appointmentRepository 모킹
+        given(appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId))
+                .willReturn(Arrays.asList(appointment1, appointment2));
+
+        // Room appointment_1 - 2개 안읽음
         ChatMessage unread1 = ChatMessage.builder()
                 .id(1L)
-                .roomId("1:21")
+                .roomId("appointment_1")
                 .sender(patient)
                 .content("메시지1")
                 .isRead(false)
@@ -346,27 +371,31 @@ class ChatServiceTest {
 
         ChatMessage unread2 = ChatMessage.builder()
                 .id(2L)
-                .roomId("1:21")
+                .roomId("appointment_1")
                 .sender(patient)
                 .content("메시지2")
                 .isRead(false)
                 .build();
 
-        // Room 2:21 - 1개 안읽음
+        // Room appointment_2 - 1개 안읽음
         ChatMessage unread3 = ChatMessage.builder()
                 .id(3L)
-                .roomId("2:21")
+                .roomId("appointment_2")
                 .sender(patient)
                 .content("메시지3")
                 .isRead(false)
                 .build();
 
-        List<ChatMessage> allMessages = Arrays.asList(unread1, unread2, unread3);
-        given(chatRepository.findAll()).willReturn(allMessages);
-
-        given(chatRepository.findUnreadMessages("1:21", doctorId))
+        // 각 방에 메시지가 존재하도록 모킹 (빈 방이 아니게)
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_1"))
                 .willReturn(Arrays.asList(unread1, unread2));
-        given(chatRepository.findUnreadMessages("2:21", doctorId))
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_2"))
+                .willReturn(List.of(unread3));
+
+        // 읽지 않은 메시지 조회 모킹
+        given(chatRepository.findUnreadMessages("appointment_1", doctorId))
+                .willReturn(Arrays.asList(unread1, unread2));
+        given(chatRepository.findUnreadMessages("appointment_2", doctorId))
                 .willReturn(List.of(unread3));
 
         // When

@@ -35,6 +35,7 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import exifr from "exifr";
+import { imageApi } from "@/api/imageApi";
 
 interface EditFeedDialogProps {
   feed: Feed | null;
@@ -191,18 +192,15 @@ export default function EditFeedDialog({
     }
   }, [startExifTime, endExifTime, imagesChanged]);
 
-  // 이미지 업로드 핸들러 (FileReader 사용)
+  // 이미지 업로드 핸들러 (S3에 실제 업로드)
   const uploadImage = async (file: File, setter: (url: string) => void) => {
-    return new Promise<void>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setter(event.target.result as string);
-        }
-        resolve();
-      };
-      reader.readAsDataURL(file);
-    });
+    try {
+      const s3Url = await imageApi.uploadFeedImage(file);
+      setter(s3Url);
+    } catch (error) {
+      console.error("이미지 업로드 실패:", error);
+      toast.error("이미지 업로드 실패");
+    }
   };
 
   // EXIF 시간 추출 함수

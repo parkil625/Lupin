@@ -235,7 +235,7 @@ export default function CreateFeedDialog({
     setIsUploading(true);
 
     try {
-      const s3Url = await imageApi.uploadImage(file);
+      const s3Url = await imageApi.uploadFeedImage(file);
       setter(s3Url);
     } catch (error) {
       console.error(error);

@@ -2,7 +2,7 @@
 CREATE TABLE users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) UNIQUE,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
     role VARCHAR(10) NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE users (
     `condition` VARCHAR(255),
     status VARCHAR(20) DEFAULT 'WAITING',
     version BIGINT,
-    
+
     INDEX idx_user_email (email),
     INDEX idx_user_monthly_points (monthly_points DESC),
     INDEX idx_user_monthly_likes (monthly_likes DESC)

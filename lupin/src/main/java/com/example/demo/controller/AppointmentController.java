@@ -22,11 +22,19 @@ public class AppointmentController {
 
     @PostMapping
     public ResponseEntity<Long> createAppointment(@Valid @RequestBody AppointmentRequest request){
-        log.info("예약 요청- 환자ID : {}, 의사ID : {}, 시간 : {}",
-                request.getPatientId(), request.getDoctorId(),request.getDate());
-        Long appointmentId = appointmentService.createAppointment(request);
+        try {
+            log.info("예약 요청 데이터 확인 - patientId: {}, doctorId: {}, date: {}",
+                    request.getPatientId(), request.getDoctorId(), request.getDate());
 
-        return ResponseEntity.ok(appointmentId);
+            Long appointmentId = appointmentService.createAppointment(request);
+            return ResponseEntity.ok(appointmentId);
+
+        } catch (Exception e) {
+            // 🌟 여기에 덫을 놓습니다! 에러가 나면 무조건 콘솔에 빨간 줄로 사연을 출력합니다.
+            log.error("❌ 예약 생성 중 치명적인 에러 발생!", e);
+            e.printStackTrace(); // 콘솔에 상세 내용 강제 출력
+            throw e; // 에러를 다시 던져서 500 응답 유지
+        }
     }
 
     @GetMapping("/doctor/{doctorId}")

@@ -64,7 +64,10 @@ class ChatServiceTest {
                 .name("의사1")
                 .build();
 
-        roomId = ChatMessage.generateRoomId(patient.getId(), doctor.getId());
+        // 구 방식 roomId (deprecated, 테스트 하위 호환성 유지용)
+        @SuppressWarnings("deprecation")
+        String tempRoomId = ChatMessage.generateRoomId(patient.getId(), doctor.getId());
+        roomId = tempRoomId;
 
         message1 = ChatMessage.builder()
                 .id(1L)
@@ -170,9 +173,11 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("채팅방 ID 생성 테스트")
+    @DisplayName("채팅방 ID 생성 테스트 (구 방식, deprecated)")
+    @Deprecated
     void generateRoomId_Success() {
         // When
+        @SuppressWarnings("deprecation")
         String generatedRoomId = ChatMessage.generateRoomId(1L, 21L);
 
         // Then
@@ -180,28 +185,40 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("의사 ID로 모든 채팅방 ID 조회")
+    @DisplayName("의사 ID로 모든 채팅방 ID 조회 (appointment 기반)")
     void getAllChatRoomsByDoctorId() {
         // Given
         Long doctorId = 21L;
-        ChatMessage message3 = ChatMessage.builder()
-                .id(3L)
-                .roomId("2:21")  // patient 2와 doctor 21
-                .sender(patient)
-                .content("두 번째 채팅방 메시지")
+
+        Appointment appointment1 = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        List<ChatMessage> allMessages = Arrays.asList(message1, message2, message3);
-        given(chatRepository.findAll())
-                .willReturn(allMessages);
+        Appointment appointment2 = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId))
+                .willReturn(Arrays.asList(appointment1, appointment2));
+
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_1"))
+                .willReturn(List.of(message1));
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_2"))
+                .willReturn(List.of(message2));
 
         // When
         List<String> roomIds = chatService.getAllChatRoomsByDoctorId(doctorId);
 
         // Then
         assertThat(roomIds).hasSize(2);
-        assertThat(roomIds).containsExactlyInAnyOrder("1:21", "2:21");
-        verify(chatRepository, times(1)).findAll();
+        assertThat(roomIds).containsExactlyInAnyOrder("appointment_1", "appointment_2");
+        verify(appointmentRepository, times(1)).findByDoctorIdOrderByDateDesc(doctorId);
     }
 
     @Test
@@ -421,63 +438,58 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("채팅방 ID로 환자 정보 조회")
+    @DisplayName("채팅방 ID로 환자 정보 조회 (appointment 기반)")
     void getPatientInfoFromRoomId() {
         // Given
-        String roomId = "1:21";  // patientId:doctorId
-        Long patientId = 1L;
+        String roomId = "appointment_1";
+        Long appointmentId = 1L;
 
-        given(userRepository.findById(patientId))
-                .willReturn(java.util.Optional.of(patient));
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(java.util.Optional.of(appointment));
 
         // When
         User result = chatService.getPatientFromRoomId(roomId);
 
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(patientId);
+        assertThat(result.getId()).isEqualTo(patient.getId());
         assertThat(result.getUserId()).isEqualTo("patient01");
         assertThat(result.getName()).isEqualTo("환자1");
-        verify(userRepository, times(1)).findById(patientId);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
     }
 
     @Test
-    @DisplayName("채팅방 ID로 관련 예약 정보 조회")
+    @DisplayName("채팅방 ID로 관련 예약 정보 조회 (appointment 기반)")
     void getAppointmentsFromRoomId() {
         // Given
-        String roomId = "1:21";  // patientId:doctorId
-        Long patientId = 1L;
-        Long doctorId = 21L;
+        String roomId = "appointment_1";
+        Long appointmentId = 1L;
 
-        Appointment appointment1 = Appointment.builder()
-                .id(1L)
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        Appointment appointment2 = Appointment.builder()
-                .id(2L)
-                .patient(patient)
-                .doctor(doctor)
-                .date(LocalDateTime.of(2025, 12, 15, 10, 0))
-                .status(AppointmentStatus.COMPLETED)
-                .build();
-
-        List<Appointment> appointments = Arrays.asList(appointment1, appointment2);
-
-        given(appointmentRepository.findByPatientIdOrderByDateDesc(patientId))
-                .willReturn(appointments);
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(java.util.Optional.of(appointment));
 
         // When
         List<Appointment> result = chatService.getAppointmentsFromRoomId(roomId);
 
         // Then
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getId()).isEqualTo(1L);
-        assertThat(result.get(1).getId()).isEqualTo(2L);
-        verify(appointmentRepository, times(1)).findByPatientIdOrderByDateDesc(patientId);
+        assertThat(result).hasSize(1);  // appointment 기반은 1개만 반환
+        assertThat(result.get(0).getId()).isEqualTo(appointmentId);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
     }
 
     @Test

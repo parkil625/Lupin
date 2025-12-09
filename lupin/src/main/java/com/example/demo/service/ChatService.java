@@ -59,9 +59,11 @@ public class ChatService {
     }
 
     public List<String> getAllChatRoomsByDoctorId(Long doctorId) {
-        return chatRepository.findAll().stream()
-                .map(ChatMessage::getRoomId)
-                .filter(roomId -> roomId.endsWith(":" + doctorId))
+        // appointment_{id} 형식의 채팅방만 조회 (구 방식 patientId:doctorId 제거)
+        List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
+        return appointments.stream()
+                .map(appointment -> "appointment_" + appointment.getId())
+                .filter(roomId -> !chatRepository.findByRoomIdOrderByTimeAsc(roomId).isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
     }
@@ -100,16 +102,15 @@ public class ChatService {
     }
 
     public User getPatientFromRoomId(String roomId) {
-        String[] parts = roomId.split(":");
-        Long patientId = Long.parseLong(parts[0]);
-        return userRepository.findById(patientId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 환자입니다."));
+        // appointment_{id} 형식에서 환자 정보 추출
+        Appointment appointment = getAppointmentFromRoomId(roomId);
+        return appointment.getPatient();
     }
 
     public List<Appointment> getAppointmentsFromRoomId(String roomId) {
-        String[] parts = roomId.split(":");
-        Long patientId = Long.parseLong(parts[0]);
-        return appointmentRepository.findByPatientIdOrderByDateDesc(patientId);
+        // appointment_{id} 형식에서 해당 예약만 반환
+        Appointment appointment = getAppointmentFromRoomId(roomId);
+        return List.of(appointment);
     }
 
     public String createChatRoomForAppointment(Long appointmentId) {

@@ -29,13 +29,15 @@ class ChatMessageTest {
     }
 
     @Test
-    @DisplayName("roomId 생성 시 patientId:doctorId 형식이다")
+    @DisplayName("roomId 생성 시 patientId:doctorId 형식이다 (구 방식, deprecated)")
+    @Deprecated
     void generateRoomIdFormatTest() {
         // given
         Long patientId = 1L;
         Long doctorId = 21L;
 
         // when
+        @SuppressWarnings("deprecation")
         String roomId = ChatMessage.generateRoomId(patientId, doctorId);
 
         // then
@@ -43,10 +45,13 @@ class ChatMessageTest {
     }
 
     @Test
-    @DisplayName("roomId 생성 시 ID 순서가 유지된다")
+    @DisplayName("roomId 생성 시 ID 순서가 유지된다 (구 방식, deprecated)")
+    @Deprecated
     void generateRoomIdOrderTest() {
         // given & when
+        @SuppressWarnings("deprecation")
         String roomId1 = ChatMessage.generateRoomId(5L, 10L);
+        @SuppressWarnings("deprecation")
         String roomId2 = ChatMessage.generateRoomId(100L, 200L);
 
         // then

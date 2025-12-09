@@ -44,6 +44,11 @@ public class ChatMessage {
         this.isRead = true;
     }
 
+    /**
+     * @deprecated 구 방식 roomId 생성 메서드 (patientId:doctorId 형식)
+     * 현재는 appointment 기반 roomId 사용: ChatService.createChatRoomForAppointment() 참고
+     */
+    @Deprecated
     public static String generateRoomId(Long patientId, Long doctorId) {
         return patientId + ":" + doctorId;
     }

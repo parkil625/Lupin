@@ -1,12 +1,13 @@
 /**
  * Home.tsx - Ultimate Performance Optimized
  *
- * 5대 최적화 전략 적용:
+ * 6대 최적화 전략 적용:
  * 1. 렌더링 파이프라인: FeedItem 컴포넌트 분리 + React.memo + useCallback
  * 2. 비즈니스 로직: useMemo로 계산 최적화 (이상적으로는 백엔드 이관)
  * 3. 네트워크 워터폴: Promise.all 병렬 요청
  * 4. 이미지 최적화: loading/fetchPriority + aspect-ratio
  * 5. 리스트 가상화: content-visibility CSS
+ * 6. 이미지 페이로드 최적화: srcset + blur placeholder + WebP
  */
 
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
@@ -31,6 +32,64 @@ import {
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { userApi, feedApi } from "@/api";
+
+// ============================================================================
+// [0] Image Optimization Utilities
+// ============================================================================
+
+/**
+ * 이미지 URL 최적화 헬퍼 함수
+ *
+ * Cloudinary 또는 CloudFront + Lambda@Edge 설정 시 자동으로 활용
+ * 미설정 시 원본 URL 반환 (Graceful Degradation)
+ *
+ * @param url - 원본 이미지 URL
+ * @param width - 원하는 너비 (px)
+ * @param quality - 품질 (1-100, 기본값 80)
+ * @param format - 이미지 포맷 ('webp' | 'auto')
+ */
+function getOptimizedImageUrl(
+  url: string,
+  width: number,
+  quality = 80,
+  format: 'webp' | 'auto' = 'auto'
+): string {
+  if (!url) return url;
+
+  // Cloudinary URL 감지 및 변환
+  if (url.includes('cloudinary.com')) {
+    const parts = url.split('/upload/');
+    if (parts.length === 2) {
+      const transformations = `w_${width},q_${quality},f_${format},c_fill`;
+      return `${parts[0]}/upload/${transformations}/${parts[1]}`;
+    }
+  }
+
+  // CloudFront URL 감지 및 쿼리 파라미터 추가
+  if (url.includes('cloudfront.net') || url.includes('cdn.')) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}w=${width}&q=${quality}&f=${format}`;
+  }
+
+  // S3 URL 감지 및 쿼리 파라미터 추가 (Lambda@Edge 설정 시)
+  if (url.includes('s3.amazonaws.com') || url.includes('s3-')) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}w=${width}&q=${quality}&f=${format}`;
+  }
+
+  // 미설정 시 원본 URL 반환
+  return url;
+}
+
+/**
+ * Blur Placeholder 데이터 URI (16x16 회색 블러)
+ * 이미지 로딩 전 보여줄 초경량 플레이스홀더
+ */
+const BLUR_DATA_URL =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E" +
+  "%3Cfilter id='b' color-interpolation-filters='sRGB'%3E" +
+  "%3CfeGaussianBlur stdDeviation='1'/%3E%3C/filter%3E" +
+  "%3Crect width='100%25' height='100%25' fill='%23f3f4f6' filter='url(%23b)'/%3E%3C/svg%3E";
 
 // ============================================================================
 // [1] Types & Interfaces
@@ -68,6 +127,8 @@ interface UserStats {
  * - React.memo: props가 변경되지 않으면 리렌더링 스킵
  * - aspect-ratio CSS: CLS(Layout Shift) 방지
  * - loading/fetchPriority: 상위 4개 이미지 우선 로딩
+ * - srcset: 디바이스 해상도에 맞는 이미지 제공 (1x, 2x, 3x)
+ * - blur placeholder: 로딩 전 UX 개선
  */
 const FeedItem = memo(({
   feed,
@@ -80,6 +141,14 @@ const FeedItem = memo(({
 }) => {
   // 상위 4개 이미지는 즉시 로딩 (모바일 2x2 그리드 기준)
   const isPriority = index < 4;
+
+  // [최적화 6] srcset 생성 - 디바이스 해상도별 이미지
+  const imageUrl = feed.images?.[0];
+  const srcSet = imageUrl
+    ? `${getOptimizedImageUrl(imageUrl, 300, 80, 'webp')} 300w,
+       ${getOptimizedImageUrl(imageUrl, 600, 80, 'webp')} 600w,
+       ${getOptimizedImageUrl(imageUrl, 900, 80, 'webp')} 900w`
+    : undefined;
 
   return (
     <div
@@ -96,12 +165,19 @@ const FeedItem = memo(({
       <div className="aspect-[3/4] w-full">
         <Card className="h-full w-full overflow-hidden rounded-none bg-white border-0 hover:opacity-90 transition-all relative">
           <div className="w-full h-full bg-white">
-            {feed.images && feed.images.length > 0 ? (
+            {imageUrl ? (
               <img
-                src={feed.images[0]}
+                src={getOptimizedImageUrl(imageUrl, 300, 80, 'webp')}
+                srcSet={srcSet}
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                 alt={feed.activity}
                 width="300"
                 height="400"
+                // [최적화 6] Blur Placeholder로 로딩 UX 개선
+                style={{
+                  backgroundImage: `url("${BLUR_DATA_URL}")`,
+                  backgroundSize: 'cover',
+                }}
                 // [최적화 4] 이미지 로딩 전략
                 loading={isPriority ? "eager" : "lazy"}
                 decoding="async"
@@ -279,10 +355,19 @@ export default function Home({
                   <div className="w-full h-full animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
                 ) : profileImage ? (
                   <img
-                    src={profileImage}
+                    src={getOptimizedImageUrl(profileImage, 220, 85, 'webp')}
+                    srcSet={`${getOptimizedImageUrl(profileImage, 110, 85, 'webp')} 1x,
+                             ${getOptimizedImageUrl(profileImage, 220, 85, 'webp')} 2x,
+                             ${getOptimizedImageUrl(profileImage, 330, 85, 'webp')} 3x`}
                     alt={`${stats?.name || '사용자'} 프로필`}
                     width="110"
                     height="110"
+                    style={{
+                      backgroundImage: `url("${BLUR_DATA_URL}")`,
+                      backgroundSize: 'cover',
+                    }}
+                    loading="eager"
+                    decoding="async"
                     fetchPriority="high"
                     className="w-full h-full object-cover"
                   />

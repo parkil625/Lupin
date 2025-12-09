@@ -48,6 +48,7 @@ class ChatServiceTest {
     private ChatMessage message1;
     private ChatMessage message2;
     private String roomId;
+    private Long appointmentId;
 
     @BeforeEach
     void setUp() {
@@ -64,7 +65,9 @@ class ChatServiceTest {
                 .name("의사1")
                 .build();
 
-        roomId = ChatMessage.generateRoomId(patient.getId(), doctor.getId());
+        // 변경: roomId 형식을 appointment_{id}로 변경
+        appointmentId = 1L;
+        roomId = "appointment_" + appointmentId;
 
         message1 = ChatMessage.builder()
                 .id(1L)
@@ -104,7 +107,7 @@ class ChatServiceTest {
         // Then
         assertThat(savedMessage).isNotNull();
         assertThat(savedMessage.getSender()).isEqualTo(patient);
-
+        assertThat(savedMessage.getRoomId()).isEqualTo(roomId);
 
         verify(userRepository, times(1)).findById(patient.getId());
         verify(chatRepository, times(1)).save(any(ChatMessage.class));
@@ -170,23 +173,14 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("채팅방 ID 생성 테스트")
-    void generateRoomId_Success() {
-        // When
-        String generatedRoomId = ChatMessage.generateRoomId(1L, 21L);
-
-        // Then
-        assertThat(generatedRoomId).isEqualTo("1:21");
-    }
-
-    @Test
     @DisplayName("의사 ID로 모든 채팅방 ID 조회")
     void getAllChatRoomsByDoctorId() {
         // Given
         Long doctorId = 21L;
+        String roomId2 = "appointment_2";
         ChatMessage message3 = ChatMessage.builder()
                 .id(3L)
-                .roomId("2:21")  // patient 2와 doctor 21
+                .roomId(roomId2)
                 .sender(patient)
                 .content("두 번째 채팅방 메시지")
                 .build();
@@ -200,7 +194,7 @@ class ChatServiceTest {
 
         // Then
         assertThat(roomIds).hasSize(2);
-        assertThat(roomIds).containsExactlyInAnyOrder("1:21", "2:21");
+        assertThat(roomIds).containsExactlyInAnyOrder("appointment_1", "appointment_2");
         verify(chatRepository, times(1)).findAll();
     }
 
@@ -208,8 +202,8 @@ class ChatServiceTest {
     @DisplayName("각 채팅방의 최근 메시지 조회")
     void getLatestMessageForEachRoom() {
         // Given
-        String roomId1 = "1:21";
-        String roomId2 = "2:21";
+        String roomId1 = "appointment_1";
+        String roomId2 = "appointment_2";
 
         ChatMessage latestMessage1 = ChatMessage.builder()
                 .id(2L)
@@ -302,7 +296,7 @@ class ChatServiceTest {
     @DisplayName("특정 채팅방의 읽지 않은 메시지 개수")
     void getUnreadMessageCount() {
         // Given
-        String roomId = "1:21";
+        // roomId는 setUp에서 "appointment_1"로 설정됨
         Long userId = 21L;  // doctor ID
 
         ChatMessage unreadMessage1 = ChatMessage.builder()
@@ -345,7 +339,7 @@ class ChatServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.now())
-                .status(AppointmentStatus.PENDING)
+                .status(AppointmentStatus.SCHEDULED) // PENDING -> SCHEDULED 수정
                 .build();
 
         Appointment appointment2 = Appointment.builder()
@@ -353,7 +347,7 @@ class ChatServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.now())
-                .status(AppointmentStatus.PENDING)
+                .status(AppointmentStatus.SCHEDULED) // PENDING -> SCHEDULED 수정
                 .build();
 
         // appointmentRepository 모킹
@@ -386,7 +380,7 @@ class ChatServiceTest {
                 .isRead(false)
                 .build();
 
-        // 각 방에 메시지가 존재하도록 모킹 (빈 방이 아니게)
+        // 각 방에 메시지가 존재하도록 모킹
         given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_1"))
                 .willReturn(Arrays.asList(unread1, unread2));
         given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_2"))
@@ -409,7 +403,7 @@ class ChatServiceTest {
     @DisplayName("읽음 처리 후 카운트 감소")
     void shouldDecreaseUnreadCountAfterMarkingAsRead() {
         // Given
-        String roomId = "1:21";
+        // roomId는 "appointment_1"
         Long userId = 21L;  // doctor ID
 
         ChatMessage unread1 = ChatMessage.builder()
@@ -453,80 +447,40 @@ class ChatServiceTest {
     @DisplayName("채팅방 ID로 환자 정보 조회")
     void getPatientInfoFromRoomId() {
         // Given
-        String roomId = "1:21";  // patientId:doctorId
-        Long patientId = 1L;
+        // roomId = "appointment_1"
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
 
-        given(userRepository.findById(patientId))
-                .willReturn(java.util.Optional.of(patient));
+        // 이제 patientId 파싱이 아니라 appointmentId 파싱 후 DB 조회
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(appointment));
 
         // When
         User result = chatService.getPatientFromRoomId(roomId);
 
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(patientId);
+        assertThat(result.getId()).isEqualTo(patient.getId());
         assertThat(result.getUserId()).isEqualTo("patient01");
         assertThat(result.getName()).isEqualTo("환자1");
-        verify(userRepository, times(1)).findById(patientId);
-    }
-
-    @Test
-    @DisplayName("채팅방 ID로 관련 예약 정보 조회")
-    void getAppointmentsFromRoomId() {
-        // Given
-        String roomId = "1:21";  // patientId:doctorId
-        Long patientId = 1L;
-        Long doctorId = 21L;
-
-        Appointment appointment1 = Appointment.builder()
-                .id(1L)
-                .patient(patient)
-                .doctor(doctor)
-                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
-                .build();
-
-        Appointment appointment2 = Appointment.builder()
-                .id(2L)
-                .patient(patient)
-                .doctor(doctor)
-                .date(LocalDateTime.of(2025, 12, 15, 10, 0))
-                .status(AppointmentStatus.COMPLETED)
-                .build();
-
-        List<Appointment> appointments = Arrays.asList(appointment1, appointment2);
-
-        given(appointmentRepository.findByPatientIdOrderByDateDesc(patientId))
-                .willReturn(appointments);
-
-        // When
-        List<Appointment> result = chatService.getAppointmentsFromRoomId(roomId);
-
-        // Then
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getId()).isEqualTo(1L);
-        assertThat(result.get(1).getId()).isEqualTo(2L);
-        verify(appointmentRepository, times(1)).findByPatientIdOrderByDateDesc(patientId);
+        
+        verify(appointmentRepository, times(1)).findById(appointmentId);
     }
 
     @Test
     @DisplayName("예약 확정 시 채팅방 자동 생성")
     void createChatRoomOnAppointmentConfirmation() {
         // Given
-        Long appointmentId = 1L;
-        Appointment appointment = Appointment.builder()
-                .id(appointmentId)
-                .patient(patient)
-                .doctor(doctor)
-                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
-                .build();
-
+        Long aptId = 1L;
         // When
-        String roomId = chatService.createChatRoomForAppointment(appointmentId);
+        String createdRoomId = chatService.createChatRoomForAppointment(aptId);
 
         // Then
-        assertThat(roomId).isEqualTo("appointment_1");
+        assertThat(createdRoomId).isEqualTo("appointment_1");
     }
 
     @Test
@@ -551,7 +505,7 @@ class ChatServiceTest {
     @DisplayName("이미 채팅방이 있으면 중복 생성 안 함")
     void shouldNotCreateDuplicateChatRoom() {
         // Given
-        Long appointmentId = 1L;
+        Long aptId = 1L;
         String expectedRoomId = "appointment_1";
 
         // 해당 appointmentId로 이미 메시지가 존재하는 경우를 시뮬레이션
@@ -567,7 +521,7 @@ class ChatServiceTest {
                 .willReturn(List.of(existingMessage));
 
         // When
-        boolean exists = chatService.chatRoomExists(appointmentId);
+        boolean exists = chatService.chatRoomExists(aptId);
 
         // Then
         assertThat(exists).isTrue();
@@ -578,68 +532,68 @@ class ChatServiceTest {
     @DisplayName("채팅방 ID로 예약 정보 조회 (appointment_X 형식)")
     void getAppointmentFromAppointmentRoomId() {
         // Given
-        String roomId = "appointment_1";  // appointment_{appointmentId}
-        Long appointmentId = 1L;
+        String targetRoomId = "appointment_1";
+        Long targetAptId = 1L;
 
         Appointment appointment = Appointment.builder()
-                .id(appointmentId)
+                .id(targetAptId)
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findById(targetAptId))
                 .willReturn(java.util.Optional.of(appointment));
 
         // When
-        Appointment result = chatService.getAppointmentFromRoomId(roomId);
+        Appointment result = chatService.getAppointmentFromRoomId(targetRoomId);
 
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(appointmentId);
+        assertThat(result.getId()).isEqualTo(targetAptId);
         assertThat(result.getPatient()).isEqualTo(patient);
         assertThat(result.getDoctor()).isEqualTo(doctor);
-        verify(appointmentRepository, times(1)).findById(appointmentId);
+        verify(appointmentRepository, times(1)).findById(targetAptId);
     }
 
     @Test
     @DisplayName("예약 ID로 채팅방 조회")
     void getRoomIdByAppointmentId() {
         // Given
-        Long appointmentId = 1L;
+        Long aptId = 1L;
 
         // When
-        String roomId = chatService.getRoomIdByAppointmentId(appointmentId);
+        String foundRoomId = chatService.getRoomIdByAppointmentId(aptId);
 
         // Then
-        assertThat(roomId).isEqualTo("appointment_1");
+        assertThat(foundRoomId).isEqualTo("appointment_1");
     }
 
     @Test
     @DisplayName("예약 취소 시 채팅방 상태 변경")
     void shouldReflectCancelledAppointmentStatus() {
         // Given
-        String roomId = "appointment_1";
-        Long appointmentId = 1L;
+        String targetRoomId = "appointment_1";
+        Long targetAptId = 1L;
 
         Appointment cancelledAppointment = Appointment.builder()
-                .id(appointmentId)
+                .id(targetAptId)
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
                 .status(AppointmentStatus.CANCELLED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findById(targetAptId))
                 .willReturn(java.util.Optional.of(cancelledAppointment));
 
         // When
-        Appointment result = chatService.getAppointmentFromRoomId(roomId);
+        Appointment result = chatService.getAppointmentFromRoomId(targetRoomId);
 
         // Then
         assertThat(result.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
-        verify(appointmentRepository, times(1)).findById(appointmentId);
+        verify(appointmentRepository, times(1)).findById(targetAptId);
     }
 
     @Test
@@ -650,7 +604,6 @@ class ChatServiceTest {
         Long appointmentId1 = 1L;
         Long appointmentId2 = 2L;
 
-        // appointment_2는 빈 채팅방 (예약은 있지만 메시지가 없음)
         Appointment appointment1 = Appointment.builder()
                 .id(appointmentId1)
                 .patient(patient)

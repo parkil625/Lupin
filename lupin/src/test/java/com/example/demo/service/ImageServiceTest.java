@@ -12,6 +12,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +35,9 @@ class ImageServiceTest {
 
     @Mock
     private S3Template s3Template;
+
+    @Mock
+    private S3Client s3Client;
 
     @Mock
     private S3Resource s3Resource;
@@ -55,16 +62,17 @@ class ImageServiceTest {
                 "image/jpeg",
                 "test image content".getBytes()
         );
-
-        URL mockUrl = new URL("https://test-bucket.s3.amazonaws.com/test-uuid.jpg");
-        given(s3Template.upload(eq(BUCKET), anyString(), any(InputStream.class))).willReturn(s3Resource);
-        given(s3Resource.getURL()).willReturn(mockUrl);
+        // S3Client putObject mock 설정
+        given(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .willReturn(PutObjectResponse.builder().build());
 
         // when
         String result = imageService.uploadImage(file);
 
         // then
-        assertThat(result).isEqualTo(mockUrl.toString());
+        assertThat(result).startsWith("https://" + BUCKET + ".s3.ap-northeast-2.amazonaws.com/");
+        assertThat(result).endsWith(".jpg");
+        verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
     @Test
@@ -83,16 +91,17 @@ class ImageServiceTest {
                 "image/jpeg",
                 "test image 2".getBytes()
         );
-
-        URL mockUrl = new URL("https://test-bucket.s3.amazonaws.com/test-uuid.jpg");
-        given(s3Template.upload(eq(BUCKET), anyString(), any(InputStream.class))).willReturn(s3Resource);
-        given(s3Resource.getURL()).willReturn(mockUrl);
+        // S3Client putObject mock 설정
+        given(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .willReturn(PutObjectResponse.builder().build());
 
         // when
         List<String> results = imageService.uploadImages(List.of(file1, file2));
 
         // then
         assertThat(results).hasSize(2);
+        assertThat(results.get(0)).startsWith("https://" + BUCKET + ".s3.ap-northeast-2.amazonaws.com/");
+        assertThat(results.get(1)).startsWith("https://" + BUCKET + ".s3.ap-northeast-2.amazonaws.com/");
     }
 
     @Test

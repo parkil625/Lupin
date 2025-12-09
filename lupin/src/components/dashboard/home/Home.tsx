@@ -88,10 +88,11 @@ const FeedItem = memo(({
             alt={feed.activity}
             width="300"
             height="400"
-            // [최적화] 뷰포트 상단 이미지는 eager, 나머지는 lazy
+            // [LCP 최적화] 첫 번째 이미지는 fetchpriority="high", 상위 4개는 eager
             loading={isPriority ? "eager" : "lazy"}
             decoding="async"
-            className="w-full h-full object-cover transition-opacity duration-500"
+            fetchPriority={index === 0 ? "high" : "auto"}
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4 text-center">
@@ -238,21 +239,18 @@ export default function Home({
       <div className="max-w-6xl mx-auto space-y-8 pb-10">
 
         {/* =========================================
-            Profile Section (LCP Core)
+            Profile Section - CLS 방지를 위한 고정 높이 적용
            ========================================= */}
-        <section className="flex flex-col items-center pt-2" aria-label="프로필 요약">
+        <section className="flex flex-col items-center pt-2 min-h-[280px]" aria-label="프로필 요약">
           {/* Avatar Area: 고정 크기로 CLS 방지 */}
-          <div className="relative mb-6">
+          <div className="relative mb-6 w-[110px] h-[110px]">
             <Avatar className="w-[110px] h-[110px] border-4 border-white shadow-xl bg-gray-50 ring-1 ring-gray-100">
-              {loading ? (
-                <div className="w-full h-full bg-gray-200 animate-pulse" />
-              ) : profileImage ? (
+              {profileImage ? (
                 <img
                   src={profileImage}
-                  alt={`${stats?.name} 프로필`}
+                  alt={`${stats?.name || '사용자'} 프로필`}
                   width="110"
                   height="110"
-                  // [LCP 핵심] 가장 높은 우선순위로 로드
                   fetchPriority="high"
                   className="w-full h-full object-cover"
                 />
@@ -264,19 +262,24 @@ export default function Home({
             </Avatar>
           </div>
 
-          {/* User Info */}
-          <div className="text-center w-full max-w-md space-y-4">
-            {loading ? (
-              <div className="space-y-4 animate-pulse">
-                <div className="h-8 w-32 bg-gray-200 rounded-lg mx-auto" />
-                <div className="h-6 w-48 bg-gray-200 rounded-lg mx-auto" />
-              </div>
-            ) : (
-              <>
+          {/* User Info - 고정 높이로 CLS 방지 */}
+          <div className="text-center w-full max-w-md min-h-[140px]">
+            {/* 이름 영역 - 고정 높이 */}
+            <div className="h-10 flex items-center justify-center mb-4">
+              {loading ? (
+                <div className="h-8 w-32 bg-gray-200 rounded-lg animate-pulse" />
+              ) : (
                 <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
                   {stats?.name}
                 </h1>
+              )}
+            </div>
 
+            {/* 통계 영역 - 고정 높이 */}
+            <div className="h-[52px] flex items-center justify-center mb-4">
+              {loading ? (
+                <div className="h-10 w-64 bg-gray-200 rounded-2xl animate-pulse" />
+              ) : (
                 <div className="flex justify-center gap-6 md:gap-8 bg-white/60 py-2 px-6 rounded-2xl backdrop-blur-sm shadow-sm border border-gray-100/50">
                   <div className="flex flex-col items-center">
                     <span className="text-xs text-gray-500 font-bold mb-0.5">피드</span>
@@ -293,26 +296,26 @@ export default function Home({
                     <span className="text-lg font-black text-gray-800">#{stats?.rank}</span>
                   </div>
                 </div>
+              )}
+            </div>
 
-                {/* Badges Area: 고정 높이(min-h)로 레이아웃 이동 방지 */}
-                <div className="flex justify-center gap-2 min-h-[28px]">
-                  {stats?.has7DayStreak && (
-                    <Badge className="bg-orange-500 text-white px-3 py-1 font-bold border-0 shadow-sm cursor-default animate-in fade-in zoom-in-95">
-                      <Flame className="w-3 h-3 mr-1.5 fill-current" /> 7일 연속
-                    </Badge>
-                  )}
-                  {stats?.isTop10 ? (
-                    <Badge className="bg-yellow-500 text-white px-3 py-1 font-bold border-0 shadow-sm cursor-default animate-in fade-in zoom-in-95">
-                      <Award className="w-3 h-3 mr-1.5 fill-current" /> TOP 10
-                    </Badge>
-                  ) : stats?.isTop100 && (
-                    <Badge className="bg-purple-500 text-white px-3 py-1 font-bold border-0 shadow-sm cursor-default animate-in fade-in zoom-in-95">
-                      <Award className="w-3 h-3 mr-1.5 fill-current" /> TOP 100
-                    </Badge>
-                  )}
-                </div>
-              </>
-            )}
+            {/* Badges Area - 고정 높이로 CLS 완전 방지 */}
+            <div className="h-[28px] flex justify-center gap-2">
+              {!loading && stats?.has7DayStreak && (
+                <Badge className="bg-orange-500 text-white px-3 py-1 font-bold border-0 shadow-sm cursor-default">
+                  <Flame className="w-3 h-3 mr-1.5 fill-current" /> 7일 연속
+                </Badge>
+              )}
+              {!loading && stats?.isTop10 ? (
+                <Badge className="bg-yellow-500 text-white px-3 py-1 font-bold border-0 shadow-sm cursor-default">
+                  <Award className="w-3 h-3 mr-1.5 fill-current" /> TOP 10
+                </Badge>
+              ) : !loading && stats?.isTop100 && (
+                <Badge className="bg-purple-500 text-white px-3 py-1 font-bold border-0 shadow-sm cursor-default">
+                  <Award className="w-3 h-3 mr-1.5 fill-current" /> TOP 100
+                </Badge>
+              )}
+            </div>
           </div>
         </section>
 

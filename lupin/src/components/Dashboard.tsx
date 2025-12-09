@@ -337,10 +337,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   if (!page) return <Navigate to={`/dashboard/${defaultPage}`} replace />;
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative bg-gray-50">
-      <Suspense fallback={<div className="absolute inset-0 bg-white" />}>
-        <AnimatedBackground variant={userType} />
-      </Suspense>
+    <div className="h-screen w-screen overflow-hidden relative">
+      <AnimatedBackground variant={userType} />
 
       <Sidebar
         expanded={sidebarExpanded || showNotifications}
@@ -476,7 +474,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           />
         )}
 
-        {dialogs.create && <CreateFeedDialog open={dialogs.create} onOpenChange={(v) => toggleDialog('create', v)} onCreate={handleCreateFeed} />}
+        <CreateFeedDialog open={dialogs.create} onOpenChange={(v) => toggleDialog('create', v)} onCreate={handleCreateFeed} />
 
         {dialogs.edit && store.editingFeed && <EditFeedDialog feed={store.editingFeed} open={dialogs.edit} onOpenChange={(v) => toggleDialog('edit', v)} onSave={handleUpdateFeed} />}
 

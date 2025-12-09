@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/hover-card";
 import { User, Crown, Dumbbell, Heart } from "lucide-react";
 import { RankerData } from "./useRankingViewModel";
-import { RANK_STYLES, DEFAULT_VALUES, RANKING_CONSTANTS } from "@/constants/rankingConstants";
+import { RANK_STYLES, RANKING_CONSTANTS } from "@/constants/rankingConstants";
 
 interface RankerItemProps {
   ranker: RankerData;

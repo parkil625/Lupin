@@ -88,10 +88,10 @@ const FeedItem = memo(({
             alt={feed.activity}
             width="300"
             height="400"
-            // [LCP 최적화] 첫 번째 이미지는 fetchpriority="high", 상위 4개는 eager
+            // [LCP 최적화] 상위 4개 이미지는 eager + high priority (모바일 2x2 그리드)
             loading={isPriority ? "eager" : "lazy"}
             decoding="async"
-            fetchPriority={index === 0 ? "high" : "auto"}
+            fetchPriority={isPriority ? "high" : "auto"}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -311,7 +311,7 @@ export default function Home({
                   <Award className="w-3 h-3 mr-1.5 fill-current" /> TOP 10
                 </Badge>
               ) : !loading && stats?.isTop100 && (
-                <Badge className="bg-purple-500 text-white px-3 py-1 font-bold border-0 shadow-sm cursor-default">
+                <Badge className="bg-purple-700 text-white px-3 py-1 font-bold border-0 shadow-sm cursor-default">
                   <Award className="w-3 h-3 mr-1.5 fill-current" /> TOP 100
                 </Badge>
               )}

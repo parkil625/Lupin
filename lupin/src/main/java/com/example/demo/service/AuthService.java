@@ -97,8 +97,14 @@ public class AuthService {
         String userId = jwtTokenProvider.getEmail(refreshToken);
         String storedRefreshToken = redisTemplate.opsForValue().get(userId);
 
-        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
+        // Redis에 저장된 토큰이 없으면 만료된 것
+        if (storedRefreshToken == null) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // Redis에 다른 토큰이 있으면 다른 기기에서 로그인한 것
+        if (!storedRefreshToken.equals(refreshToken)) {
+            throw new BusinessException(ErrorCode.SESSION_EXPIRED_BY_OTHER_LOGIN);
         }
 
         User user = userRepository.findByUserId(userId)

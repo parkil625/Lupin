@@ -1,9 +1,11 @@
 /**
  * src/store/useAuthStore.ts
+ * 순환 참조 방지를 위해 apiClient 대신 fetch 직접 사용
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import apiClient from '../api/client';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
 
 type UserRole = 'member' | 'doctor' | null;
 
@@ -46,8 +48,13 @@ export const useAuthStore = create<AuthState>()(
                 try {
                     const token = localStorage.getItem('accessToken');
                     if (token) {
-                        await apiClient.post('/auth/logout', null, {
-                            headers: { Authorization: `Bearer ${token}` }
+                        await fetch(`${API_BASE_URL}/auth/logout`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            credentials: 'include'
                         });
                     }
                 } catch (error) {
@@ -58,6 +65,7 @@ export const useAuthStore = create<AuthState>()(
                     localStorage.removeItem('userEmail');
                     localStorage.removeItem('userName');
                     set({ isLoggedIn: false, userRole: 'member' });
+                    window.location.href = '/login';
                 }
             },
         }),

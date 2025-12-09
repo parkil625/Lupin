@@ -145,7 +145,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("Redis에 저장된 토큰과 다르면 예외가 발생한다")
+    @DisplayName("Redis에 저장된 토큰과 다르면 다른 기기 로그인 예외가 발생한다")
     void reissueTokenMismatchTest() {
         // given
         String refreshToken = "validRefreshToken";
@@ -157,7 +157,7 @@ class AuthServiceTest {
         // when & then
         assertThatThrownBy(() -> authService.reissue(refreshToken))
                 .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REFRESH_TOKEN);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.SESSION_EXPIRED_BY_OTHER_LOGIN);
     }
 
     @Test

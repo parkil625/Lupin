@@ -59,9 +59,10 @@ public class ChatService {
     }
 
     public List<String> getAllChatRoomsByDoctorId(Long doctorId) {
-        return chatRepository.findAll().stream()
-                .map(ChatMessage::getRoomId)
-                .filter(roomId -> roomId.endsWith(":" + doctorId))
+        List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
+        return appointments.stream()
+                .map(appointment -> "appointment_" + appointment.getId())
+                .filter(roomId -> !chatRepository.findByRoomIdOrderByTimeAsc(roomId).isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
     }

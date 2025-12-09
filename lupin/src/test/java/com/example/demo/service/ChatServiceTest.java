@@ -173,21 +173,34 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("의사 ID로 모든 채팅방 ID 조회")
+    @DisplayName("의사 ID로 모든 채팅방 ID 조회 (appointment 기반)")
     void getAllChatRoomsByDoctorId() {
         // Given
         Long doctorId = 21L;
-        String roomId2 = "appointment_2";
-        ChatMessage message3 = ChatMessage.builder()
-                .id(3L)
-                .roomId(roomId2)
-                .sender(patient)
-                .content("두 번째 채팅방 메시지")
+
+        // Appointment 생성
+        Appointment appointment1 = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        List<ChatMessage> allMessages = Arrays.asList(message1, message2, message3);
-        given(chatRepository.findAll())
-                .willReturn(allMessages);
+        Appointment appointment2 = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId))
+                .willReturn(Arrays.asList(appointment1, appointment2));
+
+        // 각 채팅방에 메시지가 있도록 모킹
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_1"))
+                .willReturn(List.of(message1));
+        given(chatRepository.findByRoomIdOrderByTimeAsc("appointment_2"))
+                .willReturn(List.of(message2));
 
         // When
         List<String> roomIds = chatService.getAllChatRoomsByDoctorId(doctorId);
@@ -195,7 +208,7 @@ class ChatServiceTest {
         // Then
         assertThat(roomIds).hasSize(2);
         assertThat(roomIds).containsExactlyInAnyOrder("appointment_1", "appointment_2");
-        verify(chatRepository, times(1)).findAll();
+        verify(appointmentRepository, times(1)).findByDoctorIdOrderByDateDesc(doctorId);
     }
 
     @Test

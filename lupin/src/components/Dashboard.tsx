@@ -84,7 +84,9 @@ const availableTimes = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 const bookedTimes = ["10:00", "15:00"];
 
 export default function Dashboard({ onLogout, userType }: DashboardProps) {
-  const { page } = useParams<{ page: string }>();
+  const params = useParams();
+  // 와일드카드 라우트(/*) 에서는 '*' 키로 접근해야 함
+  const page = params['*']?.split('/')[0] || undefined;
   const navigate = useNavigate();
 
   // URL에서 현재 페이지 결정 (기본값: home)

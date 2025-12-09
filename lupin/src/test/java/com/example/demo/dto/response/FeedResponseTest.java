@@ -9,8 +9,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,8 +41,8 @@ class FeedResponseTest {
                 .build();
         ReflectionTestUtils.setField(feed, "id", 1L);
 
-        // 이미지 리스트 초기화 (빈 리스트로 설정하여 NPE 방지)
-        ReflectionTestUtils.setField(feed, "images", new ArrayList<FeedImage>());
+        // 이미지 Set 초기화 (빈 Set으로 설정하여 NPE 방지)
+        ReflectionTestUtils.setField(feed, "images", new HashSet<FeedImage>());
 
         // when
         FeedResponse response = FeedResponse.from(feed, 10, 5);
@@ -75,7 +75,7 @@ class FeedResponseTest {
                 .calories(500)
                 .build();
         ReflectionTestUtils.setField(feed, "id", 1L);
-        ReflectionTestUtils.setField(feed, "images", new ArrayList<FeedImage>());
+        ReflectionTestUtils.setField(feed, "images", new HashSet<FeedImage>());
 
         // when
         FeedResponse response = FeedResponse.from(feed, 10, 5);
@@ -99,7 +99,7 @@ class FeedResponseTest {
                 .build();
         ReflectionTestUtils.setField(writer, "id", 42L);
 
-        List<FeedImage> images = new ArrayList<>();
+        Set<FeedImage> images = new HashSet<>();
         FeedImage image1 = FeedImage.builder()
                 .s3Key("images/start.jpg")
                 .imgType(ImageType.START)
@@ -138,6 +138,6 @@ class FeedResponseTest {
         assertThat(response.getLikes()).isEqualTo(25L);
         assertThat(response.getComments()).isEqualTo(10L);
         assertThat(response.getImages()).hasSize(2);
-        assertThat(response.getImages()).containsExactly("images/start.jpg", "images/end.jpg");
+        assertThat(response.getImages()).containsExactlyInAnyOrder("images/start.jpg", "images/end.jpg");
     }
 }

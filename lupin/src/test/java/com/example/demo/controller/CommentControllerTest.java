@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -71,10 +72,13 @@ class CommentControllerTest {
                 .build();
 
         testFeed = Feed.builder()
-                .id(1L)
                 .writer(testUser)
+                .activity("running")
                 .content("테스트 피드")
+                .points(0L)
+                .calories(0)
                 .build();
+        ReflectionTestUtils.setField(testFeed, "id", 1L);
 
         testComment = Comment.builder()
                 .id(1L)

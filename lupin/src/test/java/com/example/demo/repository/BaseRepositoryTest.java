@@ -70,6 +70,8 @@ abstract class BaseRepositoryTest {
                 .writer(writer)
                 .activity(activity)
                 .content("testContent")
+                .points(0L)
+                .calories(0)
                 .build();
         return feedRepository.save(feed);
     }

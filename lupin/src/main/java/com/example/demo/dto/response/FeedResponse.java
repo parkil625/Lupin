@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,7 @@ public class FeedResponse {
                 .points(feed.getPoints())
                 .calories(feed.getCalories())
                 .images(feed.getImages().stream()
+                        .sorted(Comparator.comparingInt(FeedImage::getSortOrder))
                         .map(FeedImage::getS3Key)
                         .collect(Collectors.toList()))
                 .likes(likeCount)
@@ -60,6 +62,7 @@ public class FeedResponse {
                 .points(feed.getPoints())
                 .calories(feed.getCalories())
                 .images(feed.getImages().stream()
+                        .sorted(Comparator.comparingInt(FeedImage::getSortOrder))
                         .map(FeedImage::getS3Key)
                         .collect(Collectors.toList()))
                 .likes(likeCount)

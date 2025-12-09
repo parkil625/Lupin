@@ -377,13 +377,13 @@ class FeedServiceTest {
                 .willReturn(Optional.of(endTime));
 
         Feed savedFeed = Feed.builder()
-                .id(1L)
                 .writer(writer)
                 .activity(activity)
                 .content(content)
                 .points(0L)
                 .calories(0)
                 .build();
+        ReflectionTestUtils.setField(savedFeed, "id", 1L);
         given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
 
         // when
@@ -408,13 +408,13 @@ class FeedServiceTest {
                 .willReturn(Optional.empty());
 
         Feed savedFeed = Feed.builder()
-                .id(1L)
                 .writer(writer)
                 .activity(activity)
                 .content(content)
                 .points(0L)
                 .calories(0)
                 .build();
+        ReflectionTestUtils.setField(savedFeed, "id", 1L);
         given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
 
         // when
@@ -442,13 +442,13 @@ class FeedServiceTest {
                 .willReturn(Optional.of(endTime));
 
         Feed savedFeed = Feed.builder()
-                .id(1L)
                 .writer(writer)
                 .activity(activity)
                 .content(content)
                 .points(0L)
                 .calories(0)
                 .build();
+        ReflectionTestUtils.setField(savedFeed, "id", 1L);
         given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
 
         // when
@@ -476,13 +476,13 @@ class FeedServiceTest {
                 .willReturn(Optional.of(endTime));
 
         Feed savedFeed = Feed.builder()
-                .id(1L)
                 .writer(writer)
                 .activity(activity)
                 .content(content)
                 .points(0L)
                 .calories(0)
                 .build();
+        ReflectionTestUtils.setField(savedFeed, "id", 1L);
         given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
 
         // when

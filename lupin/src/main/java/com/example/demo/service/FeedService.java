@@ -149,7 +149,7 @@ public class FeedService {
         validateOwnership(feed, user);
 
         // 기존 포인트 저장 (포인트 차액 계산용)
-        long oldPoints = feed.getPoints() != null ? feed.getPoints() : 0L;
+        long oldPoints = feed.getPoints();
 
         // 내용/운동종류 업데이트
         feed.update(content, activity);

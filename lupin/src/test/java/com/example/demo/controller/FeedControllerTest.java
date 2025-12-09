@@ -22,6 +22,7 @@ import org.springframework.data.domain.SliceImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -71,12 +72,13 @@ class FeedControllerTest {
                 .build();
 
         testFeed = Feed.builder()
-                .id(1L)
                 .writer(testUser)
                 .activity("달리기")
                 .content("오늘 달리기 완료!")
                 .points(100L)
+                .calories(0)
                 .build();
+        ReflectionTestUtils.setField(testFeed, "id", 1L);
 
         given(userRepository.findByUserId("testuser")).willReturn(Optional.of(testUser));
     }
@@ -104,11 +106,13 @@ class FeedControllerTest {
     void updateFeed_Success() throws Exception {
         // given
         Feed updatedFeed = Feed.builder()
-                .id(1L)
                 .writer(testUser)
                 .activity("수영")
                 .content("수영 완료!")
+                .points(0L)
+                .calories(0)
                 .build();
+        ReflectionTestUtils.setField(updatedFeed, "id", 1L);
         given(feedService.updateFeed(any(User.class), eq(1L), eq("수영 완료!"), eq("수영")))
                 .willReturn(updatedFeed);
 

@@ -305,7 +305,7 @@ export default function Login() {
           {/* 폼 */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-            {/* 아이디 입력: watch 제거 & CSS 트릭 적용 */}
+            {/* 아이디 입력 */}
             <div className="space-y-1">
               <Label htmlFor="employeeId" className="text-xs font-bold text-gray-600 ml-1">사내 아이디</Label>
               <div className="relative group">
@@ -316,9 +316,9 @@ export default function Login() {
                   autoComplete="username"
                   placeholder="아이디 입력"
                   {...register("employeeId")}
-                  className="pl-12 pr-10 h-14 rounded-2xl border-2 bg-white peer placeholder-shown:text-ellipsis focus:border-[#C93831] transition-all"
+                  className="pl-12 pr-10 h-14 rounded-2xl border-2 border-gray-200 bg-white peer focus:border-[#C93831] transition-all"
                 />
-                {/* JS 개입 없이 CSS(:placeholder-shown)로만 버튼 표시 제어 -> 리렌더링 0 */}
+                {/* CSS peer: Input 바로 뒤에 위치해야 작동 */}
                 <button
                   type="button"
                   onClick={() => setValue("employeeId", "")}
@@ -329,7 +329,6 @@ export default function Login() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              {/* CLS 방지용 높이 확보 */}
               <p className="min-h-[1.25rem] pl-1 text-xs text-red-500">{errors.employeeId?.message}</p>
             </div>
 
@@ -344,28 +343,28 @@ export default function Login() {
                   autoComplete="current-password"
                   placeholder="비밀번호 입력"
                   {...register("password")}
-                  className="pl-12 pr-20 h-14 rounded-2xl border-2 bg-white peer focus:border-[#C93831] transition-all"
+                  className="pl-12 pr-20 h-14 rounded-2xl border-2 border-gray-200 bg-white peer focus:border-[#C93831] transition-all"
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-400 hover:text-gray-600 p-1"
-                    tabIndex={-1}
-                    aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 표시"}
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setValue("password", "")}
-                    className="text-gray-400 hover:text-gray-600 p-1 hidden peer-[:not(:placeholder-shown)]:block"
-                    tabIndex={-1}
-                    aria-label="비밀번호 지우기"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+                {/* CSS peer: Input 바로 뒤에 X 버튼 배치 */}
+                <button
+                  type="button"
+                  onClick={() => setValue("password", "")}
+                  className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 hidden peer-[:not(:placeholder-shown)]:block"
+                  tabIndex={-1}
+                  aria-label="비밀번호 지우기"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                {/* 눈동자 아이콘: 입력값 있을 때만 표시 */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 hidden peer-[:not(:placeholder-shown)]:block"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 표시"}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
               <p className="min-h-[1.25rem] pl-1 text-xs text-red-500">{errors.password?.message}</p>
             </div>

@@ -61,61 +61,102 @@ declare global {
 }
 
 // ============================================================================
-// [2] Custom Hook: 구글 로그인 로직 격리
+// [2] Custom Hook: 구글 로그인 로직 격리 (지연 로딩)
 // ============================================================================
 
 function useGoogleLogin(
   onSuccess: (credential: string) => void,
   onError: (msg: string) => void
 ) {
-  // document.getElementById 대신 ref 사용
   const googleBtnRef = useRef<HTMLDivElement>(null);
+  const scriptLoadedRef = useRef(false);
+  const scriptLoadingRef = useRef(false);
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
 
+  // 콜백 ref 최신화
   useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+  }, [onSuccess, onError]);
+
+  // GSI 초기화 함수
+  const initializeGSI = useCallback(() => {
+    if (!window.google || !googleBtnRef.current) return;
+
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (res: GoogleCredentialResponse) => onSuccessRef.current(res.credential),
+      use_fedcm_for_prompt: false,
+    });
+
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      theme: "outline",
+      size: "large",
+      type: "icon",
+      shape: "circle",
+    });
+
+    scriptLoadedRef.current = true;
+  }, []);
+
+  // [지연 로딩] 스크립트 로드 함수 - hover/click 시 호출
+  const loadGoogleScript = useCallback(() => {
+    // 이미 로드 완료 또는 로딩 중이면 스킵
+    if (scriptLoadedRef.current || scriptLoadingRef.current) return;
+
     const SCRIPT_ID = "google-jssdk";
 
-    const initializeGSI = () => {
-      if (!window.google || !googleBtnRef.current) return;
-
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (res: GoogleCredentialResponse) => onSuccess(res.credential),
-        use_fedcm_for_prompt: false,
-      });
-
-      // 숨겨진 버튼을 ref 요소 안에 렌더링
-      window.google.accounts.id.renderButton(googleBtnRef.current, {
-        theme: "outline",
-        size: "large",
-        type: "icon",
-        shape: "circle",
-      });
-    };
-
-    // 스크립트 중복 로드 방지 및 초기화
+    // 이미 DOM에 스크립트가 있으면 초기화만
     if (document.getElementById(SCRIPT_ID)) {
-      initializeGSI();
+      if (window.google) {
+        initializeGSI();
+      }
       return;
     }
+
+    scriptLoadingRef.current = true;
 
     const script = document.createElement("script");
     script.id = SCRIPT_ID;
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
-    script.onload = initializeGSI;
-    script.onerror = () => onError("Google 로그인 스크립트 로드 실패");
+    script.onload = () => {
+      scriptLoadingRef.current = false;
+      initializeGSI();
+    };
+    script.onerror = () => {
+      scriptLoadingRef.current = false;
+      onErrorRef.current("Google 로그인 스크립트 로드 실패");
+    };
     document.body.appendChild(script);
+  }, [initializeGSI]);
 
-  }, [onSuccess, onError]);
+  // 구글 버튼 클릭 핸들러
+  const triggerGoogleLogin = useCallback(() => {
+    // 스크립트 로드되지 않았으면 먼저 로드
+    if (!scriptLoadedRef.current) {
+      loadGoogleScript();
+      // 스크립트 로드 완료 후 클릭 시도 (최대 3초 대기)
+      const checkAndClick = (attempts = 0) => {
+        if (attempts > 30) return; // 3초 타임아웃
+        if (scriptLoadedRef.current) {
+          const hiddenBtn = googleBtnRef.current?.querySelector('div[role="button"]') as HTMLElement;
+          hiddenBtn?.click();
+        } else {
+          setTimeout(() => checkAndClick(attempts + 1), 100);
+        }
+      };
+      checkAndClick();
+      return;
+    }
 
-  // 커스텀 버튼 클릭 시 숨겨진 구글 버튼 트리거
-  const triggerGoogleLogin = () => {
     const hiddenBtn = googleBtnRef.current?.querySelector('div[role="button"]') as HTMLElement;
     hiddenBtn?.click();
-  };
+  }, [loadGoogleScript]);
 
-  return { googleBtnRef, triggerGoogleLogin };
+  return { googleBtnRef, triggerGoogleLogin, preloadGoogleScript: loadGoogleScript };
 }
 
 // ============================================================================
@@ -124,11 +165,13 @@ function useGoogleLogin(
 
 const SocialButton = memo(({
   onClick,
+  onMouseEnter,
   src,
   alt,
   className
 }: {
   onClick: () => void;
+  onMouseEnter?: () => void;
   src: string;
   alt: string;
   className?: string
@@ -136,6 +179,7 @@ const SocialButton = memo(({
   <button
     type="button"
     onClick={onClick}
+    onMouseEnter={onMouseEnter}
     className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md border overflow-hidden bg-white ${className}`}
     aria-label={`${alt} 로그인`}
     title={`${alt}로 로그인`}
@@ -146,7 +190,7 @@ const SocialButton = memo(({
       width="40"
       height="40"
       className="w-10 h-10 object-contain"
-      decoding="async" // 메인 스레드 차단 방지
+      decoding="async"
       loading="lazy"
     />
   </button>
@@ -181,8 +225,8 @@ export default function Login() {
     login(result.accessToken, result.role);
   }, [login]);
 
-  // Google Login Hook
-  const { googleBtnRef, triggerGoogleLogin } = useGoogleLogin(
+  // Google Login Hook (지연 로딩)
+  const { googleBtnRef, triggerGoogleLogin, preloadGoogleScript } = useGoogleLogin(
     async (credential) => {
       setError("");
       setIsLoading(true);
@@ -354,7 +398,7 @@ export default function Login() {
           <div className="flex justify-center items-center gap-5 pb-2">
             <SocialButton onClick={() => handleSocialRedirect("naver")} src="/naver-logo.png" alt="Naver" className="border-transparent" />
             <SocialButton onClick={() => handleSocialRedirect("kakao")} src="/kakao-logo.png" alt="Kakao" className="border-transparent" />
-            <SocialButton onClick={triggerGoogleLogin} src="/google-logo.png" alt="Google" className="border-gray-200" />
+            <SocialButton onClick={triggerGoogleLogin} onMouseEnter={preloadGoogleScript} src="/google-logo.png" alt="Google" className="border-gray-200" />
 
             {/* [최적화 3] 숨겨진 버튼을 Ref에 연결하여 DOM 오염 방지 */}
             <div ref={googleBtnRef} className="hidden" aria-hidden="true" />

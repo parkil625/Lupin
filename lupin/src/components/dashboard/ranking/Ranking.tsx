@@ -11,7 +11,7 @@
 
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TrendingUp, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { useRankingViewModel } from "./useRankingViewModel";
 import { RankerItem } from "./RankerItem";
 import { RankingSkeleton } from "./RankingSkeleton";
@@ -27,7 +27,6 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
     topRankers,
     belowRankers,
     statistics,
-    myStats,
     loading,
     currentMonth,
   } = useRankingViewModel(userId, profileImage);
@@ -88,39 +87,6 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
 
             {/* 사이드바 */}
             <div className="space-y-6">
-              {/* 내 통계 */}
-              <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
-                <div className="p-6 space-y-4">
-                  <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                    <TrendingUp className="w-6 h-6" style={{ color: THEME_COLORS.PRIMARY }} />
-                    내 통계
-                  </h3>
-
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700 font-medium">
-                        이번 달 활동
-                      </span>
-                      <span className="font-black text-xl" style={{ color: THEME_COLORS.PRIMARY }}>
-                        {myStats.activeDays}일
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700 font-medium">평균 점수</span>
-                      <span className="font-black text-xl" style={{ color: THEME_COLORS.PRIMARY }}>
-                        {myStats.avgScore.toFixed(1)}점
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700 font-medium">연속 기록</span>
-                      <span className="font-black text-xl" style={{ color: THEME_COLORS.PRIMARY }}>
-                        {myStats.streak}일
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
               {/* 전체 현황 */}
               <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
                 <div className="p-6 space-y-4">

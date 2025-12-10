@@ -14,7 +14,7 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
-import { User, Crown, Dumbbell, Heart } from "lucide-react";
+import { User, Crown, Dumbbell } from "lucide-react";
 import { RankerData } from "./useRankingViewModel";
 import { RANK_STYLES, RANKING_CONSTANTS } from "@/constants/rankingConstants";
 
@@ -115,14 +115,6 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
                         {ranker.avgScore.toFixed(1)}점
                       </span>
                     </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600 font-medium">
-                        이번 달 좋아요
-                      </span>
-                      <span className="font-black text-gray-900">
-                        {ranker.monthlyLikes}개
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -146,26 +138,15 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Dumbbell
-                className="w-5 h-5"
-                style={{ color: "#C93831" }}
-              />
-              <span className="text-xl font-black text-gray-900">
-                {ranker.points.toLocaleString()}
-              </span>
-              <span className="text-sm font-medium text-gray-600">pt</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Heart
-                className="w-5 h-5"
-                style={{ color: "#C93831", fill: "#C93831" }}
-              />
-              <span className="text-xl font-black text-gray-900">
-                {ranker.monthlyLikes}
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Dumbbell
+              className="w-5 h-5"
+              style={{ color: "#C93831" }}
+            />
+            <span className="text-xl font-black text-gray-900">
+              {ranker.points.toLocaleString()}
+            </span>
+            <span className="text-sm font-medium text-gray-600">pt</span>
           </div>
         </div>
       </div>

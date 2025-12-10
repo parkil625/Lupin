@@ -352,8 +352,9 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         <div className="relative mb-2 px-2.5">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="w-full flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors"
-            style={{ paddingLeft: "10px" }}
+            className={`w-full flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors ${
+              sidebarExpanded || showNotifications ? "justify-start pl-3" : "justify-center pl-0"
+            }`}
           >
             <div className="relative shrink-0">
               <Bell className="w-7 h-7 text-gray-700" />

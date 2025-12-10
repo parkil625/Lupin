@@ -422,6 +422,7 @@ function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => voi
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+              aria-label="댓글 패널 닫기"
             >
               <X className="w-5 h-5" />
             </button>
@@ -455,7 +456,7 @@ function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => voi
               className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
             />
             {commentText && (
-              <button onClick={() => setCommentText("")} className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer">
+              <button onClick={() => setCommentText("")} className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer" aria-label="댓글 지우기">
                 <X className="w-3 h-3 text-gray-600" />
               </button>
             )}
@@ -464,6 +465,7 @@ function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => voi
             onClick={handleSendComment}
             disabled={!commentText.trim()}
             className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
+            aria-label="댓글 전송"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -483,6 +485,7 @@ function FeedItem({
   onPrevImage,
   onNextImage,
   onLike,
+  isPriority = false,
 }: {
   feed: Feed;
   currentImageIndex: number;
@@ -490,6 +493,7 @@ function FeedItem({
   onPrevImage: () => void;
   onNextImage: () => void;
   onLike: () => void;
+  isPriority?: boolean;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [isReported, setIsReported] = useState(false);
@@ -532,6 +536,8 @@ function FeedItem({
               src={getCdnUrl(images[currentImageIndex] || images[0])}
               alt={feed.activity}
               className="w-full h-full object-cover"
+              loading={isPriority ? "eager" : "lazy"}
+              fetchPriority={isPriority ? "high" : "auto"}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -546,6 +552,7 @@ function FeedItem({
                 <button
                   className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
                   onClick={onPrevImage}
+                  aria-label="이전 이미지"
                 >
                   <ChevronLeft className={`w-8 h-8 ${iconColorClass}`} />
                 </button>
@@ -554,6 +561,7 @@ function FeedItem({
                 <button
                   className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
                   onClick={onNextImage}
+                  aria-label="다음 이미지"
                 >
                   <ChevronRight className={`w-8 h-8 ${iconColorClass}`} />
                 </button>
@@ -591,6 +599,7 @@ function FeedItem({
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={onLike}
+              aria-label={liked ? "좋아요 취소" : "좋아요"}
             >
               <Heart className={`w-6 h-6 ${liked ? "fill-[#C93831] text-[#C93831]" : iconColorClass}`} />
               <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
@@ -598,6 +607,7 @@ function FeedItem({
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={() => setShowComments(!showComments)}
+              aria-label={showComments ? "댓글 닫기" : "댓글 보기"}
             >
               <MessageCircle className={`w-6 h-6 ${iconColorClass} ${showComments ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
               <span className={`text-xs font-bold ${iconColorClass}`}>{feed.comments || 0}</span>
@@ -605,6 +615,7 @@ function FeedItem({
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={handleReport}
+              aria-label={isReported ? "신고 취소" : "피드 신고"}
             >
               <Siren className={`w-6 h-6 ${isReported ? "text-[#C93831] fill-[#C93831]" : iconColorClass}`} />
             </button>
@@ -680,6 +691,18 @@ export default function FeedView({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // [최적화] LCP 이미지 Preload - 첫 번째 피드 이미지
+  useEffect(() => {
+    if (allFeeds.length > 0 && allFeeds[0].images?.[0]) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = getCdnUrl(allFeeds[0].images[0]);
+      document.head.appendChild(link);
+      return () => link.remove();
+    }
+  }, [allFeeds]);
+
   // 필터링된 피드
   const filteredFeeds = useMemo(() => {
     if (!searchQuery.trim()) return allFeeds;
@@ -736,7 +759,7 @@ export default function FeedView({
         className="flex-1 overflow-y-auto snap-y snap-mandatory scrollbar-hide flex flex-col gap-4 pb-4"
         onScroll={handleScroll}
       >
-        {filteredFeeds.map((feed) => (
+        {filteredFeeds.map((feed, index) => (
           <div
             key={feed.id}
             data-feed-id={feed.id}
@@ -749,6 +772,7 @@ export default function FeedView({
               onPrevImage={() => setFeedImageIndex(feed.id, (prev) => Math.max(0, prev - 1))}
               onNextImage={() => setFeedImageIndex(feed.id, (prev) => Math.min(feed.images.length - 1, prev + 1))}
               onLike={() => handleLike(feed.id)}
+              isPriority={index === 0}
             />
           </div>
         ))}

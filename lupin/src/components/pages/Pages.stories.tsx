@@ -284,8 +284,11 @@ export const 피드페이지: Story = {
     const [scrollToFeedId, setScrollToFeedId] = useState<number | null>(null);
 
     const getFeedImageIndex = (feedId: number) => feedImageIndices[feedId] || 0;
-    const setFeedImageIndex = (feedId: number, index: number) => {
-      setFeedImageIndices(prev => ({ ...prev, [feedId]: index }));
+    const setFeedImageIndex = (feedId: number, updater: number | ((prev: number) => number)) => {
+      setFeedImageIndices(prev => ({
+        ...prev,
+        [feedId]: typeof updater === 'function' ? updater(prev[feedId] || 0) : updater
+      }));
     };
     const hasLiked = (feedId: number) => likedFeeds.has(feedId);
     const handleLike = (feedId: number) => {

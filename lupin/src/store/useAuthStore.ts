@@ -76,6 +76,11 @@ export const useAuthStore = create<AuthState>()(
         {
             name: 'auth-storage', // localStorage에 저장될 Key 이름
             storage: createJSONStorage(() => localStorage), // 저장소 지정
+            // hasHydrated는 런타임 상태이므로 저장하지 않음
+            partialize: (state) => ({
+                isLoggedIn: state.isLoggedIn,
+                userRole: state.userRole,
+            }),
             onRehydrateStorage: () => (state) => {
                 state?.setHasHydrated(true);
             },

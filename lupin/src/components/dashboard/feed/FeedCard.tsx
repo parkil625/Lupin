@@ -7,7 +7,7 @@
  * - 댓글 섹션
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Heart,
@@ -17,9 +17,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
+import { LazyBlockNoteView } from "@/components/shared/LazyBlockNote";
 import { useImageBrightness } from "@/hooks";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 import { FeedCommentSection } from "./FeedCommentSection";
@@ -49,18 +47,6 @@ export function FeedCard({
   // 이미지 밝기에 따른 아이콘 색상
   const currentImage = feed.images?.[currentImageIndex] || feed.images?.[0];
   const iconColor = useImageBrightness(currentImage);
-
-  // BlockNote 에디터 (피드 내용 표시용)
-  const initialContent = useMemo(() => {
-    if (!feed.content) return undefined;
-    try {
-      return JSON.parse(feed.content);
-    } catch {
-      return [{ type: "paragraph" as const, content: [{ type: "text" as const, text: feed.content, styles: {} }] }];
-    }
-  }, [feed.content]);
-
-  const editor = useCreateBlockNote({ initialContent });
 
   const hasImages = feed.images && feed.images.length > 0;
 
@@ -181,7 +167,7 @@ export function FeedCard({
           <div className="p-6 space-y-3 flex-1 overflow-auto bg-transparent">
             <FeedBadges feed={feed} />
             <div className="text-gray-900 font-medium text-sm leading-relaxed">
-              <BlockNoteView editor={editor} editable={false} theme="light" />
+              <LazyBlockNoteView content={feed.content} editable={false} theme="light" />
             </div>
           </div>
         </div>

@@ -33,7 +33,6 @@ import { toast } from "sonner";
 import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
 import exifr from "exifr";
 import { imageApi } from "@/api/imageApi";
 

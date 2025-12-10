@@ -32,7 +32,6 @@ import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
 import { Image, FileText, X } from "lucide-react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
 import { imageApi } from "@/api/imageApi";
 import exifr from "exifr";
 import { CheckCircle, AlertCircle } from "lucide-react";

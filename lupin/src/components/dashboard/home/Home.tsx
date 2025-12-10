@@ -421,22 +421,31 @@ export default function Home({
 
               {/* Badges - 고정 높이로 CLS 완전 방지 */}
               <div className="h-7 flex justify-center gap-2 flex-wrap">
-                {!loading && stats?.has7DayStreak && (
-                  <Badge className="bg-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                    <Flame className="w-3 h-3 mr-1" />
-                    7일 연속
-                  </Badge>
-                )}
-                {!loading && stats?.isTop10 ? (
-                  <Badge className="bg-yellow-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                    <Award className="w-3 h-3 mr-1" />
-                    TOP 10
-                  </Badge>
-                ) : !loading && stats?.isTop100 && (
-                  <Badge className="bg-purple-700 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                    <Award className="w-3 h-3 mr-1" />
-                    TOP 100
-                  </Badge>
+                {loading ? (
+                  <>
+                    <div className="h-6 w-20 rounded-full animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                    <div className="h-6 w-16 rounded-full animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                  </>
+                ) : (
+                  <>
+                    {stats?.has7DayStreak && (
+                      <Badge className="bg-orange-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                        <Flame className="w-3 h-3 mr-1" />
+                        7일 연속
+                      </Badge>
+                    )}
+                    {stats?.isTop10 ? (
+                      <Badge className="bg-yellow-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                        <Award className="w-3 h-3 mr-1" />
+                        TOP 10
+                      </Badge>
+                    ) : stats?.isTop100 && (
+                      <Badge className="bg-purple-700 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                        <Award className="w-3 h-3 mr-1" />
+                        TOP 100
+                      </Badge>
+                    )}
+                  </>
                 )}
               </div>
             </div>

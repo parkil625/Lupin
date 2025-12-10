@@ -57,9 +57,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
+import { LazyBlockNoteView } from "@/components/shared/LazyBlockNote";
 import { getRelativeTime } from "@/lib/utils";
 import { useImageBrightness } from "@/hooks";
 
@@ -111,49 +109,6 @@ export default function FeedDetailDialogHome({
   const currentImageUrl = hasImages ? feed.images[currentImageIndex] : undefined;
   const iconColor = useImageBrightness(currentImageUrl);
   const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
-
-  // BlockNote 에디터 생성 (읽기 전용)
-  const feedContent = feed?.content;
-  const initialContent = useMemo(() => {
-    if (!feedContent) return undefined;
-    try {
-      // JSON인지 확인
-      const parsed = JSON.parse(feedContent);
-      return parsed;
-    } catch {
-      // 일반 텍스트인 경우 BlockNote 기본 형식으로 변환
-      return [
-        {
-          type: "paragraph" as const,
-          content: [{ type: "text" as const, text: feedContent, styles: {} }],
-        },
-      ];
-    }
-  }, [feedContent]);
-
-  const editor = useCreateBlockNote({
-    initialContent,
-  });
-
-  // Feed가 변경되면 에디터 콘텐츠 업데이트
-  useEffect(() => {
-    if (feed?.content && editor) {
-      try {
-        // JSON인지 확인
-        const blocks = JSON.parse(feed.content);
-        editor.replaceBlocks(editor.document, blocks);
-      } catch {
-        // 일반 텍스트인 경우 BlockNote 기본 형식으로 변환
-        const textBlocks = [
-          {
-            type: "paragraph" as const,
-            content: [{ type: "text" as const, text: feed.content, styles: {} }],
-          },
-        ];
-        editor.replaceBlocks(editor.document, textBlocks);
-      }
-    }
-  }, [feed?.content, editor]);
 
   // Feed가 변경되면 해당 피드의 댓글 로드
   useEffect(() => {
@@ -1035,8 +990,8 @@ export default function FeedDetailDialogHome({
 
                   {/* Content */}
                   <div className="text-gray-900 font-medium text-sm leading-relaxed">
-                    <BlockNoteView
-                      editor={editor}
+                    <LazyBlockNoteView
+                      content={feed?.content}
                       editable={false}
                       theme="light"
                     />

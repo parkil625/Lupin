@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/select";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
 
 interface CreatePageProps {
   onCreatePost: (newFeed: Feed) => void;

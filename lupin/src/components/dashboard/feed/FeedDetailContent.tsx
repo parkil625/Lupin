@@ -51,9 +51,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
+import { LazyBlockNoteView } from "@/components/shared/LazyBlockNote";
 import { useImageBrightness } from "@/hooks";
 import { getRelativeTime } from "@/lib/utils";
 
@@ -104,32 +102,7 @@ export function FeedDetailContent({
   const currentImage = feed.images?.[currentImageIndex] || feed.images?.[0];
   const iconColor = useImageBrightness(currentImage);
 
-  // BlockNote 에디터 (읽기 전용)
-  const feedContent = feed?.content;
-  const initialContent = useMemo(() => {
-    if (!feedContent) return undefined;
-    try {
-      return JSON.parse(feedContent);
-    } catch {
-      return [{ type: "paragraph" as const, content: [{ type: "text" as const, text: feedContent, styles: {} }] }];
-    }
-  }, [feedContent]);
-
-  const editor = useCreateBlockNote({ initialContent });
-
-  // 에디터 콘텐츠 업데이트
-  useEffect(() => {
-    if (feed?.content && editor) {
-      try {
-        const blocks = JSON.parse(feed.content);
-        editor.replaceBlocks(editor.document, blocks);
-      } catch {
-        const textBlocks = [{ type: "paragraph" as const, content: [{ type: "text" as const, text: feed.content, styles: {} }] }];
-        editor.replaceBlocks(editor.document, textBlocks);
-      }
-    }
-  }, [feed?.content, editor]);
-
+  
   // 댓글 로드
   useEffect(() => {
     const fetchComments = async () => {
@@ -633,7 +606,7 @@ export function FeedDetailContent({
               </div>
 
               <div className="text-gray-900 font-medium text-sm leading-relaxed">
-                <BlockNoteView editor={editor} editable={false} theme="light" />
+                <LazyBlockNoteView content={feed.content} editable={false} theme="light" />
               </div>
             </div>
           </ScrollArea>

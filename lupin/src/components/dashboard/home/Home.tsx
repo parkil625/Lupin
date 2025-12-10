@@ -31,7 +31,7 @@ import {
   Bell,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
-import { userApi, feedApi } from "@/api";
+import { userApi, feedApi, getThumbnailUrl } from "@/api";
 
 // ============================================================================
 // [0] Image Optimization Utilities
@@ -81,20 +81,7 @@ function getOptimizedImageUrl(
   return url;
 }
 
-/**
- * S3 피드 이미지 URL을 썸네일 URL로 변환
- * 원본: feed/{uuid}.webp → 썸네일: feed/thumb/{uuid}.webp
- */
-function getThumbnailUrl(url: string): string {
-  if (!url) return url;
-
-  // S3 피드 이미지인 경우만 썸네일로 변환
-  if (url.includes('/feed/') && !url.includes('/feed/thumb/')) {
-    return url.replace('/feed/', '/feed/thumb/');
-  }
-
-  return url;
-}
+// getThumbnailUrl은 @/api에서 import
 
 /**
  * Blur Placeholder 데이터 URI (16x16 회색 블러)

@@ -28,7 +28,7 @@ import {
   Clock,
   Zap,
 } from "lucide-react";
-import { commentApi, reportApi } from "@/api";
+import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 
@@ -67,11 +67,10 @@ function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => voi
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
-  // 아바타 URL 생성 헬퍼
+  // 아바타 URL 생성 헬퍼 (CDN 사용)
   const getAvatarUrl = (avatarUrl?: string): string => {
     if (!avatarUrl) return "";
-    if (avatarUrl.startsWith("http")) return avatarUrl;
-    return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+    return getCdnUrl(avatarUrl);
   };
 
   // 댓글 로드
@@ -500,11 +499,10 @@ function FeedItem({
   const isFirstImage = currentImageIndex === 0;
   const isLastImage = currentImageIndex === images.length - 1;
 
-  // 아바타 URL 생성 헬퍼
+  // 아바타 URL 생성 헬퍼 (CDN 사용)
   const getAvatarUrl = (avatarUrl?: string): string => {
     if (!avatarUrl) return "";
-    if (avatarUrl.startsWith("http")) return avatarUrl;
-    return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+    return getCdnUrl(avatarUrl);
   };
   const writerAvatarUrl = getAvatarUrl(feed.writerAvatar);
 

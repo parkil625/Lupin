@@ -111,8 +111,8 @@ public class ImageService {
             log.info("Thumbnail uploaded: {}", thumbFileName);
         }
 
-        // URL 생성
-        return String.format("https://%s.s3.ap-northeast-2.amazonaws.com/%s", bucket, fileName);
+        // URL 생성 (Cloudflare CDN 사용)
+        return String.format("https://cdn.lupin-care.com/%s", fileName);
     }
 
     private String getExtension(String filename) {

@@ -37,7 +37,7 @@ import {
   Siren,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
-import { commentApi, reportApi } from "@/api";
+import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
 
 // 백엔드 댓글 응답 타입
@@ -124,11 +124,10 @@ export default function FeedDetailDialogHome({
         // parentId가 있는 댓글은 답글이므로 최상위 목록에서 제외
         const commentList = allComments.filter((c: BackendComment & { parentId?: number }) => !c.parentId);
 
-        // 아바타 URL 변환 헬퍼 (S3 키 또는 전체 URL 처리)
+        // 아바타 URL 변환 헬퍼 (CDN 사용)
         const getAvatarUrl = (avatarUrl?: string): string => {
           if (!avatarUrl) return "";
-          if (avatarUrl.startsWith("http")) return avatarUrl;
-          return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+          return getCdnUrl(avatarUrl);
         };
 
         // 답글 정보도 함께 로드하고 필드 매핑

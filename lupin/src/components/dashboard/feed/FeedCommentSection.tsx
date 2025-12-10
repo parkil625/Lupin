@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Heart, Send, ArrowUpDown, X, Flag } from "lucide-react";
 import { Comment } from "@/types/dashboard.types";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
-import { commentApi, reportApi } from "@/api";
+import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { getRelativeTime } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -34,11 +34,10 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
-  // 아바타 URL 생성 헬퍼
+  // 아바타 URL 생성 헬퍼 (CDN 사용)
   const getAvatarUrl = (avatarUrl?: string | null): string | undefined => {
     if (!avatarUrl) return undefined;
-    if (avatarUrl.startsWith("http")) return avatarUrl;
-    return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+    return getCdnUrl(avatarUrl);
   };
 
   // 댓글 로드

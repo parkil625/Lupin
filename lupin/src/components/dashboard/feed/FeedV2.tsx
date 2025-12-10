@@ -27,7 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { Comment } from "@/types/dashboard.types";
-import { commentApi } from "@/api";
+import { commentApi, getCdnUrl } from "@/api";
 import { getRelativeTime } from "@/lib/utils";
 import { useImageBrightness } from "@/hooks";
 
@@ -66,11 +66,10 @@ function CommentPanel({ feedId }: { feedId: number }) {
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
-  // 아바타 URL 생성 헬퍼
+  // 아바타 URL 생성 헬퍼 (CDN 사용)
   const getAvatarUrl = (avatarUrl?: string): string => {
     if (!avatarUrl) return "";
-    if (avatarUrl.startsWith("http")) return avatarUrl;
-    return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+    return getCdnUrl(avatarUrl);
   };
 
   // 댓글 로드

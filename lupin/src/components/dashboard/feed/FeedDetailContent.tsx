@@ -26,7 +26,7 @@ import {
   User,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
-import { commentApi, reportApi } from "@/api";
+import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
 
 // 백엔드 댓글 응답 타입
@@ -39,11 +39,10 @@ interface BackendComment {
   [key: string]: unknown;
 }
 
-// 아바타 URL 변환 헬퍼 함수
+// 아바타 URL 변환 헬퍼 함수 (CDN 사용)
 const getAvatarUrl = (avatarUrl?: string): string => {
   if (!avatarUrl) return "";
-  if (avatarUrl.startsWith("http")) return avatarUrl;
-  return `https://lupin-storage.s3.ap-northeast-2.amazonaws.com/${avatarUrl}`;
+  return getCdnUrl(avatarUrl);
 };
 import {
   DropdownMenu,

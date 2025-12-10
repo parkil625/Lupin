@@ -624,7 +624,7 @@ export function FeedDetailContent({
                     <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
                   </Badge>
                   <Badge className="bg-white text-blue-700 px-3 py-1 font-bold text-xs border-0">{feed.activity}</Badge>
-                  {feed.calories > 0 && <Badge className="bg-white text-orange-700 px-3 py-1 font-bold text-xs border-0">{feed.calories}kcal</Badge>}
+                  {(feed.calories ?? 0) > 0 && <Badge className="bg-white text-orange-700 px-3 py-1 font-bold text-xs border-0">{feed.calories}kcal</Badge>}
                 </div>
                 <Badge className="bg-white text-gray-700 px-3 py-1 font-bold text-xs flex items-center gap-1 border-0 flex-shrink-0">
                   {feed.updatedAt && <Pencil className="w-3 h-3" />}

@@ -99,7 +99,7 @@ interface HomeProps {
   profileImage: string | null;
   myFeeds: Feed[];
   setSelectedFeed: (feed: Feed) => void;
-  setFeedImageIndex: (feedId: number, index: number) => void;
+  setFeedImageIndex: (feedId: number, updater: number | ((prev: number) => number)) => void;
   setShowFeedDetailInHome: (show: boolean) => void;
   onCreateClick: () => void;
   refreshTrigger?: number;

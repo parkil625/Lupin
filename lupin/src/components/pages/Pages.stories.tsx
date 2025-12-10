@@ -224,7 +224,7 @@ export const 홈페이지: Story = {
             setFeedImageIndex(0);
             setShowFeedDetail(true);
           }}
-          setFeedImageIndex={(_feedId, index) => setFeedImageIndex(index)}
+          setFeedImageIndex={(_feedId, updater) => setFeedImageIndex(typeof updater === 'function' ? updater(feedImageIndex) : updater)}
           setShowFeedDetailInHome={setShowFeedDetail}
           onCreateClick={() => setShowCreateDialog(true)}
           refreshTrigger={0}

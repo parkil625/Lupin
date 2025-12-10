@@ -34,7 +34,7 @@ CREATE TABLE user_oauth (
     provider_email VARCHAR(255),
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE KEY uk_provider_provider_id (provider, provider_id)
 );
@@ -47,7 +47,7 @@ CREATE TABLE user_penalties (
     created_at DATETIME NOT NULL,
     expires_at DATETIME NOT NULL,
     penalty_count INT NOT NULL DEFAULT 1,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE KEY uk_user_penalty (user_id, penalty_type),
     INDEX idx_penalty_user (user_id),
@@ -67,7 +67,7 @@ CREATE TABLE doctor_profiles (
     address VARCHAR(500),
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(id),
     INDEX idx_doctor_profile_user (user_id)
 );
@@ -87,7 +87,7 @@ CREATE TABLE feeds (
     version BIGINT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
-    
+
     FOREIGN KEY (writer_id) REFERENCES users(id),
     INDEX idx_feed_writer (writer_id),
     INDEX idx_feed_created (created_at DESC),
@@ -101,7 +101,7 @@ CREATE TABLE feed_images (
     s3_key TEXT NOT NULL,
     img_type VARCHAR(10) NOT NULL,
     sort_order INT NOT NULL DEFAULT 0,
-    
+
     FOREIGN KEY (feed_id) REFERENCES feeds(id),
     INDEX idx_feed_image_feed (feed_id)
 );
@@ -112,7 +112,7 @@ CREATE TABLE feed_likes (
     user_id BIGINT NOT NULL,
     feed_id BIGINT NOT NULL,
     created_at DATETIME NOT NULL,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (feed_id) REFERENCES feeds(id),
     UNIQUE KEY uk_feed_like_user_feed (user_id, feed_id),
@@ -132,7 +132,7 @@ CREATE TABLE comments (
     version BIGINT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
-    
+
     FOREIGN KEY (writer_id) REFERENCES users(id),
     FOREIGN KEY (feed_id) REFERENCES feeds(id),
     FOREIGN KEY (parent_id) REFERENCES comments(id),
@@ -148,7 +148,7 @@ CREATE TABLE comment_likes (
     user_id BIGINT NOT NULL,
     comment_id BIGINT NOT NULL,
     created_at DATETIME NOT NULL,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (comment_id) REFERENCES comments(id),
     UNIQUE KEY uk_comment_like_user_comment (user_id, comment_id),
@@ -166,7 +166,7 @@ CREATE TABLE notifications (
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     ref_id VARCHAR(255),
     created_at DATETIME NOT NULL,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(id),
     INDEX idx_notification_user (user_id),
     INDEX idx_notification_user_read (user_id, is_read),
@@ -181,7 +181,7 @@ CREATE TABLE reports (
     target_id BIGINT NOT NULL,
     reporter_id BIGINT NOT NULL,
     created_at DATETIME NOT NULL,
-    
+
     FOREIGN KEY (reporter_id) REFERENCES users(id),
     UNIQUE KEY uk_report_target_reporter (target_type, target_id, reporter_id),
     INDEX idx_report_target (target_type, target_id),
@@ -200,7 +200,7 @@ CREATE TABLE outbox (
     created_at DATETIME NOT NULL,
     processed_at DATETIME,
     error_message VARCHAR(1000),
-    
+
     INDEX idx_outbox_status (status),
     INDEX idx_outbox_created (created_at),
     INDEX idx_outbox_aggregate (aggregate_type, aggregate_id)
@@ -223,7 +223,7 @@ CREATE TABLE auctions (
     winning_bid BIGINT,
     total_bids INT NOT NULL DEFAULT 0,
     version BIGINT,
-    
+
     INDEX idx_auction_status (status),
     INDEX idx_auction_start_time (start_time),
     INDEX idx_auction_end_time (regular_end_time)
@@ -238,7 +238,7 @@ CREATE TABLE auction_bids (
     bid_time DATETIME NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     version BIGINT,
-    
+
     INDEX idx_bid_auction (auction_id),
     INDEX idx_bid_user (user_id),
     INDEX idx_bid_status (status),
@@ -254,7 +254,7 @@ CREATE TABLE chat_messages (
     content TEXT NOT NULL,
     time DATETIME NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
-    
+
     FOREIGN KEY (sender_id) REFERENCES users(id),
     INDEX idx_chat_room (room_id),
     INDEX idx_chat_room_sent (room_id, time DESC),
@@ -273,7 +273,7 @@ CREATE TABLE appointments (
     version BIGINT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
-    
+
     FOREIGN KEY (patient_id) REFERENCES users(id),
     FOREIGN KEY (doctor_id) REFERENCES users(id),
     INDEX idx_appointment_patient (patient_id),
@@ -293,7 +293,7 @@ CREATE TABLE prescriptions (
     date DATE NOT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
-    
+
     FOREIGN KEY (patient_id) REFERENCES users(id),
     FOREIGN KEY (doctor_id) REFERENCES users(id),
     INDEX idx_prescription_patient (patient_id),
@@ -308,7 +308,19 @@ CREATE TABLE prescription_meds (
     medicine_name VARCHAR(255) NOT NULL,
     dosage VARCHAR(100),
     frequency VARCHAR(255),
-    
+
     FOREIGN KEY (prescription_id) REFERENCES prescriptions(id),
     INDEX idx_prescription_med_prescription (prescription_id)
+);
+
+-- 19. PointLog (포인트 로그)
+CREATE TABLE point_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    points BIGINT NOT NULL,
+    created_at DATETIME NOT NULL,
+
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_point_log_user (user_id),
+    INDEX idx_point_log_created (created_at DESC)
 );

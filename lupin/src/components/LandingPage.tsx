@@ -146,9 +146,8 @@ export default function LandingPage() {
                                 <img
                                     src="/hero-desktop.webp"
                                     alt="운동하는 여성"
-                                    width="800"
-                                    height="600"
-                                    fetchPriority="high"
+                                    width={800}
+                                    height={600}
                                     decoding="async"
                                     className="relative rounded-2xl md:rounded-3xl shadow-2xl border-4 md:border-8 border-white/50 backdrop-blur-sm w-full h-auto aspect-[4/3] object-cover"
                                 />

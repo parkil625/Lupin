@@ -19,7 +19,6 @@ interface FeedContentInputProps {
   placeholder?: string;
   maxLength?: number;
   className?: string;
-  rows?: number;
 }
 
 /**
@@ -132,7 +131,8 @@ export function FeedContentDisplay({ content, className = "" }: FeedContentDispl
 
 /**
  * 피드 내용 입력 컴포넌트
- * - 단순 textarea
+ * - 단순 textarea (아웃라인 없음)
+ * - 전체 영역 채우기
  * - 글자 수 표시
  */
 export function FeedContentInput({
@@ -141,19 +141,17 @@ export function FeedContentInput({
   placeholder = "무슨 운동을 하셨나요?",
   maxLength = 2200,
   className = "",
-  rows = 4,
 }: FeedContentInputProps) {
   return (
-    <div className="relative">
+    <div className={`relative h-full flex flex-col ${className}`}>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
-        rows={rows}
-        className={`w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#C93831] focus:border-transparent text-sm ${className}`}
+        className="flex-1 w-full p-4 resize-none focus:outline-none text-sm bg-transparent"
       />
-      <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+      <div className="absolute bottom-2 right-4 text-xs text-gray-400">
         {value.length}/{maxLength}
       </div>
     </div>

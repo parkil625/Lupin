@@ -335,14 +335,12 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
       {/* Right Editor */}
       <div className="w-[475px] bg-white flex-shrink-0 flex flex-col">
         <ScrollArea className="flex-1 w-[475px]" style={{ width: '475px', maxWidth: '475px' }}>
-          <div className="p-4">
-            <FeedContentInput
-              value={content}
-              onChange={setContent}
-              placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
-              rows={15}
-            />
-          </div>
+          <FeedContentInput
+            value={content}
+            onChange={setContent}
+            placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+            className="h-full min-h-[500px]"
+          />
         </ScrollArea>
       </div>
     </div>

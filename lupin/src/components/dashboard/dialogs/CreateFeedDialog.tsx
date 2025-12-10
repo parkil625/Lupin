@@ -445,14 +445,12 @@ export default function CreateFeedDialog({
 
           {activeTab === "content" && (
             <ScrollArea className="h-full">
-              <div className="p-4">
-                <FeedContentInput
-                  value={content}
-                  onChange={setContent}
-                  placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
-                  rows={10}
-                />
-              </div>
+              <FeedContentInput
+                value={content}
+                onChange={setContent}
+                placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+                className="h-full min-h-[300px]"
+              />
             </ScrollArea>
           )}
         </div>
@@ -638,14 +636,12 @@ export default function CreateFeedDialog({
           {/* 글 작성 탭 */}
           {activeTab === "content" && (
             <ScrollArea className="h-full">
-              <div className="p-4">
-                <FeedContentInput
-                  value={content}
-                  onChange={setContent}
-                  placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
-                  rows={10}
-                />
-              </div>
+              <FeedContentInput
+                value={content}
+                onChange={setContent}
+                placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+                className="h-full min-h-[300px]"
+              />
             </ScrollArea>
           )}
         </div>

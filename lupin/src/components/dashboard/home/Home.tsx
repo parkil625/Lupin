@@ -313,6 +313,29 @@ export default function Home({
 }: HomeProps) {
   const { stats, canPost, loading } = useHomeData(myFeeds, refreshTrigger);
 
+  // [최적화 7] LCP 이미지 Preload - 상위 2개 피드 이미지
+  // 모바일에서 상단 2개 피드가 완전히 보이므로 이 이미지들을 우선 로드
+  useEffect(() => {
+    const feedsToPreload = myFeeds.slice(0, 2);
+    const links: HTMLLinkElement[] = [];
+
+    feedsToPreload.forEach(feed => {
+      const imageUrl = feed.images?.[0];
+      if (imageUrl) {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = getThumbnailUrl(imageUrl);
+        document.head.appendChild(link);
+        links.push(link);
+      }
+    });
+
+    return () => {
+      links.forEach(link => link.remove());
+    };
+  }, [myFeeds]);
+
   // [최적화 1] useCallback으로 핸들러 참조 고정 - 메모이제이션 완성
   // 이전 문제: onClick={() => ...}가 매번 새로운 함수를 생성하여 FeedItem의 memo가 무력화됨
   // 해결: 핸들러를 useCallback으로 감싸고, feedId만 인자로 받아 처리

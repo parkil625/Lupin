@@ -125,9 +125,8 @@ class FeedE2ETest {
         Feed savedFeed = feedRepository.findAll().get(0);
         Long feedId = savedFeed.getId();
 
-        // 2. 피드에 이미지 저장 확인
-        List<FeedImage> images = feedImageRepository.findByFeedOrderBySortOrderAsc(savedFeed);
-        assertThat(images).hasSize(2);
+        // 2. 피드에 이미지 저장 확인 (cascade로 저장되므로 feed.getImages() 확인)
+        assertThat(savedFeed.getImages()).hasSize(2);
 
         // 3. 피드 좋아요
         mockMvc.perform(post("/api/feeds/" + feedId + "/like"))

@@ -312,3 +312,15 @@ CREATE TABLE prescription_meds (
     FOREIGN KEY (prescription_id) REFERENCES prescriptions(id),
     INDEX idx_prescription_med_prescription (prescription_id)
 );
+
+-- 19. PointLog (포인트 로그)
+CREATE TABLE point_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    points BIGINT NOT NULL,
+    created_at DATETIME NOT NULL,
+
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_point_log_user (user_id),
+    INDEX idx_point_log_created (created_at DESC)
+);

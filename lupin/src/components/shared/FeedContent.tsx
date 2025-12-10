@@ -143,15 +143,15 @@ export function FeedContentInput({
   className = "",
 }: FeedContentInputProps) {
   return (
-    <div className={`relative h-full flex flex-col ${className}`}>
+    <div className={`relative ${className}`}>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
-        className="flex-1 w-full p-4 resize-none focus:outline-none text-sm bg-transparent"
+        className="absolute inset-0 w-full h-full p-4 pb-8 resize-none focus:outline-none text-sm bg-transparent overflow-y-auto"
       />
-      <div className="absolute bottom-2 right-4 text-xs text-gray-400">
+      <div className="absolute bottom-2 right-4 text-xs text-gray-400 pointer-events-none">
         {value.length}/{maxLength}
       </div>
     </div>

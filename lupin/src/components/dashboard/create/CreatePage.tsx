@@ -11,7 +11,6 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, Zap, CheckCircle, Camera, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Feed } from "@/types/dashboard.types";
@@ -334,14 +333,14 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
 
       {/* Right Editor */}
       <div className="w-[475px] bg-white flex-shrink-0 flex flex-col">
-        <ScrollArea className="flex-1 w-[475px]" style={{ width: '475px', maxWidth: '475px' }}>
+        <div className="flex-1 relative">
           <FeedContentInput
             value={content}
             onChange={setContent}
             placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
-            className="h-full min-h-[500px]"
+            className="h-full"
           />
-        </ScrollArea>
+        </div>
       </div>
     </div>
   );

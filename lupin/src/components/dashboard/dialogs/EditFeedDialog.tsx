@@ -432,14 +432,12 @@ export default function EditFeedDialog({
           )}
 
           {activeTab === "content" && (
-            <ScrollArea className="h-full">
-              <FeedContentInput
-                value={content}
-                onChange={setContent}
-                placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
-                className="h-full min-h-[300px]"
-              />
-            </ScrollArea>
+            <FeedContentInput
+              value={content}
+              onChange={setContent}
+              placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+              className="h-full"
+            />
           )}
         </div>
 
@@ -618,14 +616,12 @@ export default function EditFeedDialog({
             )}
 
             {activeTab === "content" && (
-              <ScrollArea className="h-full">
-                <FeedContentInput
-                  value={content}
-                  onChange={setContent}
-                  placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
-                  className="h-full min-h-[300px]"
-                />
-              </ScrollArea>
+              <FeedContentInput
+                value={content}
+                onChange={setContent}
+                placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+                className="h-full"
+              />
             )}
           </div>
 

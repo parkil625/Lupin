@@ -96,7 +96,7 @@ describe("feedApi", () => {
 
   describe("createFeed", () => {
     it("should call POST /feeds", async () => {
-      const feedData = { activity: "running", content: "test", images: ["img.jpg"] };
+      const feedData = { activity: "running", content: "test", startImage: "start.jpg", endImage: "end.jpg" };
       const mockResponse = { data: { id: 1, ...feedData } };
       vi.mocked(apiClient.post).mockResolvedValue(mockResponse);
 
@@ -109,13 +109,13 @@ describe("feedApi", () => {
     it("should throw on error", async () => {
       vi.mocked(apiClient.post).mockRejectedValue(new Error("Create failed"));
 
-      await expect(feedApi.createFeed({ activity: "", content: "", images: [] })).rejects.toThrow();
+      await expect(feedApi.createFeed({ activity: "", content: "", startImage: "", endImage: "" })).rejects.toThrow();
     });
   });
 
   describe("updateFeed", () => {
     it("should call PUT /feeds/{feedId}", async () => {
-      const updateData = { activity: "swimming", content: "updated", images: [] };
+      const updateData = { activity: "swimming", content: "updated" };
       const mockResponse = { data: { id: 1, ...updateData } };
       vi.mocked(apiClient.put).mockResolvedValue(mockResponse);
 

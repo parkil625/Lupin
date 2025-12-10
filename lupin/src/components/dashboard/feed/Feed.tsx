@@ -477,8 +477,9 @@ function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => voi
 
 /**
  * 개별 피드 아이템 컴포넌트
+ * React.memo로 불필요한 리렌더링 방지
  */
-function FeedItem({
+const FeedItem = React.memo(function FeedItem({
   feed,
   currentImageIndex,
   liked,
@@ -526,7 +527,7 @@ function FeedItem({
   };
 
   return (
-    <div className={`h-full max-h-[calc(100vh-130px)] md:max-h-full w-fit mx-auto flex shadow-xl rounded-2xl overflow-hidden transition-all duration-300 relative`}>
+    <div className={`h-full max-h-[calc(100vh-130px)] md:max-h-full w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}>
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
         {/* 이미지 영역 - 57% */}
@@ -668,7 +669,7 @@ function FeedItem({
       )}
     </div>
   );
-}
+});
 
 /**
  * 피드 페이지 메인 컴포넌트
@@ -704,6 +705,12 @@ export default function FeedView({
       return () => link.remove();
     }
   }, [allFeeds]);
+
+  // 검색 자동완성 목록 (메모이제이션)
+  const authorSuggestions = useMemo(() =>
+    [...new Set(allFeeds.map((feed) => feed.author || feed.writerName))],
+    [allFeeds]
+  );
 
   // 필터링된 피드
   const filteredFeeds = useMemo(() => {
@@ -751,7 +758,7 @@ export default function FeedView({
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="작성자 이름으로 검색..."
-          suggestions={[...new Set(allFeeds.map((feed) => feed.author || feed.writerName))]}
+          suggestions={authorSuggestions}
         />
       </div>
 

@@ -4,7 +4,7 @@
  * BlockNote 실제 구현 (lazy load 대상)
  * 이 파일은 동적으로 import됨
  */
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
@@ -35,16 +35,6 @@ export function BlockNoteInternal({
   }, [content]);
 
   const editor = useCreateBlockNote({ initialContent });
-
-  // onChange 핸들러
-  useEffect(() => {
-    if (onChange && editable) {
-      const handleChange = () => {
-        onChange(JSON.stringify(editor.document));
-      };
-      // BlockNote의 변경 감지는 BlockNoteView의 onChange prop으로 처리
-    }
-  }, [editor, onChange, editable]);
 
   return (
     <BlockNoteView

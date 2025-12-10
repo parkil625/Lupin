@@ -6,7 +6,7 @@
  * - 초기 번들에서 1.3MB 완전 제거
  * - hover 시 prefetch로 UX 개선
  */
-import React, { Suspense, useMemo } from "react";
+import React, { Suspense } from "react";
 
 // 로딩 스피너
 const LoadingSpinner = () => (

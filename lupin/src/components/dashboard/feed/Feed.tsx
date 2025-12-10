@@ -634,7 +634,7 @@ function FeedItem({
                 <Badge className="bg-blue-50 text-blue-600 font-medium border border-blue-200">
                   <Zap className="w-3 h-3 mr-1" />{feed.activity}
                 </Badge>
-                {feed.calories > 0 && (
+                {(feed.calories ?? 0) > 0 && (
                   <Badge className="bg-orange-50 text-orange-600 font-medium border border-orange-200">
                     <Flame className="w-3 h-3 mr-1" />{feed.calories}kcal
                   </Badge>

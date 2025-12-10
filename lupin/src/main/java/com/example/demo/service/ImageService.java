@@ -27,6 +27,11 @@ public class ImageService {
     private static final int MAX_HEIGHT = 800;
     private static final int WEBP_QUALITY = 60;
 
+    // 썸네일 설정
+    private static final int THUMB_WIDTH = 300;
+    private static final int THUMB_HEIGHT = 400;
+    private static final int THUMB_QUALITY = 50;
+
     private final S3Template s3Template;
     private final S3Client s3Client;
 
@@ -40,11 +45,29 @@ public class ImageService {
     public String uploadImage(MultipartFile file, String prefix) throws IOException {
         // WebP 변환 시도
         byte[] imageBytes;
+        byte[] thumbBytes = null;
         String extension;
         String contentType;
 
         try {
-            imageBytes = convertToWebp(file);
+            ImmutableImage image = ImmutableImage.loader().fromStream(file.getInputStream());
+
+            // 원본 리사이징 + WebP 변환
+            if (image.width > MAX_WIDTH || image.height > MAX_HEIGHT) {
+                image = image.bound(MAX_WIDTH, MAX_HEIGHT);
+            }
+            imageBytes = image.bytes(WebpWriter.DEFAULT.withQ(WEBP_QUALITY));
+
+            // 썸네일 생성 (feed 폴더인 경우만)
+            if ("feed".equals(prefix)) {
+                ImmutableImage thumbImage = ImmutableImage.loader().fromStream(
+                    new ByteArrayInputStream(file.getBytes())
+                );
+                thumbImage = thumbImage.cover(THUMB_WIDTH, THUMB_HEIGHT);
+                thumbBytes = thumbImage.bytes(WebpWriter.DEFAULT.withQ(THUMB_QUALITY));
+                log.info("Thumbnail created: {}x{}, {} bytes", THUMB_WIDTH, THUMB_HEIGHT, thumbBytes.length);
+            }
+
             extension = ".webp";
             contentType = "image/webp";
             log.info("Image converted to WebP: {} -> {} bytes", file.getOriginalFilename(), imageBytes.length);
@@ -57,14 +80,15 @@ public class ImageService {
         }
 
         // 고유한 파일명 생성 (UUID)
-        String fileName = UUID.randomUUID().toString() + extension;
+        String uuid = UUID.randomUUID().toString();
+        String fileName = uuid + extension;
 
         // prefix가 있으면 폴더 경로 추가
         if (prefix != null && !prefix.isEmpty()) {
             fileName = prefix + "/" + fileName;
         }
 
-        // S3에 업로드 (Cache-Control 헤더 포함)
+        // S3에 원본 업로드 (Cache-Control 헤더 포함)
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(fileName)
@@ -73,6 +97,19 @@ public class ImageService {
                 .build();
 
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(imageBytes));
+
+        // 썸네일 업로드 (feed 폴더인 경우)
+        if (thumbBytes != null && "feed".equals(prefix)) {
+            String thumbFileName = prefix + "/thumb/" + uuid + extension;
+            PutObjectRequest thumbRequest = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(thumbFileName)
+                    .contentType(contentType)
+                    .cacheControl("max-age=31536000, immutable")
+                    .build();
+            s3Client.putObject(thumbRequest, RequestBody.fromBytes(thumbBytes));
+            log.info("Thumbnail uploaded: {}", thumbFileName);
+        }
 
         // URL 생성
         return String.format("https://%s.s3.ap-northeast-2.amazonaws.com/%s", bucket, fileName);
@@ -83,22 +120,6 @@ public class ImageService {
             return filename.substring(filename.lastIndexOf("."));
         }
         return ".jpg";
-    }
-
-    /**
-     * 이미지를 WebP 포맷으로 변환 (리사이징 + 압축)
-     */
-    private byte[] convertToWebp(MultipartFile file) throws IOException {
-        ImmutableImage image = ImmutableImage.loader().fromStream(file.getInputStream());
-
-        // 최대 크기 초과 시 리사이징
-        if (image.width > MAX_WIDTH || image.height > MAX_HEIGHT) {
-            image = image.bound(MAX_WIDTH, MAX_HEIGHT);
-            log.debug("Image resized to {}x{}", image.width, image.height);
-        }
-
-        // WebP로 변환 (80% 품질)
-        return image.bytes(WebpWriter.DEFAULT.withQ(WEBP_QUALITY));
     }
 
     public List<String> uploadImages(List<MultipartFile> files) throws IOException {

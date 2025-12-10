@@ -82,6 +82,21 @@ function getOptimizedImageUrl(
 }
 
 /**
+ * S3 피드 이미지 URL을 썸네일 URL로 변환
+ * 원본: feed/{uuid}.webp → 썸네일: feed/thumb/{uuid}.webp
+ */
+function getThumbnailUrl(url: string): string {
+  if (!url) return url;
+
+  // S3 피드 이미지인 경우만 썸네일로 변환
+  if (url.includes('/feed/') && !url.includes('/feed/thumb/')) {
+    return url.replace('/feed/', '/feed/thumb/');
+  }
+
+  return url;
+}
+
+/**
  * Blur Placeholder 데이터 URI (16x16 회색 블러)
  * 이미지 로딩 전 보여줄 초경량 플레이스홀더
  */
@@ -142,13 +157,9 @@ const FeedItem = memo(({
   // 상위 4개 이미지는 즉시 로딩 (모바일 2x2 그리드 기준)
   const isPriority = index < 4;
 
-  // [최적화 6] srcset 생성 - 디바이스 해상도별 이미지
-  const imageUrl = feed.images?.[0];
-  const srcSet = imageUrl
-    ? `${getOptimizedImageUrl(imageUrl, 300, 80, 'webp')} 300w,
-       ${getOptimizedImageUrl(imageUrl, 600, 80, 'webp')} 600w,
-       ${getOptimizedImageUrl(imageUrl, 900, 80, 'webp')} 900w`
-    : undefined;
+  // [최적화 6] 썸네일 URL 사용 (300x400, 50% 품질)
+  const originalUrl = feed.images?.[0];
+  const imageUrl = originalUrl ? getThumbnailUrl(originalUrl) : undefined;
 
   return (
     <div
@@ -167,9 +178,7 @@ const FeedItem = memo(({
           <div className="w-full h-full bg-white">
             {imageUrl ? (
               <img
-                src={getOptimizedImageUrl(imageUrl, 300, 80, 'webp')}
-                srcSet={srcSet}
-                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                src={imageUrl}
                 alt={feed.activity}
                 width="300"
                 height="400"

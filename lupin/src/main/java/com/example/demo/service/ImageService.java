@@ -27,10 +27,14 @@ public class ImageService {
     private static final int MAX_HEIGHT = 800;
     private static final int WEBP_QUALITY = 60;
 
-    // 썸네일 설정
+    // 피드 썸네일 설정
     private static final int THUMB_WIDTH = 300;
     private static final int THUMB_HEIGHT = 400;
     private static final int THUMB_QUALITY = 50;
+
+    // 프로필 썸네일 설정 (작은 아바타용)
+    private static final int PROFILE_THUMB_SIZE = 100;
+    private static final int PROFILE_THUMB_QUALITY = 60;
 
     private final S3Template s3Template;
     private final S3Client s3Client;
@@ -58,14 +62,21 @@ public class ImageService {
             }
             imageBytes = image.bytes(WebpWriter.DEFAULT.withQ(WEBP_QUALITY));
 
-            // 썸네일 생성 (feed 폴더인 경우만)
+            // 썸네일 생성 (feed, profiles 폴더)
             if ("feed".equals(prefix)) {
                 ImmutableImage thumbImage = ImmutableImage.loader().fromStream(
                     new ByteArrayInputStream(file.getBytes())
                 );
                 thumbImage = thumbImage.cover(THUMB_WIDTH, THUMB_HEIGHT);
                 thumbBytes = thumbImage.bytes(WebpWriter.DEFAULT.withQ(THUMB_QUALITY));
-                log.info("Thumbnail created: {}x{}, {} bytes", THUMB_WIDTH, THUMB_HEIGHT, thumbBytes.length);
+                log.info("Feed thumbnail created: {}x{}, {} bytes", THUMB_WIDTH, THUMB_HEIGHT, thumbBytes.length);
+            } else if ("profiles".equals(prefix)) {
+                ImmutableImage thumbImage = ImmutableImage.loader().fromStream(
+                    new ByteArrayInputStream(file.getBytes())
+                );
+                thumbImage = thumbImage.cover(PROFILE_THUMB_SIZE, PROFILE_THUMB_SIZE);
+                thumbBytes = thumbImage.bytes(WebpWriter.DEFAULT.withQ(PROFILE_THUMB_QUALITY));
+                log.info("Profile thumbnail created: {}x{}, {} bytes", PROFILE_THUMB_SIZE, PROFILE_THUMB_SIZE, thumbBytes.length);
             }
 
             extension = ".webp";
@@ -98,8 +109,8 @@ public class ImageService {
 
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(imageBytes));
 
-        // 썸네일 업로드 (feed 폴더인 경우)
-        if (thumbBytes != null && "feed".equals(prefix)) {
+        // 썸네일 업로드 (feed, profiles 폴더)
+        if (thumbBytes != null && ("feed".equals(prefix) || "profiles".equals(prefix))) {
             String thumbFileName = prefix + "/thumb/" + uuid + extension;
             PutObjectRequest thumbRequest = PutObjectRequest.builder()
                     .bucket(bucket)

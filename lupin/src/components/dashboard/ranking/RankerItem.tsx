@@ -17,6 +17,7 @@ import {
 import { User, Crown, Dumbbell } from "lucide-react";
 import { RankerData } from "./useRankingViewModel";
 import { RANK_STYLES, RANKING_CONSTANTS } from "@/constants/rankingConstants";
+import { getProfileThumbnailUrl } from "@/api";
 
 interface RankerItemProps {
   ranker: RankerData;
@@ -62,7 +63,7 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
                 <Avatar className="w-10 h-10 border-2 border-white shadow-lg bg-white cursor-pointer">
                   {ranker.profileImage ? (
                     <img
-                      src={ranker.profileImage}
+                      src={getProfileThumbnailUrl(ranker.profileImage)}
                       alt={ranker.name}
                       className="w-full h-full object-cover rounded-full"
                       loading="lazy"
@@ -80,7 +81,7 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
                 <Avatar className="w-14 h-14 border-2 border-white shadow-lg bg-white">
                   {ranker.profileImage ? (
                     <img
-                      src={ranker.profileImage}
+                      src={getProfileThumbnailUrl(ranker.profileImage)}
                       alt={ranker.name}
                       className="w-full h-full object-cover rounded-full"
                       loading="lazy"
@@ -115,7 +116,7 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
 
           {/* Name and Points */}
           <div className="flex-1 min-w-0">
-            <h3
+            <p
               className={`font-black truncate ${
                 ranker.rank <= 3 ? "text-xl" : "text-lg"
               } ${ranker.isMe ? "text-red-700" : "text-gray-900"}`}
@@ -126,7 +127,7 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
                   (나)
                 </span>
               )}
-            </h3>
+            </p>
           </div>
 
           {/* Stats */}

@@ -40,6 +40,17 @@ export const getThumbnailUrl = (url: string): string => {
   return cdnUrl;
 };
 
+/**
+ * 프로필 썸네일 URL 생성 (100x100 아바타용)
+ */
+export const getProfileThumbnailUrl = (url: string): string => {
+  const cdnUrl = getCdnUrl(url);
+  if (cdnUrl.includes('/profiles/') && !cdnUrl.includes('/profiles/thumb/')) {
+    return cdnUrl.replace('/profiles/', '/profiles/thumb/');
+  }
+  return cdnUrl;
+};
+
 export const imageApi = {
   uploadImage: async (file: File) => {
     const formData = new FormData();

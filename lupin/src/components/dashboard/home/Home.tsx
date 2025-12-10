@@ -196,10 +196,12 @@ const FeedItem = memo(({
           <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
             <div className="text-center text-white space-y-2">
               <div className="flex items-center justify-center gap-4">
-                <span className="flex items-center gap-1 font-bold text-base">
-                  <Coins className="w-5 h-5" />
-                  +{feed.points}
-                </span>
+                {(feed.points ?? 0) > 0 && (
+                  <span className="flex items-center gap-1 font-bold text-base">
+                    <Coins className="w-5 h-5" />
+                    +{feed.points}
+                  </span>
+                )}
                 <span className="flex items-center gap-1 font-bold text-base">
                   <MessageCircle className="w-5 h-5" />
                   {feed.comments}

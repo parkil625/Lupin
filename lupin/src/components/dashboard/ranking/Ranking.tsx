@@ -9,6 +9,7 @@
  * - CLS 방지 스켈레톤 UI
  */
 
+import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Users } from "lucide-react";
@@ -16,6 +17,7 @@ import { useRankingViewModel } from "./useRankingViewModel";
 import { RankerItem } from "./RankerItem";
 import { RankingSkeleton } from "./RankingSkeleton";
 import { THEME_COLORS } from "@/constants/rankingConstants";
+import { getProfileThumbnailUrl } from "@/api";
 
 interface RankingProps {
   userId: number;
@@ -30,6 +32,26 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
     loading,
     currentMonth,
   } = useRankingViewModel(userId, profileImage);
+
+  // [최적화] 상위 3개 프로필 이미지 preload - LCP 개선
+  useEffect(() => {
+    const imagesToPreload = topRankers
+      .slice(0, 3)
+      .filter(ranker => ranker.profileImage)
+      .map(ranker => getProfileThumbnailUrl(ranker.profileImage!));
+
+    const links: HTMLLinkElement[] = [];
+    imagesToPreload.forEach(url => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = url;
+      document.head.appendChild(link);
+      links.push(link);
+    });
+
+    return () => links.forEach(link => link.remove());
+  }, [topRankers]);
 
   // 로딩 중일 때 스켈레톤 렌더링
   if (loading) {
@@ -90,10 +112,10 @@ export default function Ranking({ userId, profileImage }: RankingProps) {
               {/* 전체 현황 */}
               <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
                 <div className="p-6 space-y-4">
-                  <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                  <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
                     <Users className="w-6 h-6" style={{ color: THEME_COLORS.PRIMARY }} />
                     전체 현황
-                  </h3>
+                  </h2>
 
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">

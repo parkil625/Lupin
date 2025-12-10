@@ -628,9 +628,11 @@ function FeedItem({
             {/* 뱃지 */}
             <div className="flex items-center justify-between">
               <div className="flex gap-2 flex-wrap">
-                <Badge className="bg-amber-50 text-amber-600 font-medium border border-amber-200">
-                  <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
-                </Badge>
+                {(feed.points ?? 0) > 0 && (
+                  <Badge className="bg-amber-50 text-amber-600 font-medium border border-amber-200">
+                    <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
+                  </Badge>
+                )}
                 <Badge className="bg-blue-50 text-blue-600 font-medium border border-blue-200">
                   <Zap className="w-3 h-3 mr-1" />{feed.activity}
                 </Badge>

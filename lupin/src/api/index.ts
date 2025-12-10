@@ -9,5 +9,5 @@ export { notificationApi } from './notificationApi';
 export { chatApi } from './chatApi';
 export { reportApi } from './reportApi';
 export { oauthApi } from './oauthApi';
-export { imageApi, getCdnUrl, getThumbnailUrl } from './imageApi';
+export { imageApi, getCdnUrl, getThumbnailUrl, getProfileThumbnailUrl } from './imageApi';
 export { default as apiClient } from './client';

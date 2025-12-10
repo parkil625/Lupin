@@ -256,8 +256,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   [userType]);
 
   const getFeedImageIndex = useCallback((id: number) => feedImageIndexes[id] || 0, [feedImageIndexes]);
-  const setFeedImageIndex = useCallback((id: number, idx: number) =>
-    setFeedImageIndexes(p => ({ ...p, [id]: idx })), []);
+  const setFeedImageIndex = useCallback((id: number, updater: number | ((prev: number) => number)) =>
+    setFeedImageIndexes(p => ({
+      ...p,
+      [id]: typeof updater === 'function' ? updater(p[id] || 0) : updater
+    })), []);
 
   // Like handlers
   const hasLiked = useCallback((feedId: number) => {

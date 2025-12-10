@@ -39,7 +39,7 @@ interface FeedViewProps {
   showSearch: boolean;
   setShowSearch: React.Dispatch<React.SetStateAction<boolean>>;
   getFeedImageIndex: (feedId: number) => number;
-  setFeedImageIndex: (feedId: number, index: number) => void;
+  setFeedImageIndex: (feedId: number, updater: number | ((prev: number) => number)) => void;
   hasLiked: (feedId: number) => boolean;
   handleLike: (feedId: number) => void;
   feedContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -748,8 +748,8 @@ export default function FeedView({
               feed={feed}
               currentImageIndex={getFeedImageIndex(feed.id)}
               liked={hasLiked(feed.id)}
-              onPrevImage={() => setFeedImageIndex(feed.id, Math.max(0, getFeedImageIndex(feed.id) - 1))}
-              onNextImage={() => setFeedImageIndex(feed.id, Math.min(feed.images.length - 1, getFeedImageIndex(feed.id) + 1))}
+              onPrevImage={() => setFeedImageIndex(feed.id, (prev) => Math.max(0, prev - 1))}
+              onNextImage={() => setFeedImageIndex(feed.id, (prev) => Math.min(feed.images.length - 1, prev + 1))}
               onLike={() => handleLike(feed.id)}
             />
           </div>

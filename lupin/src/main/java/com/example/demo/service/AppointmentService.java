@@ -26,17 +26,17 @@ public class AppointmentService {
     public Long createAppointment(AppointmentRequest request) {
         // 1. 환자 & 의사 존재 여부 확인
         User patient = userRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 환자입니다."));
+                .orElseThrow(() -> new BusinessException("존재하지 않는 환자입니다."));
 
         User doctor = userRepository.findById(request.getDoctorId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 의사입니다."));
+                .orElseThrow(() -> new BusinessException("존재하지 않는 의사입니다."));
 
         if (appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), request.getDate())) {
-            throw new IllegalStateException("해당 시간에 예약이 이미 꽉 찼습니다.");
+            throw new BusinessException("해당 시간에 예약이 이미 꽉 찼습니다.");
         }
 
         if (appointmentRepository.existsByPatientIdAndDate(patient.getId(), request.getDate())) {
-            throw new IllegalStateException("같은 시간에 다른 예약이 잡혀 있습니다.");
+            throw new BusinessException("같은 시간에 다른 예약이 잡혀 있습니다.");
         }
 
         Appointment appointment = Appointment.builder()

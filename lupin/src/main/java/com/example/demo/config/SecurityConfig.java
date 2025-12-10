@@ -77,6 +77,11 @@ public class SecurityConfig {
                 // CSRF 비활성화 (JWT 사용 시)
                 .csrf(AbstractHttpConfigurer::disable)
 
+                // 🌟 여기에 추가: X-Frame-Options를 SAMEORIGIN으로 설정하여 SockJS iframe 허용
+                .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                )
+
                 // CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 

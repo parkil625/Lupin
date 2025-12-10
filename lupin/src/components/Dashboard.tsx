@@ -352,7 +352,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         userType={userType}
         profileImage={profileImage}
       >
-        <div className="relative mb-2 px-2.5">
+        <div className="relative mb-2">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="w-full flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors"

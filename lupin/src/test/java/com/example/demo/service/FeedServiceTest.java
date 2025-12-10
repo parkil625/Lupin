@@ -327,7 +327,6 @@ class FeedServiceTest {
             ReflectionTestUtils.setField(feed, "id", 1L);
             return feed;
         });
-        given(feedImageRepository.save(any(FeedImage.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
@@ -339,10 +338,12 @@ class FeedServiceTest {
         assertThat(result.getPoints()).isEqualTo(30L);
         assertThat(result.getCalories()).isEqualTo(600);
         verify(feedRepository).save(any(Feed.class));
-        verify(feedImageRepository).save(argThat(image ->
-                image.getS3Key().equals("start.jpg") && image.getSortOrder() == 0 && image.getImgType() == ImageType.START));
-        verify(feedImageRepository).save(argThat(image ->
-                image.getS3Key().equals("end.jpg") && image.getSortOrder() == 1 && image.getImgType() == ImageType.END));
+        // cascade로 저장되므로 Set에 추가되었는지 확인
+        assertThat(result.getImages()).hasSize(2);
+        assertThat(result.getImages()).anyMatch(img ->
+                img.getS3Key().equals("start.jpg") && img.getSortOrder() == 0 && img.getImgType() == ImageType.START);
+        assertThat(result.getImages()).anyMatch(img ->
+                img.getS3Key().equals("end.jpg") && img.getSortOrder() == 1 && img.getImgType() == ImageType.END);
         verify(pointService).addPoints(writer, 30);
     }
 
@@ -519,7 +520,6 @@ class FeedServiceTest {
             ReflectionTestUtils.setField(feed, "id", 1L);
             return feed;
         });
-        given(feedImageRepository.save(any(FeedImage.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
@@ -678,7 +678,6 @@ class FeedServiceTest {
                 .willReturn(400);
         given(workoutScoreService.calculateDurationMinutes(eq(newStartTime), eq(newEndTime)))
                 .willReturn(90L);
-        given(feedImageRepository.save(any(FeedImage.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         Feed result = feedService.updateFeed(writer, feedId, newContent, newActivity, newS3Keys);
@@ -688,11 +687,12 @@ class FeedServiceTest {
         assertThat(result.getActivity()).isEqualTo(newActivity);
         assertThat(result.getPoints()).isEqualTo(25L);
         assertThat(result.getCalories()).isEqualTo(400);
-        verify(feedImageRepository).deleteByFeed(feed);
-        verify(feedImageRepository).save(argThat(image ->
-                image.getS3Key().equals("new-start.jpg") && image.getImgType() == ImageType.START));
-        verify(feedImageRepository).save(argThat(image ->
-                image.getS3Key().equals("new-end.jpg") && image.getImgType() == ImageType.END));
+        // cascade로 저장되므로 Set에 추가되었는지 확인
+        assertThat(result.getImages()).hasSize(2);
+        assertThat(result.getImages()).anyMatch(img ->
+                img.getS3Key().equals("new-start.jpg") && img.getImgType() == ImageType.START);
+        assertThat(result.getImages()).anyMatch(img ->
+                img.getS3Key().equals("new-end.jpg") && img.getImgType() == ImageType.END);
         verify(pointService).deductPoints(writer, 30L); // 기존 포인트 차감
         verify(pointService).addPoints(writer, 25L);    // 새 포인트 적립
     }

@@ -120,37 +120,37 @@ public class FeedService {
 
         Feed savedFeed = feedRepository.save(feed);
 
-        // 이미지 저장 (명시적 타입 지정)
+        // 이미지 저장 (Set에 추가해서 cascade가 동작하도록)
         int sortOrder = 0;
 
         // 시작 이미지 (START)
-        FeedImage startImage = FeedImage.builder()
+        FeedImage startImg = FeedImage.builder()
                 .feed(savedFeed)
                 .s3Key(startImageKey)
                 .imgType(ImageType.START)
                 .sortOrder(sortOrder++)
                 .build();
-        feedImageRepository.save(startImage);
+        savedFeed.getImages().add(startImg);
 
         // 끝 이미지 (END)
-        FeedImage endImage = FeedImage.builder()
+        FeedImage endImg = FeedImage.builder()
                 .feed(savedFeed)
                 .s3Key(endImageKey)
                 .imgType(ImageType.END)
                 .sortOrder(sortOrder++)
                 .build();
-        feedImageRepository.save(endImage);
+        savedFeed.getImages().add(endImg);
 
         // 기타 이미지 (OTHER)
         if (otherImageKeys != null) {
             for (String otherKey : otherImageKeys) {
-                FeedImage otherImage = FeedImage.builder()
+                FeedImage otherImg = FeedImage.builder()
                         .feed(savedFeed)
                         .s3Key(otherKey)
                         .imgType(ImageType.OTHER)
                         .sortOrder(sortOrder++)
                         .build();
-                feedImageRepository.save(otherImage);
+                savedFeed.getImages().add(otherImg);
             }
         }
 
@@ -219,40 +219,40 @@ public class FeedService {
         // 피드 점수/칼로리 업데이트
         feed.updateScore((long) score, calories);
 
-        // 기존 이미지 삭제
-        feedImageRepository.deleteByFeed(feed);
+        // 기존 이미지 삭제 (orphanRemoval이 동작하도록 Set을 clear)
+        feed.getImages().clear();
 
-        // 이미지 저장 (명시적 타입 지정)
+        // 이미지 저장 (Set에 추가해서 cascade가 동작하도록)
         int sortOrder = 0;
 
         // 시작 이미지 (START)
-        FeedImage startImage = FeedImage.builder()
+        FeedImage startImg = FeedImage.builder()
                 .feed(feed)
                 .s3Key(startImageKey)
                 .imgType(ImageType.START)
                 .sortOrder(sortOrder++)
                 .build();
-        feedImageRepository.save(startImage);
+        feed.getImages().add(startImg);
 
         // 끝 이미지 (END)
-        FeedImage endImage = FeedImage.builder()
+        FeedImage endImg = FeedImage.builder()
                 .feed(feed)
                 .s3Key(endImageKey)
                 .imgType(ImageType.END)
                 .sortOrder(sortOrder++)
                 .build();
-        feedImageRepository.save(endImage);
+        feed.getImages().add(endImg);
 
         // 기타 이미지 (OTHER)
         if (otherImageKeys != null) {
             for (String otherKey : otherImageKeys) {
-                FeedImage otherImage = FeedImage.builder()
+                FeedImage otherImg = FeedImage.builder()
                         .feed(feed)
                         .s3Key(otherKey)
                         .imgType(ImageType.OTHER)
                         .sortOrder(sortOrder++)
                         .build();
-                feedImageRepository.save(otherImage);
+                feed.getImages().add(otherImg);
             }
         }
 

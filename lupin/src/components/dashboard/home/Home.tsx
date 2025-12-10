@@ -433,7 +433,7 @@ export default function Home({
                     TOP 10
                   </Badge>
                 ) : !loading && stats?.isTop100 && (
-                  <Badge className="bg-purple-500 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                  <Badge className="bg-purple-700 text-white px-3 py-1.5 font-bold border-0 text-xs">
                     <Award className="w-3 h-3 mr-1" />
                     TOP 100
                   </Badge>

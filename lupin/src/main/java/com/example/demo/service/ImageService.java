@@ -1,7 +1,10 @@
 package com.example.demo.service;
 
+import com.sksamuel.scrimage.ImmutableImage;
+import com.sksamuel.scrimage.webp.WebpWriter;
 import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -9,14 +12,20 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageService {
+
+    private static final int MAX_WIDTH = 1200;
+    private static final int MAX_HEIGHT = 1200;
+    private static final int WEBP_QUALITY = 80;
 
     private final S3Template s3Template;
     private final S3Client s3Client;
@@ -29,33 +38,47 @@ public class ImageService {
     }
 
     public String uploadImage(MultipartFile file, String prefix) throws IOException {
-        String originalFileName = file.getOriginalFilename();
-        // 확장자 추출
-        String extension = "";
-        if (originalFileName != null && originalFileName.contains(".")) {
-            extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-        }
-
-        // 고유한 파일명 생성 (UUID)
-        String fileName = UUID.randomUUID().toString() + extension;
+        // 고유한 파일명 생성 (UUID) - WebP 확장자로 변경
+        String fileName = UUID.randomUUID().toString() + ".webp";
 
         // prefix가 있으면 폴더 경로 추가
         if (prefix != null && !prefix.isEmpty()) {
             fileName = prefix + "/" + fileName;
         }
 
+        // 이미지를 WebP로 변환
+        byte[] webpBytes = convertToWebp(file);
+
         // S3에 업로드 (Cache-Control 헤더 포함)
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(fileName)
-                .contentType(file.getContentType())
+                .contentType("image/webp")
                 .cacheControl("max-age=31536000, immutable") // 1년 캐싱
                 .build();
 
-        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(webpBytes));
+
+        log.info("Image converted to WebP: {} -> {} bytes", file.getOriginalFilename(), webpBytes.length);
 
         // URL 생성
         return String.format("https://%s.s3.ap-northeast-2.amazonaws.com/%s", bucket, fileName);
+    }
+
+    /**
+     * 이미지를 WebP 포맷으로 변환 (리사이징 + 압축)
+     */
+    private byte[] convertToWebp(MultipartFile file) throws IOException {
+        ImmutableImage image = ImmutableImage.loader().fromStream(file.getInputStream());
+
+        // 최대 크기 초과 시 리사이징
+        if (image.width > MAX_WIDTH || image.height > MAX_HEIGHT) {
+            image = image.bound(MAX_WIDTH, MAX_HEIGHT);
+            log.debug("Image resized to {}x{}", image.width, image.height);
+        }
+
+        // WebP로 변환 (80% 품질)
+        return image.bytes(WebpWriter.DEFAULT.withQ(WEBP_QUALITY));
     }
 
     public List<String> uploadImages(List<MultipartFile> files) throws IOException {

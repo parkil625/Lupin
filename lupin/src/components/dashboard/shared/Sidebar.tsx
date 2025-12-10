@@ -55,6 +55,8 @@ export default function Sidebar({
             src="/Lupin.webp"
             alt="Lupin Logo"
             className="h-14 w-auto object-contain"
+            loading="lazy"
+            decoding="async"
           />
         </div>
         <nav className="flex-1 space-y-2">

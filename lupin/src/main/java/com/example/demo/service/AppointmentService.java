@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.example.demo.exception.BusinessException;
+import com.example.demo.exception.ErrorCode;
 
 import java.util.List;
 
@@ -27,17 +28,16 @@ public class AppointmentService {
     public Long createAppointment(AppointmentRequest request) {
         // 1. 환자 & 의사 존재 여부 확인
         User patient = userRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new BusinessException("존재하지 않는 환자입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 환자입니다."));
 
         User doctor = userRepository.findById(request.getDoctorId())
-                .orElseThrow(() -> new BusinessException("존재하지 않는 의사입니다."));
-
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 의사입니다."));
         if (appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), request.getDate())) {
-            throw new BusinessException("해당 시간에 예약이 이미 꽉 찼습니다.");
+            throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "해당 시간에 예약이 이미 꽉 찼습니다.");
         }
 
         if (appointmentRepository.existsByPatientIdAndDate(patient.getId(), request.getDate())) {
-            throw new BusinessException("같은 시간에 다른 예약이 잡혀 있습니다.");
+            throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "같은 시간에 다른 예약이 잡혀 있습니다.");
         }
 
         Appointment appointment = Appointment.builder()
@@ -75,7 +75,7 @@ public class AppointmentService {
     @Transactional
     public void cancelAppointment(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예약입니다."));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorCode.APPOINTMENT_NOT_FOUND,"존재하지 않는 예약입니다."));
 
         // 엔티티 내부의 비즈니스 로직 호출 (상태 변경 검증 포함)
         appointment.cancel();
@@ -84,7 +84,7 @@ public class AppointmentService {
     @Transactional
     public void startConsultation(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예약입니다."));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
 
         appointment.startConsultation();
     }
@@ -92,7 +92,7 @@ public class AppointmentService {
     @Transactional
     public void completeConsultation(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예약입니다."));
+                .orElseThrow(() -> new IllegalArgumentException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
 
         appointment.complete();
     }

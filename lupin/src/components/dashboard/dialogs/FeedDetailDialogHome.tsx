@@ -57,7 +57,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LazyBlockNoteView } from "@/components/shared/LazyBlockNote";
+import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { getRelativeTime } from "@/lib/utils";
 import { useImageBrightness } from "@/hooks";
 
@@ -937,35 +937,6 @@ export default function FeedDetailDialogHome({
               className="h-[43%] md:flex-1 bg-transparent w-full md:w-[475px] md:max-w-[475px]"
             >
               <div className="p-4 md:p-6 space-y-3">
-                <style>{`
-                  .bn-container {
-                    max-width: 100% !important;
-                    width: 100% !important;
-                    background: transparent !important;
-                  }
-                  .bn-editor {
-                    max-width: 100% !important;
-                    width: 100% !important;
-                    padding: 0 !important;
-                    background: transparent !important;
-                  }
-                  .bn-block-content {
-                    max-width: 100% !important;
-                  }
-                  .ProseMirror {
-                    background: transparent !important;
-                    color: #111827 !important;
-                  }
-                  .ProseMirror p, .ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4, .ProseMirror h5, .ProseMirror h6, .ProseMirror li, .ProseMirror span {
-                    color: #111827 !important;
-                  }
-                  @media (min-width: 768px) {
-                    .bn-container, .bn-editor, .bn-block-content {
-                      max-width: 427px !important;
-                      width: 427px !important;
-                    }
-                  }
-                `}</style>
                 <div className="space-y-3 w-full md:max-w-[427px]">
                   {/* Badges */}
                   <div className="flex items-center justify-between">
@@ -988,13 +959,7 @@ export default function FeedDetailDialogHome({
                   </div>
 
                   {/* Content */}
-                  <div className="text-gray-900 font-medium text-sm leading-relaxed">
-                    <LazyBlockNoteView
-                      content={feed?.content}
-                      editable={false}
-                      theme="light"
-                    />
-                  </div>
+                  <FeedContentDisplay content={feed?.content || ""} />
                 </div>
               </div>
             </ScrollArea>

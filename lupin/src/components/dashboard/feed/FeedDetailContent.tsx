@@ -50,7 +50,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LazyBlockNoteView } from "@/components/shared/LazyBlockNote";
+import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { useImageBrightness } from "@/hooks";
 import { getRelativeTime } from "@/lib/utils";
 
@@ -605,9 +605,7 @@ export function FeedDetailContent({
                 </Badge>
               </div>
 
-              <div className="text-gray-900 font-medium text-sm leading-relaxed">
-                <LazyBlockNoteView content={feed.content} editable={false} theme="light" />
-              </div>
+              <FeedContentDisplay content={feed.content} />
             </div>
           </ScrollArea>
         </div>

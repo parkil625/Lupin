@@ -3,7 +3,7 @@
  *
  * 피드 작성 다이얼로그 컴포넌트
  * - 새 피드 작성
- * - BlockNote 에디터 사용
+ * - 인스타그램 스타일 textarea 사용
  * - 운동 시작/끝 사진 업로드
  */
 
@@ -30,8 +30,7 @@ import {
 import { toast } from "sonner";
 import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
 import { Image, FileText, X } from "lucide-react";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
+import { FeedContentInput } from "@/components/shared/FeedContent";
 import { imageApi } from "@/api/imageApi";
 import exifr from "exifr";
 import { CheckCircle, AlertCircle } from "lucide-react";
@@ -73,29 +72,12 @@ export default function CreateFeedDialog({
   const [endExifTime, setEndExifTime] = useState<Date | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<"none" | "verified" | "invalid">("none");
 
-  const editor = useCreateBlockNote({
-    initialContent: [
-      {
-        type: "paragraph",
-        content: "",
-      },
-    ],
-  });
+  // 피드 내용 (plain text)
+  const [content, setContent] = useState("");
 
-  // 에디터에 실제 콘텐츠가 있는지 확인하는 함수
+  // 콘텐츠가 있는지 확인하는 함수
   const checkHasEditorContent = () => {
-    return editor.document.some(block => {
-      if (block.type === 'paragraph' && Array.isArray(block.content)) {
-        return block.content.some((item: unknown) => {
-          if (typeof item === 'string') return item.trim().length > 0;
-          if (item && typeof item === 'object' && 'text' in item) {
-            return String((item as { text: string }).text || '').trim().length > 0;
-          }
-          return false;
-        });
-      }
-      return block.type !== 'paragraph';
-    });
+    return content.trim().length > 0;
   };
 
   // 실제 저장할 가치가 있는 변경사항이 있는지 확인 (이미지 또는 글)
@@ -129,21 +111,13 @@ export default function CreateFeedDialog({
           setEndImage(draft.endImage || null);
           setOtherImages(draft.otherImages || []);
           setWorkoutType(draft.workoutType || "헬스");
-
-          // 에디터 콘텐츠 복원
-          if (draft.content && Array.isArray(draft.content)) {
-            try {
-              editor.replaceBlocks(editor.document, draft.content);
-            } catch {
-              console.log("Editor content restore failed");
-            }
-          }
+          setContent(draft.content || "");
         } catch {
           console.log("Failed to load draft");
         }
       }
     }
-  }, [open, editor]);
+  }, [open]);
 
   // 상태 변경 시 localStorage에 자동 저장
   useEffect(() => {
@@ -153,11 +127,11 @@ export default function CreateFeedDialog({
         endImage,
         otherImages,
         workoutType,
-        content: editor.document,
+        content,
       };
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     }
-  }, [open, startImage, endImage, otherImages, workoutType, editor]);
+  }, [open, startImage, endImage, otherImages, workoutType, content]);
 
   // EXIF 시간 검증
   useEffect(() => {
@@ -197,33 +171,22 @@ export default function CreateFeedDialog({
     }
 
     const images = [startImage, endImage, ...otherImages].filter(Boolean) as string[];
-    const blocks = editor.document;
-    const contentJson = JSON.stringify(blocks);
 
     // localStorage 초기화
     localStorage.removeItem(DRAFT_STORAGE_KEY);
 
-    // 피드 생성 (시간 검증 여부와 관계없이 제출 가능)
-    onCreate(images, contentJson, workoutType, startImage, endImage);
+    // 피드 생성 (plain text로 전송)
+    onCreate(images, content, workoutType, startImage, endImage);
 
     // 상태 초기화
     setStartImage(null);
     setEndImage(null);
     setOtherImages([]);
     setWorkoutType("헬스");
+    setContent("");
     setStartExifTime(null);
     setEndExifTime(null);
     setVerificationStatus("none");
-    try {
-      editor.replaceBlocks(editor.document, [
-        {
-          type: "paragraph",
-          content: "",
-        },
-      ]);
-    } catch {
-      console.log("Editor reset skipped");
-    }
 
     // 다이얼로그 닫기
     onOpenChange(false);
@@ -279,20 +242,8 @@ export default function CreateFeedDialog({
   // 제출 가능: 시작/끝 사진만 있으면 됨 (EXIF 검증은 백엔드에서)
   const canSubmit = startImage && endImage;
 
-  // 에디터에 실제 콘텐츠가 있는지 확인
-  const hasEditorContent = editor.document.some(block => {
-    if (block.type === 'paragraph' && Array.isArray(block.content)) {
-      return block.content.some((item: unknown) => {
-        if (typeof item === 'string') return item.trim().length > 0;
-        if (item && typeof item === 'object' && 'text' in item) {
-          return String((item as { text: string }).text || '').trim().length > 0;
-        }
-        return false;
-      });
-    }
-    // 다른 블록 타입(이미지, 헤더 등)이 있으면 콘텐츠가 있는 것으로 간주
-    return block.type !== 'paragraph';
-  });
+  // 콘텐츠가 있는지 확인
+  const hasEditorContent = content.trim().length > 0;
 
   // 실제 저장할 가치가 있는 변경사항이 있는지 확인 (이미지 또는 글)
   const hasMeaningfulChanges =
@@ -319,16 +270,10 @@ export default function CreateFeedDialog({
     setEndImage(null);
     setOtherImages([]);
     setWorkoutType("헬스");
+    setContent("");
     setStartExifTime(null);
     setEndExifTime(null);
     setVerificationStatus("none");
-    try {
-      editor.replaceBlocks(editor.document, [
-        { type: "paragraph", content: "" },
-      ]);
-    } catch {
-      // 에디터 초기화 실패 무시
-    }
 
     // 다이얼로그 닫은 후 localStorage 삭제 (useEffect 방지)
     onOpenChange(false);
@@ -500,16 +445,13 @@ export default function CreateFeedDialog({
 
           {activeTab === "content" && (
             <ScrollArea className="h-full">
-              <style>{`
-                .bn-editor { max-width: 100% !important; width: 100% !important; background: transparent !important; min-height: 300px !important; }
-                .bn-container { max-width: 100% !important; width: 100% !important; background: transparent !important; }
-                .bn-block-content { max-width: 100% !important; background: transparent !important; }
-                .bn-inline-content { word-wrap: break-word !important; overflow-wrap: break-word !important; }
-                .bn-block { background: transparent !important; }
-                .ProseMirror { background: transparent !important; min-height: 300px !important; }
-              `}</style>
               <div className="p-4">
-                <BlockNoteView editor={editor} theme="light" />
+                <FeedContentInput
+                  value={content}
+                  onChange={setContent}
+                  placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+                  rows={10}
+                />
               </div>
             </ScrollArea>
           )}
@@ -696,36 +638,13 @@ export default function CreateFeedDialog({
           {/* 글 작성 탭 */}
           {activeTab === "content" && (
             <ScrollArea className="h-full">
-              <style>{`
-                .bn-editor {
-                  max-width: 100% !important;
-                  width: 100% !important;
-                  background: transparent !important;
-                  min-height: 300px !important;
-                }
-                .bn-container {
-                  max-width: 100% !important;
-                  width: 100% !important;
-                  background: transparent !important;
-                }
-                .bn-block-content {
-                  max-width: 100% !important;
-                  background: transparent !important;
-                }
-                .bn-inline-content {
-                  word-wrap: break-word !important;
-                  overflow-wrap: break-word !important;
-                }
-                .bn-block {
-                  background: transparent !important;
-                }
-                .ProseMirror {
-                  background: transparent !important;
-                  min-height: 300px !important;
-                }
-              `}</style>
               <div className="p-4">
-                <BlockNoteView editor={editor} theme="light" />
+                <FeedContentInput
+                  value={content}
+                  onChange={setContent}
+                  placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+                  rows={10}
+                />
               </div>
             </ScrollArea>
           )}
@@ -765,7 +684,7 @@ export default function CreateFeedDialog({
                 endImage,
                 otherImages,
                 workoutType,
-                content: editor.document,
+                content,
               };
               localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
               setShowCloseConfirm(false);

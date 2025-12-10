@@ -3,7 +3,7 @@
  *
  * 피드 수정 다이얼로그 컴포넌트
  * - 기존 피드 내용 수정
- * - BlockNote 에디터 사용
+ * - 인스타그램 스타일 textarea 사용
  * - 운동 시작/끝 사진 업로드
  */
 
@@ -31,8 +31,7 @@ import { Image, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { toast } from "sonner";
 import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
+import { FeedContentInput, convertBlockNoteToPlainText } from "@/components/shared/FeedContent";
 import exifr from "exifr";
 import { imageApi } from "@/api/imageApi";
 
@@ -56,7 +55,6 @@ export default function EditFeedDialog({
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
   const [isDesktop, setIsDesktop] = useState(false);
-  const [editorContent, setEditorContent] = useState<string>("");
   const prevOpenRef = useRef(open);
 
   // 데스크톱 여부 감지
@@ -82,7 +80,8 @@ export default function EditFeedDialog({
     content: string;
   } | null>(null);
 
-  const editor = useCreateBlockNote();
+  // 피드 내용 (plain text)
+  const [content, setContent] = useState("");
 
   // 외부에서 open이 false로 변경되면 확인 다이얼로그 표시
   useEffect(() => {
@@ -94,7 +93,7 @@ export default function EditFeedDialog({
         endImage !== initialDataRef.current.endImage ||
         JSON.stringify(otherImages) !== JSON.stringify(initialDataRef.current.otherImages) ||
         workoutType !== initialDataRef.current.workoutType ||
-        editorContent !== initialDataRef.current.content
+        content !== initialDataRef.current.content
       );
 
       if (hasActualChanges) {
@@ -107,11 +106,11 @@ export default function EditFeedDialog({
       }
     }
     prevOpenRef.current = open;
-  }, [open, startImage, endImage, otherImages, workoutType, editorContent]);
+  }, [open, startImage, endImage, otherImages, workoutType, content]);
 
   // Feed가 변경되면 기존 데이터로 초기화
   useEffect(() => {
-    if (feed && editor && open) {
+    if (feed && open) {
       const initialStartImage = feed.images[0] || null;
       const initialEndImage = feed.images[1] || null;
       const initialOtherImages = feed.images.slice(2) || [];
@@ -123,40 +122,20 @@ export default function EditFeedDialog({
       setOtherImages(initialOtherImages);
       setWorkoutType(initialWorkoutType);
 
-      // 기존 내용을 에디터에 로드
-      try {
-        let blocks;
-        if (typeof feed.content === 'string' && feed.content.startsWith('[')) {
-          blocks = JSON.parse(feed.content);
-        } else if (typeof feed.content === 'string') {
-          blocks = [{ type: "paragraph", content: feed.content }];
-        } else {
-          blocks = feed.content;
-        }
+      // 기존 내용을 plain text로 변환
+      const plainTextContent = convertBlockNoteToPlainText(feed.content || "");
+      setContent(plainTextContent);
 
-        editor.replaceBlocks(editor.document, blocks);
-      } catch (error) {
-        console.error('Failed to load feed content:', error);
-        editor.replaceBlocks(editor.document, [
-          { type: "paragraph", content: feed.content || "" }
-        ]);
-      }
-
-      // 에디터가 콘텐츠를 정규화한 후 초기 데이터 저장
-      // BlockNote는 콘텐츠 로드 시 내부적으로 정규화하므로, 로드 후 저장해야 정확한 비교 가능
-      setTimeout(() => {
-        const normalizedContent = JSON.stringify(editor.document);
-        initialDataRef.current = {
-          startImage: initialStartImage,
-          endImage: initialEndImage,
-          otherImages: initialOtherImages,
-          workoutType: initialWorkoutType,
-          content: normalizedContent,
-        };
-        setEditorContent(normalizedContent);
-      }, 100);
+      // 초기 데이터 저장 (변경 감지용)
+      initialDataRef.current = {
+        startImage: initialStartImage,
+        endImage: initialEndImage,
+        otherImages: initialOtherImages,
+        workoutType: initialWorkoutType,
+        content: plainTextContent,
+      };
     }
-  }, [feed, editor, open]);
+  }, [feed, open]);
 
   // EXIF 시간 검증 (이미지가 변경된 경우에만)
   useEffect(() => {
@@ -249,10 +228,9 @@ export default function EditFeedDialog({
     }
 
     const images = [startImage, endImage, ...otherImages].filter(Boolean) as string[];
-    const blocks = editor.document;
-    const contentJson = JSON.stringify(blocks);
 
-    onSave(feed.id, images, contentJson, workoutType, startImage, endImage);
+    // plain text로 저장
+    onSave(feed.id, images, content, workoutType, startImage, endImage);
     // 저장 완료 후 상태 초기화
     initialDataRef.current = null;
     onOpenChange(false);
@@ -262,13 +240,12 @@ export default function EditFeedDialog({
   const checkHasActualChanges = () => {
     if (!initialDataRef.current) return false;
 
-    const currentContent = JSON.stringify(editor.document);
     return (
       startImage !== initialDataRef.current.startImage ||
       endImage !== initialDataRef.current.endImage ||
       JSON.stringify(otherImages) !== JSON.stringify(initialDataRef.current.otherImages) ||
       workoutType !== initialDataRef.current.workoutType ||
-      currentContent !== initialDataRef.current.content
+      content !== initialDataRef.current.content
     );
   };
 
@@ -456,16 +433,13 @@ export default function EditFeedDialog({
 
           {activeTab === "content" && (
             <ScrollArea className="h-full">
-              <style>{`
-                .bn-editor { max-width: 100% !important; width: 100% !important; background: transparent !important; min-height: 300px !important; }
-                .bn-container { max-width: 100% !important; width: 100% !important; background: transparent !important; }
-                .bn-block-content { max-width: 100% !important; background: transparent !important; }
-                .bn-inline-content { word-wrap: break-word !important; overflow-wrap: break-word !important; }
-                .bn-block { background: transparent !important; }
-                .ProseMirror { background: transparent !important; min-height: 300px !important; }
-              `}</style>
               <div className="p-4">
-                <BlockNoteView editor={editor} theme="light" onChange={() => setEditorContent(JSON.stringify(editor.document))} />
+                <FeedContentInput
+                  value={content}
+                  onChange={setContent}
+                  placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+                  rows={10}
+                />
               </div>
             </ScrollArea>
           )}
@@ -647,16 +621,13 @@ export default function EditFeedDialog({
 
             {activeTab === "content" && (
               <ScrollArea className="h-full">
-                <style>{`
-                  .bn-editor { max-width: 100% !important; width: 100% !important; background: transparent !important; min-height: 300px !important; }
-                  .bn-container { max-width: 100% !important; width: 100% !important; background: transparent !important; }
-                  .bn-block-content { max-width: 100% !important; background: transparent !important; }
-                  .bn-inline-content { word-wrap: break-word !important; overflow-wrap: break-word !important; }
-                  .bn-block { background: transparent !important; }
-                  .ProseMirror { background: transparent !important; min-height: 300px !important; }
-                `}</style>
                 <div className="p-4">
-                  <BlockNoteView editor={editor} theme="light" onChange={() => setEditorContent(JSON.stringify(editor.document))} />
+                  <FeedContentInput
+                    value={content}
+                    onChange={setContent}
+                    placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+                    rows={10}
+                  />
                 </div>
               </ScrollArea>
             )}

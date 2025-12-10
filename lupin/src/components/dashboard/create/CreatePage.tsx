@@ -3,7 +3,7 @@
  *
  * 피드 작성 페이지 컴포넌트
  * - 운동 인증 사진 업로드
- * - BlockNote 에디터 사용
+ * - 인스타그램 스타일 textarea 사용
  * - 운동 시작/끝 사진 업로드
  */
 
@@ -22,8 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
+import { FeedContentInput } from "@/components/shared/FeedContent";
 
 interface CreatePageProps {
   onCreatePost: (newFeed: Feed) => void;
@@ -50,7 +49,8 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
 
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
-  const editor = useCreateBlockNote();
+  // 피드 내용 (plain text)
+  const [content, setContent] = useState("");
 
   const handleCreatePost = async () => {
     const images = [
@@ -74,9 +74,6 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
       return;
     }
 
-    const blocks = editor.document;
-    const contentJson = JSON.stringify(blocks);
-
     // 임시 점수 계산 (추후 백엔드에서 사진 메타데이터 기반으로 계산)
     const workoutMinutes = 30; // 임시값
     const points = Math.floor(workoutMinutes / 5) * 5; // 5분당 5점
@@ -90,7 +87,7 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
       author: userName,
       activity: workoutType,
       points: points,
-      content: contentJson,
+      content: content,
       images: images,
       likes: 0,
       comments: 0,
@@ -107,6 +104,7 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
     setEndImage(null);
     setOtherImages([]);
     setWorkoutType("");
+    setContent("");
   };
 
   const handleFileSelect = (
@@ -337,31 +335,13 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
       {/* Right Editor */}
       <div className="w-[475px] bg-white flex-shrink-0 flex flex-col">
         <ScrollArea className="flex-1 w-[475px]" style={{ width: '475px', maxWidth: '475px' }}>
-          <style>{`
-            .bn-editor {
-              max-width: 443px !important;
-              width: 443px !important;
-            }
-            .bn-container {
-              max-width: 475px !important;
-              width: 475px !important;
-            }
-            .bn-block-content {
-              max-width: 443px !important;
-            }
-            .bn-inline-content {
-              word-wrap: break-word !important;
-              overflow-wrap: break-word !important;
-            }
-            [data-radix-scroll-area-viewport] {
-              width: 475px !important;
-              max-width: 475px !important;
-            }
-          `}</style>
-          <div style={{ minWidth: '475px', width: '475px' }}>
-            <div style={{ padding: '1rem' }}>
-              <BlockNoteView editor={editor} theme="light" />
-            </div>
+          <div className="p-4">
+            <FeedContentInput
+              value={content}
+              onChange={setContent}
+              placeholder="무슨 운동을 하셨나요? 오늘의 운동 기록을 남겨보세요 💪"
+              rows={15}
+            />
           </div>
         </ScrollArea>
       </div>

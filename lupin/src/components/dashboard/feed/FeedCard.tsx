@@ -17,7 +17,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
-import { LazyBlockNoteView } from "@/components/shared/LazyBlockNote";
+import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { useImageBrightness } from "@/hooks";
 import { getCdnUrl } from "@/api";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
@@ -168,9 +168,7 @@ export function FeedCard({
           {/* 피드 내용 */}
           <div className="p-6 space-y-3 flex-1 overflow-auto bg-transparent">
             <FeedBadges feed={feed} />
-            <div className="text-gray-900 font-medium text-sm leading-relaxed">
-              <LazyBlockNoteView content={feed.content} editable={false} theme="light" />
-            </div>
+            <FeedContentDisplay content={feed.content} />
           </div>
         </div>
 

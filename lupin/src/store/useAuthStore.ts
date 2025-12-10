@@ -12,9 +12,11 @@ type UserRole = 'member' | 'doctor' | null;
 interface AuthState {
     isLoggedIn: boolean;
     userRole: UserRole;
+    hasHydrated: boolean;
     // Actions
     login: (token: string, role: string) => void;
     logout: () => void;
+    setHasHydrated: (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -22,6 +24,8 @@ export const useAuthStore = create<AuthState>()(
         (set) => ({
             isLoggedIn: false,
             userRole: 'member',
+            hasHydrated: false,
+            setHasHydrated: (state) => set({ hasHydrated: state }),
 
             login: (token, role) => {
                 localStorage.setItem('accessToken', token);
@@ -72,6 +76,9 @@ export const useAuthStore = create<AuthState>()(
         {
             name: 'auth-storage', // localStorage에 저장될 Key 이름
             storage: createJSONStorage(() => localStorage), // 저장소 지정
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

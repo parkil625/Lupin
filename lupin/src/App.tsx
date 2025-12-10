@@ -41,6 +41,12 @@ function PublicRoute({ children }: { children: ReactNode }) {
 export default function App() {
   const userRole = useAuthStore((state) => state.userRole);
   const logout = useAuthStore((state) => state.logout);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+
+  // 인증 상태가 localStorage에서 로드될 때까지 대기 (깜빡임 방지)
+  if (!hasHydrated) {
+    return <PageLoader />;
+  }
 
   return (
     <ErrorBoundary>

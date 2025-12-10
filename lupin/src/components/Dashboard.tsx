@@ -466,8 +466,14 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             open={showFeedDetailInHome}
             onOpenChange={(v) => { setShowFeedDetailInHome(v); if (!v) { store.setSelectedFeed(null); setTargetCommentId(null); } }}
             currentImageIndex={getFeedImageIndex(store.selectedFeed.id)}
-            onPrevImage={() => setFeedImageIndex(store.selectedFeed!.id, Math.max(0, getFeedImageIndex(store.selectedFeed!.id) - 1))}
-            onNextImage={() => setFeedImageIndex(store.selectedFeed!.id, Math.min(store.selectedFeed!.images.length - 1, getFeedImageIndex(store.selectedFeed!.id) + 1))}
+            onPrevImage={() => setFeedImageIndexes(prev => {
+              const current = prev[store.selectedFeed!.id] || 0;
+              return { ...prev, [store.selectedFeed!.id]: Math.max(0, current - 1) };
+            })}
+            onNextImage={() => setFeedImageIndexes(prev => {
+              const current = prev[store.selectedFeed!.id] || 0;
+              return { ...prev, [store.selectedFeed!.id]: Math.min(store.selectedFeed!.images.length - 1, current + 1) };
+            })}
             onEdit={handleEditFeed}
             onDelete={handleDeleteFeed}
             targetCommentId={targetCommentId}

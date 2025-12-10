@@ -41,7 +41,7 @@ export function RankingSkeleton({ currentMonth }: RankingSkeletonProps) {
                     className="w-full rounded-xl animate-pulse"
                     style={{
                       backgroundColor: skeletonBgColor,
-                      height: "58px", // RankerItem과 동일한 높이
+                      height: "50px", // RankerItem과 동일한 높이 (py-1 + avatar 40px)
                     }}
                   />
                 )
@@ -50,39 +50,6 @@ export function RankingSkeleton({ currentMonth }: RankingSkeletonProps) {
 
             {/* 사이드바 스켈레톤 */}
             <div className="space-y-6">
-              {/* 내 통계 스켈레톤 */}
-              <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
-                <div className="p-6 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-6 h-6 rounded animate-pulse"
-                      style={{ backgroundColor: skeletonBgColor }}
-                    />
-                    <div
-                      className="h-6 w-20 rounded animate-pulse"
-                      style={{ backgroundColor: skeletonBgColor }}
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="flex justify-between items-center"
-                      >
-                        <div
-                          className="h-5 w-24 rounded animate-pulse"
-                          style={{ backgroundColor: skeletonBgColor }}
-                        />
-                        <div
-                          className="h-7 w-12 rounded animate-pulse"
-                          style={{ backgroundColor: skeletonBgColor }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-
               {/* 전체 현황 스켈레톤 */}
               <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
                 <div className="p-6 space-y-4">

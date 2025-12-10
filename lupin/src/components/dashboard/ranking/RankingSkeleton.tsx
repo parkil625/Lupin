@@ -9,6 +9,7 @@
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RANKING_CONSTANTS, THEME_COLORS } from "@/constants/rankingConstants";
+import { Users } from "lucide-react";
 
 interface RankingSkeletonProps {
   currentMonth: number;
@@ -53,32 +54,32 @@ export function RankingSkeleton({ currentMonth }: RankingSkeletonProps) {
               {/* 전체 현황 스켈레톤 */}
               <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl">
                 <div className="p-6 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-6 h-6 rounded animate-pulse"
-                      style={{ backgroundColor: skeletonBgColor }}
-                    />
-                    <div
-                      className="h-6 w-24 rounded animate-pulse"
-                      style={{ backgroundColor: skeletonBgColor }}
-                    />
-                  </div>
+                  <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                    <Users className="w-6 h-6" style={{ color: THEME_COLORS.PRIMARY }} />
+                    전체 현황
+                  </h3>
                   <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">총 참여자</span>
                       <div
-                        key={i}
-                        className="flex justify-between items-center"
-                      >
-                        <div
-                          className="h-5 w-24 rounded animate-pulse"
-                          style={{ backgroundColor: skeletonBgColor }}
-                        />
-                        <div
-                          className="h-7 w-12 rounded animate-pulse"
-                          style={{ backgroundColor: skeletonBgColor }}
-                        />
-                      </div>
-                    ))}
+                        className="h-7 w-12 rounded animate-pulse"
+                        style={{ backgroundColor: skeletonBgColor }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">이번 달 활동</span>
+                      <div
+                        className="h-7 w-12 rounded animate-pulse"
+                        style={{ backgroundColor: skeletonBgColor }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-700 font-medium">평균 점수</span>
+                      <div
+                        className="h-7 w-12 rounded animate-pulse"
+                        style={{ backgroundColor: skeletonBgColor }}
+                      />
+                    </div>
                   </div>
                 </div>
               </Card>

@@ -290,11 +290,19 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     images: string[],
     content: string,
     workoutType: string,
-    _startImage: string | null,
-    _endImage: string | null
+    startImage: string | null,
+    endImage: string | null
   ) => {
     try {
-      await feedApi.updateFeed(feedId, { activity: workoutType, content, images });
+      // 타입별 필드로 전송 (배열 순서 의존 제거)
+      const otherImages = images.filter(img => img !== startImage && img !== endImage);
+      await feedApi.updateFeed(feedId, {
+        activity: workoutType,
+        content,
+        startImage: startImage || undefined,
+        endImage: endImage || undefined,
+        otherImages
+      });
       store.updateFeed(feedId, { images, content, activity: workoutType, time: "방금 전" });
       store.triggerRefresh();
       toast.success("피드가 수정되었습니다!");
@@ -319,11 +327,23 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     images: string[],
     content: string,
     workoutType: string,
-    _startImage: string | null,
-    _endImage: string | null
+    startImage: string | null,
+    endImage: string | null
   ) => {
     try {
-      await feedApi.createFeed({ activity: workoutType, content, images });
+      if (!startImage || !endImage) {
+        toast.error("시작 사진과 끝 사진이 필요합니다.");
+        return;
+      }
+      // 타입별 필드로 전송 (배열 순서 의존 제거)
+      const otherImages = images.filter(img => img !== startImage && img !== endImage);
+      await feedApi.createFeed({
+        activity: workoutType,
+        content,
+        startImage,
+        endImage,
+        otherImages
+      });
       store.triggerRefresh();
       toast.success("피드가 작성되었습니다!");
     } catch (error: unknown) {

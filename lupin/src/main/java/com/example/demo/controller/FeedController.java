@@ -36,7 +36,15 @@ public class FeedController extends BaseController {
             @Valid @RequestBody FeedRequest request
     ) {
         User user = getCurrentUser(userDetails);
-        Feed feed = feedService.createFeed(user, request.getActivity(), request.getContent(), request.getImages());
+        // 타입별 필드 우선 사용, 없으면 기존 images 배열 사용 (하위 호환)
+        Feed feed = feedService.createFeed(
+                user,
+                request.getActivity(),
+                request.getContent(),
+                request.getStartImageKey(),
+                request.getEndImageKey(),
+                request.getOtherImageKeys()
+        );
         return ResponseEntity.ok(toFeedResponse(feed));
     }
 
@@ -48,9 +56,20 @@ public class FeedController extends BaseController {
     ) {
         User user = getCurrentUser(userDetails);
         Feed feed;
-        if (request.getImages() != null && request.getImages().size() >= 2) {
-            // 이미지가 있으면 이미지와 함께 수정
-            feed = feedService.updateFeed(user, feedId, request.getContent(), request.getActivity(), request.getImages());
+        String startKey = request.getStartImageKey();
+        String endKey = request.getEndImageKey();
+
+        if (startKey != null && endKey != null) {
+            // 타입별 필드 사용 (권장)
+            feed = feedService.updateFeed(
+                    user,
+                    feedId,
+                    request.getContent(),
+                    request.getActivity(),
+                    startKey,
+                    endKey,
+                    request.getOtherImageKeys()
+            );
         } else {
             // 이미지가 없으면 내용만 수정
             feed = feedService.updateFeed(user, feedId, request.getContent(), request.getActivity());

@@ -87,14 +87,14 @@ class FeedControllerTest {
     @WithMockUser(username = "testuser")
     @DisplayName("POST /api/feeds - 피드 작성 성공")
     void createFeed_Success() throws Exception {
-        // given
-        given(feedService.createFeed(any(User.class), eq("달리기"), eq("오늘 달리기 완료!"), any()))
+        // given - 새 API 시그니처: createFeed(User, activity, content, startImage, endImage, otherImages)
+        given(feedService.createFeed(any(User.class), eq("달리기"), eq("오늘 달리기 완료!"), eq("start.jpg"), eq("end.jpg"), any()))
                 .willReturn(testFeed);
 
-        // when & then
+        // when & then - startImage, endImage를 타입별로 전송
         mockMvc.perform(post("/api/feeds")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"activity\": \"달리기\", \"content\": \"오늘 달리기 완료!\", \"images\": []}"))
+                        .content("{\"activity\": \"달리기\", \"content\": \"오늘 달리기 완료!\", \"startImage\": \"start.jpg\", \"endImage\": \"end.jpg\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.activity").value("달리기"));

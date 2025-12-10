@@ -76,12 +76,24 @@ export const feedApi = {
     }
   },
 
-  createFeed: async (data: { activity: string; content: string; images: string[] }) => {
+  createFeed: async (data: {
+    activity: string;
+    content: string;
+    startImage: string;
+    endImage: string;
+    otherImages?: string[];
+  }) => {
     const response = await apiClient.post('/feeds', data);
     return response.data;
   },
 
-  updateFeed: async (feedId: number, data: { activity: string; content: string; images: string[] }) => {
+  updateFeed: async (feedId: number, data: {
+    activity: string;
+    content: string;
+    startImage?: string;
+    endImage?: string;
+    otherImages?: string[];
+  }) => {
     const response = await apiClient.put(`/feeds/${feedId}`, data);
     return response.data;
   },

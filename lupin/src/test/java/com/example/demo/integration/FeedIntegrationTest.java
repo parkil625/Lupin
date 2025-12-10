@@ -107,11 +107,12 @@ class FeedIntegrationTest {
     @DisplayName("피드 생성 → 조회 통합 테스트")
     @WithMockUser(username = "testuser")
     void createAndGetFeed() throws Exception {
-        // 1. 피드 생성 (이미지 필수)
+        // 1. 피드 생성 (startImage, endImage 타입별로 지정)
         FeedRequest request = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("오늘 5km 달리기 완료!")
-                .images(List.of("start.jpg", "end.jpg"))
+                .startImage("start.jpg")
+                .endImage("end.jpg")
                 .build();
 
         String createResponse = mockMvc.perform(post("/api/feeds")
@@ -217,11 +218,12 @@ class FeedIntegrationTest {
     @DisplayName("이미지와 함께 피드 생성 통합 테스트")
     @WithMockUser(username = "testuser")
     void createFeedWithImages() throws Exception {
-        // given
+        // given - startImage, endImage 타입별로 지정
         FeedRequest request = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("사진 포함 피드")
-                .images(List.of("image1.jpg", "image2.jpg"))
+                .startImage("image1.jpg")
+                .endImage("image2.jpg")
                 .build();
 
         // when
@@ -285,11 +287,12 @@ class FeedIntegrationTest {
     @DisplayName("피드 삭제 시 이미지도 함께 삭제 통합 테스트")
     @WithMockUser(username = "testuser")
     void deleteFeedWithImages() throws Exception {
-        // given
+        // given - startImage, endImage 타입별로 지정
         FeedRequest request = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("삭제할 피드")
-                .images(List.of("image1.jpg", "image2.jpg"))
+                .startImage("image1.jpg")
+                .endImage("image2.jpg")
                 .build();
 
         mockMvc.perform(post("/api/feeds")

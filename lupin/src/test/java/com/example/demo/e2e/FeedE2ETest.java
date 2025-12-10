@@ -108,11 +108,12 @@ class FeedE2ETest {
     @DisplayName("E2E: 피드 작성 → 좋아요 → 댓글 → 대댓글 → 삭제 전체 흐름")
     @WithMockUser(username = "testuser")
     void feedLifecycle_FullFlow() throws Exception {
-        // 1. 피드 작성
+        // 1. 피드 작성 (startImage, endImage 타입별로 지정)
         FeedRequest feedRequest = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("오늘 5km 달리기 완료!")
-                .images(List.of("run1.jpg", "run2.jpg"))
+                .startImage("run1.jpg")
+                .endImage("run2.jpg")
                 .build();
 
         mockMvc.perform(post("/api/feeds")
@@ -396,11 +397,12 @@ class FeedE2ETest {
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        // 2. 피드 작성 (이미지 필수)
+        // 2. 피드 작성 (startImage, endImage 타입별로 지정)
         FeedRequest request = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("오늘의 피드")
-                .images(List.of("start.jpg", "end.jpg"))
+                .startImage("start.jpg")
+                .endImage("end.jpg")
                 .build();
 
         mockMvc.perform(post("/api/feeds")
@@ -714,11 +716,12 @@ class FeedE2ETest {
     @DisplayName("E2E: 여러 사용자 상호작용 시뮬레이션")
     @WithMockUser(username = "testuser")
     void multiUserInteraction() throws Exception {
-        // 1. 피드 작성 (이미지 필수)
+        // 1. 피드 작성 (startImage, endImage 타입별로 지정)
         FeedRequest feedRequest = FeedRequest.builder()
                 .activity("RUNNING")
                 .content("다중 사용자 테스트")
-                .images(List.of("start.jpg", "end.jpg"))
+                .startImage("start.jpg")
+                .endImage("end.jpg")
                 .build();
 
         mockMvc.perform(post("/api/feeds")

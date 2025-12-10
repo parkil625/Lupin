@@ -63,13 +63,22 @@ public class FeedService {
 
     @Transactional
     public Feed createFeed(User writer, String activity, String content, List<String> s3Keys) {
-        // 시작/끝 사진 필수 검증
+        // 하위 호환: 기존 배열 방식 (인덱스 0=START, 1=END, 2+=OTHER)
         if (s3Keys.size() < 2) {
             throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED);
         }
-
         String startImageKey = s3Keys.get(0);
         String endImageKey = s3Keys.get(1);
+        List<String> otherImageKeys = s3Keys.size() > 2 ? s3Keys.subList(2, s3Keys.size()) : List.of();
+        return createFeed(writer, activity, content, startImageKey, endImageKey, otherImageKeys);
+    }
+
+    @Transactional
+    public Feed createFeed(User writer, String activity, String content, String startImageKey, String endImageKey, List<String> otherImageKeys) {
+        // 시작/끝 사진 필수 검증
+        if (startImageKey == null || endImageKey == null) {
+            throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED);
+        }
 
         // EXIF 시간 추출 시도 및 점수 계산
         int score = 0;
@@ -111,16 +120,38 @@ public class FeedService {
 
         Feed savedFeed = feedRepository.save(feed);
 
-        // 이미지 저장 (시작=START, 끝=END, 나머지=OTHER)
-        for (int i = 0; i < s3Keys.size(); i++) {
-            ImageType imgType = (i == 0) ? ImageType.START : (i == 1) ? ImageType.END : ImageType.OTHER;
-            FeedImage feedImage = FeedImage.builder()
-                    .feed(savedFeed)
-                    .s3Key(s3Keys.get(i))
-                    .imgType(imgType)
-                    .sortOrder(i)
-                    .build();
-            feedImageRepository.save(feedImage);
+        // 이미지 저장 (명시적 타입 지정)
+        int sortOrder = 0;
+
+        // 시작 이미지 (START)
+        FeedImage startImage = FeedImage.builder()
+                .feed(savedFeed)
+                .s3Key(startImageKey)
+                .imgType(ImageType.START)
+                .sortOrder(sortOrder++)
+                .build();
+        feedImageRepository.save(startImage);
+
+        // 끝 이미지 (END)
+        FeedImage endImage = FeedImage.builder()
+                .feed(savedFeed)
+                .s3Key(endImageKey)
+                .imgType(ImageType.END)
+                .sortOrder(sortOrder++)
+                .build();
+        feedImageRepository.save(endImage);
+
+        // 기타 이미지 (OTHER)
+        if (otherImageKeys != null) {
+            for (String otherKey : otherImageKeys) {
+                FeedImage otherImage = FeedImage.builder()
+                        .feed(savedFeed)
+                        .s3Key(otherKey)
+                        .imgType(ImageType.OTHER)
+                        .sortOrder(sortOrder++)
+                        .build();
+                feedImageRepository.save(otherImage);
+            }
         }
 
         // 포인트 부여
@@ -143,6 +174,15 @@ public class FeedService {
 
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity, List<String> s3Keys) {
+        // 하위 호환: 기존 배열 방식 (인덱스 0=START, 1=END, 2+=OTHER)
+        String startImageKey = s3Keys.get(0);
+        String endImageKey = s3Keys.get(1);
+        List<String> otherImageKeys = s3Keys.size() > 2 ? s3Keys.subList(2, s3Keys.size()) : List.of();
+        return updateFeed(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys);
+    }
+
+    @Transactional
+    public Feed updateFeed(User user, Long feedId, String content, String activity, String startImageKey, String endImageKey, List<String> otherImageKeys) {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
@@ -158,8 +198,8 @@ public class FeedService {
         int score = 0;
         int calories = 0;
 
-        var startTimeOpt = imageMetadataService.extractPhotoDateTime(s3Keys.get(0));
-        var endTimeOpt = imageMetadataService.extractPhotoDateTime(s3Keys.get(1));
+        var startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
+        var endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
 
         if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
             LocalDateTime startTime = startTimeOpt.get();
@@ -182,16 +222,38 @@ public class FeedService {
         // 기존 이미지 삭제
         feedImageRepository.deleteByFeed(feed);
 
-        // 새 이미지 저장
-        for (int i = 0; i < s3Keys.size(); i++) {
-            ImageType imgType = (i == 0) ? ImageType.START : (i == 1) ? ImageType.END : ImageType.OTHER;
-            FeedImage feedImage = FeedImage.builder()
-                    .feed(feed)
-                    .s3Key(s3Keys.get(i))
-                    .imgType(imgType)
-                    .sortOrder(i)
-                    .build();
-            feedImageRepository.save(feedImage);
+        // 이미지 저장 (명시적 타입 지정)
+        int sortOrder = 0;
+
+        // 시작 이미지 (START)
+        FeedImage startImage = FeedImage.builder()
+                .feed(feed)
+                .s3Key(startImageKey)
+                .imgType(ImageType.START)
+                .sortOrder(sortOrder++)
+                .build();
+        feedImageRepository.save(startImage);
+
+        // 끝 이미지 (END)
+        FeedImage endImage = FeedImage.builder()
+                .feed(feed)
+                .s3Key(endImageKey)
+                .imgType(ImageType.END)
+                .sortOrder(sortOrder++)
+                .build();
+        feedImageRepository.save(endImage);
+
+        // 기타 이미지 (OTHER)
+        if (otherImageKeys != null) {
+            for (String otherKey : otherImageKeys) {
+                FeedImage otherImage = FeedImage.builder()
+                        .feed(feed)
+                        .s3Key(otherKey)
+                        .imgType(ImageType.OTHER)
+                        .sortOrder(sortOrder++)
+                        .build();
+                feedImageRepository.save(otherImage);
+            }
         }
 
         // 포인트 조정 (기존 차감 후 새로 적립)

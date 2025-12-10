@@ -39,6 +39,7 @@ export default function ImageUploadBox({
       for (const file of files) {
         if (file.type.startsWith("image/")) {
           await onFileSelect(file);
+          if (variant !== "upload") break; // 단일 이미지면 첫 번째만
         }
       }
     };

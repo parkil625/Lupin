@@ -408,7 +408,7 @@ export default function ProfilePage({ onLogout, profileImage, setProfileImage }:
                                 <Edit className="w-4 h-4 mr-2" /> 저장
                             </Button>
                         ) : (
-                            <Button onClick={() => setIsEditing(true)} variant="outline" className="border-gray-200 font-bold">
+                            <Button type="button" onClick={() => setIsEditing(true)} variant="outline" className="border-gray-200 font-bold">
                                 <Edit className="w-4 h-4 mr-2 text-gray-600" /> 수정
                             </Button>
                         )}

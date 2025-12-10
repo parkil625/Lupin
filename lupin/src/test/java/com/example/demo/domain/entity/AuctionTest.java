@@ -3,6 +3,7 @@ package com.example.demo.domain.entity;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
 import com.example.demo.domain.enums.Role;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AuctionTest {
@@ -235,10 +237,70 @@ class AuctionTest {
         assertEquals(bidAmount, bid.getBidAmount());
         assertEquals(user, bid.getUser());
     }
+    
+    @Test
+    @DisplayName("정규 종료 시간이 지났지만 ACTIVE 상태라면, 입찰 시 초읽기가 시작된다")
+    void placeBid_triggers_overtime() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime regularEnd = now.minusSeconds(1); // 1초 지남
+        User bidder = createDummyUser(2L);
+
+        Auction auction = Auction.builder()
+                .status(AuctionStatus.ACTIVE) // 아직 ACTIVE (스케줄러가 안 돌았거나 미세한 차이)
+                .currentPrice(1000L)
+                .regularEndTime(regularEnd)
+                .overtimeStarted(false)
+                .overtimeSeconds(60) // 초읽기 60초 설정
+                .build();
+
+        // when
+        auction.placeBid(bidder, 2000L, now);
+
+        // then
+        assertThat(auction.getCurrentPrice()).isEqualTo(2000L);
+        assertThat(auction.getWinner()).isEqualTo(bidder);
+
+
+        // [핵심] 초읽기 종료 시간이 (입찰시간 + 60초)로 설정되었는지 검증
+        assertThat(auction.getOvertimeEndTime()).isEqualTo(now.plusSeconds(60));
+    }
+
+    @Test
+    @DisplayName("이미 초읽기 진행 중이라면, 입찰 시 종료 시간이 연장된다")
+    void placeBid_extends_overtime() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        User bidder = createDummyUser(3L);
+
+        Auction auction = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .currentPrice(1000L)
+                .regularEndTime(now.minusHours(1))
+                .overtimeStarted(true) // 이미 초읽기 중
+                .overtimeSeconds(30)   // 연장 단위 30초
+                .overtimeEndTime(now.plusSeconds(10)) // 원래 10초 남았음
+                .build();
+
+        // when
+        auction.placeBid(bidder, 2000L, now);
+
+        // then
+        assertThat(auction.getCurrentPrice()).isEqualTo(2000L);
+
+        // [핵심] 원래 10초 남았었지만, 방금 입찰했으므로 (now + 30초)로 늘어나야 함
+        assertThat(auction.getOvertimeEndTime()).isEqualTo(now.plusSeconds(30));
+    }
+
+
 
     // ===========================
     // Helper Methods
     // ===========================
+    private User createDummyUser(Long id) {
+        return User.builder().id(id).name("테스터" + id).build();
+    }
+
 
     private User createUser(String name) {
         return User.builder()

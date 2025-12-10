@@ -188,6 +188,10 @@ public class Auction {
     //입찰시 확인 최고 낙찰자 교체(근데 원래 있던 사람 상태는 못바꿔줌)
     public void placeBid(User user,Long bidAmount,LocalDateTime bidTime ) {
 
+        if (this.status == AuctionStatus.ACTIVE && !overtimeStarted && bidTime.isAfter(regularEndTime)) {
+            startOvertime(bidTime);
+        }
+
         validateTime(bidTime);
         validateBid(bidAmount);
 

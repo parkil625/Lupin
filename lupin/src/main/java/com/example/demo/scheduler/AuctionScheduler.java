@@ -19,7 +19,12 @@ public class AuctionScheduler {
     public void handleAuctions() {
         LocalDateTime now = LocalDateTime.now();
         auctionService.activateScheduledAuctions(now);
-        auctionService.closeExpiredAuctions(now);
     }
 
+    @Scheduled(cron = "0 * * * * *")//원래는 1초마다인데 스케쥴러를 이용하는건 성능에 좋지 않은것 같음
+    public void handleAuctions1() {
+        LocalDateTime now = LocalDateTime.now();
+        auctionService.startOvertimeForAuctions(now);
+        auctionService.closeExpiredAuctions(now);
+    }
 }

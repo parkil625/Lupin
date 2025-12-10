@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,9 +28,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuctionService 테스트")
@@ -429,7 +430,82 @@ class AuctionServiceTest {
        verify(auctionBidRepository).findBidsByActiveAuction();
    }
 
+    @Test
+    @DisplayName("초읽기 대상 경매들을 찾아 상태를 변경하고 즉시 저장한다")
+    void startOvertimeForAuctions_success() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
 
+        // Mock 객체 생성 (실제 Entity 대신 동작을 검증하기 위함)
+        Auction auction1 = mock(Auction.class);
+        Auction auction2 = mock(Auction.class);
+
+        // ID 설정 (로그 확인용, 필수는 아님)
+        given(auction1.getId()).willReturn(1L);
+        given(auction2.getId()).willReturn(2L);
+
+        // Repository가 위 2개를 리턴하도록 설정
+        given(auctionRepository.findAuctionsReadyForOvertime(any(LocalDateTime.class)))
+                .willReturn(List.of(auction1, auction2));
+
+        // when
+        auctionService.startOvertimeForAuctions(now);
+
+        // then
+        // 1. 각 경매의 startOvertime() 메서드가 호출되었는지 검증
+        verify(auction1, times(1)).startOvertime(now);
+        verify(auction2, times(1)).startOvertime(now);
+
+        // 2. 각 경매가 saveAndFlush()로 저장되었는지 검증
+        verify(auctionRepository, times(1)).saveAndFlush(auction1);
+        verify(auctionRepository, times(1)).saveAndFlush(auction2);
+    }
+
+    @Test
+    @DisplayName("상태 변경 중 예외가 발생한 경매는 스킵하고, 나머지는 정상 처리한다")
+    void startOvertimeForAuctions_handleException() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+
+        Auction normalAuction = mock(Auction.class);
+        Auction errorAuction = mock(Auction.class);
+
+        given(normalAuction.getId()).willReturn(1L);
+        given(errorAuction.getId()).willReturn(2L); // 에러 날 녀석
+
+        // Repository가 리스트 리턴
+        given(auctionRepository.findAuctionsReadyForOvertime(any(LocalDateTime.class)))
+                .willReturn(List.of(errorAuction, normalAuction));
+
+        // [핵심] errorAuction은 startOvertime 호출 시 예외 발생시키기
+        willThrow(new IllegalStateException("이미 종료된 경매입니다"))
+                .given(errorAuction).startOvertime(any());
+
+        // when
+        auctionService.startOvertimeForAuctions(now);
+
+        // then
+        // 1. 에러 난 경매: 저장 메서드가 절대 호출되면 안 됨 (never)
+        verify(auctionRepository, never()).saveAndFlush(errorAuction);
+
+        // 2. 정상 경매: 에러와 상관없이 정상적으로 저장되어야 함 (times 1)
+        verify(auctionRepository, times(1)).saveAndFlush(normalAuction);
+    }
+
+    @Test
+    @DisplayName("대상 경매가 없으면 아무 작업도 수행하지 않는다")
+    void startOvertimeForAuctions_empty() {
+        // given
+        given(auctionRepository.findAuctionsReadyForOvertime(any()))
+                .willReturn(Collections.emptyList());
+
+        // when
+        auctionService.startOvertimeForAuctions(LocalDateTime.now());
+
+        // then
+        // saveAndFlush가 한 번도 호출되지 않아야 함
+        verify(auctionRepository, never()).saveAndFlush(any());
+    }
 
 
 

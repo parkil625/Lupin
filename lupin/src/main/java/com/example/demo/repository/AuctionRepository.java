@@ -32,12 +32,9 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     select a
     from Auction a
     where a.status = 'ACTIVE'
-      and (
-            (a.overtimeStarted = false and a.regularEndTime < :now)
-            or
-            (a.overtimeStarted = true and a.overtimeEndTime < :now)
-          )
-""")
+      and a.overtimeStarted = true
+      and a.overtimeEndTime < :now
+    """)
     List<Auction> findExpiredAuctions(@Param("now") LocalDateTime now);
 
 
@@ -46,6 +43,16 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     select a
     from Auction a join fetch a.auctionItem 
     where a.status = :status """) Optional<Auction> findFirstWithItemByStatus(@Param("status") AuctionStatus status);
+
+    //정규 시간 종료시 자동 30초 부여
+    @Query("""
+    select a
+    from Auction a
+    where a.status = 'ACTIVE'
+      and a.overtimeStarted = false
+      and a.regularEndTime < :now
+    """)
+    List<Auction> findAuctionsReadyForOvertime(@Param("now") LocalDateTime now);
 
 
     //진행 예정인 경매 정보, 경매 물품 정보 가지고 오기

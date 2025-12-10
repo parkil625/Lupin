@@ -85,7 +85,14 @@ public class AuctionService {
 
         for (Auction auction : auctions) {
             List<AuctionBid> auctionBids = auctionBidRepository.findByAuctionId(auction.getId());
+
+            // 상태 변경 (ACTIVE -> ENDED)
             auction.deactivate(auctionBids);
+
+            // [추가] 변경 사항 즉시 DB 반영!
+            auctionRepository.saveAndFlush(auction);
+
+            log.info("🏁 경매 ID {} -> 종료(ENDED) 처리 완료", auction.getId());
         }
 
     }
@@ -124,6 +131,26 @@ public class AuctionService {
                 .toList();
     }
 
+    public void startOvertimeForAuctions(LocalDateTime now) {
+        List<Auction> auctions = auctionRepository.findAuctionsReadyForOvertime(now);
 
+        // [추가] 대상을 찾았는지 확인하는 로그
+        if (!auctions.isEmpty()) {
+            log.info("⏰ 초읽기 전환 대상 경매 {}건 발견! (기준 시간: {})", auctions.size(), now);
+        }
+
+        for (Auction auction : auctions) {
+            try {
+                auction.startOvertime(now);
+
+                // [필수] 즉시 반영
+                auctionRepository.saveAndFlush(auction);
+
+                log.info("✅ 경매 ID {} -> 초읽기 모드(Overtime)로 변경 및 저장 완료", auction.getId());
+            } catch (IllegalStateException e) {
+                log.error("경매 ID {} 초읽기 전환 실패: {}", auction.getId(), e.getMessage());
+            }
+        }
+    }
 
 }

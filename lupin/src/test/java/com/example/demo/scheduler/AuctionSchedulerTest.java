@@ -27,12 +27,14 @@ class AuctionSchedulerTest {
     @DisplayName("스케줄러가 실행되면 서비스 로직을 호출한다")
     void handleAuctions() {
         // when
+        // 스케줄러 메서드를 직접 호출 (Spring 스케줄링 없이 로직만 테스트)
+        auctionScheduler.handleAuctions1();
         auctionScheduler.handleAuctions();
-
         // then
-        // activateScheduledAuctions가 1번 호출되었는지 검증
+        // 1. 예약된 경매 시작 로직 호출 확인
         verify(auctionService, times(1)).activateScheduledAuctions(any(LocalDateTime.class));
-        // closeExpiredAuctions가 1번 호출되었는지 검증
+
+        // 2. 만료된 경매 종료 로직 호출 확인
         verify(auctionService, times(1)).closeExpiredAuctions(any(LocalDateTime.class));
     }
 }

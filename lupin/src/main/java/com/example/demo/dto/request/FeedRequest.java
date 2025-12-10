@@ -16,7 +16,7 @@ public class FeedRequest {
     @NotBlank(message = "활동은 필수입니다")
     private String activity;
 
-    @Size(max = 1000, message = "피드 내용은 1000자 이하로 작성해주세요")
+    @Size(max = 50000, message = "피드 내용이 너무 깁니다")
     private String content;
 
     private List<String> images = new ArrayList<>();

@@ -23,9 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ImageService {
 
-    private static final int MAX_WIDTH = 1200;
-    private static final int MAX_HEIGHT = 1200;
-    private static final int WEBP_QUALITY = 80;
+    private static final int MAX_WIDTH = 800;
+    private static final int MAX_HEIGHT = 800;
+    private static final int WEBP_QUALITY = 60;
 
     private final S3Template s3Template;
     private final S3Client s3Client;

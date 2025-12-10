@@ -8,24 +8,29 @@
 -- 1. USERS (14명의 활발한 회원들)
 -- 비밀번호: 'test1234' (BCrypt 해시) / user01, doctor01은 비번 '1'
 -- =====================================================
-INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, avatar)
+INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES
     -- 테스트 계정 (비밀번호: 1)
-    (13, 'user01', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '테스트유저', 'MEMBER', 175.0, 70.0, 'M', '1995-01-01', NULL),
-    (14, 'doctor01', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '테스트의사', 'DOCTOR', 178.0, 72.0, 'M', '1985-01-01', NULL),
+    (13, 'user01', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '테스트유저', 'MEMBER', 175.0, 70.0, 'M', '1995-01-01', NULL, NULL),
+    (14, 'doctor01', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '테스트의사', 'DOCTOR', 178.0, 72.0, 'M', '1985-01-01', '내과', NULL),
+    -- 진료과별 의사 (비밀번호: test1234)
+    (15, 'dr.kim.internal', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '김민수', 'DOCTOR', 175.0, 70.0, 'M', '1980-03-15', '내과', NULL),
+    (16, 'dr.lee.derma', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '이지은', 'DOCTOR', 165.0, 55.0, 'F', '1983-07-20', '피부과', NULL),
+    (17, 'dr.park.surgery', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '박준호', 'DOCTOR', 180.0, 75.0, 'M', '1978-11-08', '외과', NULL),
+    (18, 'dr.choi.psychia', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '최서연', 'DOCTOR', 168.0, 58.0, 'F', '1982-05-12', '신경정신과', NULL),
     -- 기존 회원들 (비밀번호: test1234)
-    (1, 'minjun90', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '김민준', 'MEMBER', 175.5, 70.0, 'M', '1990-01-15', NULL),
-    (2, 'soyeon95', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '이소연', 'MEMBER', 168.0, 55.5, 'F', '1995-05-20', NULL),
-    (3, 'junhyuk88', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '박준혁', 'MEMBER', 180.0, 75.0, 'M', '1988-11-30', NULL),
-    (4, 'dr.choi', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '최성훈', 'DOCTOR', 172.0, 68.0, 'M', '1985-03-10', NULL),
-    (5, 'yuna92', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '정유나', 'MEMBER', 165.0, 52.0, 'F', '1992-07-25', NULL),
-    (6, 'runner_kim', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '김태호', 'MEMBER', 178.0, 72.0, 'M', '1991-08-12', NULL),
-    (7, 'yoga_jin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '한진아', 'MEMBER', 162.0, 48.0, 'F', '1994-02-28', NULL),
-    (8, 'health_master', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '오승민', 'MEMBER', 182.0, 80.0, 'M', '1987-06-15', NULL),
-    (9, 'swim_love', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '강수빈', 'MEMBER', 170.0, 58.0, 'F', '1993-12-05', NULL),
-    (10, 'bike_rider', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '임동현', 'MEMBER', 176.0, 73.0, 'M', '1989-04-22', NULL),
-    (11, 'pilates_queen', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '서예진', 'MEMBER', 166.0, 50.0, 'F', '1996-09-18', NULL),
-    (12, 'crossfit_pro', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '장현우', 'MEMBER', 184.0, 85.0, 'M', '1990-11-08', NULL);
+    (1, 'minjun90', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '김민준', 'MEMBER', 175.5, 70.0, 'M', '1990-01-15', NULL, NULL),
+    (2, 'soyeon95', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '이소연', 'MEMBER', 168.0, 55.5, 'F', '1995-05-20', NULL, NULL),
+    (3, 'junhyuk88', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '박준혁', 'MEMBER', 180.0, 75.0, 'M', '1988-11-30', NULL, NULL),
+    (4, 'dr.choi', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '최성훈', 'DOCTOR', 172.0, 68.0, 'M', '1985-03-10', NULL, NULL),
+    (5, 'yuna92', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '정유나', 'MEMBER', 165.0, 52.0, 'F', '1992-07-25', NULL, NULL),
+    (6, 'runner_kim', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '김태호', 'MEMBER', 178.0, 72.0, 'M', '1991-08-12', NULL, NULL),
+    (7, 'yoga_jin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '한진아', 'MEMBER', 162.0, 48.0, 'F', '1994-02-28', NULL, NULL),
+    (8, 'health_master', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '오승민', 'MEMBER', 182.0, 80.0, 'M', '1987-06-15', NULL, NULL),
+    (9, 'swim_love', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '강수빈', 'MEMBER', 170.0, 58.0, 'F', '1993-12-05', NULL, NULL),
+    (10, 'bike_rider', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '임동현', 'MEMBER', 176.0, 73.0, 'M', '1989-04-22', NULL, NULL),
+    (11, 'pilates_queen', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '서예진', 'MEMBER', 166.0, 50.0, 'F', '1996-09-18', NULL, NULL),
+    (12, 'crossfit_pro', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3Iu.AryBxTfJJp6t6F/e', '장현우', 'MEMBER', 184.0, 85.0, 'M', '1990-11-08', NULL, NULL);
 
 -- =====================================================
 -- 2. FEEDS (30개의 다양한 운동 피드)

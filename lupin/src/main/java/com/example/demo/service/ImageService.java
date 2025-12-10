@@ -38,31 +38,51 @@ public class ImageService {
     }
 
     public String uploadImage(MultipartFile file, String prefix) throws IOException {
-        // 고유한 파일명 생성 (UUID) - WebP 확장자로 변경
-        String fileName = UUID.randomUUID().toString() + ".webp";
+        // WebP 변환 시도
+        byte[] imageBytes;
+        String extension;
+        String contentType;
+
+        try {
+            imageBytes = convertToWebp(file);
+            extension = ".webp";
+            contentType = "image/webp";
+            log.info("Image converted to WebP: {} -> {} bytes", file.getOriginalFilename(), imageBytes.length);
+        } catch (Exception e) {
+            // WebP 변환 실패 시 원본 사용 (fallback)
+            log.warn("WebP conversion failed, using original: {}", e.getMessage());
+            imageBytes = file.getBytes();
+            extension = getExtension(file.getOriginalFilename());
+            contentType = file.getContentType();
+        }
+
+        // 고유한 파일명 생성 (UUID)
+        String fileName = UUID.randomUUID().toString() + extension;
 
         // prefix가 있으면 폴더 경로 추가
         if (prefix != null && !prefix.isEmpty()) {
             fileName = prefix + "/" + fileName;
         }
 
-        // 이미지를 WebP로 변환
-        byte[] webpBytes = convertToWebp(file);
-
         // S3에 업로드 (Cache-Control 헤더 포함)
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(fileName)
-                .contentType("image/webp")
+                .contentType(contentType)
                 .cacheControl("max-age=31536000, immutable") // 1년 캐싱
                 .build();
 
-        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(webpBytes));
-
-        log.info("Image converted to WebP: {} -> {} bytes", file.getOriginalFilename(), webpBytes.length);
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(imageBytes));
 
         // URL 생성
         return String.format("https://%s.s3.ap-northeast-2.amazonaws.com/%s", bucket, fileName);
+    }
+
+    private String getExtension(String filename) {
+        if (filename != null && filename.contains(".")) {
+            return filename.substring(filename.lastIndexOf("."));
+        }
+        return ".jpg";
     }
 
     /**

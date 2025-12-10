@@ -64,7 +64,7 @@ public class CommentService {
     }
 
     private void validateOwnership(Comment comment, User user) {
-        if (!comment.getWriter().equals(user)) {
+        if (!comment.getWriter().getId().equals(user.getId())) {
             throw new BusinessException(ErrorCode.COMMENT_NOT_OWNER);
         }
     }

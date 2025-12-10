@@ -171,6 +171,7 @@ public class KakaoOAuthService {
                 .userId(user.getUserId())
                 .email(user.getProviderEmail())
                 .name(user.getName())
+                .department(user.getDepartment())
                 .role(user.getRole().name())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)

@@ -98,21 +98,13 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
                   <p className="text-sm text-gray-700 font-medium">
                     {ranker.department}
                   </p>
-                  <div className="pt-1 space-y-1.5">
+                  <div className="pt-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-600 font-medium">
                         이번 달 활동
                       </span>
                       <span className="font-black text-gray-900">
                         {ranker.activeDays}일
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600 font-medium">
-                        평균 점수
-                      </span>
-                      <span className="font-black text-gray-900">
-                        {ranker.avgScore.toFixed(1)}점
                       </span>
                     </div>
                   </div>

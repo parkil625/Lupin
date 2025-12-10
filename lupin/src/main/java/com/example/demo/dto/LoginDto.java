@@ -10,6 +10,7 @@ public class LoginDto {
     private String userId;
     private String email;
     private String name;    // 사용자 실명
+    private String department;
     private String role;    // 권한 (ROLE_USER 등)
 
     private String accessToken;

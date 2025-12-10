@@ -222,6 +222,7 @@ export default function Login() {
     if (safeId) localStorage.setItem("userId", safeId.toString());
     if (result.email) localStorage.setItem("userEmail", result.email);
     if (result.name) localStorage.setItem("userName", result.name);
+    if (result.department) localStorage.setItem("userDepartment", result.department);
     login(result.accessToken, result.role);
   }, [login]);
 

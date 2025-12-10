@@ -183,7 +183,7 @@ const AvatarSection = memo(({
             </div>
             <div className="text-center sm:text-left pt-2 space-y-0.5">
                 <h2 className="text-2xl md:text-3xl font-black text-gray-900">{localStorage.getItem('userName') || '사용자'}</h2>
-                <p className="text-gray-500 text-sm font-medium">개발팀</p>
+                <p className="text-gray-500 text-sm font-medium">{localStorage.getItem('userDepartment') || '부서 미정'}</p>
                 <p className="text-gray-400 text-xs font-mono">{localStorage.getItem('userEmail')}</p>
             </div>
         </div>
@@ -396,12 +396,12 @@ export default function ProfilePage({ onLogout, profileImage, setProfileImage }:
         <div className="h-full overflow-y-auto p-4 md:p-8 bg-gray-50/50 scroll-smooth">
             <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 pb-20">
                 {/* Header Actions */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky top-0 z-10 bg-gray-50/95 backdrop-blur py-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">마이페이지</h1>
                         <p className="text-gray-500 font-medium text-sm mt-1">내 정보를 안전하게 관리하세요</p>
                     </div>
-                    <ButtonGroup className="shadow-sm bg-white rounded-lg">
+                    <ButtonGroup>
                         {isEditing ? (
                             // [중요] form 속성을 사용하여 렌더링 격리된 자식 폼 제출
                             <Button type="submit" form="profile-form" variant="outline" className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold">

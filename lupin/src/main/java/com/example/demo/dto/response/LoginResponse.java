@@ -17,6 +17,7 @@ public class LoginResponse {
     private Long userId;
     private String email;
     private String name;
+    private String department;
     private String role;
 
     public static LoginResponse from(LoginDto dto) {
@@ -26,6 +27,7 @@ public class LoginResponse {
                 .userId(dto.getId())
                 .email(dto.getEmail())
                 .name(dto.getName())
+                .department(dto.getDepartment())
                 .role(dto.getRole())
                 .build();
     }

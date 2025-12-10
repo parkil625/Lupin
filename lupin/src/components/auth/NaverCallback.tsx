@@ -68,6 +68,7 @@ export default function NaverCallback() {
                     localStorage.setItem('userId', result.id.toString());
                     localStorage.setItem('userEmail', result.email);
                     localStorage.setItem('userName', result.name);
+                    if (result.department) localStorage.setItem('userDepartment', result.department);
 
                     // 로그인 처리
                     login(result.accessToken, result.role);

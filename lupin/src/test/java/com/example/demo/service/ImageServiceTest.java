@@ -69,9 +69,10 @@ class ImageServiceTest {
         // when
         String result = imageService.uploadImage(file);
 
-        // then
-        assertThat(result).startsWith("https://" + BUCKET + ".s3.ap-northeast-2.amazonaws.com/");
-        assertThat(result).endsWith(".jpg");
+        // then (CDN URL 형식으로 반환됨)
+        assertThat(result).startsWith("https://cdn.lupin-care.com/");
+        // WebP 변환 실패 시 원본 확장자 유지
+        assertThat(result).containsPattern("\\.(jpg|webp)$");
         verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
@@ -98,10 +99,10 @@ class ImageServiceTest {
         // when
         List<String> results = imageService.uploadImages(List.of(file1, file2));
 
-        // then
+        // then (CDN URL 형식으로 반환됨)
         assertThat(results).hasSize(2);
-        assertThat(results.get(0)).startsWith("https://" + BUCKET + ".s3.ap-northeast-2.amazonaws.com/");
-        assertThat(results.get(1)).startsWith("https://" + BUCKET + ".s3.ap-northeast-2.amazonaws.com/");
+        assertThat(results.get(0)).startsWith("https://cdn.lupin-care.com/");
+        assertThat(results.get(1)).startsWith("https://cdn.lupin-care.com/");
     }
 
     @Test

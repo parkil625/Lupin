@@ -506,8 +506,8 @@ function FeedItem({
   };
   const writerAvatarUrl = getAvatarUrl(feed.writerAvatar);
 
-  // 이미지 밝기에 따른 아이콘 색상 결정
-  const currentImageUrl = hasImages ? images[currentImageIndex] : undefined;
+  // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
+  const currentImageUrl = hasImages ? getCdnUrl(images[currentImageIndex]) : undefined;
   const iconColor = useImageBrightness(currentImageUrl);
   const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
 
@@ -529,7 +529,7 @@ function FeedItem({
         <div className="relative h-[57%]">
           {hasImages ? (
             <img
-              src={images[currentImageIndex] || images[0]}
+              src={getCdnUrl(images[currentImageIndex] || images[0])}
               alt={feed.activity}
               className="w-full h-full object-cover"
             />

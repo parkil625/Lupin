@@ -19,6 +19,7 @@ import {
 import { Feed } from "@/types/dashboard.types";
 import { LazyBlockNoteView } from "@/components/shared/LazyBlockNote";
 import { useImageBrightness } from "@/hooks";
+import { getCdnUrl } from "@/api";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 import { FeedCommentSection } from "./FeedCommentSection";
 
@@ -44,9 +45,10 @@ export function FeedCard({
 }: FeedCardProps) {
   const [showComments, setShowComments] = useState(false);
 
-  // 이미지 밝기에 따른 아이콘 색상
+  // 이미지 밝기에 따른 아이콘 색상 (CDN URL 사용)
   const currentImage = feed.images?.[currentImageIndex] || feed.images?.[0];
-  const iconColor = useImageBrightness(currentImage);
+  const currentImageUrl = currentImage ? getCdnUrl(currentImage) : undefined;
+  const iconColor = useImageBrightness(currentImageUrl);
 
   const hasImages = feed.images && feed.images.length > 0;
 
@@ -74,10 +76,10 @@ export function FeedCard({
             {hasImages ? (
               <>
                 <img
-                  src={feed.images[currentImageIndex] || feed.images[0]}
+                  src={getCdnUrl(feed.images[currentImageIndex] || feed.images[0])}
                   alt={feed.activity}
                   className="w-full h-full object-cover"
-                                 />
+                />
 
                 {/* 이미지 네비게이션 */}
                 {feed.images.length > 1 && (

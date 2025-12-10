@@ -97,9 +97,10 @@ export function FeedDetailContent({
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
-  // 이미지 밝기에 따른 아이콘 색상
+  // 이미지 밝기에 따른 아이콘 색상 (CDN URL 사용)
   const currentImage = feed.images?.[currentImageIndex] || feed.images?.[0];
-  const iconColor = useImageBrightness(currentImage);
+  const currentImageUrl = currentImage ? getCdnUrl(currentImage) : undefined;
+  const iconColor = useImageBrightness(currentImageUrl);
 
   
   // 댓글 로드
@@ -495,10 +496,10 @@ export function FeedDetailContent({
             {hasImages ? (
               <>
                 <img
-                  src={feed.images[currentImageIndex] || feed.images[0]}
+                  src={getCdnUrl(feed.images[currentImageIndex] || feed.images[0])}
                   alt={feed.activity}
                   className="w-full h-full object-cover"
-                                 />
+                />
 
                 {feed.images.length > 1 && (
                   <>

@@ -104,9 +104,9 @@ export default function FeedDetailDialogHome({
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
-  // 이미지 밝기에 따른 아이콘 색상 결정
+  // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
   const hasImages = feed?.images && feed.images.length > 0;
-  const currentImageUrl = hasImages ? feed.images[currentImageIndex] : undefined;
+  const currentImageUrl = hasImages ? getCdnUrl(feed.images[currentImageIndex]) : undefined;
   const iconColor = useImageBrightness(currentImageUrl);
   const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
 
@@ -748,10 +748,10 @@ export default function FeedDetailDialogHome({
                 {/* Image Carousel - 모바일에서 57% 높이 (Feed.tsx와 동일) */}
                 <div className="relative h-[57%] md:h-[545px] w-full md:max-w-[475px] overflow-hidden">
                   <img
-                    src={feed.images[currentImageIndex] || feed.images[0]}
+                    src={getCdnUrl(feed.images[currentImageIndex] || feed.images[0])}
                     alt={feed.activity}
                     className="w-full h-full object-cover"
-                                     />
+                  />
 
                   {feed.images.length > 1 && (
                     <>

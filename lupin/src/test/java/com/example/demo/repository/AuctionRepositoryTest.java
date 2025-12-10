@@ -44,7 +44,11 @@ class AuctionRepositoryTest {
                 .currentPrice(1000L)
                 .startTime(now.minusHours(2))
                 .regularEndTime(now.minusHours(1))
-                .overtimeStarted(false)
+
+                // [수정] Repository가 true만 찾고 있으므로 true로 변경
+                .overtimeStarted(true)
+                // [수정] 쿼리가 overtimeEndTime을 비교하므로 값 설정 필수
+                .overtimeEndTime(now.minusSeconds(1))
                 .build();
 
         // 2. 진행 중인 경매 생성
@@ -208,5 +212,63 @@ class AuctionRepositoryTest {
         // ★ 핵심 검증: User 엔티티와 Join해서 이름을 잘 가져왔는가?
         assertThat(response.winnerName()).isEqualTo("홍길동");
     }
+    @Test
+    @DisplayName("정규 시간이 종료되었으나 아직 초읽기가 시작되지 않은 ACTIVE 경매를 조회한다")
+    void findAuctionsReadyForOvertime() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. [Target] 조회 대상: ACTIVE, 초읽기X, 정규시간 지남(1분 전)
+        Auction targetAuction = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .overtimeStarted(false)
+                .regularEndTime(now.minusMinutes(1)) // 과거
+                .currentPrice(1000L) // (필수값 예시)
+                .startTime(now.minusHours(2)) // (필수값 예시)
+                .build();
+
+        // 2. [Filter 1] 시간이 아직 안 지남 (미래)
+        Auction futureAuction = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .overtimeStarted(false)
+                .regularEndTime(now.plusMinutes(1)) // 미래
+                .currentPrice(1000L)
+                .startTime(now)
+                .build();
+
+        // 3. [Filter 2] 이미 초읽기가 시작됨
+        Auction alreadyOvertimeAuction = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .overtimeStarted(true) // 이미 True
+                .regularEndTime(now.minusMinutes(1))
+                .overtimeEndTime(now.plusMinutes(1)) // 초읽기 진행 중
+                .currentPrice(1000L)
+                .startTime(now.minusHours(2))
+                .build();
+
+        // 4. [Filter 3] 상태가 ACTIVE가 아님 (종료됨)
+        Auction endedAuction = Auction.builder()
+                .status(AuctionStatus.ENDED) // 종료 상태
+                .overtimeStarted(false)
+                .regularEndTime(now.minusMinutes(1))
+                .currentPrice(1000L)
+                .startTime(now.minusHours(3))
+                .build();
+
+        auctionRepository.saveAll(List.of(targetAuction, futureAuction, alreadyOvertimeAuction, endedAuction));
+
+
+
+// when
+        List<Auction> result = auctionRepository.findAuctionsReadyForOvertime(now);
+
+        // then
+        assertThat(result).hasSize(1);
+
+        // 만약 여기서 NPE가 났었다면, 이제는 item이 있으므로 통과될 겁니다.
+        // 단순 ID 비교라면 아래처럼만 해도 충분합니다.
+        assertThat(result.get(0).getId()).isEqualTo(targetAuction.getId());
+    }
+
 
 }

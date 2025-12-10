@@ -10,8 +10,8 @@ interface ScheduledAuctionResponse {
 }
 
 export const getActiveAuction = async () => {
-  const response = await client.get("/auction/active");
-  return response.data;
+    const response = await client.get(`/auction/active?_t=${Date.now()}`);
+    return response.data;
 };
 
 // 예정된 경매 (배열 반환 + 필드 채우기)
@@ -29,10 +29,12 @@ export const getScheduledAuctions = async (): Promise<AuctionData[]> => {
 };
 
 
- export const placeBid = async (auctionId: number, amount: number) => {
-     const response = await client.post(`/auction/${auctionId}/bid`, { amount });
-     return response.data;
- };
+export const placeBid = async (auctionId: number, amount: number) => {
+    const response = await client.post(`/auction/${auctionId}/bid`, {
+        bidAmount: amount,
+    });
+    return response.data;
+};
 
 export const getUserPoints = async () => {
     const response = await client.get('/users/points');

@@ -93,8 +93,4 @@ class AppointmentIntegrationTest {
                 .andExpect(status().isOk()); // 성공해야 한다고 가정 (실패하면 에러 뜸)
     }
 
-    @Test
-    void searchName() {
-        em.persist(new)
-    }
 }

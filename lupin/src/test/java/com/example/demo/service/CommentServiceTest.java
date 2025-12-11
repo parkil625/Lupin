@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.event.NotificationEvent;
+import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
@@ -45,6 +46,9 @@ class CommentServiceTest {
 
     @Mock
     private NotificationRepository notificationRepository;
+
+    @Mock
+    private CommentLikeRepository commentLikeRepository;
 
     @InjectMocks
     private CommentService commentService;
@@ -142,6 +146,7 @@ class CommentServiceTest {
 
         // then
         verify(commentRepository).findById(commentId);
+        verify(commentLikeRepository).deleteByComment(existingComment);
         verify(commentRepository).delete(existingComment);
     }
 
@@ -509,6 +514,8 @@ class CommentServiceTest {
         // then
         // COMMENT_LIKE 알림 삭제 (refId = commentId)
         verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
+        // 댓글 좋아요 삭제
+        verify(commentLikeRepository).deleteByComment(comment);
         // 부모 댓글이므로 REPLY 알림도 삭제 (refId = 부모댓글ID = commentId)
         verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), "REPLY");
         verify(commentRepository).delete(comment);

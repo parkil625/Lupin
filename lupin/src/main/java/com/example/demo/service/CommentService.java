@@ -78,25 +78,32 @@ public class CommentService {
         // COMMENT_LIKE 알림 삭제 (refId = commentId)
         notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
 
+        // 댓글 좋아요 삭제 (외래키 제약조건)
+        commentLikeRepository.deleteByComment(comment);
+
         // 부모 댓글인 경우
         if (comment.getParent() == null) {
             // REPLY 알림 삭제 (refId = 부모 댓글 ID = 본인 ID)
             notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "REPLY");
-            // 대댓글들의 COMMENT_LIKE 알림 삭제
-            deleteRepliesNotifications(comment);
+            // 대댓글들의 좋아요 및 알림 삭제
+            deleteRepliesData(comment);
         }
 
         commentRepository.delete(comment);
     }
 
     /**
-     * 부모 댓글 삭제 시 대댓글들의 COMMENT_LIKE 알림 삭제
-     * COMMENT_LIKE 알림의 refId = commentId (대댓글 ID)
+     * 부모 댓글 삭제 시 대댓글들의 좋아요 및 알림 삭제
      */
-    private void deleteRepliesNotifications(Comment parentComment) {
+    private void deleteRepliesData(Comment parentComment) {
         List<Comment> replies = commentRepository.findByParentOrderByIdAsc(parentComment);
         if (replies.isEmpty()) {
             return;
+        }
+
+        // 대댓글들의 좋아요 삭제 (외래키 제약조건)
+        for (Comment reply : replies) {
+            commentLikeRepository.deleteByComment(reply);
         }
 
         // 대댓글 ID 수집 후 COMMENT_LIKE 알림 삭제 (refId = commentId)

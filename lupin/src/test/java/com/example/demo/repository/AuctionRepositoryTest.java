@@ -33,25 +33,33 @@ class AuctionRepositoryTest {
     private UserRepository userRepository; // 유저 저장을 위해 추가
 
     @Test
-    @DisplayName("종료 시간이 지난 ACTIVE 경매를 조회한다 (만료된 경매)")
+    @DisplayName("종료 시간이 지난 ACTIVE 경매를 조회한다 (초읽기 종료 OR 정규시간+30초 대기 종료)")
     void findExpiredAuctions() {
         // given
         LocalDateTime now = LocalDateTime.now();
+        // [핵심] 30초 전 시간을 기준값으로 설정
+        LocalDateTime regularTimeLimit = now.minusSeconds(30);
 
-        // 1. 만료된 경매 생성 (필수값 채우기)
-        Auction expiredAuction = Auction.builder()
+        // Case 1: 초읽기 진행했고, 연장 시간도 끝난 경매 -> (종료 대상 O)
+        Auction expiredOvertimeAuction = Auction.builder()
                 .status(AuctionStatus.ACTIVE)
                 .currentPrice(1000L)
                 .startTime(now.minusHours(2))
                 .regularEndTime(now.minusHours(1))
-
-                // [수정] Repository가 true만 찾고 있으므로 true로 변경
                 .overtimeStarted(true)
-                // [수정] 쿼리가 overtimeEndTime을 비교하므로 값 설정 필수
-                .overtimeEndTime(now.minusSeconds(1))
+                .overtimeEndTime(now.minusSeconds(1)) // 현재보다 1초 전 종료
                 .build();
 
-        // 2. 진행 중인 경매 생성
+        // Case 2: 초읽기 안 했지만, 정규 종료 후 30초가 지난 경매 -> (종료 대상 O)
+        Auction expiredRegularAuction = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .currentPrice(1000L)
+                .startTime(now.minusHours(2))
+                .regularEndTime(now.minusMinutes(1)) // 1분 전에 정규 종료 (30초 지남)
+                .overtimeStarted(false)
+                .build();
+
+        // Case 3: 아직 진행 중인 경매 -> (종료 대상 X)
         Auction activeAuction = Auction.builder()
                 .status(AuctionStatus.ACTIVE)
                 .currentPrice(2000L)
@@ -60,15 +68,19 @@ class AuctionRepositoryTest {
                 .overtimeStarted(false)
                 .build();
 
-        auctionRepository.save(expiredAuction);
+        auctionRepository.save(expiredOvertimeAuction);
+        auctionRepository.save(expiredRegularAuction);
         auctionRepository.save(activeAuction);
 
         // when
-        List<Auction> result = auctionRepository.findExpiredAuctions(now);
+        // [수정] 인자를 2개(현재 시간, 30초 전 시간) 넘겨야 합니다!
+        List<Auction> result = auctionRepository.findExpiredAuctions(now, regularTimeLimit);
 
         // then
-        assertThat(result).extracting("id").contains(expiredAuction.getId());
-        assertThat(result).extracting("id").doesNotContain(activeAuction.getId());
+        // 만료된 경매 2개는 포함되고, 진행 중인 경매는 포함되지 않아야 함
+        assertThat(result).extracting("id")
+                .contains(expiredOvertimeAuction.getId(), expiredRegularAuction.getId())
+                .doesNotContain(activeAuction.getId());
     }
 
     @Test

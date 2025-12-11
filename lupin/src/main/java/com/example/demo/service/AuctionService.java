@@ -86,7 +86,9 @@ public class AuctionService {
 
     //종료된 경매 ended 시켜주는 메소드
     public void closeExpiredAuctions(LocalDateTime now) {
-        List<Auction> auctions = auctionRepository.findExpiredAuctions(now);
+        LocalDateTime endedTimeThreshold = now.minusSeconds(30);
+
+        List<Auction> auctions = auctionRepository.findExpiredAuctions(now, endedTimeThreshold);
 
         for (Auction auction : auctions) {
             List<AuctionBid> auctionBids = auctionBidRepository.findByAuctionId(auction.getId());

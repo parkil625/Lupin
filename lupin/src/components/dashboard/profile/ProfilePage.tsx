@@ -283,8 +283,8 @@ const OAuthSection = memo(() => {
         finally { setIsLoading(false); }
     }, [fetchConns]);
 
-    // Google Script: 연동 안 된 경우에만 로드
-    const needsGoogle = !connections.some(c => c.provider === 'GOOGLE');
+    // Google Script: 로딩 완료 후 연동 안 된 경우에만 로드
+    const needsGoogle = !isLoading && !connections.some(c => c.provider === 'GOOGLE');
     const { triggerGoogle } = useGoogleScript(needsGoogle, handleLinkGoogle);
 
     const handleLink = (p: 'NAVER' | 'KAKAO') => {
@@ -367,9 +367,10 @@ const OAuthSection = memo(() => {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <div id="hidden-google-btn" className="hidden" aria-hidden="true"/>
                     </div>
                 )}
+                {/* Google GSI 버튼 - 항상 렌더링되어야 스크립트 초기화 가능 */}
+                <div id="hidden-google-btn" className="hidden" aria-hidden="true"/>
             </div>
         </div>
     );

@@ -2,26 +2,26 @@
 -- Test Users for Login
 -- Date: 2025-11-27
 -- Description:
---   - 일반 직원: user01 / 1 (박선일)
---   - 의사: doctor01 / 1 (홍세민)
+--   - 일반 직원: user01 / 1 (테스트유저)
+--   - 의사: doctor01~04 / 1 (내과, 외과, 신경외과, 피부과)
 -- ============================================
 
 -- BCrypt 인코딩된 비밀번호 "1"
 -- $2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO
 
--- 1. 일반 직원 (MEMBER) - 박선일 (ID: 20)
+-- 1. 일반 직원 (MEMBER) - 테스트유저 (ID: 20)
 INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
     20,
     'user01',
     '$2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO',
-    '박선일',
+    '테스트유저',
     'MEMBER',
-    178.5,
-    72.0,
-    '남성',
-    '1992-03-15',
-    '개발팀',
+    175.0,
+    70.0,
+    'M',
+    '1995-01-01',
+    NULL,
     NULL
 );
 

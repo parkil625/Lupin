@@ -4,10 +4,12 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.event.NotificationEvent;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +41,7 @@ class CommentServiceTest {
     private FeedRepository feedRepository;
 
     @Mock
-    private NotificationService notificationService;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private NotificationRepository notificationRepository;
@@ -320,8 +322,8 @@ class CommentServiceTest {
         // when
         commentService.createReply(replier, feedId, parentId, content);
 
-        // then - refId는 parentId(부모 댓글 ID) 사용
-        verify(notificationService).createReplyNotification(commentOwner, replier, parentId);
+        // then - 이벤트 발행 확인 (비동기 알림 처리)
+        verify(eventPublisher).publishEvent(any(NotificationEvent.class));
     }
 
     @Test

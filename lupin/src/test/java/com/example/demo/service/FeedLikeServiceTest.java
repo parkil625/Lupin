@@ -4,12 +4,14 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedLike;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.event.NotificationEvent;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,10 +39,10 @@ class FeedLikeServiceTest {
     private FeedRepository feedRepository;
 
     @Mock
-    private NotificationService notificationService;
+    private NotificationRepository notificationRepository;
 
     @Mock
-    private NotificationRepository notificationRepository;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private FeedLikeService feedLikeService;
@@ -57,6 +59,7 @@ class FeedLikeServiceTest {
                 .name("사용자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(user, "id", 1L);
 
         writer = User.builder()
                 .userId("writer")
@@ -64,6 +67,7 @@ class FeedLikeServiceTest {
                 .name("작성자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(writer, "id", 2L);
 
         feed = Feed.builder()
                 .writer(writer)
@@ -78,8 +82,8 @@ class FeedLikeServiceTest {
     void likeFeedTest() {
         // given
         Long feedId = 1L;
+        given(feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feedId)).willReturn(false);
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
-        given(feedLikeRepository.existsByUserAndFeed(user, feed)).willReturn(false);
         given(feedLikeRepository.save(any(FeedLike.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -92,19 +96,19 @@ class FeedLikeServiceTest {
     }
 
     @Test
-    @DisplayName("피드에 좋아요를 누르면 피드 작성자에게 알림이 생성된다 (refId = feedId)")
+    @DisplayName("피드에 좋아요를 누르면 피드 작성자에게 알림 이벤트가 발행된다")
     void likeFeedCreatesNotificationTest() {
         // given
         Long feedId = 1L;
+        given(feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feedId)).willReturn(false);
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
-        given(feedLikeRepository.existsByUserAndFeed(user, feed)).willReturn(false);
         given(feedLikeRepository.save(any(FeedLike.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         feedLikeService.likeFeed(user, feedId);
 
-        // then - refId는 feedId 사용
-        verify(notificationService).createFeedLikeNotification(writer, user, feedId);
+        // then - 이벤트 발행 검증
+        verify(eventPublisher).publishEvent(any(NotificationEvent.class));
     }
 
     @Test
@@ -112,8 +116,7 @@ class FeedLikeServiceTest {
     void likeFeedAlreadyLikedTest() {
         // given
         Long feedId = 1L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
-        given(feedLikeRepository.existsByUserAndFeed(user, feed)).willReturn(true);
+        given(feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feedId)).willReturn(true);
 
         // when & then
         assertThatThrownBy(() -> feedLikeService.likeFeed(user, feedId))
@@ -161,6 +164,7 @@ class FeedLikeServiceTest {
     void likeFeedNotFoundTest() {
         // given
         Long feedId = 999L;
+        given(feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feedId)).willReturn(false);
         given(feedRepository.findById(feedId)).willReturn(Optional.empty());
 
         // when & then

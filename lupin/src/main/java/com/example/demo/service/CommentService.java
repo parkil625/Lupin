@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.event.NotificationEvent;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
@@ -10,6 +11,7 @@ import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +25,8 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final FeedRepository feedRepository;
-    private final NotificationService notificationService;
     private final NotificationRepository notificationRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Comment createComment(User writer, Long feedId, String content) {
@@ -41,8 +43,14 @@ public class CommentService {
 
         // 댓글 카운트 증가 (반정규화)
         feed.incrementCommentCount();
-        // refId = feedId (피드 참조)
-        notificationService.createCommentNotification(feed.getWriter(), writer, feedId);
+
+        // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
+        eventPublisher.publishEvent(NotificationEvent.comment(
+                feed.getWriter().getId(),
+                writer.getId(),
+                writer.getName(),
+                feedId
+        ));
 
         return savedComment;
     }
@@ -53,9 +61,6 @@ public class CommentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
         validateOwnership(comment, user);
-
-        // 댓글 카운트 감소 (반정규화)
-        comment.getFeed().decrementCommentCount();
         comment.update(content);
         return comment;
     }
@@ -66,6 +71,9 @@ public class CommentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
         validateOwnership(comment, user);
+
+        // 댓글 카운트 감소 (반정규화)
+        comment.getFeed().decrementCommentCount();
 
         // COMMENT_LIKE 알림 삭제 (refId = commentId)
         notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
@@ -142,8 +150,14 @@ public class CommentService {
 
         // 대댓글도 댓글 카운트 증가 (반정규화)
         feed.incrementCommentCount();
-        // refId = parentId (부모 댓글 참조)
-        notificationService.createReplyNotification(parent.getWriter(), writer, parentId);
+
+        // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
+        eventPublisher.publishEvent(NotificationEvent.reply(
+                parent.getWriter().getId(),
+                writer.getId(),
+                writer.getName(),
+                parentId
+        ));
 
         return savedReply;
     }

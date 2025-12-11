@@ -140,32 +140,13 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("모든 알림을 읽음 처리한다")
+    @DisplayName("모든 알림을 읽음 처리한다 - 벌크 업데이트")
     void markAllAsReadTest() {
-        // given
-        Notification notification1 = Notification.builder()
-                .user(user)
-                .type("LIKE")
-                .title("좋아요 알림")
-                .content("내용1")
-                .build();
-
-        Notification notification2 = Notification.builder()
-                .user(user)
-                .type("COMMENT")
-                .title("댓글 알림")
-                .content("내용2")
-                .build();
-
-        given(notificationRepository.findByUserAndIsReadFalse(user))
-                .willReturn(List.of(notification1, notification2));
-
         // when
         notificationService.markAllAsRead(user);
 
-        // then
-        assertThat(notification1.getIsRead()).isTrue();
-        assertThat(notification2.getIsRead()).isTrue();
+        // then - 벌크 업데이트 메서드 호출 확인
+        verify(notificationRepository).markAllAsRead(user);
     }
 
     @Test

@@ -93,7 +93,7 @@ public class CommentService {
     }
 
     /**
-     * 부모 댓글 삭제 시 대댓글들의 좋아요 및 알림 삭제
+     * 부모 댓글 삭제 시 대댓글들의 좋아요, 알림, 대댓글 자체 삭제
      */
     private void deleteRepliesData(Comment parentComment) {
         List<Comment> replies = commentRepository.findByParentOrderByIdAsc(parentComment);
@@ -101,16 +101,18 @@ public class CommentService {
             return;
         }
 
-        // 대댓글들의 좋아요 삭제 (외래키 제약조건)
-        for (Comment reply : replies) {
-            commentLikeRepository.deleteByComment(reply);
-        }
-
         // 대댓글 ID 수집 후 COMMENT_LIKE 알림 삭제 (refId = commentId)
         List<String> replyIds = replies.stream()
                 .map(r -> String.valueOf(r.getId()))
                 .toList();
         notificationRepository.deleteByRefIdInAndType(replyIds, "COMMENT_LIKE");
+
+        // 대댓글들의 좋아요 삭제 후 대댓글 삭제 (외래키 제약조건)
+        for (Comment reply : replies) {
+            commentLikeRepository.deleteByComment(reply);
+            parentComment.getFeed().decrementCommentCount(); // 대댓글 카운트 감소
+            commentRepository.delete(reply);
+        }
     }
 
     private void validateOwnership(Comment comment, User user) {

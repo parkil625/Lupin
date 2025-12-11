@@ -357,16 +357,11 @@ export function FeedDetailContent({
       await commentApi.deleteComment(commentId);
       setComments((prevComments) =>
         prevComments
-          .map((c) => {
-            if (c.id === commentId) {
-              if (c.replies && c.replies.length > 0) {
-                return { ...c, author: "", content: "삭제된 댓글입니다.", isDeleted: true };
-              }
-              return null;
-            }
-            return { ...c, replies: c.replies?.filter((r) => r.id !== commentId) || [] };
-          })
-          .filter(Boolean) as Comment[]
+          .filter((c) => c.id !== commentId) // 부모 댓글 삭제 (대댓글도 백엔드에서 삭제됨)
+          .map((c) => ({
+            ...c,
+            replies: c.replies?.filter((r) => r.id !== commentId) || [], // 대댓글 삭제
+          }))
       );
     } catch (error) {
       console.error("댓글 삭제 실패:", error);

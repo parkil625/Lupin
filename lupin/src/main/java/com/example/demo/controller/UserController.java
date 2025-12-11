@@ -53,7 +53,13 @@ public class UserController extends BaseController {
     @GetMapping("/statistics")
     public ResponseEntity<Map<String, Long>> getStatistics() {
         long totalUsers = userService.getTotalUserCount();
-        return ResponseEntity.ok(Map.of("totalUsers", totalUsers));
+        long activeUsersThisMonth = userService.getActiveUsersThisMonth();
+        long averagePoints = userService.getAveragePoints();
+        return ResponseEntity.ok(Map.of(
+                "totalUsers", totalUsers,
+                "activeUsersThisMonth", activeUsersThisMonth,
+                "averagePoints", averagePoints
+        ));
     }
 
     @GetMapping("/{userId}")

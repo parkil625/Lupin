@@ -10,6 +10,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -101,6 +103,19 @@ public class UserService {
 
     public long getTotalUserCount() {
         return userRepository.count();
+    }
+
+    public long getActiveUsersThisMonth() {
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime startOfMonth = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime endOfMonth = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+        Long count = pointLogRepository.countActiveUsersThisMonth(startOfMonth, endOfMonth);
+        return count != null ? count : 0L;
+    }
+
+    public long getAveragePoints() {
+        Double avg = pointLogRepository.getAveragePointsPerUser();
+        return avg != null ? Math.round(avg) : 0L;
     }
 
     public Map<String, Object> getUserStats(Long userId) {

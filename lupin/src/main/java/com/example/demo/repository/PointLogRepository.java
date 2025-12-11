@@ -31,4 +31,12 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
 
     @Query("SELECT u, COALESCE(SUM(p.points), 0) as totalPoints FROM User u LEFT JOIN PointLog p ON p.user = u GROUP BY u ORDER BY totalPoints DESC, u.id ASC")
     List<Object[]> findAllUsersWithPointsRankedAll();
+
+    // 이번 달 활동한 유저 수 (PointLog 기록이 있는 유저)
+    @Query("SELECT COUNT(DISTINCT p.user) FROM PointLog p WHERE p.createdAt BETWEEN :startDateTime AND :endDateTime")
+    Long countActiveUsersThisMonth(@Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
+
+    // 전체 유저 평균 포인트 (Native Query)
+    @Query(value = "SELECT COALESCE(AVG(total_points), 0) FROM (SELECT COALESCE(SUM(p.points), 0) as total_points FROM users u LEFT JOIN point_log p ON p.user_id = u.id GROUP BY u.id) as user_totals", nativeQuery = true)
+    Double getAveragePointsPerUser();
 }

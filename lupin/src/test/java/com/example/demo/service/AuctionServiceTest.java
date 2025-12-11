@@ -51,6 +51,9 @@ class AuctionServiceTest {
     @Mock
     PointService pointService;
 
+    @Mock
+    com.example.demo.scheduler.AuctionTaskScheduler auctionTaskScheduler;
+
 
     @Test
     void 입찰이_성공하면_현재가와_우승자가_변경되고_입찰기록이_저장된다() {

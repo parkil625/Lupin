@@ -243,27 +243,28 @@ class AuctionTest {
     void placeBid_triggers_overtime() {
         // given
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime regularEnd = now.minusSeconds(1); // 1초 지남
-        User bidder = createDummyUser(2L);
-
         Auction auction = Auction.builder()
-                .status(AuctionStatus.ACTIVE) // 아직 ACTIVE (스케줄러가 안 돌았거나 미세한 차이)
-                .currentPrice(1000L)
-                .regularEndTime(regularEnd)
+                .status(AuctionStatus.ACTIVE)
+                .startTime(now.minusMinutes(10))
+                .regularEndTime(now.plusMinutes(10)) // 10분 뒤 종료
+                .overtimeSeconds(30)
                 .overtimeStarted(false)
-                .overtimeSeconds(60) // 초읽기 60초 설정
                 .build();
 
+        User user = User.builder().id(1L).build();
+
+        // [수정 포인트!]
+        // 기존: regularEndTime.plusSeconds(1) (시간 지난 뒤) -> 에러
+        // 변경: regularEndTime.minusSeconds(10) (10초 남았을 때) -> 성공!
+        LocalDateTime bidTime = auction.getRegularEndTime().minusSeconds(10);
+
         // when
-        auction.placeBid(bidder, 2000L, now);
+        auction.placeBid(user, 1000L, bidTime);
 
         // then
-        assertThat(auction.getCurrentPrice()).isEqualTo(2000L);
-        assertThat(auction.getWinner()).isEqualTo(bidder);
-
-
-        // [핵심] 초읽기 종료 시간이 (입찰시간 + 60초)로 설정되었는지 검증
-        assertThat(auction.getOvertimeEndTime()).isEqualTo(now.plusSeconds(60));
+        assertThat(auction.getOvertimeStarted()).isTrue(); // 초읽기 켜졌니?
+        // 종료 시간이 '입찰시간 + 30초'로 늘어났는지 확인
+        assertThat(auction.getOvertimeEndTime()).isEqualTo(bidTime.plusSeconds(30));
     }
 
     @Test

@@ -68,17 +68,23 @@ export default defineConfig({
   build: {
     target: 'esnext',
     outDir: 'dist',
+    cssCodeSplit: true,
     commonjsOptions: {
       transformMixedEsModules: true
     },
-    // 🚀 [FCP 최적화] 번들 분할로 초기 로딩 속도 개선
+    // 🚀 [FCP/LCP 최적화] 번들 분할로 초기 로딩 속도 개선
     rollupOptions: {
       output: {
         manualChunks: {
           // 1. React 핵심 라이브러리 분리
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // 2. lucide-react는 Tree-shaking에 맡김 (필요한 아이콘만 로딩)
-          // 3. 기타 UI 라이브러리 분리
+          // 2. HTTP 클라이언트 분리 (초기 로딩 불필요)
+          'client': ['axios'],
+          // 3. 차트 라이브러리 분리 (Home/Ranking에서만 사용)
+          'charts': ['recharts'],
+          // 4. 폼 라이브러리 분리
+          'forms': ['react-hook-form', 'zod', '@hookform/resolvers'],
+          // 5. 기타 UI 라이브러리 분리
           'vendor-ui': ['@radix-ui/react-slot', 'class-variance-authority', 'clsx', 'tailwind-merge']
         }
       }

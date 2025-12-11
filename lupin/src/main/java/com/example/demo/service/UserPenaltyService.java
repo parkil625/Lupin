@@ -26,6 +26,9 @@ public class UserPenaltyService {
                 .user(user)
                 .penaltyType(penaltyType)
                 .build();
+        // 유저 상태를 BANNED로 변경
+        user.ban();
+
         return userPenaltyRepository.save(penalty);
     }
 

@@ -37,6 +37,10 @@ public class FeedLikeService {
                 .build();
 
         FeedLike savedFeedLike = feedLikeRepository.save(feedLike);
+
+        // 좋아요 카운트 증가 (반정규화)
+        feed.incrementLikeCount();
+
         // refId = feedId (피드 참조)
         notificationService.createFeedLikeNotification(feed.getWriter(), user, feedId);
 
@@ -50,6 +54,9 @@ public class FeedLikeService {
 
         FeedLike feedLike = feedLikeRepository.findByUserAndFeed(user, feed)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
+
+        // 좋아요 카운트 감소 (반정규화)
+        feed.decrementLikeCount();
 
         // refId = feedId (피드 참조)
         notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");

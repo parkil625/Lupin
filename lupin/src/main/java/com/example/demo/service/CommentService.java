@@ -38,6 +38,9 @@ public class CommentService {
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
+
+        // 댓글 카운트 증가 (반정규화)
+        feed.incrementCommentCount();
         // refId = feedId (피드 참조)
         notificationService.createCommentNotification(feed.getWriter(), writer, feedId);
 
@@ -50,6 +53,9 @@ public class CommentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
         validateOwnership(comment, user);
+
+        // 댓글 카운트 감소 (반정규화)
+        comment.getFeed().decrementCommentCount();
         comment.update(content);
         return comment;
     }
@@ -133,6 +139,9 @@ public class CommentService {
                 .build();
 
         Comment savedReply = commentRepository.save(reply);
+
+        // 대댓글도 댓글 카운트 증가 (반정규화)
+        feed.incrementCommentCount();
         // refId = parentId (부모 댓글 참조)
         notificationService.createReplyNotification(parent.getWriter(), writer, parentId);
 

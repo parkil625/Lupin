@@ -1,6 +1,7 @@
 package com.example.demo.domain.entity;
 
 import com.example.demo.domain.enums.Role;
+import com.example.demo.domain.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,6 +32,12 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Role role;
+
+    // 유저 상태 - 로그인 시 즉시 확인 가능
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 15)
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
 
     @Column
     private Double height;
@@ -63,5 +70,22 @@ public class User {
         this.name = name;
         this.height = height;
         this.weight = weight;
+    }
+
+    // 상태 변경 메서드
+    public void ban() {
+        this.status = UserStatus.BANNED;
+    }
+
+    public void activate() {
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public void withdraw() {
+        this.status = UserStatus.WITHDRAWN;
+    }
+
+    public boolean isActive() {
+        return this.status == UserStatus.ACTIVE;
     }
 }

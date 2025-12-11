@@ -119,6 +119,9 @@ public class FeedService {
 
         Feed savedFeed = feedRepository.save(feed);
 
+        // 썸네일 URL 설정 (반정규화 - 시작 이미지 사용)
+        savedFeed.setThumbnailUrl(startImageKey);
+
         // 이미지 저장 (Set에 추가해서 cascade가 동작하도록)
         int sortOrder = 0;
 
@@ -217,6 +220,9 @@ public class FeedService {
 
         // 피드 점수/칼로리 업데이트
         feed.updateScore((long) score, calories);
+
+        // 썸네일 URL 업데이트 (반정규화)
+        feed.setThumbnailUrl(startImageKey);
 
         // 기존 이미지 삭제 (orphanRemoval이 동작하도록 Set을 clear)
         feed.getImages().clear();

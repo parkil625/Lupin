@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "feed_reports")
+@Table(name = "feed_reports", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_feed_report_reporter_feed", columnNames = {"reporter_id", "feed_id"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

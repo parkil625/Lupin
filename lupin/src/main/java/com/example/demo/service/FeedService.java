@@ -177,6 +177,8 @@ public class FeedService {
 
         validateOwnership(feed, user);
         feed.update(content, activity);
+        // [OSIV OFF] 트랜잭션 내에서 images 초기화
+        feed.getImages().size();
         return feed;
     }
 
@@ -274,6 +276,10 @@ public class FeedService {
         if (score > 0) {
             pointService.addPoints(user, score);
         }
+
+        // [OSIV OFF] 변경 후 영속성 컨텍스트에서 이미지 컬렉션 초기화 보장
+        feedRepository.flush();
+        feed.getImages().size();
 
         return feed;
     }

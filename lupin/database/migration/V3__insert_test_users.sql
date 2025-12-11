@@ -9,9 +9,10 @@
 -- BCrypt 인코딩된 비밀번호 "1"
 -- $2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO
 
--- 1. 일반 직원 (MEMBER) - 박선일
-INSERT IGNORE INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
+-- 1. 일반 직원 (MEMBER) - 박선일 (ID: 20)
+INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
+    20,
     'user01',
     '$2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO',
     '박선일',
@@ -24,9 +25,10 @@ VALUES (
     NULL
 );
 
--- 2. 의사 (DOCTOR) - 홍세민 (내과)
-INSERT IGNORE INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
+-- 2. 의사 (DOCTOR) - 홍세민 (내과, ID: 21)
+INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
+    21,
     'doctor01',
     '$2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO',
     '홍세민',
@@ -39,9 +41,10 @@ VALUES (
     NULL
 );
 
--- 3. 의사 (DOCTOR) - 김준호 (외과)
-INSERT IGNORE INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
+-- 3. 의사 (DOCTOR) - 김준호 (외과, ID: 22)
+INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
+    22,
     'doctor02',
     '$2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO',
     '김준호',
@@ -54,9 +57,10 @@ VALUES (
     NULL
 );
 
--- 4. 의사 (DOCTOR) - 이정민 (신경외과)
-INSERT IGNORE INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
+-- 4. 의사 (DOCTOR) - 이정민 (신경외과, ID: 23)
+INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
+    23,
     'doctor03',
     '$2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO',
     '이정민',
@@ -69,9 +73,10 @@ VALUES (
     NULL
 );
 
--- 5. 의사 (DOCTOR) - 박지은 (피부과)
-INSERT IGNORE INTO users (user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
+-- 5. 의사 (DOCTOR) - 박지은 (피부과, ID: 24)
+INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
+    24,
     'doctor04',
     '$2a$10$N9qo8uLOickgx2ZMRZoMy.bIZEbP5kSNdGTfp4r4U/4IhPQ8lZlWO',
     '박지은',

@@ -408,8 +408,13 @@ export default function ProfilePage({ onLogout, profileImage, setProfileImage }:
                     </div>
                     <ButtonGroup>
                         {isEditing ? (
-                            // [중요] form 속성을 사용하여 렌더링 격리된 자식 폼 제출
-                            <Button type="submit" form="profile-form" variant="outline" className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold">
+                            // [중요] type="button"으로 변경하여 클릭 이벤트로 폼 제출
+                            <Button
+                                type="button"
+                                onClick={() => document.getElementById('profile-form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))}
+                                variant="outline"
+                                className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold"
+                            >
                                 <Edit className="w-4 h-4 mr-2" /> 저장
                             </Button>
                         ) : (

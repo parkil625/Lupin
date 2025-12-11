@@ -172,7 +172,7 @@ public class FeedService {
 
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity) {
-        Feed feed = feedRepository.findById(feedId)
+        Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
         validateOwnership(feed, user);
@@ -193,7 +193,7 @@ public class FeedService {
 
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity, String startImageKey, String endImageKey, List<String> otherImageKeys) {
-        Feed feed = feedRepository.findById(feedId)
+        Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
         validateOwnership(feed, user);

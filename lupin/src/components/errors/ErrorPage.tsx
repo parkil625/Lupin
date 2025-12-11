@@ -30,12 +30,9 @@ const ErrorPage = memo(({
   };
 
   return (
-    // [접근성] role="alert"로 스크린 리더에게 중요 오류 상황임을 즉시 알림
-    <main
-      role="alert"
-      className="min-h-screen w-full bg-gradient-to-b from-slate-200 via-slate-100 to-slate-300 flex items-center justify-center p-4"
-    >
-      <div className="max-w-lg w-full text-center space-y-6">
+    // [접근성] main landmark 유지 + 내부 div에 role="alert"로 오류 알림
+    <main className="min-h-screen w-full bg-gradient-to-b from-slate-200 via-slate-100 to-slate-300 flex items-center justify-center p-4">
+      <div role="alert" className="max-w-lg w-full text-center space-y-6">
 
         {/*
             [LCP & CLS 최적화]
@@ -50,6 +47,8 @@ const ErrorPage = memo(({
           >
             <img
               src="/error-500.webp"
+              srcSet="/error-500-sm.webp 280w, /error-500.webp 400w"
+              sizes="(max-width: 640px) 280px, 400px"
               alt=""
               width="400"
               height="221"

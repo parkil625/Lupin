@@ -188,6 +188,16 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      - name: Copy nginx config to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "lupin/nginx/"
+          target: "~/lupin/"
+          strip_components: 1
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -195,13 +205,21 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # ECR 로그인
             aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
             docker pull ${{ secrets.ECR_REGISTRY }}/lupin-backend:latest
-            docker stop lupin-backend || true
-            docker rm lupin-backend || true
+
+            # 기존 컨테이너 정리
+            docker stop lupin-backend lupin-nginx || true
+            docker rm lupin-backend lupin-nginx || true
+
+            # Docker 네트워크 생성 (없으면)
+            docker network create lupin-network || true
+
+            # Spring Boot 앱 실행
             docker run -d \
               --name lupin-backend \
-              --network host \
+              --network lupin-network \
               --restart unless-stopped \
               -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
               -e GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
@@ -213,6 +231,16 @@ jobs:
               -e AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
               ${{ secrets.ECR_REGISTRY }}/lupin-backend:latest
+
+            # Nginx 실행 (보안 헤더 포함)
+            docker run -d \
+              --name lupin-nginx \
+              --network lupin-network \
+              -p 8081:8081 \
+              --restart unless-stopped \
+              -v ~/lupin/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
+              nginx:alpine
+
             docker image prune -af
 
       - name: Deployment result

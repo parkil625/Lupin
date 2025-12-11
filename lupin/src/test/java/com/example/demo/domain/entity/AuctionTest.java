@@ -237,9 +237,9 @@ class AuctionTest {
         assertEquals(bidAmount, bid.getBidAmount());
         assertEquals(user, bid.getUser());
     }
-    
+
     @Test
-    @DisplayName("정규 종료 시간이 지났지만 ACTIVE 상태라면, 입찰 시 초읽기가 시작된다")
+    @DisplayName("정규 종료 시간이 임박했을 때(30초 미만), 입찰하면 초읽기가 시작된다")
     void placeBid_triggers_overtime() {
         // given
         LocalDateTime now = LocalDateTime.now();
@@ -253,17 +253,19 @@ class AuctionTest {
 
         User user = User.builder().id(1L).build();
 
-        // [수정 포인트!]
-        // 기존: regularEndTime.plusSeconds(1) (시간 지난 뒤) -> 에러
-        // 변경: regularEndTime.minusSeconds(10) (10초 남았을 때) -> 성공!
+        // 💡 [핵심 수정 포인트]
+        // 이전 코드: regularEndTime.plusSeconds(1) -> 이미 끝난 시간이라 에러 발생 (정상)
+        // 수정 코드: regularEndTime.minusSeconds(10) -> 종료 10초 전 (초읽기 발동 조건)
         LocalDateTime bidTime = auction.getRegularEndTime().minusSeconds(10);
 
         // when
         auction.placeBid(user, 1000L, bidTime);
 
         // then
-        assertThat(auction.getOvertimeStarted()).isTrue(); // 초읽기 켜졌니?
-        // 종료 시간이 '입찰시간 + 30초'로 늘어났는지 확인
+        // 1. 초읽기 모드가 켜졌는지 확인
+        assertThat(auction.getOvertimeStarted()).isTrue();
+
+        // 2. 종료 시간이 '입찰 시간 + 30초'로 잘 연장되었는지 확인
         assertThat(auction.getOvertimeEndTime()).isEqualTo(bidTime.plusSeconds(30));
     }
 

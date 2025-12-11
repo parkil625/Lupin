@@ -213,14 +213,12 @@ jobs:
             docker stop lupin-backend lupin-nginx || true
             docker rm lupin-backend lupin-nginx || true
 
-            # Docker 네트워크 생성 (없으면)
-            docker network create lupin-network || true
-
-            # Spring Boot 앱 실행
+            # Spring Boot 앱 실행 (내부 포트 8080, --network host로 Redis 접근)
             docker run -d \
               --name lupin-backend \
-              --network lupin-network \
+              --network host \
               --restart unless-stopped \
+              -e SERVER_PORT=8080 \
               -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
               -e GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
               -e GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
@@ -232,11 +230,10 @@ jobs:
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
               ${{ secrets.ECR_REGISTRY }}/lupin-backend:latest
 
-            # Nginx 실행 (보안 헤더 포함)
+            # Nginx 실행 (보안 헤더 포함, 8081 -> localhost:8080)
             docker run -d \
               --name lupin-nginx \
-              --network lupin-network \
-              -p 8081:8081 \
+              --network host \
               --restart unless-stopped \
               -v ~/lupin/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
               nginx:alpine

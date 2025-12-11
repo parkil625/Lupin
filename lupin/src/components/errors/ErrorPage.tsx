@@ -49,10 +49,10 @@ const ErrorPage = memo(({
             style={MASK_STYLE}
           >
             <img
-              src="/error-500.png"
+              src="/error-500.webp"
               alt=""
               width="400"
-              height="400"
+              height="221"
               fetchPriority="high"
               loading="eager"
               decoding="async"

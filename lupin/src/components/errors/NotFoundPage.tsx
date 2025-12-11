@@ -35,10 +35,10 @@ const NotFoundPage = memo(() => {
             style={MASK_STYLE}
           >
             <img
-              src="/error-404.png"
+              src="/error-404.webp"
               alt=""
               width="400"
-              height="400"
+              height="221"
               fetchPriority="high"
               loading="eager"
               decoding="async"

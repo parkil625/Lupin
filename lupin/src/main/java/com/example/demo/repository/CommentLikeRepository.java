@@ -45,4 +45,17 @@ public interface CommentLikeRepository extends JpaRepository<CommentLike, Long> 
     // 피드에 달린 모든 댓글의 좋아요 조회 (알림 삭제용)
     @Query("SELECT cl FROM CommentLike cl WHERE cl.comment.feed = :feed")
     List<CommentLike> findByFeedComments(@Param("feed") Feed feed);
+
+    // [최적화] 여러 댓글의 좋아요 수를 한 번에 조회
+    @Query("SELECT cl.comment.id, COUNT(cl) FROM CommentLike cl WHERE cl.comment.id IN :commentIds GROUP BY cl.comment.id")
+    List<Object[]> countByCommentIds(@Param("commentIds") List<Long> commentIds);
+
+    // [최적화] 사용자가 좋아요한 댓글 ID 목록 조회
+    @Query("SELECT cl.comment.id FROM CommentLike cl WHERE cl.user.id = :userId AND cl.comment.id IN :commentIds")
+    List<Long> findLikedCommentIdsByUserId(@Param("userId") Long userId, @Param("commentIds") List<Long> commentIds);
+
+    // [최적화] 여러 댓글의 좋아요 일괄 삭제
+    @Modifying
+    @Query("DELETE FROM CommentLike cl WHERE cl.comment IN :comments")
+    void deleteByCommentIn(@Param("comments") List<Comment> comments);
 }

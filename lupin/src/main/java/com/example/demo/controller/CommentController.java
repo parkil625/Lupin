@@ -15,8 +15,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -26,7 +29,7 @@ public class CommentController extends BaseController {
     private final CommentService commentService;
     private final CommentLikeService commentLikeService;
     private final CommentReportService commentReportService;
-    private final CommentLikeRepository commentLikeRepository;
+    private final CommentLikeRepository commentLikeRepository; // [최적화] 배치 조회용
 
     @PostMapping("/feeds/{feedId}/comments")
     public ResponseEntity<CommentResponse> createComment(
@@ -74,12 +77,18 @@ public class CommentController extends BaseController {
     ) {
         User currentUser = userDetails != null ? getCurrentUser(userDetails) : null;
         List<Comment> comments = commentService.getCommentsByFeed(feedId);
+
+        // [최적화] 배치 조회로 N+1 문제 해결
+        List<Long> commentIds = comments.stream().map(Comment::getId).toList();
+        Map<Long, Long> likeCounts = getLikeCountMap(commentIds);
+        Set<Long> likedIds = currentUser != null ? getLikedCommentIds(currentUser.getId(), commentIds) : Collections.emptySet();
+
         List<CommentResponse> responses = comments.stream()
-                .map(comment -> {
-                    long likeCount = commentLikeRepository.countByComment(comment);
-                    boolean isLiked = currentUser != null && commentLikeRepository.existsByUserIdAndCommentId(currentUser.getId(), comment.getId());
-                    return CommentResponse.from(comment, likeCount, isLiked);
-                })
+                .map(comment -> CommentResponse.from(
+                        comment,
+                        likeCounts.getOrDefault(comment.getId(), 0L),
+                        likedIds.contains(comment.getId())
+                ))
                 .toList();
         return ResponseEntity.ok(responses);
     }
@@ -109,12 +118,18 @@ public class CommentController extends BaseController {
     ) {
         User currentUser = userDetails != null ? getCurrentUser(userDetails) : null;
         List<Comment> replies = commentService.getReplies(commentId);
+
+        // [최적화] 배치 조회로 N+1 문제 해결
+        List<Long> replyIds = replies.stream().map(Comment::getId).toList();
+        Map<Long, Long> likeCounts = getLikeCountMap(replyIds);
+        Set<Long> likedIds = currentUser != null ? getLikedCommentIds(currentUser.getId(), replyIds) : Collections.emptySet();
+
         List<CommentResponse> responses = replies.stream()
-                .map(reply -> {
-                    long likeCount = commentLikeRepository.countByComment(reply);
-                    boolean isLiked = currentUser != null && commentLikeRepository.existsByUserIdAndCommentId(currentUser.getId(), reply.getId());
-                    return CommentResponse.from(reply, likeCount, isLiked);
-                })
+                .map(reply -> CommentResponse.from(
+                        reply,
+                        likeCounts.getOrDefault(reply.getId(), 0L),
+                        likedIds.contains(reply.getId())
+                ))
                 .toList();
         return ResponseEntity.ok(responses);
     }
@@ -154,5 +169,24 @@ public class CommentController extends BaseController {
         return commentLikeRepository.findByIdWithComment(commentLikeId)
                 .map(commentLike -> ResponseEntity.ok(Map.of("commentId", commentLike.getComment().getId())))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // [최적화] 배치 조회 헬퍼 메서드 - N개의 댓글 좋아요 수를 2개 쿼리로 조회
+    private Map<Long, Long> getLikeCountMap(List<Long> commentIds) {
+        if (commentIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return commentLikeRepository.countByCommentIds(commentIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
+
+    private Set<Long> getLikedCommentIds(Long userId, List<Long> commentIds) {
+        if (commentIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return Set.copyOf(commentLikeRepository.findLikedCommentIdsByUserId(userId, commentIds));
     }
 }

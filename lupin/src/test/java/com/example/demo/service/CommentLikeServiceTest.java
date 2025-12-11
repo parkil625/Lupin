@@ -5,12 +5,14 @@ import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.event.NotificationEvent;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,10 +40,10 @@ class CommentLikeServiceTest {
     private CommentRepository commentRepository;
 
     @Mock
-    private NotificationService notificationService;
+    private NotificationRepository notificationRepository;
 
     @Mock
-    private NotificationRepository notificationRepository;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private CommentLikeService commentLikeService;
@@ -88,8 +90,8 @@ class CommentLikeServiceTest {
     void likeCommentTest() {
         // given
         Long commentId = 1L;
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)).willReturn(false);
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.save(any(CommentLike.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -102,19 +104,19 @@ class CommentLikeServiceTest {
     }
 
     @Test
-    @DisplayName("댓글에 좋아요를 누르면 댓글 작성자에게 알림이 생성된다 (refId = commentId)")
+    @DisplayName("댓글에 좋아요를 누르면 댓글 작성자에게 알림 이벤트가 발행된다")
     void likeCommentCreatesNotificationTest() {
         // given
         Long commentId = 1L;
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)).willReturn(false);
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.save(any(CommentLike.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         commentLikeService.likeComment(user, commentId);
 
-        // then - refId는 commentId 사용
-        verify(notificationService).createCommentLikeNotification(writer, user, commentId);
+        // then - 이벤트 발행 검증
+        verify(eventPublisher).publishEvent(any(NotificationEvent.class));
     }
 
     @Test
@@ -122,7 +124,6 @@ class CommentLikeServiceTest {
     void likeCommentAlreadyLikedTest() {
         // given
         Long commentId = 1L;
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)).willReturn(true);
 
         // when & then
@@ -171,6 +172,7 @@ class CommentLikeServiceTest {
     void likeCommentNotFoundTest() {
         // given
         Long commentId = 999L;
+        given(commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)).willReturn(false);
         given(commentRepository.findById(commentId)).willReturn(Optional.empty());
 
         // when & then

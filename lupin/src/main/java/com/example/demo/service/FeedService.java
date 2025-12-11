@@ -48,11 +48,17 @@ public class FeedService {
     private final WorkoutScoreService workoutScoreService;
 
     public Slice<Feed> getHomeFeeds(User user, int page, int size) {
-        return feedRepository.findByWriterNotOrderByIdDesc(user, PageRequest.of(page, size));
+        Slice<Feed> feeds = feedRepository.findByWriterNotOrderByIdDesc(user, PageRequest.of(page, size));
+        // [OSIV OFF] 트랜잭션 내에서 images 초기화 (BatchSize로 효율적 조회)
+        feeds.getContent().forEach(feed -> feed.getImages().size());
+        return feeds;
     }
 
     public Slice<Feed> getMyFeeds(User user, int page, int size) {
-        return feedRepository.findByWriterOrderByIdDesc(user, PageRequest.of(page, size));
+        Slice<Feed> feeds = feedRepository.findByWriterOrderByIdDesc(user, PageRequest.of(page, size));
+        // [OSIV OFF] 트랜잭션 내에서 images 초기화 (BatchSize로 효율적 조회)
+        feeds.getContent().forEach(feed -> feed.getImages().size());
+        return feeds;
     }
 
     @Transactional
@@ -119,6 +125,9 @@ public class FeedService {
 
         Feed savedFeed = feedRepository.save(feed);
 
+        // 썸네일 URL 설정 (반정규화 - 시작 이미지 사용)
+        savedFeed.setThumbnailUrl(startImageKey);
+
         // 이미지 저장 (Set에 추가해서 cascade가 동작하도록)
         int sortOrder = 0;
 
@@ -163,11 +172,13 @@ public class FeedService {
 
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity) {
-        Feed feed = feedRepository.findById(feedId)
+        Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
         validateOwnership(feed, user);
         feed.update(content, activity);
+        // [OSIV OFF] 트랜잭션 내에서 images 초기화
+        feed.getImages().size();
         return feed;
     }
 
@@ -182,7 +193,7 @@ public class FeedService {
 
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity, String startImageKey, String endImageKey, List<String> otherImageKeys) {
-        Feed feed = feedRepository.findById(feedId)
+        Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
         validateOwnership(feed, user);
@@ -217,6 +228,9 @@ public class FeedService {
 
         // 피드 점수/칼로리 업데이트
         feed.updateScore((long) score, calories);
+
+        // 썸네일 URL 업데이트 (반정규화)
+        feed.setThumbnailUrl(startImageKey);
 
         // 기존 이미지 삭제 (orphanRemoval이 동작하도록 Set을 clear)
         feed.getImages().clear();
@@ -263,6 +277,10 @@ public class FeedService {
             pointService.addPoints(user, score);
         }
 
+        // [OSIV OFF] 변경 후 영속성 컨텍스트에서 이미지 컬렉션 초기화 보장
+        feedRepository.flush();
+        feed.getImages().size();
+
         return feed;
     }
 
@@ -283,7 +301,7 @@ public class FeedService {
         commentRepository.deleteParentCommentsByFeed(feed);
         feedLikeRepository.deleteByFeed(feed);
         feedReportRepository.deleteByFeed(feed);
-        feedImageRepository.deleteByFeed(feed);
+        // feedImageRepository.deleteByFeed 제거 - Feed의 cascade + orphanRemoval이 처리
         feedRepository.delete(feed);
     }
 
@@ -341,8 +359,11 @@ public class FeedService {
     }
 
     public Feed getFeedDetail(Long feedId) {
-        return feedRepository.findById(feedId)
+        Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
+        // [OSIV OFF] 트랜잭션 내에서 images 초기화
+        feed.getImages().size();
+        return feed;
     }
 
     public boolean canPostToday(User user) {

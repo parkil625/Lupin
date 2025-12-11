@@ -283,8 +283,8 @@ const OAuthSection = memo(() => {
         finally { setIsLoading(false); }
     }, [fetchConns]);
 
-    // Google Script: 연동 안 된 경우에만 로드
-    const needsGoogle = !connections.some(c => c.provider === 'GOOGLE');
+    // Google Script: 로딩 완료 후 연동 안 된 경우에만 로드
+    const needsGoogle = !isLoading && !connections.some(c => c.provider === 'GOOGLE');
     const { triggerGoogle } = useGoogleScript(needsGoogle, handleLinkGoogle);
 
     const handleLink = (p: 'NAVER' | 'KAKAO') => {
@@ -367,9 +367,10 @@ const OAuthSection = memo(() => {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <div id="hidden-google-btn" className="hidden" aria-hidden="true"/>
                     </div>
                 )}
+                {/* Google GSI 버튼 - 항상 렌더링되어야 스크립트 초기화 가능 */}
+                <div id="hidden-google-btn" className="hidden" aria-hidden="true"/>
             </div>
         </div>
     );
@@ -407,8 +408,13 @@ export default function ProfilePage({ onLogout, profileImage, setProfileImage }:
                     </div>
                     <ButtonGroup>
                         {isEditing ? (
-                            // [중요] form 속성을 사용하여 렌더링 격리된 자식 폼 제출
-                            <Button type="submit" form="profile-form" variant="outline" className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold">
+                            // [중요] type="button"으로 변경하여 클릭 이벤트로 폼 제출
+                            <Button
+                                type="button"
+                                onClick={() => document.getElementById('profile-form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))}
+                                variant="outline"
+                                className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold"
+                            >
                                 <Edit className="w-4 h-4 mr-2" /> 저장
                             </Button>
                         ) : (

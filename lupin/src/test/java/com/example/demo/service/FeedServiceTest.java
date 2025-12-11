@@ -116,7 +116,7 @@ class FeedServiceTest {
         String newContent = "수정된 내용";
         String newActivity = "walking";
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when
         Feed result = feedService.updateFeed(writer, feedId, newContent, newActivity);
@@ -131,7 +131,7 @@ class FeedServiceTest {
     void updateFeedNotFoundTest() {
         // given
         Long feedId = 999L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> feedService.updateFeed(writer, feedId, "내용", "activity"))
@@ -243,7 +243,7 @@ class FeedServiceTest {
                 .content("내용")
                 .build();
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when
         Feed result = feedService.getFeedDetail(feedId);
@@ -257,7 +257,7 @@ class FeedServiceTest {
     void getFeedDetailNotFoundTest() {
         // given
         Long feedId = 999L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> feedService.getFeedDetail(feedId))
@@ -530,7 +530,7 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("피드 삭제 시 연관된 이미지도 삭제된다")
+    @DisplayName("피드 삭제 시 연관된 이미지도 삭제된다 (cascade)")
     void deleteFeedWithImagesTest() {
         // given
         Long feedId = 1L;
@@ -547,8 +547,7 @@ class FeedServiceTest {
         // when
         feedService.deleteFeed(writer, feedId);
 
-        // then
-        verify(feedImageRepository).deleteByFeed(feed);
+        // then - 이미지 삭제는 Feed의 cascade + orphanRemoval로 처리됨
         verify(feedRepository).delete(feed);
     }
 
@@ -583,7 +582,7 @@ class FeedServiceTest {
                 .content("원래 내용")
                 .build();
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when & then
         assertThatThrownBy(() -> feedService.updateFeed(otherUser, feedId, "수정 내용", "walking"))
@@ -667,7 +666,7 @@ class FeedServiceTest {
         LocalDateTime newStartTime = LocalDate.now().atTime(14, 0);
         LocalDateTime newEndTime = LocalDate.now().atTime(15, 30); // 1.5시간 운동
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
         given(imageMetadataService.extractPhotoDateTime("new-start.jpg"))
                 .willReturn(Optional.of(newStartTime));
         given(imageMetadataService.extractPhotoDateTime("new-end.jpg"))
@@ -713,7 +712,7 @@ class FeedServiceTest {
         String newContent = "수정된 내용";
         String newActivity = "walking";
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when - 이미지 없이 호출 (기존 메서드)
         Feed result = feedService.updateFeed(writer, feedId, newContent, newActivity);

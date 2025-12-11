@@ -11,6 +11,7 @@
 import React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LucideIcon, User } from "lucide-react";
+import { getProfileThumbnailUrl } from "@/api";
 
 interface NavItem {
   id: string;
@@ -96,7 +97,7 @@ export default function Sidebar({
           <Avatar className="w-9 h-9 border-2 border-[#C93831] flex-shrink-0">
             {profileImage ? (
               <img
-                src={profileImage}
+                src={getProfileThumbnailUrl(profileImage)}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />

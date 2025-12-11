@@ -2,6 +2,8 @@ package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,11 +16,21 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
+    // [최적화] Slice로 변경 - count 쿼리 제거
+    Slice<Notification> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+
+    // 기존 List 반환 메서드 유지 (하위 호환)
     List<Notification> findByUserOrderByCreatedAtDescIdDesc(User user);
 
+    // [최적화] 존재 확인
     boolean existsByUserAndIsReadFalse(User user);
 
     List<Notification> findByUserAndIsReadFalse(User user);
+
+    // [최적화] 전체 읽음 처리 - 벌크 업데이트
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.user = :user AND n.isRead = false")
+    int markAllAsRead(@Param("user") User user);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.refId = :refId AND n.type IN :types")

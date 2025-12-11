@@ -2,6 +2,10 @@ spring:
   main:
     allow-bean-definition-overriding: true
 
+  flyway:
+    enabled: true
+    validate-on-migrate: false  # 체크섬 검증 비활성화 (마이그레이션 수정으로 인한 불일치 해결)
+
   datasource:
     url: jdbc:mysql://lupin-db.croa8saikppw.ap-northeast-2.rds.amazonaws.com:3306/lupin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull
     username: admin

@@ -62,8 +62,8 @@ public class NotificationService {
 
     @Transactional
     public void markAllAsRead(User user) {
-        List<Notification> unreadNotifications = notificationRepository.findByUserAndIsReadFalse(user);
-        unreadNotifications.forEach(Notification::markAsRead);
+        // [최적화] 벌크 업데이트 - 개별 엔티티 로딩 없이 한 번에 처리
+        notificationRepository.markAllAsRead(user);
     }
 
     @Transactional

@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true) // [최적화] 기본 읽기 전용
 public class NaverOAuthService {
 
     private final UserRepository userRepository;
@@ -70,6 +70,7 @@ public class NaverOAuthService {
     /**
      * 네이버 계정 연동
      */
+    @Transactional // [최적화] DB 저장이 필요한 메서드만 쓰기 트랜잭션
     public void linkNaver(User user, String code, String state) {
         try {
             String accessToken = getAccessToken(code, state);

@@ -30,6 +30,42 @@ public class FeedResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /**
+     * [최적화] Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음
+     */
+    public static FeedResponse from(Feed feed) {
+        return from(feed, false);
+    }
+
+    /**
+     * [최적화] Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음
+     */
+    public static FeedResponse from(Feed feed, boolean isLiked) {
+        return FeedResponse.builder()
+                .id(feed.getId())
+                .activity(feed.getActivity())
+                .content(feed.getContent())
+                .writerName(feed.getWriter().getName())
+                .writerId(feed.getWriter().getId())
+                .writerAvatar(feed.getWriter().getAvatar())
+                .points(feed.getPoints())
+                .calories(feed.getCalories())
+                .images(feed.getImages() != null ? feed.getImages().stream()
+                        .sorted(Comparator.comparingInt(FeedImage::getSortOrder))
+                        .map(FeedImage::getS3Key)
+                        .collect(Collectors.toList()) : Collections.emptyList())
+                .likes((long) feed.getLikeCount())
+                .comments((long) feed.getCommentCount())
+                .isLiked(isLiked)
+                .createdAt(feed.getCreatedAt())
+                .updatedAt(feed.getUpdatedAt())
+                .build();
+    }
+
+    /**
+     * @deprecated 반정규화 필드 사용으로 대체 - from(Feed, boolean) 사용 권장
+     */
+    @Deprecated
     public static FeedResponse from(Feed feed, long likeCount, long commentCount) {
         return FeedResponse.builder()
                 .id(feed.getId())
@@ -52,6 +88,10 @@ public class FeedResponse {
                 .build();
     }
 
+    /**
+     * @deprecated 반정규화 필드 사용으로 대체 - from(Feed, boolean) 사용 권장
+     */
+    @Deprecated
     public static FeedResponse from(Feed feed, long likeCount, long commentCount, boolean isLiked) {
         return FeedResponse.builder()
                 .id(feed.getId())

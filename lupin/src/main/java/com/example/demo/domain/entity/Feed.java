@@ -46,6 +46,16 @@ public class Feed {
     @Column(nullable = false)
     private long points;
 
+    // 반정규화 필드 - 성능 최적화
+    @Column(name = "like_count", nullable = false)
+    private int likeCount = 0;
+
+    @Column(name = "comment_count", nullable = false)
+    private int commentCount = 0;
+
+    @Column(name = "thumbnail_url", length = 500)
+    private String thumbnailUrl;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -61,7 +71,9 @@ public class Feed {
         this.content = content;
         this.points = points;
         this.calories = calories;
-        this.images = new HashSet<>(); // Builder로 생성 시에도 초기화
+        this.images = new HashSet<>();
+        this.likeCount = 0;
+        this.commentCount = 0;
     }
 
     public void update(String content, String activity) {
@@ -72,6 +84,33 @@ public class Feed {
     public void updateScore(long points, int calories) {
         this.points = points;
         this.calories = calories;
+    }
+
+    // 좋아요 카운트 증감 메서드
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
+
+    // 댓글 카운트 증감 메서드
+    public void incrementCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decrementCommentCount() {
+        if (this.commentCount > 0) {
+            this.commentCount--;
+        }
+    }
+
+    // 썸네일 URL 설정
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     @Override

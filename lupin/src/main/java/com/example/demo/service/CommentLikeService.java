@@ -3,12 +3,14 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.User;
+import com.example.demo.event.NotificationEvent;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,17 +21,18 @@ public class CommentLikeService {
 
     private final CommentLikeRepository commentLikeRepository;
     private final CommentRepository commentRepository;
-    private final NotificationService notificationService;
     private final NotificationRepository notificationRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CommentLike likeComment(User user, Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
-
+        // [최적화] ID 기반 존재 확인
         if (commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)) {
             throw new BusinessException(ErrorCode.ALREADY_LIKED);
         }
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
         CommentLike commentLike = CommentLike.builder()
                 .user(user)
@@ -37,8 +40,14 @@ public class CommentLikeService {
                 .build();
 
         CommentLike savedCommentLike = commentLikeRepository.save(commentLike);
-        // refId = commentId (댓글 참조)
-        notificationService.createCommentLikeNotification(comment.getWriter(), user, commentId);
+
+        // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
+        eventPublisher.publishEvent(NotificationEvent.commentLike(
+                comment.getWriter().getId(),
+                user.getId(),
+                user.getName(),
+                commentId
+        ));
 
         return savedCommentLike;
     }

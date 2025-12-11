@@ -82,9 +82,9 @@ export const feedApi = {
     startImage: string;
     endImage: string;
     otherImages?: string[];
-  }) => {
+  }): Promise<FeedResponse> => {
     const response = await apiClient.post('/feeds', data);
-    return response.data;
+    return transformFeedImages(response.data) as FeedResponse;
   },
 
   updateFeed: async (feedId: number, data: {

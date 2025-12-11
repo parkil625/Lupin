@@ -167,12 +167,13 @@ const AvatarSection = memo(({
                         <>
                             <button
                                 onClick={() => !isUploading && fileRef.current?.click()}
+                                aria-label="프로필 사진 업로드"
                                 className="absolute bottom-0 right-0 w-9 h-9 bg-[#C93831] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#B02F28] transition-transform active:scale-95 disabled:bg-gray-300"
                             >
                                 {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                             </button>
                             {image && (
-                                <button onClick={handleRemove} className="absolute -top-2 -right-2 w-7 h-7 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center shadow hover:bg-red-100 hover:text-red-600 transition-colors">
+                                <button onClick={handleRemove} aria-label="프로필 사진 삭제" className="absolute -top-2 -right-2 w-7 h-7 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center shadow hover:bg-red-100 hover:text-red-600 transition-colors">
                                     <X className="w-3.5 h-3.5" />
                                 </button>
                             )}
@@ -212,19 +213,19 @@ const BasicInfoForm = memo(({
     return (
         <form id="profile-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <section className="space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">기본 정보</h3>
+                <h3 className="text-lg font-bold text-gray-900">기본 정보</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <Label className="text-xs font-bold text-gray-500 ml-1">생년월일</Label>
+                        <Label htmlFor="birthDate" className="text-xs font-bold text-gray-500 ml-1">생년월일</Label>
                         <InputGroup className="mt-1.5">
-                            <InputGroupInput type="date" {...register("birthDate")} disabled={!isEditing} className={`bg-gray-50/50 rounded-xl ${errors.birthDate ? "border-red-400" : "border-gray-200"}`} />
+                            <InputGroupInput id="birthDate" type="date" {...register("birthDate")} disabled={!isEditing} className={`bg-gray-50/50 rounded-xl ${errors.birthDate ? "border-red-400" : "border-gray-200"}`} />
                         </InputGroup>
                         {errors.birthDate && <p className="text-xs text-red-500 mt-1">{errors.birthDate.message}</p>}
                     </div>
                     <div>
-                        <Label className="text-xs font-bold text-gray-500 ml-1">성별</Label>
+                        <Label htmlFor="gender" className="text-xs font-bold text-gray-500 ml-1">성별</Label>
                         <Select value={gender} onValueChange={v => setValue("gender", v)} disabled={!isEditing}>
-                            <SelectTrigger className={`mt-1.5 bg-gray-50/50 rounded-xl ${errors.gender ? "border-red-400" : "border-gray-200"}`}><SelectValue placeholder="선택" /></SelectTrigger>
+                            <SelectTrigger id="gender" aria-label="성별 선택" className={`mt-1.5 bg-gray-50/50 rounded-xl ${errors.gender ? "border-red-400" : "border-gray-200"}`}><SelectValue placeholder="선택" /></SelectTrigger>
                             <SelectContent><SelectItem value="남성">남성</SelectItem><SelectItem value="여성">여성</SelectItem></SelectContent>
                         </Select>
                     </div>
@@ -232,19 +233,19 @@ const BasicInfoForm = memo(({
             </section>
 
             <section className="space-y-4">
-                <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">신체 정보</h3>
+                <h3 className="text-lg font-bold text-gray-900">신체 정보</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <Label className="text-xs font-bold text-gray-500 ml-1">키 (cm)</Label>
+                        <Label htmlFor="height" className="text-xs font-bold text-gray-500 ml-1">키 (cm)</Label>
                         <InputGroup className="mt-1.5">
-                            <InputGroupInput type="number" {...register("height")} disabled={!isEditing} className={`bg-gray-50/50 rounded-xl ${errors.height ? "border-red-400" : "border-gray-200"}`} />
+                            <InputGroupInput id="height" type="number" {...register("height")} disabled={!isEditing} className={`bg-gray-50/50 rounded-xl ${errors.height ? "border-red-400" : "border-gray-200"}`} />
                         </InputGroup>
                         {errors.height && <p className="text-xs text-red-500 mt-1">{errors.height.message}</p>}
                     </div>
                     <div>
-                        <Label className="text-xs font-bold text-gray-500 ml-1">몸무게 (kg)</Label>
+                        <Label htmlFor="weight" className="text-xs font-bold text-gray-500 ml-1">몸무게 (kg)</Label>
                         <InputGroup className="mt-1.5">
-                            <InputGroupInput type="number" {...register("weight")} disabled={!isEditing} className={`bg-gray-50/50 rounded-xl ${errors.weight ? "border-red-400" : "border-gray-200"}`} />
+                            <InputGroupInput id="weight" type="number" {...register("weight")} disabled={!isEditing} className={`bg-gray-50/50 rounded-xl ${errors.weight ? "border-red-400" : "border-gray-200"}`} />
                         </InputGroup>
                         {errors.weight && <p className="text-xs text-red-500 mt-1">{errors.weight.message}</p>}
                     </div>
@@ -309,7 +310,7 @@ const OAuthSection = memo(() => {
 
     return (
         <div className="space-y-4 pt-2">
-            <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">계정 연동</h3>
+            <h3 className="text-lg font-bold text-gray-900">계정 연동</h3>
             <div className="p-5 rounded-xl bg-white/80 border border-gray-200 shadow-sm transition-all hover:shadow-md min-h-[88px]">
                 {isLoading ? (
                     <div className="w-full flex items-center gap-4 animate-pulse">

@@ -13,7 +13,7 @@ VALUES
     -- 테스트 계정 (비밀번호: 1)
     (13, 'user01', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '테스트유저', 'MEMBER', 175.0, 70.0, 'M', '1995-01-01', NULL, NULL),
     -- 의사 계정들 (비밀번호: 1)
-    (21, 'doctor01', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '홍세민', 'DOCTOR', 163.0, 52.0, '여성', '1988-07-22', NULL, '의료실'),
+    (21, 'doctor01', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '박대기', 'DOCTOR', 163.0, 52.0, '여성', '1988-07-22', NULL, '의료실'),
     (22, 'doctor02', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '김준호', 'DOCTOR', 175.0, 70.0, '남성', '1985-05-10', NULL, '의료실'),
     (23, 'doctor03', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '이정민', 'DOCTOR', 168.0, 58.0, '남성', '1982-11-18', NULL, '의료실'),
     (24, 'doctor04', '$2a$10$c2TQaJnZaQLbMxjQ2GRs8OQr4aO7a6l8C0hKQ3wCGnA3lxmzz6vUi', '박지은', 'DOCTOR', 165.0, 55.0, '여성', '1990-03-25', NULL, '의료실'),
@@ -273,7 +273,7 @@ INSERT IGNORE INTO doctor_profiles (user_id, specialty, license_number, medical_
 VALUES
     (21, '내과', 'DOC-2024-001', 10, '010-9876-5432', '1988-07-22', '여성', '서울특별시 강남구', NOW()),
     (22, '외과', 'DOC-2024-002', 12, '010-1234-5678', '1985-05-10', '남성', '서울특별시 서초구', NOW()),
-    (23, '신경외과', 'DOC-2024-003', 15, '010-2345-6789', '1982-11-18', '남성', '서울특별시 송파구', NOW()),
+    (23, '신경정신과', 'DOC-2024-003', 15, '010-2345-6789', '1982-11-18', '남성', '서울특별시 송파구', NOW()),
     (24, '피부과', 'DOC-2024-004', 8, '010-3456-7890', '1990-03-25', '여성', '서울특별시 강동구', NOW());
 
 -- =====================================================

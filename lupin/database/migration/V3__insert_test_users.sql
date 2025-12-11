@@ -57,7 +57,7 @@ VALUES (
     NULL
 );
 
--- 4. 의사 (DOCTOR) - 이정민 (신경외과, ID: 23)
+-- 4. 의사 (DOCTOR) - 이정민 (신경정신과, ID: 23)
 INSERT IGNORE INTO users (id, user_id, password, name, role, height, weight, gender, birth_date, department, avatar)
 VALUES (
     23,
@@ -119,11 +119,11 @@ SELECT
 FROM users
 WHERE user_id = 'doctor02';
 
--- 8. 의사 프로필 생성 (doctor03용 - 신경외과)
+-- 8. 의사 프로필 생성 (doctor03용 - 신경정신과)
 INSERT IGNORE INTO doctor_profiles (user_id, specialty, license_number, medical_experience, phone, birth_date, gender, address, created_at)
 SELECT
     id,
-    '신경외과',
+    '신경정신과',
     'DOC-2024-003',
     15,
     '010-2345-6789',

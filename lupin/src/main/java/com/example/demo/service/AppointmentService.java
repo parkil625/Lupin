@@ -1,6 +1,7 @@
 package com.example.demo.service;
 import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
 import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.dto.request.AppointmentRequest;
 import com.example.demo.repository.AppointmentRepository;

@@ -337,13 +337,16 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       }
       // 타입별 필드로 전송 (배열 순서 의존 제거)
       const otherImages = images.filter(img => img !== startImage && img !== endImage);
-      await feedApi.createFeed({
+      const response = await feedApi.createFeed({
         activity: workoutType,
         content,
         startImage,
         endImage,
         otherImages
       });
+      // 응답을 변환하여 스토어에 즉시 추가 (프로필 사진 즉시 표시)
+      const newFeed = mapBackendFeed(response);
+      store.addFeed(newFeed);
       store.triggerRefresh();
       toast.success("피드가 작성되었습니다!");
     } catch (error: unknown) {

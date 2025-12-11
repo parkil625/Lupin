@@ -81,5 +81,5 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     Optional<AuctionStatusResponse> findAuctionStatus();
 
 
-
+    List<Auction> findAllByStatus(AuctionStatus auctionStatus);
 }

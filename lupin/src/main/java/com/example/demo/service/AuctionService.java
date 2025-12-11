@@ -12,6 +12,7 @@ import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.scheduler.AuctionTaskScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,8 @@ public class AuctionService {
     private final UserRepository userRepository;
     private final AuctionBidRepository auctionBidRepository;
     private final PointService pointService;
+
+    private final AuctionTaskScheduler auctionTaskScheduler;
 
     //경매 입찰 시켜주는 메소드
     public void placeBid(Long auctionId, Long Id, Long bidAmount, LocalDateTime bidTime) {
@@ -68,6 +71,8 @@ public class AuctionService {
         // 입찰 엔티티 생성,저장
         AuctionBid bid = auction.createBid(user, bidAmount, bidTime);
         auctionBidRepository.save(bid);
+
+        auctionTaskScheduler.scheduleAuctionEnd(auction.getId(), auction.getEndTime());
     }
 
     //경매 시작 시간이 된 경매 active 시켜주는 메소드
@@ -92,7 +97,7 @@ public class AuctionService {
             // [추가] 변경 사항 즉시 DB 반영!
             auctionRepository.saveAndFlush(auction);
 
-            log.info("🏁 경매 ID {} -> 종료(ENDED) 처리 완료", auction.getId());
+            log.info("경매 ID {} -> 종료(ENDED) 처리 완료", auction.getId());
         }
 
     }
@@ -136,7 +141,7 @@ public class AuctionService {
 
         // [추가] 대상을 찾았는지 확인하는 로그
         if (!auctions.isEmpty()) {
-            log.info("⏰ 초읽기 전환 대상 경매 {}건 발견! (기준 시간: {})", auctions.size(), now);
+            log.info("초읽기 전환 대상 경매 {}건 발견! (기준 시간: {})", auctions.size(), now);
         }
 
         for (Auction auction : auctions) {
@@ -146,7 +151,7 @@ public class AuctionService {
                 // [필수] 즉시 반영
                 auctionRepository.saveAndFlush(auction);
 
-                log.info("✅ 경매 ID {} -> 초읽기 모드(Overtime)로 변경 및 저장 완료", auction.getId());
+                log.info("경매 ID {} -> 초읽기 모드(Overtime)로 변경 및 저장 완료", auction.getId());
             } catch (IllegalStateException e) {
                 log.error("경매 ID {} 초읽기 전환 실패: {}", auction.getId(), e.getMessage());
             }

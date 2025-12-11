@@ -1,5 +1,5 @@
 package com.example.demo.service;
-
+import com.example.demo.domain.enums.Role;
 import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.ChatMessage;
 import com.example.demo.domain.entity.User;
@@ -51,12 +51,14 @@ class AppointmentServiceTest {
                 .id(1L)
                 .userId("patient01")
                 .name("환자1")
+                .role(Role.MEMBER)
                 .build();
 
         doctor = User.builder()
                 .id(21L)
                 .userId("doctor01")
                 .name("의사1")
+                .role(Role.DOCTOR)
                 .build();
 
         appointment = Appointment.builder()

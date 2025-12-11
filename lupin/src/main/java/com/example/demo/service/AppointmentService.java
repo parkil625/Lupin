@@ -1,6 +1,7 @@
 package com.example.demo.service;
 import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
 import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.dto.request.AppointmentRequest;
 import com.example.demo.repository.AppointmentRepository;
@@ -32,10 +33,14 @@ public class AppointmentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 환자입니다."));
 
         User doctor = userRepository.findById(request.getDoctorId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "존재하지 않는 의사입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 의사입니다."));
+
+        if (doctor.getRole() != Role.DOCTOR) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "해당 사용자는 의사가 아닙니다.");
+        }
 
         if (appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), request.getDate())) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND, "해당 시간에 예약이 이미 꽉 찼습니다.");
+            throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "해당 시간에 예약이 이미 꽉 찼습니다.");
         }
 
         if (appointmentRepository.existsByPatientIdAndDate(patient.getId(), request.getDate())) {

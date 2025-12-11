@@ -243,7 +243,7 @@ class FeedServiceTest {
                 .content("내용")
                 .build();
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when
         Feed result = feedService.getFeedDetail(feedId);
@@ -257,7 +257,7 @@ class FeedServiceTest {
     void getFeedDetailNotFoundTest() {
         // given
         Long feedId = 999L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> feedService.getFeedDetail(feedId))

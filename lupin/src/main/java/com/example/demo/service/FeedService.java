@@ -48,11 +48,17 @@ public class FeedService {
     private final WorkoutScoreService workoutScoreService;
 
     public Slice<Feed> getHomeFeeds(User user, int page, int size) {
-        return feedRepository.findByWriterNotOrderByIdDesc(user, PageRequest.of(page, size));
+        Slice<Feed> feeds = feedRepository.findByWriterNotOrderByIdDesc(user, PageRequest.of(page, size));
+        // [OSIV OFF] 트랜잭션 내에서 images 초기화 (BatchSize로 효율적 조회)
+        feeds.getContent().forEach(feed -> feed.getImages().size());
+        return feeds;
     }
 
     public Slice<Feed> getMyFeeds(User user, int page, int size) {
-        return feedRepository.findByWriterOrderByIdDesc(user, PageRequest.of(page, size));
+        Slice<Feed> feeds = feedRepository.findByWriterOrderByIdDesc(user, PageRequest.of(page, size));
+        // [OSIV OFF] 트랜잭션 내에서 images 초기화 (BatchSize로 효율적 조회)
+        feeds.getContent().forEach(feed -> feed.getImages().size());
+        return feeds;
     }
 
     @Transactional
@@ -347,8 +353,11 @@ public class FeedService {
     }
 
     public Feed getFeedDetail(Long feedId) {
-        return feedRepository.findById(feedId)
+        Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
+        // [OSIV OFF] 트랜잭션 내에서 images 초기화
+        feed.getImages().size();
+        return feed;
     }
 
     public boolean canPostToday(User user) {

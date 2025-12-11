@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
@@ -22,6 +23,7 @@ public class CommentService {
     private static final List<String> COMMENT_NOTIFICATION_TYPES = List.of("COMMENT_LIKE", "REPLY");
 
     private final CommentRepository commentRepository;
+    private final CommentLikeRepository commentLikeRepository;
     private final FeedRepository feedRepository;
     private final NotificationService notificationService;
     private final NotificationRepository notificationRepository;
@@ -59,8 +61,41 @@ public class CommentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
         validateOwnership(comment, user);
+
+        // 본인 댓글의 알림 삭제
         notificationRepository.deleteByRefIdAndTypeIn(String.valueOf(commentId), COMMENT_NOTIFICATION_TYPES);
+
+        // 부모 댓글인 경우 대댓글 관련 알림도 삭제
+        if (comment.getParent() == null) {
+            deleteRepliesNotifications(comment);
+        }
+
         commentRepository.delete(comment);
+    }
+
+    private void deleteRepliesNotifications(Comment parentComment) {
+        List<Comment> replies = commentRepository.findByParentOrderByIdAsc(parentComment);
+        if (replies.isEmpty()) {
+            return;
+        }
+
+        // 대댓글 ID 수집
+        List<String> replyIds = replies.stream()
+                .map(r -> String.valueOf(r.getId()))
+                .toList();
+
+        // REPLY 알림 삭제 (refId = reply ID)
+        notificationRepository.deleteByRefIdInAndType(replyIds, "REPLY");
+
+        // COMMENT_LIKE 알림 삭제 (refId = commentLike ID)
+        for (Comment reply : replies) {
+            List<String> commentLikeIds = commentLikeRepository.findByComment(reply).stream()
+                    .map(cl -> String.valueOf(cl.getId()))
+                    .toList();
+            if (!commentLikeIds.isEmpty()) {
+                notificationRepository.deleteByRefIdInAndType(commentLikeIds, "COMMENT_LIKE");
+            }
+        }
     }
 
     private void validateOwnership(Comment comment, User user) {

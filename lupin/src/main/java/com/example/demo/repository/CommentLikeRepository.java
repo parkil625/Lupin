@@ -41,4 +41,8 @@ public interface CommentLikeRepository extends JpaRepository<CommentLike, Long> 
 
     @Query("SELECT cl FROM CommentLike cl JOIN FETCH cl.comment WHERE cl.id = :id")
     Optional<CommentLike> findByIdWithComment(@Param("id") Long id);
+
+    // 피드에 달린 모든 댓글의 좋아요 조회 (알림 삭제용)
+    @Query("SELECT cl FROM CommentLike cl WHERE cl.comment.feed = :feed")
+    List<CommentLike> findByFeedComments(@Param("feed") Feed feed);
 }

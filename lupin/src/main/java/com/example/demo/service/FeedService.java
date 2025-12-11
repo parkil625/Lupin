@@ -35,7 +35,6 @@ public class FeedService {
     private static final int POINT_RECOVERY_DAYS = 7;
     private static final int MAX_WORKOUT_HOURS = 24;
     private static final int PHOTO_TIME_TOLERANCE_HOURS = 6; // 자정 넘어 운동 허용 (±6시간)
-    private static final List<String> FEED_NOTIFICATION_TYPES = List.of("FEED_LIKE", "COMMENT");
 
     private final FeedRepository feedRepository;
     private final FeedImageRepository feedImageRepository;
@@ -275,15 +274,44 @@ public class FeedService {
         validateOwnership(feed, user);
         recoverPointsIfWithinPeriod(feed);
 
+        // 알림 삭제 (데이터 삭제 전에 ID 수집)
+        deleteRelatedNotifications(feed);
+
         // 관련 데이터 삭제 (외래 키 제약 조건 순서대로)
         commentLikeRepository.deleteByFeed(feed);
         commentRepository.deleteRepliesByFeed(feed);
         commentRepository.deleteParentCommentsByFeed(feed);
         feedLikeRepository.deleteByFeed(feed);
         feedReportRepository.deleteByFeed(feed);
-        notificationRepository.deleteByRefIdAndTypeIn(String.valueOf(feedId), FEED_NOTIFICATION_TYPES);
         feedImageRepository.deleteByFeed(feed);
         feedRepository.delete(feed);
+    }
+
+    private void deleteRelatedNotifications(Feed feed) {
+        // FEED_LIKE 알림 삭제 (refId = FeedLike ID)
+        List<String> feedLikeIds = feedLikeRepository.findByFeed(feed).stream()
+                .map(fl -> String.valueOf(fl.getId()))
+                .toList();
+        if (!feedLikeIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(feedLikeIds, "FEED_LIKE");
+        }
+
+        // COMMENT 알림 삭제 (refId = Comment ID)
+        List<String> commentIds = commentRepository.findByFeed(feed).stream()
+                .map(c -> String.valueOf(c.getId()))
+                .toList();
+        if (!commentIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(commentIds, "COMMENT");
+            notificationRepository.deleteByRefIdInAndType(commentIds, "REPLY");
+        }
+
+        // COMMENT_LIKE 알림 삭제 (refId = CommentLike ID)
+        List<String> commentLikeIds = commentLikeRepository.findByFeedComments(feed).stream()
+                .map(cl -> String.valueOf(cl.getId()))
+                .toList();
+        if (!commentLikeIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(commentLikeIds, "COMMENT_LIKE");
+        }
     }
 
     private void validateOwnership(Feed feed, User user) {

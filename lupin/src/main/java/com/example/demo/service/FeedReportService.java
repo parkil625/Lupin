@@ -6,6 +6,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedImageRepository;
 import com.example.demo.repository.FeedLikeRepository;
@@ -28,6 +29,7 @@ public class FeedReportService {
     private final FeedLikeRepository feedLikeRepository;
     private final FeedImageRepository feedImageRepository;
     private final CommentRepository commentRepository;
+    private final CommentLikeRepository commentLikeRepository;
     private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
     private final UserPenaltyService userPenaltyService;
@@ -73,12 +75,21 @@ public class FeedReportService {
             notificationRepository.deleteByRefIdInAndType(feedLikeIds, "FEED_LIKE");
         }
 
-        // COMMENT 알림 삭제 (refId = Comment ID)
+        // COMMENT, REPLY 알림 삭제 (refId = Comment ID)
         List<String> commentIds = commentRepository.findByFeed(feed).stream()
                 .map(c -> String.valueOf(c.getId()))
                 .toList();
         if (!commentIds.isEmpty()) {
             notificationRepository.deleteByRefIdInAndType(commentIds, "COMMENT");
+            notificationRepository.deleteByRefIdInAndType(commentIds, "REPLY");
+        }
+
+        // COMMENT_LIKE 알림 삭제 (refId = CommentLike ID)
+        List<String> commentLikeIds = commentLikeRepository.findByFeedComments(feed).stream()
+                .map(cl -> String.valueOf(cl.getId()))
+                .toList();
+        if (!commentLikeIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(commentLikeIds, "COMMENT_LIKE");
         }
 
         feedLikeRepository.deleteByFeed(feed);

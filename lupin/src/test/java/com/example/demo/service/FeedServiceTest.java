@@ -530,7 +530,7 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("피드 삭제 시 연관된 이미지도 삭제된다")
+    @DisplayName("피드 삭제 시 연관된 이미지도 삭제된다 (cascade)")
     void deleteFeedWithImagesTest() {
         // given
         Long feedId = 1L;
@@ -547,8 +547,7 @@ class FeedServiceTest {
         // when
         feedService.deleteFeed(writer, feedId);
 
-        // then
-        verify(feedImageRepository).deleteByFeed(feed);
+        // then - 이미지 삭제는 Feed의 cascade + orphanRemoval로 처리됨
         verify(feedRepository).delete(feed);
     }
 

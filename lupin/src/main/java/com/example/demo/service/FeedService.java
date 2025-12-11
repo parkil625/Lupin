@@ -289,7 +289,7 @@ public class FeedService {
         commentRepository.deleteParentCommentsByFeed(feed);
         feedLikeRepository.deleteByFeed(feed);
         feedReportRepository.deleteByFeed(feed);
-        feedImageRepository.deleteByFeed(feed);
+        // feedImageRepository.deleteByFeed 제거 - Feed의 cascade + orphanRemoval이 처리
         feedRepository.delete(feed);
     }
 

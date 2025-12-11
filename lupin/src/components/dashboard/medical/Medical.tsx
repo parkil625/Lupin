@@ -41,7 +41,6 @@ MedicalProps) {
   // 현재 로그인한 환자 정보 (localStorage에서 가져오기)
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
   const currentPatientId = currentUserId; // 환자의 경우 userId와 patientId가 동일
-  const doctorId = 22; // doctor02의 ID (테스트용)
 
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
@@ -163,12 +162,19 @@ MedicalProps) {
   const handleConfirmAppointment = async () => {
     if (!selectedDepartment || !selectedDate || !selectedTime) return;
 
-    const departmentNames: Record<string, string> = {
-      internal: "내과",
-      surgery: "외과",
-      psychiatry: "신경정신과",
-      dermatology: "피부과",
+    // 진료과별 의사 ID 및 이름 매핑
+    const departmentMapping: Record<string, { id: number; name: string; displayName: string }> = {
+      internal: { id: 22, name: "김민수", displayName: "내과" },
+      surgery: { id: 23, name: "이준호", displayName: "외과" },
+      psychiatry: { id: 24, name: "박서연", displayName: "신경정신과" },
+      dermatology: { id: 25, name: "최지은", displayName: "피부과" },
     };
+
+    const selectedDoctor = departmentMapping[selectedDepartment];
+    if (!selectedDoctor) {
+      toast.error("올바른 진료과를 선택해주세요.");
+      return;
+    }
 
     try {
       // 날짜 + 시간 조합 (ISO 8601 형식)
@@ -179,7 +185,7 @@ MedicalProps) {
       // 백엔드 API 호출
       const appointmentId = await appointmentApi.createAppointment({
         patientId: currentPatientId,
-        doctorId: doctorId,
+        doctorId: selectedDoctor.id,
         date: appointmentDateTime.toISOString(),
       });
 
@@ -187,9 +193,9 @@ MedicalProps) {
 
       setActiveAppointment({
         id: appointmentId,
-        doctorId: doctorId,
-        doctorName: "김민준",
-        type: `${departmentNames[selectedDepartment]} 상담`,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        type: `${selectedDoctor.displayName} 상담`,
       });
       setIsChatEnded(false);
       setShowAppointmentView(false);
@@ -197,7 +203,7 @@ MedicalProps) {
       toast.success(
         `${selectedDate.toLocaleDateString(
           "ko-KR"
-        )} ${selectedTime} 예약이 완료되었습니다`
+        )} ${selectedTime} ${selectedDoctor.displayName} 예약이 완료되었습니다`
       );
 
       // 상태 초기화
@@ -217,8 +223,10 @@ MedicalProps) {
   // 스크롤 제어용 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // WebSocket 연결
-  const roomId = `${currentPatientId}:${doctorId}`;
+  // WebSocket 연결 (예약이 있을 때만)
+  const roomId = activeAppointment
+    ? `${currentPatientId}:${activeAppointment.doctorId}`
+    : "";
 
   // 메시지 수신 콜백 (HEAD의 로직 유지: 본인이 보낸 메시지는 알림 표시 안함)
   const handleMessageReceived = useCallback(

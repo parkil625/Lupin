@@ -4,7 +4,6 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.FeedRequest;
 import com.example.demo.dto.response.FeedResponse;
-import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.service.FeedLikeService;
 import com.example.demo.service.FeedReportService;
@@ -27,8 +26,7 @@ public class FeedController extends BaseController {
     private final FeedService feedService;
     private final FeedLikeService feedLikeService;
     private final FeedReportService feedReportService;
-    private final FeedLikeRepository feedLikeRepository;
-    private final CommentRepository commentRepository;
+    private final FeedLikeRepository feedLikeRepository; // [최적화] isLiked 체크용으로만 사용
 
     @PostMapping
     public ResponseEntity<FeedResponse> createFeed(
@@ -166,16 +164,14 @@ public class FeedController extends BaseController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // [최적화] Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음
     private FeedResponse toFeedResponse(Feed feed) {
-        long likeCount = feedLikeRepository.countByFeed(feed);
-        long commentCount = commentRepository.countByFeed(feed);
-        return FeedResponse.from(feed, likeCount, commentCount);
+        return FeedResponse.from(feed);
     }
 
+    // [최적화] Feed 엔티티의 반정규화 필드 사용 - isLiked만 DB 조회
     private FeedResponse toFeedResponse(Feed feed, User currentUser) {
-        long likeCount = feedLikeRepository.countByFeed(feed);
-        long commentCount = commentRepository.countByFeed(feed);
-        boolean isLiked = currentUser != null && feedLikeRepository.existsByUserAndFeed(currentUser, feed);
-        return FeedResponse.from(feed, likeCount, commentCount, isLiked);
+        boolean isLiked = currentUser != null && feedLikeRepository.existsByUserIdAndFeedId(currentUser.getId(), feed.getId());
+        return FeedResponse.from(feed, isLiked);
     }
 }

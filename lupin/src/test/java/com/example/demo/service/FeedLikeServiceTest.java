@@ -92,24 +92,19 @@ class FeedLikeServiceTest {
     }
 
     @Test
-    @DisplayName("피드에 좋아요를 누르면 피드 작성자에게 알림이 생성된다 (refId = feedLikeId)")
+    @DisplayName("피드에 좋아요를 누르면 피드 작성자에게 알림이 생성된다 (refId = feedId)")
     void likeFeedCreatesNotificationTest() {
         // given
         Long feedId = 1L;
-        Long feedLikeId = 100L;
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
         given(feedLikeRepository.existsByUserAndFeed(user, feed)).willReturn(false);
-        given(feedLikeRepository.save(any(FeedLike.class))).willAnswer(invocation -> {
-            FeedLike feedLike = invocation.getArgument(0);
-            ReflectionTestUtils.setField(feedLike, "id", feedLikeId);
-            return feedLike;
-        });
+        given(feedLikeRepository.save(any(FeedLike.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         feedLikeService.likeFeed(user, feedId);
 
-        // then
-        verify(notificationService).createFeedLikeNotification(writer, user, feedLikeId);
+        // then - refId는 feedId 사용
+        verify(notificationService).createFeedLikeNotification(writer, user, feedId);
     }
 
     @Test
@@ -131,12 +126,10 @@ class FeedLikeServiceTest {
     void unlikeFeedTest() {
         // given
         Long feedId = 1L;
-        Long feedLikeId = 100L;
         FeedLike feedLike = FeedLike.builder()
                 .user(user)
                 .feed(feed)
                 .build();
-        ReflectionTestUtils.setField(feedLike, "id", feedLikeId);
 
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
         given(feedLikeRepository.findByUserAndFeed(user, feed)).willReturn(Optional.of(feedLike));
@@ -144,8 +137,8 @@ class FeedLikeServiceTest {
         // when
         feedLikeService.unlikeFeed(user, feedId);
 
-        // then
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedLikeId), "FEED_LIKE");
+        // then - refId는 feedId 사용
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");
         verify(feedLikeRepository).delete(feedLike);
     }
 

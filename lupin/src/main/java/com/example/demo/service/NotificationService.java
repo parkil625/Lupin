@@ -12,6 +12,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * 알림 서비스
+ *
+ * ========================================
+ * 알림 타입별 refId 구조
+ * ========================================
+ *
+ * | 타입            | refId 값           | 참조 대상      | 삭제 시점                       |
+ * |-----------------|--------------------|---------------|--------------------------------|
+ * | FEED_LIKE       | Feed.id            | 해당 피드      | 피드 삭제, 좋아요 취소 시         |
+ * | COMMENT         | Feed.id            | 해당 피드      | 피드 삭제, 댓글 삭제 시           |
+ * | COMMENT_LIKE    | Comment.id         | 해당 댓글      | 댓글 삭제, 좋아요 취소 시         |
+ * | REPLY           | 부모 Comment.id    | 부모 댓글      | 부모댓글 삭제, 대댓글 삭제 시     |
+ * | FEED_DELETED    | null               | -             | -                              |
+ * | COMMENT_DELETED | null               | -             | -                              |
+ *
+ * ========================================
+ * 프론트엔드 알림 클릭 시 이동 로직
+ * ========================================
+ * - FEED_LIKE: refId가 바로 Feed.id → 해당 피드로 이동
+ * - COMMENT: refId가 바로 Feed.id → 해당 피드의 댓글로 이동
+ * - COMMENT_LIKE: refId(Comment.id)로 Comment 조회 → Feed.id 얻어서 이동
+ * - REPLY: refId(부모 Comment.id)로 Comment 조회 → Feed.id 얻어서 이동
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -50,8 +74,12 @@ public class NotificationService {
         notificationRepository.deleteById(notificationId);
     }
 
+    /**
+     * 피드 좋아요 알림 생성
+     * @param feedId 좋아요가 눌린 피드의 ID (refId로 저장)
+     */
     @Transactional
-    public void createFeedLikeNotification(User feedOwner, User liker, Long feedLikeId) {
+    public void createFeedLikeNotification(User feedOwner, User liker, Long feedId) {
         if (feedOwner.getId().equals(liker.getId())) {
             return;
         }
@@ -60,15 +88,19 @@ public class NotificationService {
                 .user(feedOwner)
                 .type("FEED_LIKE")
                 .title(liker.getName() + "님이 피드에 좋아요를 눌렀습니다")
-                .refId(String.valueOf(feedLikeId))
+                .refId(String.valueOf(feedId))
                 .build();
 
         Notification saved = notificationRepository.save(notification);
         notificationSseService.sendNotification(feedOwner.getId(), NotificationResponse.from(saved));
     }
 
+    /**
+     * 댓글 알림 생성
+     * @param feedId 댓글이 달린 피드의 ID (refId로 저장)
+     */
     @Transactional
-    public void createCommentNotification(User feedOwner, User commenter, Long commentId) {
+    public void createCommentNotification(User feedOwner, User commenter, Long feedId) {
         if (feedOwner.getId().equals(commenter.getId())) {
             return;
         }
@@ -77,15 +109,19 @@ public class NotificationService {
                 .user(feedOwner)
                 .type("COMMENT")
                 .title(commenter.getName() + "님이 댓글을 남겼습니다")
-                .refId(String.valueOf(commentId))
+                .refId(String.valueOf(feedId))
                 .build();
 
         Notification saved = notificationRepository.save(notification);
         notificationSseService.sendNotification(feedOwner.getId(), NotificationResponse.from(saved));
     }
 
+    /**
+     * 댓글 좋아요 알림 생성
+     * @param commentId 좋아요가 눌린 댓글의 ID (refId로 저장)
+     */
     @Transactional
-    public void createCommentLikeNotification(User commentOwner, User liker, Long commentLikeId) {
+    public void createCommentLikeNotification(User commentOwner, User liker, Long commentId) {
         if (commentOwner.getId().equals(liker.getId())) {
             return;
         }
@@ -94,15 +130,19 @@ public class NotificationService {
                 .user(commentOwner)
                 .type("COMMENT_LIKE")
                 .title(liker.getName() + "님이 댓글에 좋아요를 눌렀습니다")
-                .refId(String.valueOf(commentLikeId))
+                .refId(String.valueOf(commentId))
                 .build();
 
         Notification saved = notificationRepository.save(notification);
         notificationSseService.sendNotification(commentOwner.getId(), NotificationResponse.from(saved));
     }
 
+    /**
+     * 답글(대댓글) 알림 생성
+     * @param parentCommentId 답글이 달린 부모 댓글의 ID (refId로 저장)
+     */
     @Transactional
-    public void createReplyNotification(User commentOwner, User replier, Long replyId) {
+    public void createReplyNotification(User commentOwner, User replier, Long parentCommentId) {
         if (commentOwner.getId().equals(replier.getId())) {
             return;
         }
@@ -111,7 +151,7 @@ public class NotificationService {
                 .user(commentOwner)
                 .type("REPLY")
                 .title(replier.getName() + "님이 답글을 남겼습니다")
-                .refId(String.valueOf(replyId))
+                .refId(String.valueOf(parentCommentId))
                 .build();
 
         Notification saved = notificationRepository.save(notification);

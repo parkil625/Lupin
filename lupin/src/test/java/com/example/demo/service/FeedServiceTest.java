@@ -633,15 +633,15 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
 
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(commentRepository.findByFeed(feed)).willReturn(List.of());
 
         // when
         feedService.deleteFeed(writer, feedId);
 
         // then
-        verify(notificationRepository).deleteByRefIdAndTypeIn(
-                String.valueOf(feedId),
-                List.of("FEED_LIKE", "COMMENT")
-        );
+        // FEED_LIKE, COMMENT 알림 삭제 (refId = feedId)
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedId), "COMMENT");
         verify(feedRepository).delete(feed);
     }
 

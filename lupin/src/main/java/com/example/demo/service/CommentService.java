@@ -20,8 +20,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class CommentService {
 
-    private static final List<String> COMMENT_NOTIFICATION_TYPES = List.of("COMMENT_LIKE", "REPLY");
-
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final FeedRepository feedRepository;
@@ -40,7 +38,8 @@ public class CommentService {
                 .build();
 
         Comment savedComment = commentRepository.save(comment);
-        notificationService.createCommentNotification(feed.getWriter(), writer, savedComment.getId());
+        // refId = feedId (피드 참조)
+        notificationService.createCommentNotification(feed.getWriter(), writer, feedId);
 
         return savedComment;
     }
@@ -62,40 +61,35 @@ public class CommentService {
 
         validateOwnership(comment, user);
 
-        // 본인 댓글의 알림 삭제
-        notificationRepository.deleteByRefIdAndTypeIn(String.valueOf(commentId), COMMENT_NOTIFICATION_TYPES);
+        // COMMENT_LIKE 알림 삭제 (refId = commentId)
+        notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
 
-        // 부모 댓글인 경우 대댓글 관련 알림도 삭제
+        // 부모 댓글인 경우
         if (comment.getParent() == null) {
+            // REPLY 알림 삭제 (refId = 부모 댓글 ID = 본인 ID)
+            notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "REPLY");
+            // 대댓글들의 COMMENT_LIKE 알림 삭제
             deleteRepliesNotifications(comment);
         }
 
         commentRepository.delete(comment);
     }
 
+    /**
+     * 부모 댓글 삭제 시 대댓글들의 COMMENT_LIKE 알림 삭제
+     * COMMENT_LIKE 알림의 refId = commentId (대댓글 ID)
+     */
     private void deleteRepliesNotifications(Comment parentComment) {
         List<Comment> replies = commentRepository.findByParentOrderByIdAsc(parentComment);
         if (replies.isEmpty()) {
             return;
         }
 
-        // 대댓글 ID 수집
+        // 대댓글 ID 수집 후 COMMENT_LIKE 알림 삭제 (refId = commentId)
         List<String> replyIds = replies.stream()
                 .map(r -> String.valueOf(r.getId()))
                 .toList();
-
-        // REPLY 알림 삭제 (refId = reply ID)
-        notificationRepository.deleteByRefIdInAndType(replyIds, "REPLY");
-
-        // COMMENT_LIKE 알림 삭제 (refId = commentLike ID)
-        for (Comment reply : replies) {
-            List<String> commentLikeIds = commentLikeRepository.findByComment(reply).stream()
-                    .map(cl -> String.valueOf(cl.getId()))
-                    .toList();
-            if (!commentLikeIds.isEmpty()) {
-                notificationRepository.deleteByRefIdInAndType(commentLikeIds, "COMMENT_LIKE");
-            }
-        }
+        notificationRepository.deleteByRefIdInAndType(replyIds, "COMMENT_LIKE");
     }
 
     private void validateOwnership(Comment comment, User user) {
@@ -139,7 +133,8 @@ public class CommentService {
                 .build();
 
         Comment savedReply = commentRepository.save(reply);
-        notificationService.createReplyNotification(parent.getWriter(), writer, savedReply.getId());
+        // refId = parentId (부모 댓글 참조)
+        notificationService.createReplyNotification(parent.getWriter(), writer, parentId);
 
         return savedReply;
     }

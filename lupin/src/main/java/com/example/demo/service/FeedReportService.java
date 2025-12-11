@@ -66,30 +66,39 @@ public class FeedReportService {
         }
     }
 
+    /**
+     * 신고로 인한 피드 삭제 시 관련 알림 삭제
+     * - FEED_LIKE: refId = feedId
+     * - COMMENT: refId = feedId
+     * - COMMENT_LIKE: refId = commentId
+     * - REPLY: refId = parentCommentId (부모 댓글 ID)
+     */
     private void deleteFeedByReport(Feed feed) {
-        // FEED_LIKE 알림 삭제 (refId = FeedLike ID)
-        List<String> feedLikeIds = feedLikeRepository.findByFeed(feed).stream()
-                .map(fl -> String.valueOf(fl.getId()))
-                .toList();
-        if (!feedLikeIds.isEmpty()) {
-            notificationRepository.deleteByRefIdInAndType(feedLikeIds, "FEED_LIKE");
-        }
+        String feedIdStr = String.valueOf(feed.getId());
 
-        // COMMENT, REPLY 알림 삭제 (refId = Comment ID)
-        List<String> commentIds = commentRepository.findByFeed(feed).stream()
+        // FEED_LIKE, COMMENT 알림 삭제 (refId = feedId)
+        notificationRepository.deleteByRefIdAndType(feedIdStr, "FEED_LIKE");
+        notificationRepository.deleteByRefIdAndType(feedIdStr, "COMMENT");
+
+        // 댓글 ID 수집 (부모 댓글만)
+        List<String> parentCommentIds = commentRepository.findByFeed(feed).stream()
+                .filter(c -> c.getParent() == null)
                 .map(c -> String.valueOf(c.getId()))
                 .toList();
-        if (!commentIds.isEmpty()) {
-            notificationRepository.deleteByRefIdInAndType(commentIds, "COMMENT");
-            notificationRepository.deleteByRefIdInAndType(commentIds, "REPLY");
+
+        // REPLY 알림 삭제 (refId = 부모 댓글 ID)
+        if (!parentCommentIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(parentCommentIds, "REPLY");
         }
 
-        // COMMENT_LIKE 알림 삭제 (refId = CommentLike ID)
-        List<String> commentLikeIds = commentLikeRepository.findByFeedComments(feed).stream()
-                .map(cl -> String.valueOf(cl.getId()))
+        // 모든 댓글 ID 수집 (COMMENT_LIKE 삭제용)
+        List<String> allCommentIds = commentRepository.findByFeed(feed).stream()
+                .map(c -> String.valueOf(c.getId()))
                 .toList();
-        if (!commentLikeIds.isEmpty()) {
-            notificationRepository.deleteByRefIdInAndType(commentLikeIds, "COMMENT_LIKE");
+
+        // COMMENT_LIKE 알림 삭제 (refId = commentId)
+        if (!allCommentIds.isEmpty()) {
+            notificationRepository.deleteByRefIdInAndType(allCommentIds, "COMMENT_LIKE");
         }
 
         feedLikeRepository.deleteByFeed(feed);

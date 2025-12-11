@@ -102,24 +102,19 @@ class CommentLikeServiceTest {
     }
 
     @Test
-    @DisplayName("댓글에 좋아요를 누르면 댓글 작성자에게 알림이 생성된다 (refId = commentLikeId)")
+    @DisplayName("댓글에 좋아요를 누르면 댓글 작성자에게 알림이 생성된다 (refId = commentId)")
     void likeCommentCreatesNotificationTest() {
         // given
         Long commentId = 1L;
-        Long commentLikeId = 100L;
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.existsByUserIdAndCommentId(user.getId(), commentId)).willReturn(false);
-        given(commentLikeRepository.save(any(CommentLike.class))).willAnswer(invocation -> {
-            CommentLike commentLike = invocation.getArgument(0);
-            ReflectionTestUtils.setField(commentLike, "id", commentLikeId);
-            return commentLike;
-        });
+        given(commentLikeRepository.save(any(CommentLike.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         commentLikeService.likeComment(user, commentId);
 
-        // then
-        verify(notificationService).createCommentLikeNotification(writer, user, commentLikeId);
+        // then - refId는 commentId 사용
+        verify(notificationService).createCommentLikeNotification(writer, user, commentId);
     }
 
     @Test
@@ -141,12 +136,10 @@ class CommentLikeServiceTest {
     void unlikeCommentTest() {
         // given
         Long commentId = 1L;
-        Long commentLikeId = 100L;
         CommentLike commentLike = CommentLike.builder()
                 .user(user)
                 .comment(comment)
                 .build();
-        ReflectionTestUtils.setField(commentLike, "id", commentLikeId);
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.findByUserIdAndCommentId(user.getId(), commentId)).willReturn(Optional.of(commentLike));
@@ -154,8 +147,8 @@ class CommentLikeServiceTest {
         // when
         commentLikeService.unlikeComment(user, commentId);
 
-        // then
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentLikeId), "COMMENT_LIKE");
+        // then - refId는 commentId 사용
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
         verify(commentLikeRepository).delete(commentLike);
     }
 

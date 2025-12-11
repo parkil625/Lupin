@@ -37,7 +37,8 @@ public class FeedLikeService {
                 .build();
 
         FeedLike savedFeedLike = feedLikeRepository.save(feedLike);
-        notificationService.createFeedLikeNotification(feed.getWriter(), user, savedFeedLike.getId());
+        // refId = feedId (피드 참조)
+        notificationService.createFeedLikeNotification(feed.getWriter(), user, feedId);
 
         return savedFeedLike;
     }
@@ -50,7 +51,8 @@ public class FeedLikeService {
         FeedLike feedLike = feedLikeRepository.findByUserAndFeed(user, feed)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
-        notificationRepository.deleteByRefIdAndType(String.valueOf(feedLike.getId()), "FEED_LIKE");
+        // refId = feedId (피드 참조)
+        notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");
         feedLikeRepository.delete(feedLike);
     }
 }

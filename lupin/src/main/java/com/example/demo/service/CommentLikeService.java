@@ -37,7 +37,8 @@ public class CommentLikeService {
                 .build();
 
         CommentLike savedCommentLike = commentLikeRepository.save(commentLike);
-        notificationService.createCommentLikeNotification(comment.getWriter(), user, savedCommentLike.getId());
+        // refId = commentId (댓글 참조)
+        notificationService.createCommentLikeNotification(comment.getWriter(), user, commentId);
 
         return savedCommentLike;
     }
@@ -50,7 +51,8 @@ public class CommentLikeService {
         CommentLike commentLike = commentLikeRepository.findByUserIdAndCommentId(user.getId(), commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
-        notificationRepository.deleteByRefIdAndType(String.valueOf(commentLike.getId()), "COMMENT_LIKE");
+        // refId = commentId (댓글 참조)
+        notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
         commentLikeRepository.delete(commentLike);
     }
 }

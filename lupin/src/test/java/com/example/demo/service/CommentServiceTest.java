@@ -277,7 +277,7 @@ class CommentServiceTest {
     }
 
     @Test
-    @DisplayName("대댓글을 작성하면 부모 댓글 작성자에게 알림이 생성된다 (refId = replyId)")
+    @DisplayName("대댓글을 작성하면 부모 댓글 작성자에게 알림이 생성된다 (refId = parentId)")
     void createReplyCreatesNotificationTest() {
         // given
         User commentOwner = User.builder()
@@ -296,7 +296,6 @@ class CommentServiceTest {
 
         Long feedId = 1L;
         Long parentId = 1L;
-        Long replyId = 100L;
         String content = "대댓글입니다";
 
         Comment parentComment = Comment.builder()
@@ -307,7 +306,7 @@ class CommentServiceTest {
                 .build();
 
         Comment savedReply = Comment.builder()
-                .id(replyId)
+                .id(100L)
                 .writer(replier)
                 .feed(feed)
                 .parent(parentComment)
@@ -321,8 +320,8 @@ class CommentServiceTest {
         // when
         commentService.createReply(replier, feedId, parentId, content);
 
-        // then
-        verify(notificationService).createReplyNotification(commentOwner, replier, replyId);
+        // then - refId는 parentId(부모 댓글 ID) 사용
+        verify(notificationService).createReplyNotification(commentOwner, replier, parentId);
     }
 
     @Test
@@ -497,17 +496,19 @@ class CommentServiceTest {
                 .feed(feed)
                 .content("삭제할 댓글")
                 .build();
+        // parent가 null이므로 부모 댓글 (대댓글 아님)
 
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        given(commentRepository.findByParentOrderByIdAsc(comment)).willReturn(List.of());
 
         // when
         commentService.deleteComment(writer, commentId);
 
         // then
-        verify(notificationRepository).deleteByRefIdAndTypeIn(
-                String.valueOf(commentId),
-                List.of("COMMENT_LIKE", "REPLY")
-        );
+        // COMMENT_LIKE 알림 삭제 (refId = commentId)
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
+        // 부모 댓글이므로 REPLY 알림도 삭제 (refId = 부모댓글ID = commentId)
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), "REPLY");
         verify(commentRepository).delete(comment);
     }
 }

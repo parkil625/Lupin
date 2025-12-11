@@ -489,11 +489,13 @@ MedicalProps) {
                     <div className="flex items-center gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black">
-                          김
+                          {activeAppointment?.doctorName.charAt(0) || "의"}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-bold text-gray-900">김의사</div>
+                        <div className="font-bold text-gray-900">
+                          {activeAppointment?.doctorName || "의사"} 의사
+                        </div>
                         <div className="text-xs text-gray-600">온라인</div>
                       </div>
                     </div>
@@ -510,7 +512,7 @@ MedicalProps) {
                       {messages.map((msg) => {
                         const isMine = msg.senderId === currentUserId;
                         const senderInitial = isMine
-                          ? "김"
+                          ? localStorage.getItem("userName")?.charAt(0) || "환"
                           : msg.senderName.charAt(0);
 
                         return (

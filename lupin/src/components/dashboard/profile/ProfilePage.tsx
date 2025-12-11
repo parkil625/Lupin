@@ -385,13 +385,16 @@ export default function ProfilePage({ onLogout, profileImage, setProfileImage }:
 
     // 저장 핸들러 (메모이제이션)
     const handleSaveProfile = useCallback((data: ProfileFormData) => {
+        // 편집 모드가 아니면 무시 (중복 제출 방지)
+        if (!isEditing) return;
+
         localStorage.setItem("userHeight", data.height);
         localStorage.setItem("userWeight", data.weight);
         localStorage.setItem("userBirthDate", data.birthDate);
         localStorage.setItem("userGender", data.gender);
         setIsEditing(false);
         toast.success("프로필이 저장되었습니다.");
-    }, []);
+    }, [isEditing]);
 
     return (
         <div className="h-full overflow-y-auto p-4 md:p-8 bg-gray-50/50 scroll-smooth">

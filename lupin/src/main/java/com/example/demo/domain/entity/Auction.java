@@ -138,11 +138,15 @@ public class Auction {
         }
 
         for (AuctionBid bid : bids) {
-            if (bid.getUser().getId().equals(this.winner.getId())) {
+            // 1. 현재 살아있는 1등 표(ACTIVE)라면 ->우승(WINNING)
+            if (bid.isActive()) {
                 bid.winBid();
-            } else {
+            }
+            // 2. 이미 밀려난 표(OUTBID)라면 ->패배(LOST)
+            else if (bid.isOutBid()) {
                 bid.lostBid();
             }
+            // 그 외(이미 LOST 등)는 건드리지 않음
         }
 
         this.overtimeStarted = false;
@@ -188,47 +192,53 @@ public class Auction {
     //입찰시 확인 최고 낙찰자 교체(근데 원래 있던 사람 상태는 못바꿔줌)
     public void placeBid(User user, Long bidAmount, LocalDateTime bidTime) {
 
-// 1. [필수] 경매가 ACTIVE 상태가 아니면(이미 ENDED 상태면) 무조건 튕겨내기
+        // 1. 경매 상태 확인
         if (this.status != AuctionStatus.ACTIVE) {
             throw new IllegalStateException("경매가 종료되었습니다.");
         }
 
-        // 2. [핵심 수정] "아직 정규 시간이 안 끝났는데" 30초 미만으로 남았을 때만 초읽기 진입!
-        if (!overtimeStarted) {
-            // 이미 정규 시간이 지났다면? -> 절대 받아주면 안 됨
-            if (bidTime.isAfter(regularEndTime)) {
-                throw new IllegalStateException("정규 경매 시간이 종료되었습니다.");
+        // 2. 시간 검증 및 초읽기 진입 로직 (Logic B 적용)
+        if (overtimeStarted) {
+            // [상황 A] 이미 초읽기 모드인 경우
+            // 초읽기 종료 시간과 비교
+            if (bidTime.isAfter(overtimeEndTime)) {
+                throw new IllegalStateException("초읽기 시간이 종료되었습니다.");
             }
+            // 입찰 성공 -> 시간 30초 리셋 (연장)
+            this.overtimeEndTime = bidTime.plusSeconds(overtimeSeconds);
 
-            // 남은 시간 계산
-            java.time.Duration secondsLeft = java.time.Duration.between(bidTime, regularEndTime);
+        } else {
+            // [상황 B] 아직 초읽기 전 (정규 시간 중 이거나 정규 시간 끝난 직후)
 
-            // "남은 시간이 0보다 크고(=아직 안 끝남) 30초 이하일 때"
-            if (!secondsLeft.isNegative() && secondsLeft.getSeconds() <= 30) {
+            if (bidTime.isBefore(regularEndTime)) {
+                // B-1) 정규 시간 내 입찰
+                // -> [중요] 아무런 시간 연장도 하지 않고, 초읽기 모드도 켜지 않습니다.
+                // 그냥 입찰만 받아줍니다.
+            } else {
+                // B-2) 정규 시간이 지났음 (30초 대기 시간)
+                // 정규 종료 후 30초까지만 기회를 줌
+                LocalDateTime hardLimit = regularEndTime.plusSeconds(overtimeSeconds);
+
+                if (bidTime.isAfter(hardLimit)) {
+                    throw new IllegalStateException("정규 시간 및 추가 대기 시간이 모두 종료되었습니다.");
+                }
+
+                // 이때 비로소 "초읽기 모드" 시작!
                 startOvertime(bidTime);
             }
         }
 
-        // 3. 초읽기 모드라면? -> 종료 시간을 '현재 입찰 시간 + 30초'로 연장(리셋)
-        if (overtimeStarted) {
-            // 여기서 시간을 늘려줘야 validateTime을 통과함
-            this.overtimeEndTime = bidTime.plusSeconds(overtimeSeconds);
-        }
-
-        // 4. 시간 및 금액 검증 (순서 중요: 시간 연장 처리 후에 검증해야 함)
-        validateTime(bidTime);
+        // 3. 금액 검증 (기존 로직 유지)
         validateBid(bidAmount);
 
-        // 5. 입찰 확정 처리
+        // 4. 우승자 및 가격 업데이트
         currentPrice = bidAmount;
         winner = user;
+        this.totalBids++;
     }
 
     // 경매 시간 상태 바꾸는 메소드
     public void startOvertime(LocalDateTime now) {
-        if (overtimeStarted) {
-            throw new IllegalStateException("이미 초읽기가 시작된 상태입니다.");
-        }
         overtimeStarted = true;
         overtimeEndTime = now.plusSeconds(overtimeSeconds);
     }
@@ -246,6 +256,6 @@ public class Auction {
         }
 
         // 그 외에는 원래 정해진 정규 종료 시간 반환
-        return regularEndTime;
+        return regularEndTime.plusSeconds(overtimeSeconds);
     }
 }

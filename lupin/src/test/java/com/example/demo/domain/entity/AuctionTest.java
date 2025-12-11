@@ -239,24 +239,24 @@ class AuctionTest {
     }
 
     @Test
-    @DisplayName("정규 종료 시간이 임박했을 때(30초 미만), 입찰하면 초읽기가 시작된다")
+    @DisplayName("정규 시간이 지난 후(30초 대기 시간 내) 입찰하면, 초읽기가 시작된다")
     void placeBid_triggers_overtime() {
         // given
         LocalDateTime now = LocalDateTime.now();
         Auction auction = Auction.builder()
                 .status(AuctionStatus.ACTIVE)
                 .startTime(now.minusMinutes(10))
-                .regularEndTime(now.plusMinutes(10)) // 10분 뒤 종료
+                .regularEndTime(now) // 테스트 편의상 '지금'을 정규 종료 시간으로 설정
                 .overtimeSeconds(30)
                 .overtimeStarted(false)
                 .build();
 
         User user = User.builder().id(1L).build();
 
-        // 💡 [핵심 수정 포인트]
-        // 이전 코드: regularEndTime.plusSeconds(1) -> 이미 끝난 시간이라 에러 발생 (정상)
-        // 수정 코드: regularEndTime.minusSeconds(10) -> 종료 10초 전 (초읽기 발동 조건)
-        LocalDateTime bidTime = auction.getRegularEndTime().minusSeconds(10);
+        // [핵심 수정 포인트]
+        // Logic B 규칙: "정규 시간이 끝난 뒤"에 입찰해야 초읽기가 켜집니다.
+        // 따라서 종료 시간보다 '10초 뒤' (하지만 30초 대기 시간 안쪽)로 설정합니다.
+        LocalDateTime bidTime = auction.getRegularEndTime().plusSeconds(10);
 
         // when
         auction.placeBid(user, 1000L, bidTime);
@@ -326,42 +326,59 @@ class AuctionTest {
     }
 
     @Test
-    @DisplayName("2. [정상] 정규 마감 30초 전 입찰 -> 초읽기 발동 (Overtime Started)")
+// [수정] DisplayName을 바뀐 로직에 맞게 고쳤습니다.
+    @DisplayName("2. [정상] 정규 시간이 끝난 뒤(30초 대기 중) 입찰 -> 초읽기 발동 (Overtime Started)")
     void bid_triggers_overtime() {
         // given
         LocalDateTime now = LocalDateTime.now();
-        Auction auction = createAuction(now.minusMinutes(10), now.plusMinutes(10));
+
+        // 테스트 편의상 '시작 시간은 20분 전', '정규 종료 시간은 10분 전'으로 설정 (이미 종료된 상태)
+        Auction auction = createAuction(now.minusMinutes(20), now.minusMinutes(10));
         User user = User.builder().id(1L).build();
 
-        // 상황: 종료 10초 전 입찰! (30초 이내 조건 충족)
-        LocalDateTime bidTime = auction.getRegularEndTime().minusSeconds(10);
+        // [핵심 수정]
+        // Logic B: 정규 시간이 "끝난 후"에 입찰해야 초읽기가 켜집니다.
+        // 따라서 '정규 종료 시간 + 10초' 시점에 입찰한 것으로 설정합니다.
+        LocalDateTime bidTime = auction.getRegularEndTime().plusSeconds(10);
 
         // when
         auction.placeBid(user, 2000L, bidTime);
 
         // then
-        assertThat(auction.getOvertimeStarted()).isTrue(); // 초읽기 켜짐!
-        // 종료 시간 = 입찰시간 + 30초 로 늘어났는지 확인
+        // 1. 초읽기가 켜졌는지 확인 (true여야 함)
+        assertThat(auction.getOvertimeStarted()).isTrue();
+
+        // 2. 종료 시간이 '입찰 시점 + 30초'로 연장되었는지 확인
         assertThat(auction.getOvertimeEndTime()).isEqualTo(bidTime.plusSeconds(30));
     }
 
     @Test
-    @DisplayName("3. [좀비 방지] 정규 시간이 1초라도 지났는데 입찰 -> 예외 발생 (절대 받아주면 안 됨)")
+// [이름 변경] 1초가 아니라 '30초 대기 시간마저 지났을 때'로 수정
+    @DisplayName("3. [좀비 방지] 정규 종료 후 대기 시간(30초)마저 지났을 때 입찰 -> 예외 발생")
     void bid_after_regular_end_fails() {
         // given
         LocalDateTime now = LocalDateTime.now();
-        // 10분 전에 시작해서, 1분 전에 이미 끝난 경매
-        Auction auction = createAuction(now.minusMinutes(20), now.minusMinutes(1));
+        // 10분 전에 시작해서, 1분 전에 정규 시간이 끝난 경매
+        Auction auction = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .startTime(now.minusMinutes(20))
+                .regularEndTime(now.minusMinutes(1))
+                .overtimeSeconds(30)
+                .overtimeStarted(false)
+                .build();
+
         User user = User.builder().id(1L).build();
 
-        // 상황: 종료 시간보다 1초 늦게 입찰 시도
-        LocalDateTime bidTime = auction.getRegularEndTime().plusSeconds(1);
+        // [핵심 수정]
+        // 1초 뒤(plusSeconds(1))는 이제 합격입니다.
+        // 에러를 보고 싶으면 30초보다 더 늦은 '31초 뒤'로 설정해야 합니다.
+        LocalDateTime bidTime = auction.getRegularEndTime().plusSeconds(31);
 
         // when & then
-        // "입찰하면 에러가 터져야 한다!"라고 검증
+        // 이제 31초나 늦었으니 진짜로 에러가 발생할 겁니다 -> 테스트 통과!
         assertThatThrownBy(() -> auction.placeBid(user, 2000L, bidTime))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("정규 경매 시간이 종료되었습니다.");
+                .hasMessage("정규 시간 및 추가 대기 시간이 모두 종료되었습니다.");
     }
 
     @Test
@@ -369,28 +386,38 @@ class AuctionTest {
     void bid_during_overtime_extends_time() {
         // given
         LocalDateTime now = LocalDateTime.now();
-        Auction auction = createAuction(now.minusMinutes(30), now.plusMinutes(1));
+        // 테스트하기 쉽게 '10분 전에 이미 정규 시간이 끝난 경매'로 만듭니다.
+        Auction auction = createAuction(now.minusMinutes(20), now.minusMinutes(10));
+
         User user1 = User.builder().id(1L).build();
         User user2 = User.builder().id(2L).build();
 
-        // [1단계] 먼저 마감 직전에 입찰해서 초읽기를 켬
-        LocalDateTime triggerTime = auction.getRegularEndTime().minusSeconds(10);
-        auction.placeBid(user1, 2000L, triggerTime);
+        // [1단계] 초읽기 발동시키기 (Logic B: 정규 종료 후 입찰!)
+        // 정규 종료 5초 뒤에 첫 입찰 (30초 대기 시간 안쪽)
+        LocalDateTime firstBidTime = auction.getRegularEndTime().plusSeconds(5);
+        auction.placeBid(user1, 2000L, firstBidTime);
 
-        assertThat(auction.getOvertimeStarted()).isTrue(); // 초읽기 진입 확인
+        // 검증: 이제 초읽기가 켜졌어야 함
+        assertThat(auction.getOvertimeStarted()).isTrue();
         LocalDateTime firstOvertimeEnd = auction.getOvertimeEndTime();
 
-        // [2단계] 늘어난 시간 안에 다른 사람이 또 입찰
-        LocalDateTime secondBidTime = triggerTime.plusSeconds(10);
+        // 1차 종료 시간 = 1차 입찰 + 30초
+        assertThat(firstOvertimeEnd).isEqualTo(firstBidTime.plusSeconds(30));
+
+        // [2단계] 시간 연장시키기 (리셋 확인)
+        // 1차 입찰 후 10초 뒤에(아직 시간 남았을 때) 다른 사람이 입찰
+        LocalDateTime secondBidTime = firstBidTime.plusSeconds(10);
         auction.placeBid(user2, 3000L, secondBidTime);
 
         // then
+        // 가격과 우승자가 바뀌었는지 확인
         assertThat(auction.getCurrentPrice()).isEqualTo(3000L);
         assertThat(auction.getWinner()).isEqualTo(user2);
 
-        // 종료 시간이 '두 번째 입찰 시간 + 30초'로 더 늘어났는지 확인
+        // [핵심] 종료 시간이 '두 번째 입찰 시간 + 30초'로 다시 늘어났는지 확인
         assertThat(auction.getOvertimeEndTime()).isEqualTo(secondBidTime.plusSeconds(30));
-        // 당연히 첫 번째 종료 시간보다 더 뒤여야 함
+
+        // 당연히 첫 번째 종료 시간보다 더 뒤여야 함 (시간이 늘어났으니까)
         assertThat(auction.getOvertimeEndTime()).isAfter(firstOvertimeEnd);
     }
 

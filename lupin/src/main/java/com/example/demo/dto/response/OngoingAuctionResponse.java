@@ -12,6 +12,7 @@ public record OngoingAuctionResponse(
         Boolean overtimeStarted,
         LocalDateTime overtimeEndTime,
         Integer overtimeSeconds,
+        Integer totalBids,
         AuctionItemResponse item
 ) {
     public static OngoingAuctionResponse from(Auction auction) {
@@ -24,6 +25,7 @@ public record OngoingAuctionResponse(
                 auction.getOvertimeStarted(),
                 auction.getOvertimeEndTime(),
                 auction.getOvertimeSeconds(),
+                auction.getTotalBids(),
                 AuctionItemResponse.from(auction.getAuctionItem())
         );
     }

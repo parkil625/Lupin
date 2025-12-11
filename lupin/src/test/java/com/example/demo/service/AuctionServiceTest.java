@@ -262,29 +262,41 @@ class AuctionServiceTest {
     }
 
     @Test
-    void 경매시간이_종료된_경매_비활성화(){
-        //given
+    void 경매시간이_종료된_경매_비활성화() {
+        // given
         LocalDateTime now = createLocalDateNow();
-        User user = createUser(1L,"홍길동");
+        // [핵심] Service 내부 로직과 똑같이 계산해서 변수로 만들어줍니다.
+        LocalDateTime regularTimeLimit = now.minusSeconds(30);
+
+        User user = createUser(1L, "홍길동");
+
         Auction auction = Auction.builder()
                 .id(1L)
                 .status(AuctionStatus.ACTIVE)
                 .currentPrice(100L)
                 .startTime(now.minusMinutes(40))
-                .regularEndTime(now.minusMinutes(30)) // 정규시간 끝났고
+                .regularEndTime(now.minusMinutes(30)) // 정규시간 끝남
                 .overtimeStarted(true)
-                .overtimeEndTime(now.minusSeconds(1)) // 초읽기도 종료됨!!
+                .overtimeEndTime(now.minusSeconds(1)) // 초읽기도 끝남 (현재보다 1초 전)
                 .winner(user)
                 .build();
 
-        given(auctionRepository.findExpiredAuctions(now))
+        // 1. 종료 대상 경매 찾기 Mocking (파라미터 일치 중요!)
+        given(auctionRepository.findExpiredAuctions(now, regularTimeLimit))
                 .willReturn(List.of(auction));
 
-        //when
+        // 2. 해당 경매의 입찰 내역 조회 Mocking (빈 리스트라도 반환해야 함)
+        given(auctionBidRepository.findByAuctionId(auction.getId()))
+                .willReturn(Collections.emptyList()); // 혹은 List.of()
+
+        // when
         auctionService.closeExpiredAuctions(now);
 
-        //then
+        // then
         assertEquals(AuctionStatus.ENDED, auction.getStatus());
+
+        // (선택) 실제로 DB 반영(saveAndFlush)이 호출되었는지까지 검증하면 더 완벽합니다.
+        verify(auctionRepository).saveAndFlush(auction);
     }
 
 

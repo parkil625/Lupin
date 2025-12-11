@@ -1,4 +1,4 @@
-import {useState, useEffect, useRef} from "react";
+import { useState, useEffect, useRef } from "react";
 import { AuctionData } from "@/types/auction.types";
 
 export const useAuctionTimer = (
@@ -16,42 +16,56 @@ export const useAuctionTimer = (
             return;
         }
 
-        const regularEnd = new Date(selectedAuction.regularEndTime).getTime();
-        const overtimeSec = selectedAuction.overtimeSeconds ?? 30;
-        const overtimeEnd = regularEnd + overtimeSec * 1000;
-
         const tick = async () => {
             const now = Date.now();
+            const regularEnd = new Date(selectedAuction.regularEndTime).getTime();
 
-            // 1) 정규 시간
-            if (now < regularEnd) {
+            // [Logic B 핵심 수정]
+            // 목표 시간 설정
+            let targetEndTime = 0;
+            let currentIsOvertime = false;
+
+            if (selectedAuction.overtimeStarted && selectedAuction.overtimeEndTime) {
+                // 1. 서버에서 공식적으로 초읽기가 시작된 경우
+                targetEndTime = new Date(selectedAuction.overtimeEndTime).getTime();
+                currentIsOvertime = true;
+            } else {
+                // 2. 아직 초읽기 플래그는 없지만...
+                if (now >= regularEnd) {
+                    // 정규 시간이 지났다면 -> "자동 초읽기(30초)"로 간주!
+                    // 마감 시간 = 정규 종료 + 30초
+                    const overtimeSec = selectedAuction.overtimeSeconds ?? 30;
+                    targetEndTime = regularEnd + (overtimeSec * 1000);
+                    currentIsOvertime = true; // 화면에는 초읽기로 표시
+                } else {
+                    // 정규 시간 안쪽인 경우
+                    targetEndTime = regularEnd;
+                    currentIsOvertime = false;
+                }
+            }
+
+            // 남은 시간 계산
+            const diffSeconds = Math.floor((targetEndTime - now) / 1000);
+
+            if (diffSeconds >= 0) {
+                setCountdown(diffSeconds);
+                setIsOvertime(currentIsOvertime);
+            } else {
+                // 진짜로 모든 시간이 끝남
+                setCountdown(0);
                 setIsOvertime(false);
-                setCountdown(Math.max(0, Math.floor((regularEnd - now) / 1000)));
-                return;
-            }
 
-            // 2) 정규 끝난 뒤 ~ 30초 초읽기
-            if (now >= regularEnd && now < overtimeEnd) {
-                setIsOvertime(true);
-                setCountdown(Math.max(0, Math.floor((overtimeEnd - now) / 1000)));
-                return;
-            }
-
-            // 3) 완전 종료
-            setCountdown(0);
-            setIsOvertime(false);
-
-            if (refreshData && !isFetching.current) {
-                isFetching.current = true;
-                try {
-                    await refreshData();
-                } finally {
-                    isFetching.current = false;
+                if (refreshData && !isFetching.current) {
+                    isFetching.current = true;
+                    try {
+                        await refreshData();
+                    } finally {
+                        isFetching.current = false;
+                    }
                 }
             }
         };
 
-        // 즉시 한 번 호출
         tick();
         const interval = setInterval(tick, 1000);
 
@@ -59,7 +73,8 @@ export const useAuctionTimer = (
     }, [
         selectedAuction?.auctionId,
         selectedAuction?.regularEndTime,
-        selectedAuction?.overtimeSeconds,
+        selectedAuction?.overtimeEndTime,
+        selectedAuction?.overtimeStarted,
         selectedAuction?.status,
         refreshData,
     ]);

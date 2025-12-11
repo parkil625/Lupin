@@ -107,12 +107,15 @@ public class CommentService {
                 .toList();
         notificationRepository.deleteByRefIdInAndType(replyIds, "COMMENT_LIKE");
 
-        // 대댓글들의 좋아요 삭제 후 대댓글 삭제 (외래키 제약조건)
-        for (Comment reply : replies) {
-            commentLikeRepository.deleteByComment(reply);
-            parentComment.getFeed().decrementCommentCount(); // 대댓글 카운트 감소
-            commentRepository.delete(reply);
+        // [최적화] 대댓글들의 좋아요 일괄 삭제 (N개 쿼리 → 1개 쿼리)
+        commentLikeRepository.deleteByCommentIn(replies);
+
+        // 대댓글 카운트 감소 후 일괄 삭제
+        int replyCount = replies.size();
+        for (int i = 0; i < replyCount; i++) {
+            parentComment.getFeed().decrementCommentCount();
         }
+        commentRepository.deleteAll(replies);
     }
 
     private void validateOwnership(Comment comment, User user) {

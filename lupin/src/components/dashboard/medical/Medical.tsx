@@ -41,7 +41,7 @@ MedicalProps) {
   // 현재 로그인한 환자 정보 (localStorage에서 가져오기)
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
   const currentPatientId = currentUserId; // 환자의 경우 userId와 patientId가 동일
-  const doctorId = 21; // doctor01의 ID (테스트용)
+  const doctorId = 22; // doctor02의 ID (테스트용)
 
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);

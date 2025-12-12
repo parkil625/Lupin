@@ -56,21 +56,9 @@ public class AppointmentService {
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        // 예약 생성 시 자동으로 채팅방 생성 (환영 메시지 전송)
+        // 예약 생성 시 자동으로 채팅방 생성 (메시지 없이)
         String roomId = chatService.createChatRoomForAppointment(savedAppointment.getId());
         log.info("예약 ID {}에 대한 채팅방 생성 완료: {}", savedAppointment.getId(), roomId);
-
-        // 시스템 환영 메시지 전송
-        try {
-            chatService.saveMessage(
-                    roomId,
-                    doctor.getId(),
-                    "안녕하세요, " + patient.getName() + "님. 예약이 확정되었습니다. 궁금하신 점이 있으시면 편하게 말씀해주세요."
-            );
-            log.info("채팅방 {}에 환영 메시지 전송 완료", roomId);
-        } catch (Exception e) {
-            log.warn("환영 메시지 전송 실패: {}", e.getMessage());
-        }
 
         return savedAppointment.getId();
     }

@@ -94,7 +94,7 @@ class AppointmentServiceTest {
         assertThat(appointmentId).isNotNull();
         verify(appointmentRepository, times(1)).save(any(Appointment.class));
         verify(chatService, times(1)).createChatRoomForAppointment(anyLong());
-        verify(chatService, times(1)).saveMessage(eq("appointment_1"), eq(21L), anyString());
+        // 환영 메시지 전송 기능 제거로 인해 saveMessage 검증 제거
     }
 
     @Test

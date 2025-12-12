@@ -286,7 +286,7 @@ public class FeedService {
 
     @Transactional
     public void deleteFeed(User user, Long feedId) {
-        Feed feed = feedRepository.findById(feedId)
+        Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
         validateOwnership(feed, user);

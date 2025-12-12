@@ -147,17 +147,15 @@ function useDashboardLogic(
     if (!refId) return;
 
     if (notification.type === "FEED_LIKE") {
-      const like = await feedApi.getFeedLikeById(refId);
-      if (like?.feedId) navigateToFeed(like.feedId, null);
+      // refId가 feedId - 바로 이동
+      navigateToFeed(refId, null);
     } else if (["COMMENT", "REPLY"].includes(notification.type)) {
       const comment = await commentApi.getCommentById(refId);
       if (comment?.feedId) navigateToFeed(comment.feedId, refId);
     } else if (notification.type === "COMMENT_LIKE") {
-      const like = await commentApi.getCommentLikeById(refId);
-      if (like?.commentId) {
-        const comment = await commentApi.getCommentById(like.commentId);
-        if (comment?.feedId) navigateToFeed(comment.feedId, like.commentId);
-      }
+      // refId는 commentId - COMMENT/REPLY와 동일하게 처리
+      const comment = await commentApi.getCommentById(refId);
+      if (comment?.feedId) navigateToFeed(comment.feedId, refId);
     }
   }, [navigateToFeed]);
 

@@ -99,12 +99,8 @@ export const feedApi = {
   },
 
   deleteFeed: async (feedId: number) => {
-    try {
-      const response = await apiClient.delete(`/feeds/${feedId}`);
-      return response.data;
-    } catch {
-      return { success: true, feedId };
-    }
+    const response = await apiClient.delete(`/feeds/${feedId}`);
+    return response.data;
   },
 
   likeFeed: async (feedId: number) => {

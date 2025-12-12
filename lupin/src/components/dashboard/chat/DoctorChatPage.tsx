@@ -66,6 +66,9 @@ const formatChatTime = (timeString?: string) => {
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
 
+  // 현재 활성화된 roomId를 명시적으로 관리
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+
   const [selectedChatMember, setSelectedChatMember] = useState<Member | null>(
     null
   );
@@ -111,32 +114,30 @@ export default function DoctorChatPage() {
     }
   }, [currentUserId]);
 
-  // 🔧 수정: roomId를 chatRooms에서 가져오기 (appointment_{id} 형식)
-  const selectedRoom = chatRooms.find(
-    (room) => room.patientId === selectedChatMember?.id
-  );
-  const roomId = selectedRoom?.roomId || "";
-
   const handleMessageReceived = useCallback(
     (message: ChatMessageResponse) => {
-      setMessages((prev) => [...prev, message]);
-      if (message.senderId !== currentUserId) {
-        toast.success("새 메시지가 도착했습니다");
+      // 현재 보고 있는 방에 온 메시지만 추가
+      if (activeRoomId && message.roomId === activeRoomId) {
+        setMessages((prev) => [...prev, message]);
       }
-      // 메시지 수신 시 채팅방 목록 갱신 (최신 메시지 시간 및 내용 업데이트)
+
+      if (message.senderId !== currentUserId) {
+        // 다른 방에 메시지가 오면 알림
+        if (message.roomId !== activeRoomId) {
+          toast.success("새 메시지가 도착했습니다");
+        }
+      }
+      // 메시지 수신 시 채팅방 목록 갱신
       loadChatRooms();
     },
-    [currentUserId, loadChatRooms]
+    [currentUserId, loadChatRooms, activeRoomId]
   );
 
-  // 🔧 제거: handleReadNotification (REST API로만 처리)
-
-  // 🔧 수정: markAsRead, onReadNotification 제거 (REST API로만 처리)
   const {
     isConnected,
     sendMessage: sendWebSocketMessage,
   } = useWebSocket({
-    roomId: roomId || "placeholder",
+    roomId: activeRoomId || "placeholder",
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
   });
@@ -150,13 +151,14 @@ export default function DoctorChatPage() {
     loadChatRooms();
   }, [loadChatRooms]);
 
+  // activeRoomId가 변경될 때마다 메시지를 새로 로드
   useEffect(() => {
-    if (!selectedChatMember || !roomId) return;
+    if (!activeRoomId) return;
 
     const loadMessages = async () => {
       try {
-        // 🔧 수정: roomId를 직접 사용 (이미 올바른 appointment_{id} 형식)
-        const loadedMessages = await chatApi.getAllMessagesByRoomId(roomId);
+        console.log("메시지 로드 시작 RoomID:", activeRoomId);
+        const loadedMessages = await chatApi.getAllMessagesByRoomId(activeRoomId);
         setMessages(loadedMessages);
       } catch (error) {
         console.error("메시지 로드 실패:", error);
@@ -164,41 +166,34 @@ export default function DoctorChatPage() {
     };
 
     loadMessages();
-    // selectedChatMember 변경 시에도 메시지 다시 로드
-  }, [roomId, selectedChatMember]);
+  }, [activeRoomId]);
 
-  // 🔧 수정: REST API로 읽음 처리 + 채팅방 목록 갱신 (즉시 실행)
+  // 읽음 처리 로직
   useEffect(() => {
-    if (
-      isConnected &&
-      selectedChatMember &&
-      roomId &&
-      roomId !== "placeholder"
-    ) {
-      // 즉시 읽음 처리 (타이머 제거)
+    if (isConnected && activeRoomId && activeRoomId !== "placeholder") {
       const markMessagesAsRead = async () => {
         try {
-          await chatApi.markAsRead(roomId, currentUserId);
-          console.log('✅ 읽음 처리 완료:', roomId);
-          // 읽음 처리 후 채팅방 목록 다시 로드 (unreadCount 갱신)
+          await chatApi.markAsRead(activeRoomId, currentUserId);
+          console.log('✅ 읽음 처리 완료:', activeRoomId);
           await loadChatRooms();
         } catch (error) {
           console.error('❌ 읽음 처리 실패:', error);
         }
       };
-
       markMessagesAsRead();
     }
-  }, [isConnected, roomId, selectedChatMember, currentUserId, loadChatRooms]);
+  }, [isConnected, activeRoomId, currentUserId, loadChatRooms]);
 
   const handleFinishConsultation = () => {
     if (!selectedChatMember) return;
     toast.success(`${selectedChatMember.name}님의 진료가 완료되었습니다.`);
     setSelectedChatMember(null);
+    setActiveRoomId(null);
+    setMessages([]);
   };
 
   const handleSendDoctorChat = () => {
-    if (!chatMessage.trim() || !selectedChatMember) return;
+    if (!chatMessage.trim() || !activeRoomId) return;
 
     sendWebSocketMessage(chatMessage, currentUserId);
 
@@ -207,10 +202,9 @@ export default function DoctorChatPage() {
 
   // 입력창 포커스 시 읽음 처리
   const handleInputFocus = async () => {
-    if (roomId && roomId !== "placeholder") {
+    if (activeRoomId && activeRoomId !== "placeholder") {
       try {
-        await chatApi.markAsRead(roomId, currentUserId);
-        console.log('✅ 입력창 포커스 - 읽음 처리 완료:', roomId);
+        await chatApi.markAsRead(activeRoomId, currentUserId);
         await loadChatRooms();
       } catch (error) {
         console.error('❌ 읽음 처리 실패:', error);
@@ -288,9 +282,8 @@ export default function DoctorChatPage() {
                         ? "김강민"
                         : room.patientName;
 
-                      const isSelected =
-                        selectedChatMember &&
-                        room.patientId === selectedChatMember.id;
+                      // activeRoomId로 선택 여부 판단
+                      const isSelected = activeRoomId === room.roomId;
 
                       return (
                         <div
@@ -299,8 +292,10 @@ export default function DoctorChatPage() {
                             // 이미 선택된 채팅방이면 아무 작업도 하지 않음
                             if (isSelected) return;
 
-                            // 다른 채팅방으로 전환 시 이전 메시지 초기화
-                            setMessages([]);
+                            // 활성 룸 ID 변경 (useEffect가 메시지 로드)
+                            setActiveRoomId(room.roomId);
+
+                            // 선택된 멤버 정보 업데이트
                             setSelectedChatMember({
                               id: room.patientId,
                               name: displayName,
@@ -311,6 +306,9 @@ export default function DoctorChatPage() {
                               condition: "양호",
                               status: "in-progress",
                             });
+
+                            // 메시지 초기화
+                            setMessages([]);
                           }}
                           className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
                             isSelected
@@ -355,7 +353,7 @@ export default function DoctorChatPage() {
 
             {/* 중앙: 채팅 영역 */}
             <div className="flex-1 flex flex-col p-6 border-r border-gray-200 h-full overflow-hidden">
-              {selectedChatMember ? (
+              {selectedChatMember && activeRoomId ? (
                 <>
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4 flex-shrink-0">
                     <div className="flex items-center gap-3">
@@ -389,9 +387,18 @@ export default function DoctorChatPage() {
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isMine = msg.senderId === currentUserId;
+
+                        // 이름 표시 로직 개선: senderName이 없으면 선택된 환자 이름 사용
+                        let senderDisplayName = "알 수 없음";
+                        if (isMine) {
+                          senderDisplayName = "나";
+                        } else {
+                          senderDisplayName = msg.senderName || selectedChatMember?.name || "알 수 없음";
+                        }
+
                         const senderInitial = isMine
                           ? "의"
-                          : msg.senderName.charAt(0);
+                          : senderDisplayName.charAt(0);
 
                         return (
                           <div
@@ -416,7 +423,7 @@ export default function DoctorChatPage() {
                             >
                               {!isMine && (
                                 <div className="font-bold text-xs text-gray-900 mb-1">
-                                  {msg.senderName}
+                                  {senderDisplayName}
                                 </div>
                               )}
                               <div className="text-sm">{msg.content}</div>

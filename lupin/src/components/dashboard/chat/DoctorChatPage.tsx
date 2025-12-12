@@ -133,7 +133,7 @@ export default function DoctorChatPage() {
       try {
         const rooms = await chatApi.getChatRooms(currentUserId);
         // 최신 메시지 순서대로 정렬 (카톡처럼)
-        const sortedRooms = rooms.sort((a, b) => {
+        const sortedRooms = rooms.sort((a: ChatRoomResponse, b: ChatRoomResponse) => {
           const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
           const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
           return timeB - timeA; // 최신순

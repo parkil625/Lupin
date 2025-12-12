@@ -150,14 +150,14 @@ function useDashboardLogic(
       // refId = feedId - 바로 이동
       navigateToFeed(refId, null);
     } else if (notification.type === "COMMENT") {
-      // refId = feedId - 바로 이동 (댓글 하이라이트 없음)
-      navigateToFeed(refId, null);
+      // refId = feedId - 댓글 창만 열기 (하이라이트 없음, -1은 "댓글 창 열기" 신호)
+      navigateToFeed(refId, -1);
     } else if (notification.type === "REPLY") {
-      // refId = parentCommentId - 부모 댓글을 조회해서 feedId 얻음
+      // refId = parentCommentId - 부모 댓글을 조회해서 feedId 얻고, 부모 댓글 하이라이트
       const parentComment = await commentApi.getCommentById(refId);
-      if (parentComment?.feedId) navigateToFeed(parentComment.feedId, null);
+      if (parentComment?.feedId) navigateToFeed(parentComment.feedId, refId);
     } else if (notification.type === "COMMENT_LIKE") {
-      // refId = commentId
+      // refId = commentId - 해당 댓글 하이라이트
       const comment = await commentApi.getCommentById(refId);
       if (comment?.feedId) navigateToFeed(comment.feedId, refId);
     }

@@ -125,6 +125,7 @@ export function FeedCard({
               <UserHoverCard
                 name={feed.author || feed.writerName}
                 department={feed.writerDepartment}
+                activeDays={feed.writerActiveDays}
                 avatarUrl={feed.writerAvatar}
               />
             </div>

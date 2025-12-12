@@ -188,8 +188,8 @@ export default function FeedDetailDialogHome({
         });
         setCommentLikes(likesState);
 
-        // targetCommentId가 있으면 댓글창 열기
-        if (targetCommentId) {
+        // targetCommentId가 있으면 댓글창 열기 (-1은 "댓글 창만 열기" 신호)
+        if (targetCommentId !== null && targetCommentId !== undefined) {
           setShowComments(true);
         }
       } catch (error) {
@@ -230,9 +230,9 @@ export default function FeedDetailDialogHome({
     }
   };
 
-  // targetCommentId가 있으면 해당 댓글로 스크롤
+  // targetCommentId가 양수이면 해당 댓글로 스크롤 및 하이라이트 (-1은 무시)
   useEffect(() => {
-    if (targetCommentId && open && comments.length > 0 && showComments) {
+    if (targetCommentId && targetCommentId > 0 && open && comments.length > 0 && showComments) {
       const numTargetId = Number(targetCommentId);
       console.log('[Highlight] 조건 충족, targetCommentId:', numTargetId);
 

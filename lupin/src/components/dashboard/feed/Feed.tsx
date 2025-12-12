@@ -11,7 +11,6 @@ import { SearchInput } from "@/components/molecules";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Heart,
@@ -22,7 +21,6 @@ import {
   Send,
   X,
   ArrowUpDown,
-  User,
   Siren,
   Flame,
   Clock,

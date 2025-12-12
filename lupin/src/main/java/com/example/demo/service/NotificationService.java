@@ -16,25 +16,23 @@ import java.util.List;
  * 알림 서비스
  *
  * ========================================
- * 알림 타입별 refId 구조
+ * 알림 타입별 refId / targetId 구조
  * ========================================
  *
- * | 타입            | refId 값           | 참조 대상      | 삭제 시점                       |
- * |-----------------|--------------------|---------------|--------------------------------|
- * | FEED_LIKE       | Feed.id            | 해당 피드      | 피드 삭제, 좋아요 취소 시         |
- * | COMMENT         | Feed.id            | 해당 피드      | 피드 삭제, 댓글 삭제 시           |
- * | COMMENT_LIKE    | Comment.id         | 해당 댓글      | 댓글 삭제, 좋아요 취소 시         |
- * | REPLY           | 부모 Comment.id    | 부모 댓글      | 부모댓글 삭제, 대댓글 삭제 시     |
- * | FEED_DELETED    | null               | -             | -                              |
- * | COMMENT_DELETED | null               | -             | -                              |
+ * | 타입            | refId (네비게이션)  | targetId (하이라이트) | 삭제 시점                       |
+ * |-----------------|--------------------|-----------------------|--------------------------------|
+ * | FEED_LIKE       | Feed.id            | null                  | 피드 삭제, 좋아요 취소 시         |
+ * | COMMENT         | Feed.id            | Comment.id            | 피드 삭제, 댓글 삭제 시           |
+ * | COMMENT_LIKE    | Comment.id         | Comment.id            | 댓글 삭제, 좋아요 취소 시         |
+ * | REPLY           | 부모 Comment.id    | Reply.id              | 부모댓글 삭제, 대댓글 삭제 시     |
+ * | FEED_DELETED    | null               | null                  | -                              |
+ * | COMMENT_DELETED | null               | null                  | -                              |
  *
  * ========================================
- * 프론트엔드 알림 클릭 시 이동 로직
+ * 프론트엔드 알림 클릭 시 로직
  * ========================================
- * - FEED_LIKE: refId가 바로 Feed.id → 해당 피드로 이동
- * - COMMENT: refId가 바로 Feed.id → 해당 피드의 댓글로 이동
- * - COMMENT_LIKE: refId(Comment.id)로 Comment 조회 → Feed.id 얻어서 이동
- * - REPLY: refId(부모 Comment.id)로 Comment 조회 → Feed.id 얻어서 이동
+ * - refId: 네비게이션용 (피드 이동, 부모 댓글로 스크롤 등)
+ * - targetId: 하이라이트할 댓글/답글 ID
  */
 @Service
 @RequiredArgsConstructor
@@ -98,9 +96,10 @@ public class NotificationService {
     /**
      * 댓글 알림 생성
      * @param feedId 댓글이 달린 피드의 ID (refId로 저장)
+     * @param commentId 생성된 댓글의 ID (targetId로 저장 - 하이라이트용)
      */
     @Transactional
-    public void createCommentNotification(User feedOwner, User commenter, Long feedId) {
+    public void createCommentNotification(User feedOwner, User commenter, Long feedId, Long commentId) {
         if (feedOwner.getId().equals(commenter.getId())) {
             return;
         }
@@ -110,6 +109,7 @@ public class NotificationService {
                 .type("COMMENT")
                 .title(commenter.getName() + "님이 댓글을 남겼습니다")
                 .refId(String.valueOf(feedId))
+                .targetId(commentId)
                 .build();
 
         Notification saved = notificationRepository.save(notification);
@@ -118,7 +118,7 @@ public class NotificationService {
 
     /**
      * 댓글 좋아요 알림 생성
-     * @param commentId 좋아요가 눌린 댓글의 ID (refId로 저장)
+     * @param commentId 좋아요가 눌린 댓글의 ID (refId, targetId 모두 저장)
      */
     @Transactional
     public void createCommentLikeNotification(User commentOwner, User liker, Long commentId) {
@@ -131,6 +131,7 @@ public class NotificationService {
                 .type("COMMENT_LIKE")
                 .title(liker.getName() + "님이 댓글에 좋아요를 눌렀습니다")
                 .refId(String.valueOf(commentId))
+                .targetId(commentId)
                 .build();
 
         Notification saved = notificationRepository.save(notification);
@@ -140,9 +141,10 @@ public class NotificationService {
     /**
      * 답글(대댓글) 알림 생성
      * @param parentCommentId 답글이 달린 부모 댓글의 ID (refId로 저장)
+     * @param replyId 생성된 답글의 ID (targetId로 저장 - 하이라이트용)
      */
     @Transactional
-    public void createReplyNotification(User commentOwner, User replier, Long parentCommentId) {
+    public void createReplyNotification(User commentOwner, User replier, Long parentCommentId, Long replyId) {
         if (commentOwner.getId().equals(replier.getId())) {
             return;
         }
@@ -152,6 +154,7 @@ public class NotificationService {
                 .type("REPLY")
                 .title(replier.getName() + "님이 답글을 남겼습니다")
                 .refId(String.valueOf(parentCommentId))
+                .targetId(replyId)
                 .build();
 
         Notification saved = notificationRepository.save(notification);

@@ -85,6 +85,7 @@ public class NotificationEventListener {
                 .type(event.getType().name())
                 .title(title)
                 .refId(event.getRefId() != null ? String.valueOf(event.getRefId()) : null)
+                .targetId(event.getTargetId())
                 .build();
     }
 }

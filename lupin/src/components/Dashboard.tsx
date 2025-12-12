@@ -146,20 +146,25 @@ function useDashboardLogic(
     const refId = notification.refId ? parseInt(notification.refId) : null;
     if (!refId) return;
 
+    const targetId = notification.targetId ?? null;
+
     if (notification.type === "FEED_LIKE") {
-      // refId = feedId - 바로 이동
+      // refId = feedId - 바로 이동 (하이라이트 없음)
       navigateToFeed(refId, null);
     } else if (notification.type === "COMMENT") {
-      // refId = feedId - 댓글 창만 열기 (하이라이트 없음, -1은 "댓글 창 열기" 신호)
-      navigateToFeed(refId, -1);
+      // refId = feedId, targetId = 댓글ID - 해당 댓글 하이라이트
+      // targetId 없으면 -1 (댓글창만 열기, 기존 알림 호환)
+      navigateToFeed(refId, targetId ?? -1);
     } else if (notification.type === "REPLY") {
-      // refId = parentCommentId - 부모 댓글을 조회해서 feedId 얻고, 부모 댓글 하이라이트
+      // refId = 부모댓글ID, targetId = 답글ID - 답글 하이라이트
+      // targetId 없으면 부모댓글 하이라이트 (기존 알림 호환)
       const parentComment = await commentApi.getCommentById(refId);
-      if (parentComment?.feedId) navigateToFeed(parentComment.feedId, refId);
+      if (parentComment?.feedId) navigateToFeed(parentComment.feedId, targetId ?? refId);
     } else if (notification.type === "COMMENT_LIKE") {
-      // refId = commentId - 해당 댓글 하이라이트
+      // refId = commentId, targetId = commentId - 해당 댓글 하이라이트
+      // targetId 없으면 refId로 하이라이트 (기존 알림 호환)
       const comment = await commentApi.getCommentById(refId);
-      if (comment?.feedId) navigateToFeed(comment.feedId, refId);
+      if (comment?.feedId) navigateToFeed(comment.feedId, targetId ?? refId);
     }
   }, [navigateToFeed]);
 

@@ -248,14 +248,17 @@ class NotificationServiceTest {
 
         given(notificationRepository.save(any(Notification.class))).willAnswer(invocation -> invocation.getArgument(0));
 
+        Long commentId = 10L;
+
         // when
-        notificationService.createCommentNotification(feedOwner, commenter, feedId);
+        notificationService.createCommentNotification(feedOwner, commenter, feedId, commentId);
 
         // then
         verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
                 notification.getUser().equals(feedOwner) &&
                 notification.getType().equals("COMMENT") &&
-                notification.getRefId().equals(String.valueOf(feedId))
+                notification.getRefId().equals(String.valueOf(feedId)) &&
+                notification.getTargetId().equals(commentId)
         ));
     }
 
@@ -264,9 +267,10 @@ class NotificationServiceTest {
     void createCommentNotificationSelfTest() {
         // given
         Long feedId = 1L;
+        Long commentId = 10L;
 
         // when
-        notificationService.createCommentNotification(user, user, feedId);
+        notificationService.createCommentNotification(user, user, feedId, commentId);
 
         // then
         verify(notificationRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
@@ -340,18 +344,20 @@ class NotificationServiceTest {
                 .build();
         ReflectionTestUtils.setField(replier, "id", 3L);
 
-        Long commentId = 1L;
+        Long parentCommentId = 1L;
+        Long replyId = 20L;
 
         given(notificationRepository.save(any(Notification.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        notificationService.createReplyNotification(commentOwner, replier, commentId);
+        notificationService.createReplyNotification(commentOwner, replier, parentCommentId, replyId);
 
         // then
         verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
                 notification.getUser().equals(commentOwner) &&
                 notification.getType().equals("REPLY") &&
-                notification.getRefId().equals(String.valueOf(commentId))
+                notification.getRefId().equals(String.valueOf(parentCommentId)) &&
+                notification.getTargetId().equals(replyId)
         ));
     }
 
@@ -359,10 +365,11 @@ class NotificationServiceTest {
     @DisplayName("자기 자신의 댓글에 답글 시 알림을 생성하지 않는다")
     void createReplyNotificationSelfTest() {
         // given
-        Long commentId = 1L;
+        Long parentCommentId = 1L;
+        Long replyId = 20L;
 
         // when
-        notificationService.createReplyNotification(user, user, commentId);
+        notificationService.createReplyNotification(user, user, parentCommentId, replyId);
 
         // then
         verify(notificationRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());

@@ -16,6 +16,7 @@ public class NotificationResponse {
     private String content;
     private Boolean isRead;
     private String refId;
+    private Long targetId;
     private LocalDateTime createdAt;
 
     public static NotificationResponse from(Notification notification) {
@@ -26,6 +27,7 @@ public class NotificationResponse {
                 .content(notification.getContent())
                 .isRead(notification.getIsRead())
                 .refId(notification.getRefId())
+                .targetId(notification.getTargetId())
                 .createdAt(notification.getCreatedAt())
                 .build();
     }

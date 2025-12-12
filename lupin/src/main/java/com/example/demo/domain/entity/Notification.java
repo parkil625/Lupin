@@ -37,6 +37,9 @@ public class Notification {
     @Column(name = "ref_id")
     private String refId;
 
+    @Column(name = "target_id")
+    private Long targetId;
+
     @Column(name = "created_at", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

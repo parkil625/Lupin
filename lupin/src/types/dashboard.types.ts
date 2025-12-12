@@ -60,6 +60,7 @@ export interface Notification {
   content?: string;
   isRead: boolean;
   refId?: string;
+  targetId?: number;  // 하이라이트할 댓글/답글 ID
   createdAt: string;
 }
 

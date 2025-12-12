@@ -95,6 +95,22 @@ export default function DoctorChatPage() {
     { name: "항히스타민제", quantity: 0 },
   ]);
 
+  // 채팅방 목록 로드 함수 (재사용 가능하도록 별도 함수로 분리)
+  const loadChatRooms = useCallback(async () => {
+    try {
+      const rooms = await chatApi.getChatRooms(currentUserId);
+      // 최신 메시지 순서대로 정렬 (카톡처럼)
+      const sortedRooms = rooms.sort((a: ChatRoomResponse, b: ChatRoomResponse) => {
+        const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+        const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+        return timeB - timeA; // 최신순
+      });
+      setChatRooms(sortedRooms);
+    } catch (error) {
+      console.error("채팅방 목록 로드 실패:", error);
+    }
+  }, [currentUserId]);
+
   // 🔧 수정: roomId를 chatRooms에서 가져오기 (appointment_{id} 형식)
   const selectedRoom = chatRooms.find(
     (room) => room.patientId === selectedChatMember?.id
@@ -107,8 +123,10 @@ export default function DoctorChatPage() {
       if (message.senderId !== currentUserId) {
         toast.success("새 메시지가 도착했습니다");
       }
+      // 메시지 수신 시 채팅방 목록 갱신 (최신 메시지 시간 및 내용 업데이트)
+      loadChatRooms();
     },
-    [currentUserId]
+    [currentUserId, loadChatRooms]
   );
 
   // 🔧 제거: handleReadNotification (REST API로만 처리)
@@ -129,23 +147,8 @@ export default function DoctorChatPage() {
   }, [messages]);
 
   useEffect(() => {
-    const loadChatRooms = async () => {
-      try {
-        const rooms = await chatApi.getChatRooms(currentUserId);
-        // 최신 메시지 순서대로 정렬 (카톡처럼)
-        const sortedRooms = rooms.sort((a: ChatRoomResponse, b: ChatRoomResponse) => {
-          const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-          const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-          return timeB - timeA; // 최신순
-        });
-        setChatRooms(sortedRooms);
-      } catch (error) {
-        console.error("채팅방 목록 로드 실패:", error);
-      }
-    };
-
     loadChatRooms();
-  }, [currentUserId]);
+  }, [loadChatRooms]);
 
   useEffect(() => {
     if (!selectedChatMember || !roomId) return;
@@ -164,7 +167,7 @@ export default function DoctorChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
-  // 🔧 수정: REST API로 읽음 처리
+  // 🔧 수정: REST API로 읽음 처리 + 채팅방 목록 갱신
   useEffect(() => {
     if (
       isConnected &&
@@ -176,13 +179,15 @@ export default function DoctorChatPage() {
         try {
           await chatApi.markAsRead(roomId, currentUserId);
           console.log('✅ 읽음 처리 완료:', roomId);
+          // 읽음 처리 후 채팅방 목록 다시 로드 (unreadCount 갱신)
+          await loadChatRooms();
         } catch (error) {
           console.error('❌ 읽음 처리 실패:', error);
         }
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isConnected, roomId, selectedChatMember, currentUserId]);
+  }, [isConnected, roomId, selectedChatMember, currentUserId, loadChatRooms]);
 
   const handleFinishConsultation = () => {
     if (!selectedChatMember) return;
@@ -275,7 +280,9 @@ export default function DoctorChatPage() {
                       return (
                         <div
                           key={room.roomId}
-                          onClick={() =>
+                          onClick={() => {
+                            // 채팅방 전환 시 이전 메시지 초기화
+                            setMessages([]);
                             setSelectedChatMember({
                               id: room.patientId,
                               name: displayName,
@@ -285,8 +292,8 @@ export default function DoctorChatPage() {
                               lastVisit: "정보 없음",
                               condition: "양호",
                               status: "in-progress",
-                            })
-                          }
+                            });
+                          }}
                           className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
                             isSelected
                               ? "bg-blue-50 border-blue-300"

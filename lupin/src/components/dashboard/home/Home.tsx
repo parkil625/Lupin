@@ -197,6 +197,8 @@ const FeedItem = memo(({
           <div className="absolute top-2 left-2 z-10">
             <UserHoverCard
               name={feed.author || feed.writerName}
+              department={feed.writerDepartment}
+              activeDays={feed.writerActiveDays}
               avatarUrl={feed.writerAvatar}
               size="sm"
             />

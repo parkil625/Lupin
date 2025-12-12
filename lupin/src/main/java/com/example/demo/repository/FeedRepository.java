@@ -39,4 +39,12 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     Optional<Feed> findByIdForDelete(@Param("id") Long id);
 
     // 기본 findById는 JpaRepository에서 제공
+
+    // [activeDays] 사용자의 이번 달 피드 작성 고유 날짜 수
+    @Query("SELECT COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer = :writer AND f.createdAt BETWEEN :start AND :end")
+    int countDistinctDaysByWriterAndCreatedAtBetween(@Param("writer") User writer, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // [activeDays] 여러 사용자의 이번 달 activeDays를 한 번에 조회
+    @Query("SELECT f.writer.id, COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer.id IN :writerIds AND f.createdAt BETWEEN :start AND :end GROUP BY f.writer.id")
+    List<Object[]> countActiveDaysByWriterIds(@Param("writerIds") List<Long> writerIds, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

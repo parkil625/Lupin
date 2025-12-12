@@ -21,6 +21,8 @@ public class FeedResponse {
     private String writerName;
     private Long writerId;
     private String writerAvatar;
+    private String writerDepartment;
+    private Integer writerActiveDays;
     private Long points;
     private Integer calories;
     private List<String> images;
@@ -41,6 +43,13 @@ public class FeedResponse {
      * [최적화] Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음
      */
     public static FeedResponse from(Feed feed, boolean isLiked) {
+        return from(feed, isLiked, null);
+    }
+
+    /**
+     * [최적화] Feed 엔티티의 반정규화 필드 사용 + activeDays 포함
+     */
+    public static FeedResponse from(Feed feed, boolean isLiked, Integer activeDays) {
         return FeedResponse.builder()
                 .id(feed.getId())
                 .activity(feed.getActivity())
@@ -48,6 +57,8 @@ public class FeedResponse {
                 .writerName(feed.getWriter().getName())
                 .writerId(feed.getWriter().getId())
                 .writerAvatar(feed.getWriter().getAvatar())
+                .writerDepartment(feed.getWriter().getDepartment())
+                .writerActiveDays(activeDays)
                 .points(feed.getPoints())
                 .calories(feed.getCalories())
                 .images(feed.getImages() != null ? feed.getImages().stream()
@@ -74,6 +85,7 @@ public class FeedResponse {
                 .writerName(feed.getWriter().getName())
                 .writerId(feed.getWriter().getId())
                 .writerAvatar(feed.getWriter().getAvatar())
+                .writerDepartment(feed.getWriter().getDepartment())
                 .points(feed.getPoints())
                 .calories(feed.getCalories())
                 .images(feed.getImages() != null ? feed.getImages().stream()
@@ -100,6 +112,7 @@ public class FeedResponse {
                 .writerName(feed.getWriter().getName())
                 .writerId(feed.getWriter().getId())
                 .writerAvatar(feed.getWriter().getAvatar())
+                .writerDepartment(feed.getWriter().getDepartment())
                 .points(feed.getPoints())
                 .calories(feed.getCalories())
                 .images(feed.getImages() != null ? feed.getImages().stream()

@@ -7,6 +7,8 @@ export interface FeedResponse {
   writerId: number;
   writerName: string;
   writerAvatar?: string;
+  writerDepartment?: string;
+  writerActiveDays?: number;
   activity: string;
   points?: number;
   content: string;

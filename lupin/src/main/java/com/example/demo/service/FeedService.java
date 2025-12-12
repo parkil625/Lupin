@@ -322,10 +322,9 @@ public class FeedService {
         notificationRepository.deleteByRefIdAndType(feedIdStr, "FEED_LIKE");
         notificationRepository.deleteByRefIdAndType(feedIdStr, "COMMENT");
 
-        // 댓글 ID 수집 (부모 댓글만)
-        List<String> parentCommentIds = commentRepository.findByFeed(feed).stream()
-                .filter(c -> c.getParent() == null)
-                .map(c -> String.valueOf(c.getId()))
+        // 댓글 ID 수집 (부모 댓글만) - 프로젝션 쿼리로 엔티티 로드 없이 ID만 조회
+        List<String> parentCommentIds = commentRepository.findParentCommentIdsByFeed(feed).stream()
+                .map(String::valueOf)
                 .toList();
 
         // REPLY 알림 삭제 (refId = 부모 댓글 ID)
@@ -333,9 +332,9 @@ public class FeedService {
             notificationRepository.deleteByRefIdInAndType(parentCommentIds, "REPLY");
         }
 
-        // 모든 댓글 ID 수집 (COMMENT_LIKE 삭제용)
-        List<String> allCommentIds = commentRepository.findByFeed(feed).stream()
-                .map(c -> String.valueOf(c.getId()))
+        // 모든 댓글 ID 수집 (COMMENT_LIKE 삭제용) - 프로젝션 쿼리로 엔티티 로드 없이 ID만 조회
+        List<String> allCommentIds = commentRepository.findCommentIdsByFeed(feed).stream()
+                .map(String::valueOf)
                 .toList();
 
         // COMMENT_LIKE 알림 삭제 (refId = commentId)

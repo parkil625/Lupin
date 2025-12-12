@@ -38,6 +38,14 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     long countByFeed(Feed feed);
 
+    // [피드 삭제] 부모 댓글 ID만 조회 (엔티티 로드 없이)
+    @Query("SELECT c.id FROM Comment c WHERE c.feed = :feed AND c.parent IS NULL")
+    List<Long> findParentCommentIdsByFeed(@Param("feed") Feed feed);
+
+    // [피드 삭제] 모든 댓글 ID만 조회 (엔티티 로드 없이)
+    @Query("SELECT c.id FROM Comment c WHERE c.feed = :feed")
+    List<Long> findCommentIdsByFeed(@Param("feed") Feed feed);
+
     @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.writer LEFT JOIN CommentLike cl ON cl.comment = c " +
            "WHERE c.feed = :feed AND c.parent IS NULL " +
            "GROUP BY c ORDER BY COUNT(cl) DESC")

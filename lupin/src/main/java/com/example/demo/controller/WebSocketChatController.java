@@ -11,6 +11,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * WebSocket 채팅 컨트롤러
@@ -29,6 +30,7 @@ public class WebSocketChatController {
      * 클라이언트: /app/chat.send
      * 구독: /queue/chat/{roomId}
      */
+    @Transactional
     @MessageMapping("/chat.send")
     public void sendMessage(@Valid @Payload ChatMessageRequest request) {
         log.info("메시지 전송 요청 - roomId: {}, senderId: {}", request.getRoomId(), request.getSenderId());
@@ -39,6 +41,9 @@ public class WebSocketChatController {
                     request.getSenderId(),
                     request.getContent()
             );
+
+            // Lazy loading 방지를 위해 sender name 명시적 로드
+            String senderName = savedMessage.getSender().getName();
 
             ChatMessageResponse response = ChatMessageResponse.from(savedMessage);
 

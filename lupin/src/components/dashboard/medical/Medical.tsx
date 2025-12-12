@@ -164,7 +164,7 @@ MedicalProps) {
 
     // 진료과별 의사 ID 및 이름 매핑
     const departmentMapping: Record<string, { id: number; name: string; displayName: string }> = {
-      internal: { id: 22, name: "김민수", displayName: "내과" },
+      internal: { id: 22, name: "김준호", displayName: "내과" },
       surgery: { id: 23, name: "이준호", displayName: "외과" },
       psychiatry: { id: 24, name: "박서연", displayName: "신경정신과" },
       dermatology: { id: 25, name: "최지은", displayName: "피부과" },

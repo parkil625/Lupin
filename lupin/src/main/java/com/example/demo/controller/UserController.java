@@ -2,8 +2,10 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.PenaltyType;
+import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.UserProfileRequest;
 import com.example.demo.dto.response.UserResponse;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.PointService;
 import com.example.demo.service.UserPenaltyService;
 import com.example.demo.service.UserService;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -26,6 +29,7 @@ public class UserController extends BaseController {
     private final UserService userService;
     private final PointService pointService;
     private final UserPenaltyService userPenaltyService;
+    private final UserRepository userRepository;
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getMe(
@@ -156,6 +160,27 @@ public class UserController extends BaseController {
         User user = getCurrentUser(userDetails);
         boolean hasPenalty = userPenaltyService.hasActivePenalty(user, type);
         return ResponseEntity.ok(Map.of("hasPenalty", hasPenalty));
+    }
+
+    /**
+     * 진료과별 의사 조회
+     * GET /api/users/doctors?department=internal
+     */
+    @GetMapping("/doctors")
+    public ResponseEntity<List<Map<String, Object>>> getDoctorsByDepartment(
+            @RequestParam String department
+    ) {
+        List<User> doctors = userRepository.findByRoleAndDepartment(Role.DOCTOR, department);
+
+        List<Map<String, Object>> doctorList = doctors.stream()
+                .map(doctor -> Map.of(
+                        "id", (Object) doctor.getId(),
+                        "name", (Object) doctor.getName(),
+                        "department", (Object) (doctor.getDepartment() != null ? doctor.getDepartment() : "")
+                ))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(doctorList);
     }
 
 }

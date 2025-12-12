@@ -232,19 +232,20 @@ export default function FeedDetailDialogHome({
   // targetCommentId가 있으면 해당 댓글로 스크롤
   useEffect(() => {
     if (targetCommentId && open && comments.length > 0 && showComments) {
-      console.log('[Highlight] 조건 충족, targetCommentId:', targetCommentId);
+      const numTargetId = Number(targetCommentId);
+      console.log('[Highlight] 조건 충족, targetCommentId:', numTargetId);
 
       // targetCommentId가 답글인지 확인하고, 답글이면 부모 댓글 펼치기
       let parentIdToExpand: number | null = null;
       for (const comment of comments) {
         // 최상위 댓글인지 확인
-        if (comment.id === targetCommentId) {
+        if (Number(comment.id) === numTargetId) {
           console.log('[Highlight] 최상위 댓글 찾음');
           break; // 최상위 댓글이면 펼칠 필요 없음
         }
         // 답글인지 확인
         if (comment.replies) {
-          const reply = comment.replies.find(r => r.id === targetCommentId);
+          const reply = comment.replies.find(r => Number(r.id) === numTargetId);
           if (reply) {
             parentIdToExpand = comment.id;
             console.log('[Highlight] 답글 찾음, 부모:', parentIdToExpand);

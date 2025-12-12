@@ -119,12 +119,18 @@ function useDashboardLogic(
       const currentUserId = Number(localStorage.getItem("userId") || "0");
       const isMyFeed = Number(feed.writerId) === currentUserId;
 
-      store.setSelectedFeed(feed);
-      setShowFeedDetailInHome(true);
-
-      if (isMyFeed) navigateFn("/dashboard/home");
-      else {
-        store.setPivotFeed(feed.id, feed);
+      if (isMyFeed) {
+        // 내 피드: 홈에서 다이얼로그로 표시
+        store.setSelectedFeed(feed);
+        setShowFeedDetailInHome(true);
+        navigateFn("/dashboard/home");
+      } else {
+        // 타인 피드: 피드 메뉴에서 해당 피드를 최상단에 표시 (다이얼로그 X)
+        // 이전에 열려있던 다이얼로그 닫기
+        setShowFeedDetailInHome(false);
+        store.setSelectedFeed(null);
+        // commentId도 함께 전달하여 댓글 하이라이트 지원
+        store.setPivotFeed(feed.id, feed, commentId);
         store.loadFeeds(0, true, feed.id);
         navigateFn("/dashboard/feed");
       }

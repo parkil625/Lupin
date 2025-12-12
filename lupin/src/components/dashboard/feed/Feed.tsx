@@ -31,6 +31,7 @@ import {
 import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
+import { useFeedStore } from "@/store/useFeedStore";
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -53,7 +54,7 @@ interface FeedViewProps {
 /**
  * 댓글 패널 컴포넌트
  */
-function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => void }) {
+function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; onClose?: () => void; targetCommentId?: number | null }) {
   const [commentText, setCommentText] = useState("");
   const [replyCommentText, setReplyCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
@@ -63,6 +64,8 @@ function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => voi
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [commentReported, setCommentReported] = useState<Record<number, boolean>>({});
+  const [highlightedCommentId, setHighlightedCommentId] = useState<number | null>(null);
+  const commentRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
@@ -135,6 +138,42 @@ function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => voi
     };
     fetchComments();
   }, [feedId]);
+
+  // 타겟 댓글 하이라이트 및 스크롤
+  useEffect(() => {
+    if (targetCommentId && comments.length > 0) {
+      const numTargetId = Number(targetCommentId);
+      setHighlightedCommentId(numTargetId);
+
+      // 답글인 경우 부모 댓글의 접힘 상태 해제
+      for (const comment of comments) {
+        const reply = comment.replies?.find(r => Number(r.id) === numTargetId);
+        if (reply) {
+          setCollapsedComments(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(comment.id);
+            return newSet;
+          });
+          break;
+        }
+      }
+
+      // 잠시 후 스크롤 (DOM 업데이트 대기)
+      setTimeout(() => {
+        const element = commentRefs.current[numTargetId];
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+
+      // 3초 후 하이라이트 제거
+      const timer = setTimeout(() => {
+        setHighlightedCommentId(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [targetCommentId, comments]);
 
   const countAllComments = (commentList: Comment[]): number => {
     let count = 0;
@@ -299,9 +338,14 @@ function CommentPanel({ feedId, onClose }: { feedId: number; onClose?: () => voi
     const isReplying = replyingTo === comment.id;
     const likeInfo = commentLikes[comment.id] || { liked: false, count: 0 };
     const isDeleted = comment.isDeleted;
+    const isHighlighted = highlightedCommentId === comment.id;
 
     return (
-      <div key={comment.id} className={`transition-colors duration-500 ${depth > 0 ? "ml-8 mt-3" : ""}`}>
+      <div
+        key={comment.id}
+        ref={(el) => { commentRefs.current[comment.id] = el; }}
+        className={`transition-colors duration-500 rounded-lg ${depth > 0 ? "ml-8 mt-3" : ""} ${isHighlighted ? "bg-yellow-100 ring-2 ring-yellow-400 p-2 -m-2" : ""}`}
+      >
         <div className="flex gap-3">
           <Avatar className="w-8 h-8 flex-shrink-0">
             {comment.avatar && comment.avatar.startsWith("http") ? (
@@ -482,6 +526,7 @@ const FeedItem = React.memo(function FeedItem({
   onNextImage,
   onLike,
   isPriority = false,
+  targetCommentId,
 }: {
   feed: Feed;
   currentImageIndex: number;
@@ -490,9 +535,17 @@ const FeedItem = React.memo(function FeedItem({
   onNextImage: () => void;
   onLike: () => void;
   isPriority?: boolean;
+  targetCommentId?: number | null;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [isReported, setIsReported] = useState(false);
+
+  // targetCommentId가 있으면 댓글창 자동 열기
+  useEffect(() => {
+    if (targetCommentId) {
+      setShowComments(true);
+    }
+  }, [targetCommentId]);
 
   const hasImages = feed.images && feed.images.length > 0;
   const images = feed.images || [];
@@ -654,11 +707,11 @@ const FeedItem = React.memo(function FeedItem({
         <>
           {/* 모바일용 전체화면 오버레이 (하단 네비 제외) */}
           <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
-            <CommentPanel feedId={feed.id} onClose={() => setShowComments(false)} />
+            <CommentPanel feedId={feed.id} onClose={() => setShowComments(false)} targetCommentId={targetCommentId} />
           </div>
           {/* 데스크톱용 사이드 패널 */}
           <div className="hidden md:block h-full aspect-[7/16] border-l border-gray-200/50 flex-shrink-0">
-            <CommentPanel feedId={feed.id} />
+            <CommentPanel feedId={feed.id} targetCommentId={targetCommentId} />
           </div>
         </>
       )}
@@ -688,6 +741,18 @@ export default function FeedView({
 }: FeedViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 스토어에서 targetCommentIdForFeed와 pivotFeedId 읽기
+  const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } = useFeedStore();
+
+  // targetCommentIdForFeed 사용 후 정리 (컴포넌트 언마운트 또는 다른 페이지로 이동 시)
+  useEffect(() => {
+    return () => {
+      if (targetCommentIdForFeed) {
+        setTargetCommentIdForFeed(null);
+      }
+    };
+  }, [targetCommentIdForFeed, setTargetCommentIdForFeed]);
 
   // [최적화] LCP 이미지 Preload - 첫 번째 피드 이미지
   useEffect(() => {
@@ -777,6 +842,7 @@ export default function FeedView({
               onNextImage={() => setFeedImageIndex(feed.id, (prev) => Math.min(feed.images.length - 1, prev + 1))}
               onLike={() => handleLike(feed.id)}
               isPriority={index === 0}
+              targetCommentId={index === 0 && pivotFeedId && feed.id === pivotFeedId ? targetCommentIdForFeed : null}
             />
           </div>
         ))}

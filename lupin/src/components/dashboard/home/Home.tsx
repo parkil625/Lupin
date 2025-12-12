@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { userApi, feedApi, getThumbnailUrl } from "@/api";
+import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 
 // ============================================================================
 // [0] Image Optimization Utilities
@@ -190,6 +191,16 @@ const FeedItem = memo(({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* 작성자 아바타 호버카드 */}
+          <div className="absolute top-2 left-2 z-10">
+            <UserHoverCard
+              name={feed.author || feed.writerName}
+              points={feed.points}
+              avatarUrl={feed.writerAvatar}
+              size="sm"
+            />
           </div>
 
           {/* Hover Overlay - CSS로 처리하여 JS 부하 없음 */}

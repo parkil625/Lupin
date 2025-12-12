@@ -30,6 +30,7 @@ interface FeedState {
   // 알림에서 피드로 이동 시 사용
   pivotFeedId: number | null;
   pivotFeed: Feed | null;
+  targetCommentIdForFeed: number | null; // 피드 메뉴에서 댓글 하이라이트용
 
   // 데이터 새로고침 트리거
   refreshTrigger: number;
@@ -39,7 +40,8 @@ interface FeedState {
   setAllFeeds: (feeds: Feed[]) => void;
   setSelectedFeed: (feed: Feed | null) => void;
   setEditingFeed: (feed: Feed | null) => void;
-  setPivotFeed: (feedId: number | null, feed: Feed | null) => void;
+  setPivotFeed: (feedId: number | null, feed: Feed | null, targetCommentId?: number | null) => void;
+  setTargetCommentIdForFeed: (commentId: number | null) => void;
   triggerRefresh: () => void;
 
   // 피드 로드 액션
@@ -91,6 +93,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   isLoadingFeeds: false,
   pivotFeedId: null,
   pivotFeed: null,
+  targetCommentIdForFeed: null,
   refreshTrigger: 0,
 
   // 기본 setter
@@ -98,7 +101,12 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   setAllFeeds: (feeds) => set({ allFeeds: feeds }),
   setSelectedFeed: (feed) => set({ selectedFeed: feed }),
   setEditingFeed: (feed) => set({ editingFeed: feed }),
-  setPivotFeed: (feedId, feed) => set({ pivotFeedId: feedId, pivotFeed: feed }),
+  setPivotFeed: (feedId, feed, targetCommentId = null) => set({
+    pivotFeedId: feedId,
+    pivotFeed: feed,
+    targetCommentIdForFeed: targetCommentId
+  }),
+  setTargetCommentIdForFeed: (commentId) => set({ targetCommentIdForFeed: commentId }),
   triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),
 
   // 내 피드 로드

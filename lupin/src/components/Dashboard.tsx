@@ -101,12 +101,13 @@ function useDashboardLogic(
 
   // Deep Linking Navigation Logic
   const navigateToFeed = useCallback(async (feedId: number, commentId: number | null) => {
-    let feed = store.myFeeds.find(f => f.id === feedId) || store.allFeeds.find(f => f.id === feedId);
+    const numFeedId = Number(feedId);
+    let feed = store.myFeeds.find(f => Number(f.id) === numFeedId) || store.allFeeds.find(f => Number(f.id) === numFeedId);
     setTargetCommentId(commentId);
 
     if (!feed) {
       try {
-        const res = await feedApi.getFeedById(feedId);
+        const res = await feedApi.getFeedById(numFeedId);
         if (res) {
           feed = mapBackendFeed(res);
           store.addFeedToAll(feed);
@@ -115,8 +116,8 @@ function useDashboardLogic(
     }
 
     if (feed) {
-      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-      const isMyFeed = feed.writerId === currentUserId;
+      const currentUserId = Number(localStorage.getItem("userId") || "0");
+      const isMyFeed = Number(feed.writerId) === currentUserId;
 
       store.setSelectedFeed(feed);
       setShowFeedDetailInHome(true);

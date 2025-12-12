@@ -92,7 +92,10 @@ export default function NotificationPopup({
             {notifications.map((notif) => (
               <div
                 key={notif.id}
-                onClick={() => onNotificationClick(notif)}
+                onClick={() => {
+                  onNotificationClick(notif);
+                  onClose(true);
+                }}
                 className={`p-3 rounded-xl cursor-pointer transition-all hover:shadow-md ${
                   notif.isRead
                     ? "bg-gray-50"
@@ -173,7 +176,10 @@ export default function NotificationPopup({
             {notifications.map((notif) => (
               <div
                 key={notif.id}
-                onClick={() => onNotificationClick(notif)}
+                onClick={() => {
+                  onNotificationClick(notif);
+                  onClose(true);
+                }}
                 className={`p-3 rounded-xl cursor-pointer transition-all hover:shadow-md ${
                   notif.isRead
                     ? "bg-white/60"

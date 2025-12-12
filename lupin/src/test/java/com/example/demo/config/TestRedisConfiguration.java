@@ -6,11 +6,15 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 @TestConfiguration
 public class TestRedisConfiguration {
@@ -29,6 +33,24 @@ public class TestRedisConfiguration {
         return template;
     }
 
+    @Bean
+    public StringRedisTemplate stringRedisTemplate() {
+        StringRedisTemplate template = mock(StringRedisTemplate.class);
+        ValueOperations<String, String> valueOps = mock(ValueOperations.class);
+        when(template.opsForValue()).thenReturn(valueOps);
+        return template;
+    }
+
+    @Bean
+    public RedisMessageListenerContainer redisMessageListener() {
+        return mock(RedisMessageListenerContainer.class);
+    }
+
+
+    @Bean
+    public ChannelTopic topic() {
+        return new ChannelTopic("test-topic");
+    }
     @Bean
     public RedissonClient redissonClient() {
         RedissonClient client = mock(RedissonClient.class);

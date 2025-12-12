@@ -10,6 +10,7 @@ import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.scheduler.AuctionTaskScheduler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,15 +46,19 @@ class AuctionServiceTest {
     @Mock
     AuctionBidRepository auctionBidRepository;
 
-    @InjectMocks
-    AuctionService auctionService;
-
     @Mock
     PointService pointService;
 
-    @Mock
-    com.example.demo.scheduler.AuctionTaskScheduler auctionTaskScheduler;
+    @InjectMocks
+    AuctionService auctionService;
 
+    // ▼ [추가] 새로 생긴 의존성에 대한 Mock 객체 추가
+    @Mock
+    AuctionSseService auctionSseService;
+
+    // ▼ [추가] 기존에 있었으나 Mock이 누락된 것으로 보이는 스케줄러도 추가
+    @Mock
+    AuctionTaskScheduler auctionTaskScheduler;
 
     @Test
     void 입찰이_성공하면_현재가와_우승자가_변경되고_입찰기록이_저장된다() {

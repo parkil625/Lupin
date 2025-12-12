@@ -60,6 +60,7 @@ import {
 import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { getRelativeTime } from "@/lib/utils";
 import { useImageBrightness } from "@/hooks";
+import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 
 interface FeedDetailDialogHomeProps {
   feed: Feed | null;
@@ -787,17 +788,13 @@ export default function FeedDetailDialogHome({
                     </>
                   )}
 
-                  {/* Author Avatar Only */}
+                  {/* Author Avatar with HoverCard */}
                   <div className="absolute top-4 left-4">
-                    <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
-                      {feed.writerAvatar ? (
-                        <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" />
-                      ) : (
-                        <AvatarFallback className="bg-white">
-                          <User className="w-5 h-5 text-gray-400" />
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
+                    <UserHoverCard
+                      name={feed.author || feed.writerName}
+                      points={feed.points}
+                      avatarUrl={feed.writerAvatar}
+                    />
                   </div>
 
                   {/* Menu Button */}
@@ -860,15 +857,11 @@ export default function FeedDetailDialogHome({
                 {/* No Image Layout */}
                 <div className="relative p-6 bg-transparent h-[545px]">
                   <div className="flex items-center justify-between">
-                    <Avatar className="w-10 h-10 border-2 border-gray-300 shadow-lg">
-                      {feed.writerAvatar ? (
-                        <img src={feed.writerAvatar} alt={feed.writerName} className="w-full h-full object-cover" />
-                      ) : (
-                        <AvatarFallback className="bg-white">
-                          <User className="w-5 h-5 text-gray-400" />
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
+                    <UserHoverCard
+                      name={feed.author || feed.writerName}
+                      points={feed.points}
+                      avatarUrl={feed.writerAvatar}
+                    />
 
                     {/* Menu Button */}
                     <DropdownMenu>

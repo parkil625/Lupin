@@ -32,6 +32,7 @@ import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
+import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -632,16 +633,14 @@ const FeedItem = React.memo(function FeedItem({
             </>
           )}
 
-          {/* 작성자 */}
-          <Avatar className="absolute top-4 left-4 w-10 h-10 border-2 border-white shadow-lg">
-            {writerAvatarUrl ? (
-              <img src={writerAvatarUrl} alt={feed.writerName} className="w-full h-full object-cover" />
-            ) : (
-              <AvatarFallback className="bg-white">
-                <User className="w-5 h-5 text-gray-400" />
-              </AvatarFallback>
-            )}
-          </Avatar>
+          {/* 작성자 호버카드 */}
+          <div className="absolute top-4 left-4">
+            <UserHoverCard
+              name={feed.author || feed.writerName}
+              points={feed.points}
+              avatarUrl={feed.writerAvatar}
+            />
+          </div>
 
           {/* 액션 버튼 */}
           <div className="absolute right-4 bottom-4 flex flex-col gap-4">

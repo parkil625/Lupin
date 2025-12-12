@@ -225,7 +225,7 @@ MedicalProps) {
 
   // WebSocket 연결 (예약이 있을 때만)
   const roomId = activeAppointment
-    ? `${currentPatientId}:${activeAppointment.doctorId}`
+    ? `appointment_${activeAppointment.id}`
     : "";
 
   // 메시지 수신 콜백 (HEAD의 로직 유지: 본인이 보낸 메시지는 알림 표시 안함)

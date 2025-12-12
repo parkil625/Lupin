@@ -140,10 +140,7 @@ public class ChatService {
     public List<String> getAllChatRoomsIncludingEmpty(Long doctorId) {
         List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
         return appointments.stream()
-                .filter(appointment ->
-                    appointment.getStatus() != AppointmentStatus.COMPLETED &&
-                    appointment.getStatus() != AppointmentStatus.CANCELLED
-                )
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
                 .map(appointment -> getRoomIdByAppointmentId(appointment.getId()))
                 .collect(Collectors.toList());
     }

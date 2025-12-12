@@ -106,7 +106,13 @@ export default function DoctorChatPage() {
     const loadChatRooms = async () => {
       try {
         const rooms = await chatApi.getChatRooms(currentUserId);
-        setChatRooms(rooms);
+        // 최신 메시지 순서대로 정렬 (카톡처럼)
+        const sortedRooms = rooms.sort((a, b) => {
+          const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+          const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+          return timeB - timeA; // 최신순
+        });
+        setChatRooms(sortedRooms);
       } catch (error) {
         console.error("채팅방 목록 로드 실패:", error);
       }
@@ -223,7 +229,7 @@ export default function DoctorChatPage() {
               <h3 className="text-xl font-black text-gray-900 mb-4 flex-shrink-0">
                 대화 목록
               </h3>
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
                   {chatRooms.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">

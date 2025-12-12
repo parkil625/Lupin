@@ -311,7 +311,7 @@ MedicalProps) {
       id: 3,
       name: "진통제 처방",
       date: "10월 15일",
-      doctor: "김의사",
+      doctor: "김준호 의사",
       medicines: ["이부프로펜 200mg"],
       diagnosis: "근육통",
       instructions: "통증이 있을 때 4-6시간 간격으로 복용하세요.",
@@ -331,7 +331,7 @@ MedicalProps) {
     {
       id: 1,
       type: "내과 상담",
-      doctor: "김의사",
+      doctor: "김준호 의사",
       date: "11월 15일",
       time: "오후 3시",
       status: "예정",
@@ -489,11 +489,13 @@ MedicalProps) {
                     <div className="flex items-center gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black">
-                          김
+                          {activeAppointment?.doctorName?.charAt(0) || "의"}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-bold text-gray-900">김의사</div>
+                        <div className="font-bold text-gray-900">
+                          {activeAppointment?.doctorName || "알 수 없음"} 의사
+                        </div>
                         <div className="text-xs text-gray-600">온라인</div>
                       </div>
                     </div>

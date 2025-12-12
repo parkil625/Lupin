@@ -296,7 +296,10 @@ export default function DoctorChatPage() {
                         <div
                           key={room.roomId}
                           onClick={() => {
-                            // 채팅방 전환 시 이전 메시지 초기화
+                            // 이미 선택된 채팅방이면 아무 작업도 하지 않음
+                            if (isSelected) return;
+
+                            // 다른 채팅방으로 전환 시 이전 메시지 초기화
                             setMessages([]);
                             setSelectedChatMember({
                               id: room.patientId,

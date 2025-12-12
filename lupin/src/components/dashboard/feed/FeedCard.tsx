@@ -124,7 +124,6 @@ export function FeedCard({
             <div className="absolute top-4 left-4">
               <UserHoverCard
                 name={feed.author || feed.writerName}
-                points={feed.points}
                 avatarUrl={feed.writerAvatar}
               />
             </div>

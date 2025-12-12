@@ -792,7 +792,6 @@ export default function FeedDetailDialogHome({
                   <div className="absolute top-4 left-4">
                     <UserHoverCard
                       name={feed.author || feed.writerName}
-                      points={feed.points}
                       avatarUrl={feed.writerAvatar}
                     />
                   </div>
@@ -859,7 +858,6 @@ export default function FeedDetailDialogHome({
                   <div className="flex items-center justify-between">
                     <UserHoverCard
                       name={feed.author || feed.writerName}
-                      points={feed.points}
                       avatarUrl={feed.writerAvatar}
                     />
 

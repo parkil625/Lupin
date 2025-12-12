@@ -22,10 +22,6 @@ export interface UserHoverCardProps {
   department?: string;
   /** 이번 달 활동일 */
   activeDays?: number;
-  /** 평균 점수 */
-  avgScore?: number;
-  /** 총 점수 */
-  points?: number;
   /** 아바타 크기 (기본: md) */
   size?: "sm" | "md" | "lg";
   /** 아바타 이미지 URL */
@@ -48,10 +44,8 @@ const iconSizes = {
 
 export function UserHoverCard({
   name,
-  department = "운동 활동",
-  activeDays = 0,
-  avgScore = 0,
-  points = 0,
+  department,
+  activeDays,
   size = "md",
   avatarUrl,
   className,
@@ -84,21 +78,17 @@ export function UserHoverCard({
           </Avatar>
           <div className="space-y-2 flex-1">
             <h4 className="text-base font-black text-gray-900">{name}</h4>
-            <p className="text-sm text-gray-700 font-medium">{department}</p>
-            <div className="pt-1 space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-600 font-medium">이번 달 활동</span>
-                <span className="text-gray-900 font-bold">{activeDays}일</span>
+            {department && (
+              <p className="text-sm text-gray-700 font-medium">{department}</p>
+            )}
+            {activeDays !== undefined && (
+              <div className="pt-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-600 font-medium">이번 달 활동</span>
+                  <span className="font-black text-gray-900">{activeDays}일</span>
+                </div>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-600 font-medium">평균 점수</span>
-                <span className="text-gray-900 font-bold">{avgScore}점</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-600 font-medium">총 점수</span>
-                <span className="text-[#C93831] font-bold">{points}점</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </HoverCardContent>

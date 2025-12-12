@@ -402,8 +402,6 @@ function CommentItem({
           name={comment.author}
           department={comment.department}
           activeDays={comment.activeDays}
-          avgScore={comment.avgScore}
-          points={comment.points}
           avatarUrl={comment.avatar || undefined}
           size="sm"
         />

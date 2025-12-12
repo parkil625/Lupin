@@ -37,6 +37,32 @@ interface MedicineQuantity {
 
 // 🔧 제거: ReadNotification (REST API로만 처리)
 
+// 시간 포맷 함수 (카톡 스타일)
+const formatChatTime = (timeString?: string) => {
+  if (!timeString) return "";
+
+  const messageTime = new Date(timeString);
+  const today = new Date();
+
+  // 오늘인지 확인
+  const isToday = messageTime.toDateString() === today.toDateString();
+
+  if (isToday) {
+    // 오늘이면 시간만 표시 (오후 3:45)
+    return messageTime.toLocaleTimeString("ko-KR", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } else {
+    // 오늘이 아니면 날짜 표시 (12월 11일)
+    return messageTime.toLocaleDateString("ko-KR", {
+      month: "long",
+      day: "numeric",
+    });
+  }
+};
+
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
 
@@ -106,7 +132,13 @@ export default function DoctorChatPage() {
     const loadChatRooms = async () => {
       try {
         const rooms = await chatApi.getChatRooms(currentUserId);
-        setChatRooms(rooms);
+        // 최신 메시지 순서대로 정렬 (카톡처럼)
+        const sortedRooms = rooms.sort((a, b) => {
+          const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+          const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+          return timeB - timeA; // 최신순
+        });
+        setChatRooms(sortedRooms);
       } catch (error) {
         console.error("채팅방 목록 로드 실패:", error);
       }
@@ -223,7 +255,7 @@ export default function DoctorChatPage() {
               <h3 className="text-xl font-black text-gray-900 mb-4 flex-shrink-0">
                 대화 목록
               </h3>
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
                   {chatRooms.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">
@@ -268,18 +300,25 @@ export default function DoctorChatPage() {
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <div className="font-bold text-sm text-gray-900">
-                                {displayName}
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="font-bold text-sm text-gray-900">
+                                  {displayName}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {formatChatTime(room.lastMessageTime)}
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-600 truncate">
-                                {room.lastMessage || "메시지 없음"}
+                              <div className="flex items-center justify-between">
+                                <div className="text-xs text-gray-600 truncate flex-1">
+                                  {room.lastMessage || "메시지를 시작하세요"}
+                                </div>
+                                {room.unreadCount > 0 && (
+                                  <Badge className="bg-red-500 text-white font-bold border-0 text-xs ml-2 flex-shrink-0">
+                                    {room.unreadCount}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
-                            {room.unreadCount > 0 && (
-                              <Badge className="bg-red-500 text-white font-bold border-0 text-xs">
-                                {room.unreadCount}
-                              </Badge>
-                            )}
                           </div>
                         </div>
                       );

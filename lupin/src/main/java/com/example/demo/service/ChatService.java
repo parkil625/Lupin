@@ -2,6 +2,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.ChatMessage;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.ChatRepository;
 import com.example.demo.repository.UserRepository;
@@ -139,6 +140,7 @@ public class ChatService {
     public List<String> getAllChatRoomsIncludingEmpty(Long doctorId) {
         List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
         return appointments.stream()
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
                 .map(appointment -> getRoomIdByAppointmentId(appointment.getId()))
                 .collect(Collectors.toList());
     }

@@ -288,8 +288,6 @@ export default function FeedDetailDialogHome({
           el.style.borderRadius = '8px';
           el.style.boxShadow = '0 0 0 2px #f59e0b'; // amber-500 ring
 
-          console.log('[Highlight] 스타일 적용:', el.id);
-
           setTimeout(() => {
             el.style.backgroundColor = '';
             el.style.borderRadius = '';
@@ -489,8 +487,8 @@ export default function FeedDetailDialogHome({
 
     return (
       <div key={comment.id} className={isReply ? "ml-8 mt-3" : ""}>
-        {/* 하이라이트 가능한 영역 - 이 댓글만 포함, 답글은 제외 */}
-        <div id={`comment-${comment.id}`} className="transition-colors duration-500">
+        {/* 하이라이트 대상: 이 댓글만 (답글 제외) */}
+        <div id={`comment-${comment.id}`} className="transition-colors duration-500 rounded-lg">
           <div className="flex gap-3">
             <UserHoverCard
               name={comment.author}
@@ -501,75 +499,44 @@ export default function FeedDetailDialogHome({
             />
             <div className="flex-1 min-w-0">
               {isDeleted ? (
-                <>
-                  <p className="text-sm text-gray-400 italic mb-2">
-                    삭제된 댓글입니다.
-                  </p>
-                </>
+                <p className="text-sm text-gray-400 italic mb-2">삭제된 댓글입니다.</p>
               ) : (
                 <>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-sm text-gray-900">
-                      {comment.author}
-                    </span>
+                    <span className="font-bold text-sm text-gray-900">{comment.author}</span>
                     <span className="text-xs text-gray-500">{comment.time}</span>
                   </div>
-                  <p className="text-sm text-gray-900 break-words mb-2">
-                    {comment.content}
-                  </p>
-
-                  {/* 좋아요 + 답글 + 삭제 버튼 */}
+                  <p className="text-sm text-gray-900 break-words mb-2">{comment.content}</p>
                   <div className="flex items-center gap-4 mb-2">
                     <button
                       onClick={() => toggleCommentLike(comment.id)}
                       className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
                     >
-                      <Heart
-                        className={`w-4 h-4 ${
-                          likeInfo.liked
-                            ? "fill-[#C93831] text-[#C93831]"
-                            : "text-gray-600"
-                        }`}
-                      />
-                      {likeInfo.count > 0 && (
-                        <span className="text-xs text-gray-600 font-semibold">
-                          {likeInfo.count}
-                        </span>
-                      )}
+                      <Heart className={`w-4 h-4 ${likeInfo.liked ? "fill-[#C93831] text-[#C93831]" : "text-gray-600"}`} />
+                      {likeInfo.count > 0 && <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>}
                     </button>
-                    {/* 답글 버튼 - 루트 댓글에만 표시 */}
                     {depth === 0 && (
                       <button
                         onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                         className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
-                      >
-                        답글
-                      </button>
+                      >답글</button>
                     )}
-                    {/* 삭제 버튼 - 내가 쓴 댓글만 */}
                     {comment.author === currentUserName && (
                       <button
                         onClick={() => handleDeleteComment(comment.id)}
                         className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
-                      >
-                        삭제
-                      </button>
+                      >삭제</button>
                     )}
-                    {/* 신고 버튼 - 다른 사람 댓글만 */}
                     {comment.author !== currentUserName && (
                       <button
                         onClick={() => handleReportComment(comment.id)}
                         disabled={commentReported[comment.id]}
                         className={`text-xs font-semibold cursor-pointer ${commentReported[comment.id] ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
-                      >
-                        {commentReported[comment.id] ? '신고됨' : '신고'}
-                      </button>
+                      >{commentReported[comment.id] ? '신고됨' : '신고'}</button>
                     )}
                   </div>
                 </>
               )}
-
-              {/* 답글 입력 칸 (답글 버튼 클릭 시) */}
               {isReplying && (
                 <div className="mb-3">
                   <input
@@ -578,57 +545,26 @@ export default function FeedDetailDialogHome({
                     value={replyCommentText}
                     onChange={(e) => setReplyCommentText(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendReply()}
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem 0",
-                      fontSize: "0.875rem",
-                      background: "transparent",
-                      border: "none",
-                      borderBottom: "2px solid #d1d5db",
-                      outline: "none",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) =>
-                      (e.target.style.borderBottomColor = "#C93831")
-                    }
+                    style={{ width: "100%", padding: "0.5rem 0", fontSize: "0.875rem", background: "transparent", border: "none", borderBottom: "2px solid #d1d5db", outline: "none", transition: "border-color 0.2s" }}
+                    onFocus={(e) => (e.target.style.borderBottomColor = "#C93831")}
                     onBlur={(e) => (e.target.style.borderBottomColor = "#d1d5db")}
                     autoFocus
                   />
                   <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={() => {
-                        setReplyingTo(null);
-                        setReplyCommentText("");
-                      }}
-                      className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 cursor-pointer"
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={handleSendReply}
-                      disabled={!replyCommentText.trim()}
-                      className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer"
-                    >
-                      답글
-                    </button>
+                    <button onClick={() => { setReplyingTo(null); setReplyCommentText(""); }} className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 cursor-pointer">취소</button>
+                    <button onClick={handleSendReply} disabled={!replyCommentText.trim()} className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer">답글</button>
                   </div>
                 </div>
               )}
-
-              {/* 접기/펼치기 버튼 */}
               {hasReplies && (
-                <button
-                  onClick={() => toggleCollapse(comment.id)}
-                  className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2 cursor-pointer"
-                >
+                <button onClick={() => toggleCollapse(comment.id)} className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2 cursor-pointer">
                   {isCollapsed ? "▶" : "▼"} 답글 {comment.replies!.length}개
                 </button>
               )}
             </div>
           </div>
         </div>
-
-        {/* 대댓글 표시 - id 밖에 위치하여 부모 하이라이트 시 영향 받지 않음 */}
+        {/* 답글: id div 완전히 밖에 배치 */}
         {hasReplies && !isCollapsed && (
           <div className="relative mt-2 pl-2 border-l-2 border-gray-300">
             {comment.replies!.map((reply) => renderComment(reply, depth + 1))}

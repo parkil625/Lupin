@@ -16,7 +16,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Heart,
@@ -33,7 +32,6 @@ import {
   Flame,
   Zap,
   Clock,
-  User,
   Siren,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
@@ -45,6 +43,7 @@ interface BackendComment {
   id: number;
   writerName?: string;
   writerAvatar?: string;
+  writerDepartment?: string;
   content: string;
   createdAt: string;
   likeCount?: number;
@@ -140,6 +139,7 @@ export default function FeedDetailDialogHome({
                 ...reply,
                 author: reply.writerName || "알 수 없음",
                 avatar: getAvatarUrl(reply.writerAvatar),
+                department: reply.writerDepartment,
                 time: getRelativeTime(reply.createdAt),
                 likeCount: reply.likeCount || 0,
                 isLiked: reply.isLiked || false,
@@ -148,6 +148,7 @@ export default function FeedDetailDialogHome({
                 ...comment,
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
+                department: comment.writerDepartment,
                 time: getRelativeTime(comment.createdAt),
                 likeCount: comment.likeCount || 0,
                 isLiked: comment.isLiked || false,
@@ -158,6 +159,7 @@ export default function FeedDetailDialogHome({
                 ...comment,
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
+                department: comment.writerDepartment,
                 time: getRelativeTime(comment.createdAt),
                 likeCount: comment.likeCount || 0,
                 isLiked: comment.isLiked || false,
@@ -482,15 +484,12 @@ export default function FeedDetailDialogHome({
         {/* 하이라이트 가능한 영역 - 이 댓글만 포함, 답글은 제외 */}
         <div id={`comment-${comment.id}`} className="transition-colors duration-500">
           <div className="flex gap-3">
-            <Avatar className="w-8 h-8 flex-shrink-0">
-              {comment.avatar && comment.avatar.startsWith("http") ? (
-                <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" />
-              ) : (
-                <AvatarFallback className="bg-white">
-                  <User className="w-4 h-4 text-gray-400" />
-                </AvatarFallback>
-              )}
-            </Avatar>
+            <UserHoverCard
+              name={comment.author}
+              department={comment.department}
+              avatarUrl={comment.avatar || undefined}
+              size="sm"
+            />
             <div className="flex-1 min-w-0">
               {isDeleted ? (
                 <>

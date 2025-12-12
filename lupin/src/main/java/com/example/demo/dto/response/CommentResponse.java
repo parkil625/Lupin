@@ -16,6 +16,7 @@ public class CommentResponse {
     private String writerName;
     private String writerAvatar;
     private String writerDepartment;
+    private Integer writerActiveDays;
     private Long writerId;
     private LocalDateTime createdAt;
     private Long parentId;
@@ -39,6 +40,10 @@ public class CommentResponse {
     }
 
     public static CommentResponse from(Comment comment, long likeCount, boolean isLiked) {
+        return from(comment, likeCount, isLiked, null);
+    }
+
+    public static CommentResponse from(Comment comment, long likeCount, boolean isLiked, Integer activeDays) {
         return CommentResponse.builder()
                 .id(comment.getId())
                 .feedId(comment.getFeed().getId())
@@ -46,6 +51,7 @@ public class CommentResponse {
                 .writerName(comment.getWriter().getName())
                 .writerAvatar(comment.getWriter().getAvatar())
                 .writerDepartment(comment.getWriter().getDepartment())
+                .writerActiveDays(activeDays)
                 .writerId(comment.getWriter().getId())
                 .createdAt(comment.getCreatedAt())
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)

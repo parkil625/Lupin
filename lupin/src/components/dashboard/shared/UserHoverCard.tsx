@@ -78,9 +78,7 @@ export function UserHoverCard({
           </Avatar>
           <div className="space-y-2 flex-1">
             <h4 className="text-base font-black text-gray-900">{name}</h4>
-            {department && (
-              <p className="text-sm text-gray-700 font-medium">{department}</p>
-            )}
+            <p className="text-sm text-gray-700 font-medium">{department || "부서 미정"}</p>
             {activeDays !== undefined && (
               <div className="pt-1">
                 <div className="flex justify-between text-xs">

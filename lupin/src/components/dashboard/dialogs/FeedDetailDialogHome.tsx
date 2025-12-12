@@ -44,6 +44,7 @@ interface BackendComment {
   writerName?: string;
   writerAvatar?: string;
   writerDepartment?: string;
+  writerActiveDays?: number;
   content: string;
   createdAt: string;
   likeCount?: number;
@@ -140,6 +141,7 @@ export default function FeedDetailDialogHome({
                 author: reply.writerName || "알 수 없음",
                 avatar: getAvatarUrl(reply.writerAvatar),
                 department: reply.writerDepartment,
+                activeDays: reply.writerActiveDays,
                 time: getRelativeTime(reply.createdAt),
                 likeCount: reply.likeCount || 0,
                 isLiked: reply.isLiked || false,
@@ -149,6 +151,7 @@ export default function FeedDetailDialogHome({
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
                 department: comment.writerDepartment,
+                activeDays: comment.writerActiveDays,
                 time: getRelativeTime(comment.createdAt),
                 likeCount: comment.likeCount || 0,
                 isLiked: comment.isLiked || false,
@@ -160,6 +163,7 @@ export default function FeedDetailDialogHome({
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
                 department: comment.writerDepartment,
+                activeDays: comment.writerActiveDays,
                 time: getRelativeTime(comment.createdAt),
                 likeCount: comment.likeCount || 0,
                 isLiked: comment.isLiked || false,
@@ -487,6 +491,7 @@ export default function FeedDetailDialogHome({
             <UserHoverCard
               name={comment.author}
               department={comment.department}
+              activeDays={comment.activeDays}
               avatarUrl={comment.avatar || undefined}
               size="sm"
             />

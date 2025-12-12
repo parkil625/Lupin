@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.CommentRequest;
 import com.example.demo.dto.response.CommentResponse;
 import com.example.demo.repository.CommentLikeRepository;
+import com.example.demo.repository.FeedRepository;
 import com.example.demo.service.CommentLikeService;
 import com.example.demo.service.CommentReportService;
 import com.example.demo.service.CommentService;
@@ -15,10 +16,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,6 +30,7 @@ public class CommentController extends BaseController {
     private final CommentLikeService commentLikeService;
     private final CommentReportService commentReportService;
     private final CommentLikeRepository commentLikeRepository; // [최적화] 배치 조회용
+    private final FeedRepository feedRepository; // [activeDays] 계산용
 
     @PostMapping("/feeds/{feedId}/comments")
     public ResponseEntity<CommentResponse> createComment(
@@ -83,11 +84,15 @@ public class CommentController extends BaseController {
         Map<Long, Long> likeCounts = getLikeCountMap(commentIds);
         Set<Long> likedIds = currentUser != null ? getLikedCommentIds(currentUser.getId(), commentIds) : Collections.emptySet();
 
+        // [activeDays] 작성자별 활동일 배치 조회
+        Map<Long, Integer> activeDaysMap = getActiveDaysMap(comments);
+
         List<CommentResponse> responses = comments.stream()
                 .map(comment -> CommentResponse.from(
                         comment,
                         likeCounts.getOrDefault(comment.getId(), 0L),
-                        likedIds.contains(comment.getId())
+                        likedIds.contains(comment.getId()),
+                        activeDaysMap.getOrDefault(comment.getWriter().getId(), 0)
                 ))
                 .toList();
         return ResponseEntity.ok(responses);
@@ -124,11 +129,15 @@ public class CommentController extends BaseController {
         Map<Long, Long> likeCounts = getLikeCountMap(replyIds);
         Set<Long> likedIds = currentUser != null ? getLikedCommentIds(currentUser.getId(), replyIds) : Collections.emptySet();
 
+        // [activeDays] 작성자별 활동일 배치 조회
+        Map<Long, Integer> activeDaysMap = getActiveDaysMap(replies);
+
         List<CommentResponse> responses = replies.stream()
                 .map(reply -> CommentResponse.from(
                         reply,
                         likeCounts.getOrDefault(reply.getId(), 0L),
-                        likedIds.contains(reply.getId())
+                        likedIds.contains(reply.getId()),
+                        activeDaysMap.getOrDefault(reply.getWriter().getId(), 0)
                 ))
                 .toList();
         return ResponseEntity.ok(responses);
@@ -188,5 +197,31 @@ public class CommentController extends BaseController {
             return Collections.emptySet();
         }
         return Set.copyOf(commentLikeRepository.findLikedCommentIdsByUserId(userId, commentIds));
+    }
+
+    // [activeDays] 댓글 작성자별 이번 달 활동일 배치 조회
+    private Map<Long, Integer> getActiveDaysMap(List<Comment> comments) {
+        if (comments.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> writerIds = comments.stream()
+                .map(comment -> comment.getWriter().getId())
+                .distinct()
+                .toList();
+
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime startOfMonth = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime endOfMonth = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        List<Object[]> results = feedRepository.countActiveDaysByWriterIds(writerIds, startOfMonth, endOfMonth);
+
+        Map<Long, Integer> activeDaysMap = new HashMap<>();
+        for (Object[] row : results) {
+            Long writerId = (Long) row[0];
+            Long activeDays = (Long) row[1];
+            activeDaysMap.put(writerId, activeDays.intValue());
+        }
+        return activeDaysMap;
     }
 }

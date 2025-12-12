@@ -83,14 +83,15 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
         const commentList = response.content || response;
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; writerDepartment?: string; createdAt?: string }) => {
+          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; writerDepartment?: string; writerActiveDays?: number; createdAt?: string }) => {
             try {
               const repliesData = await commentApi.getRepliesByCommentId(comment.id);
-              const replies = (repliesData || []).map((reply: { writerName?: string; writerAvatar?: string; writerDepartment?: string; createdAt?: string }) => ({
+              const replies = (repliesData || []).map((reply: { writerName?: string; writerAvatar?: string; writerDepartment?: string; writerActiveDays?: number; createdAt?: string }) => ({
                 ...reply,
                 author: reply.writerName || "알 수 없음",
                 avatar: getAvatarUrl(reply.writerAvatar),
                 department: reply.writerDepartment,
+                activeDays: reply.writerActiveDays,
                 time: getRelativeTime(reply.createdAt || new Date().toISOString()),
               }));
               return {
@@ -98,6 +99,7 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
                 department: comment.writerDepartment,
+                activeDays: comment.writerActiveDays,
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies,
               };
@@ -107,6 +109,7 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
                 department: comment.writerDepartment,
+                activeDays: comment.writerActiveDays,
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: [],
               };
@@ -352,6 +355,7 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
           <UserHoverCard
             name={comment.author}
             department={comment.department}
+            activeDays={comment.activeDays}
             avatarUrl={comment.avatar || undefined}
             size="sm"
           />

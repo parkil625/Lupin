@@ -164,10 +164,10 @@ export default function DoctorChatPage() {
     };
 
     loadMessages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+    // selectedChatMember 변경 시에도 메시지 다시 로드
+  }, [roomId, selectedChatMember]);
 
-  // 🔧 수정: REST API로 읽음 처리 + 채팅방 목록 갱신
+  // 🔧 수정: REST API로 읽음 처리 + 채팅방 목록 갱신 (즉시 실행)
   useEffect(() => {
     if (
       isConnected &&
@@ -175,7 +175,8 @@ export default function DoctorChatPage() {
       roomId &&
       roomId !== "placeholder"
     ) {
-      const timer = setTimeout(async () => {
+      // 즉시 읽음 처리 (타이머 제거)
+      const markMessagesAsRead = async () => {
         try {
           await chatApi.markAsRead(roomId, currentUserId);
           console.log('✅ 읽음 처리 완료:', roomId);
@@ -184,8 +185,9 @@ export default function DoctorChatPage() {
         } catch (error) {
           console.error('❌ 읽음 처리 실패:', error);
         }
-      }, 100);
-      return () => clearTimeout(timer);
+      };
+
+      markMessagesAsRead();
     }
   }, [isConnected, roomId, selectedChatMember, currentUserId, loadChatRooms]);
 
@@ -201,6 +203,19 @@ export default function DoctorChatPage() {
     sendWebSocketMessage(chatMessage, currentUserId);
 
     setChatMessage("");
+  };
+
+  // 입력창 포커스 시 읽음 처리
+  const handleInputFocus = async () => {
+    if (roomId && roomId !== "placeholder") {
+      try {
+        await chatApi.markAsRead(roomId, currentUserId);
+        console.log('✅ 입력창 포커스 - 읽음 처리 완료:', roomId);
+        await loadChatRooms();
+      } catch (error) {
+        console.error('❌ 읽음 처리 실패:', error);
+      }
+    }
   };
 
   const updateTempMedicineQuantity = (index: number, change: number) => {
@@ -429,6 +444,7 @@ export default function DoctorChatPage() {
                       className="rounded-xl"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
+                      onFocus={handleInputFocus}
                       onKeyPress={(e) => {
                         if (e.key === "Enter") {
                           handleSendDoctorChat();

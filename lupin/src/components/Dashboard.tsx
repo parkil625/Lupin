@@ -147,13 +147,17 @@ function useDashboardLogic(
     if (!refId) return;
 
     if (notification.type === "FEED_LIKE") {
-      // refId가 feedId - 바로 이동
+      // refId = feedId - 바로 이동
       navigateToFeed(refId, null);
-    } else if (["COMMENT", "REPLY"].includes(notification.type)) {
-      const comment = await commentApi.getCommentById(refId);
-      if (comment?.feedId) navigateToFeed(comment.feedId, refId);
+    } else if (notification.type === "COMMENT") {
+      // refId = feedId - 바로 이동 (댓글 하이라이트 없음)
+      navigateToFeed(refId, null);
+    } else if (notification.type === "REPLY") {
+      // refId = parentCommentId - 부모 댓글을 조회해서 feedId 얻음
+      const parentComment = await commentApi.getCommentById(refId);
+      if (parentComment?.feedId) navigateToFeed(parentComment.feedId, null);
     } else if (notification.type === "COMMENT_LIKE") {
-      // refId는 commentId - COMMENT/REPLY와 동일하게 처리
+      // refId = commentId
       const comment = await commentApi.getCommentById(refId);
       if (comment?.feedId) navigateToFeed(comment.feedId, refId);
     }
@@ -426,7 +430,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           )}
           {selectedNav === "feed" && (
             <FeedView
-              allFeeds={store.pivotFeed ? [store.pivotFeed, ...store.allFeeds] : store.allFeeds}
+              allFeeds={store.pivotFeed ? [store.pivotFeed, ...store.allFeeds.filter(f => f.id !== store.pivotFeed?.id)] : store.allFeeds}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
               showSearch={showSearch} setShowSearch={setShowSearch}
               getFeedImageIndex={getFeedImageIndex} setFeedImageIndex={setFeedImageIndex}

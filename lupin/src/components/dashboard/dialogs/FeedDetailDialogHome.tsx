@@ -300,12 +300,13 @@ export default function FeedDetailDialogHome({
           writerId: currentUserId,
         });
 
-        // 새 댓글을 리스트에 추가
+        // 새 댓글을 리스트에 추가 (서버에서 받은 아바타 URL 사용)
         const authorName = response.writerName || currentUserName;
+        const avatarUrl = response.writerAvatar ? getCdnUrl(response.writerAvatar) : "";
         const newComment: Comment = {
           id: response.id,
           author: authorName,
-          avatar: authorName.charAt(0),
+          avatar: avatarUrl || authorName.charAt(0),
           content: response.content,
           time: "방금 전",
           replies: [],
@@ -330,12 +331,13 @@ export default function FeedDetailDialogHome({
           parentId: replyingTo,
         });
 
-        // 새 답글을 해당 댓글에 추가
+        // 새 답글을 해당 댓글에 추가 (서버에서 받은 아바타 URL 사용)
         const replyAuthorName = response.writerName || currentUserName;
+        const replyAvatarUrl = response.writerAvatar ? getCdnUrl(response.writerAvatar) : "";
         const newReply: Comment = {
           id: response.id,
           author: replyAuthorName,
-          avatar: replyAuthorName.charAt(0),
+          avatar: replyAvatarUrl || replyAuthorName.charAt(0),
           content: response.content,
           time: "방금 전",
           parentId: replyingTo,
@@ -793,6 +795,7 @@ export default function FeedDetailDialogHome({
                     <UserHoverCard
                       name={feed.author || feed.writerName}
                       department={feed.writerDepartment}
+                      activeDays={feed.writerActiveDays}
                       avatarUrl={feed.writerAvatar}
                     />
                   </div>
@@ -860,6 +863,7 @@ export default function FeedDetailDialogHome({
                     <UserHoverCard
                       name={feed.author || feed.writerName}
                       department={feed.writerDepartment}
+                      activeDays={feed.writerActiveDays}
                       avatarUrl={feed.writerAvatar}
                     />
 

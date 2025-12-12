@@ -339,7 +339,7 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
     const isReplying = replyingTo === comment.id;
     const likeInfo = commentLikes[comment.id] || { liked: false, count: 0 };
     const isDeleted = comment.isDeleted;
-    const isHighlighted = highlightedCommentId === comment.id;
+    const isHighlighted = highlightedCommentId !== null && Number(highlightedCommentId) === Number(comment.id);
 
     return (
       <div

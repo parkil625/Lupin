@@ -15,6 +15,7 @@ public class CommentResponse {
     private String content;
     private String writerName;
     private String writerAvatar;
+    private String writerDepartment;
     private Long writerId;
     private LocalDateTime createdAt;
     private Long parentId;
@@ -28,6 +29,7 @@ public class CommentResponse {
                 .content(comment.getContent())
                 .writerName(comment.getWriter().getName())
                 .writerAvatar(comment.getWriter().getAvatar())
+                .writerDepartment(comment.getWriter().getDepartment())
                 .writerId(comment.getWriter().getId())
                 .createdAt(comment.getCreatedAt())
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
@@ -43,6 +45,7 @@ public class CommentResponse {
                 .content(comment.getContent())
                 .writerName(comment.getWriter().getName())
                 .writerAvatar(comment.getWriter().getAvatar())
+                .writerDepartment(comment.getWriter().getDepartment())
                 .writerId(comment.getWriter().getId())
                 .createdAt(comment.getCreatedAt())
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)

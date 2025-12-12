@@ -85,19 +85,21 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
         const commentList = response.content || response;
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; createdAt?: string }) => {
+          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; writerDepartment?: string; createdAt?: string }) => {
             try {
               const repliesData = await commentApi.getRepliesByCommentId(comment.id);
-              const replies = (repliesData || []).map((reply: { writerName?: string; writerAvatar?: string; createdAt?: string }) => ({
+              const replies = (repliesData || []).map((reply: { writerName?: string; writerAvatar?: string; writerDepartment?: string; createdAt?: string }) => ({
                 ...reply,
                 author: reply.writerName || "알 수 없음",
                 avatar: getAvatarUrl(reply.writerAvatar),
+                department: reply.writerDepartment,
                 time: getRelativeTime(reply.createdAt || new Date().toISOString()),
               }));
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
+                department: comment.writerDepartment,
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies,
               };
@@ -106,6 +108,7 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
                 ...comment,
                 author: comment.writerName || "알 수 없음",
                 avatar: getAvatarUrl(comment.writerAvatar),
+                department: comment.writerDepartment,
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: [],
               };
@@ -345,18 +348,15 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
       <div
         key={comment.id}
         ref={(el) => { commentRefs.current[comment.id] = el; }}
-        className={`transition-colors duration-500 rounded-lg ${depth > 0 ? "ml-8 mt-3" : ""} ${isHighlighted ? "bg-yellow-100 ring-2 ring-yellow-400 p-2 -m-2" : ""}`}
+        className={`transition-colors duration-500 rounded-lg ${depth > 0 ? "ml-8 mt-3" : ""} ${isHighlighted ? "bg-amber-50" : ""}`}
       >
         <div className="flex gap-3">
-          <Avatar className="w-8 h-8 flex-shrink-0">
-            {comment.avatar && comment.avatar.startsWith("http") ? (
-              <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" />
-            ) : (
-              <AvatarFallback className="bg-white">
-                <User className="w-4 h-4 text-gray-400" />
-              </AvatarFallback>
-            )}
-          </Avatar>
+          <UserHoverCard
+            name={comment.author}
+            department={comment.department}
+            avatarUrl={comment.avatar || undefined}
+            size="sm"
+          />
           <div className="flex-1 min-w-0">
             {isDeleted ? (
               <p className="text-sm text-gray-400 italic mb-2">삭제된 댓글입니다.</p>

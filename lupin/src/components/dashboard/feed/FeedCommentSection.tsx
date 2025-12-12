@@ -51,7 +51,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
         const likesMap: Record<number, { liked: boolean; count: number }> = {};
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; createdAt?: string; likeCount?: number; isLiked?: boolean }) => {
+          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; writerDepartment?: string; createdAt?: string; likeCount?: number; isLiked?: boolean }) => {
             // 댓글 좋아요 정보 저장
             likesMap[comment.id] = {
               liked: comment.isLiked || false,
@@ -60,7 +60,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
 
             try {
               const replies = await commentApi.getRepliesByCommentId(comment.id);
-              const formattedReplies = (replies || []).map((reply: { id?: number; writerName?: string; writerAvatar?: string; createdAt?: string; likeCount?: number; isLiked?: boolean }) => {
+              const formattedReplies = (replies || []).map((reply: { id?: number; writerName?: string; writerAvatar?: string; writerDepartment?: string; createdAt?: string; likeCount?: number; isLiked?: boolean }) => {
                 // 답글 좋아요 정보 저장
                 if (reply.id) {
                   likesMap[reply.id] = {
@@ -72,6 +72,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                   ...reply,
                   author: reply.writerName,
                   avatar: getAvatarUrl(reply.writerAvatar),
+                  department: reply.writerDepartment,
                   time: getRelativeTime(reply.createdAt || new Date().toISOString()),
                 };
               });
@@ -79,6 +80,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                 ...comment,
                 author: comment.writerName,
                 avatar: getAvatarUrl(comment.writerAvatar),
+                department: comment.writerDepartment,
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: formattedReplies,
               };
@@ -87,6 +89,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                 ...comment,
                 author: comment.writerName,
                 avatar: getAvatarUrl(comment.writerAvatar),
+                department: comment.writerDepartment,
                 time: getRelativeTime(comment.createdAt || new Date().toISOString()),
                 replies: [],
               };

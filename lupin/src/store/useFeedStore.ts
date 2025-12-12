@@ -68,6 +68,8 @@ export const mapBackendFeed = (backendFeed: BackendFeed): Feed => ({
   writerId: backendFeed.writerId,
   writerName: backendFeed.writerName,
   writerAvatar: backendFeed.writerAvatar,
+  writerDepartment: backendFeed.writerDepartment,
+  writerActiveDays: backendFeed.writerActiveDays,
   activity: backendFeed.activity,
   points: backendFeed.points || 0,
   content: backendFeed.content,

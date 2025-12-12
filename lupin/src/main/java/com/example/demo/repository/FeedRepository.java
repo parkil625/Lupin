@@ -34,5 +34,9 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.id = :id")
     Optional<Feed> findByIdWithWriter(@Param("id") Long id);
 
+    // [삭제용] writer와 images 함께 페치 - cascade delete 지원
+    @Query("SELECT f FROM Feed f JOIN FETCH f.writer LEFT JOIN FETCH f.images WHERE f.id = :id")
+    Optional<Feed> findByIdForDelete(@Param("id") Long id);
+
     // 기본 findById는 JpaRepository에서 제공
 }

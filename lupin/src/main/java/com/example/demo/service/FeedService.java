@@ -286,7 +286,7 @@ public class FeedService {
 
     @Transactional
     public void deleteFeed(User user, Long feedId) {
-        Feed feed = feedRepository.findByIdWithWriter(feedId)
+        Feed feed = feedRepository.findByIdForDelete(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
         validateOwnership(feed, user);
@@ -301,7 +301,7 @@ public class FeedService {
         commentRepository.deleteParentCommentsByFeed(feed);
         feedLikeRepository.deleteByFeed(feed);
         feedReportRepository.deleteByFeed(feed);
-        feedImageRepository.deleteByFeed(feed);
+        // 이미지는 cascade + orphanRemoval로 자동 삭제 (findByIdForDelete로 이미지 로드됨)
         feedRepository.delete(feed);
     }
 

@@ -150,7 +150,7 @@ class FeedServiceTest {
                 .content("내용")
                 .build();
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -174,7 +174,7 @@ class FeedServiceTest {
         // 3일 전에 생성된 피드
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(3));
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -199,7 +199,7 @@ class FeedServiceTest {
         // 10일 전에 생성된 피드
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -222,7 +222,7 @@ class FeedServiceTest {
                 .build();
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(3));
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -542,7 +542,7 @@ class FeedServiceTest {
                 .build();
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -556,7 +556,7 @@ class FeedServiceTest {
     void deleteFeedNotFoundTest() {
         // given
         Long feedId = 999L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> feedService.deleteFeed(writer, feedId))
@@ -609,7 +609,7 @@ class FeedServiceTest {
                 .points(0L)
                 .build();
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
 
         // when & then
         assertThatThrownBy(() -> feedService.deleteFeed(otherUser, feedId))
@@ -631,7 +631,7 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "id", feedId);
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
         given(commentRepository.findByFeed(feed)).willReturn(List.of());
 
         // when

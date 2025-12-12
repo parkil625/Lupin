@@ -553,13 +553,6 @@ const FeedItem = React.memo(function FeedItem({
   const isFirstImage = currentImageIndex === 0;
   const isLastImage = currentImageIndex === images.length - 1;
 
-  // 아바타 URL 생성 헬퍼 (CDN 사용)
-  const getAvatarUrl = (avatarUrl?: string): string => {
-    if (!avatarUrl) return "";
-    return getCdnUrl(avatarUrl);
-  };
-  const writerAvatarUrl = getAvatarUrl(feed.writerAvatar);
-
   // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
   const currentImageUrl = hasImages ? getCdnUrl(images[currentImageIndex]) : undefined;
   const iconColor = useImageBrightness(currentImageUrl);

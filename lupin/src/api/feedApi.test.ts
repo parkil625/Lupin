@@ -137,12 +137,10 @@ describe("feedApi", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should return success on error", async () => {
+    it("should throw on error", async () => {
       vi.mocked(apiClient.delete).mockRejectedValue(new Error("Delete failed"));
 
-      const result = await feedApi.deleteFeed(123);
-
-      expect(result).toEqual({ success: true, feedId: 123 });
+      await expect(feedApi.deleteFeed(123)).rejects.toThrow("Delete failed");
     });
   });
 

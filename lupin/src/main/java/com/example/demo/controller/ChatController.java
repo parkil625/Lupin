@@ -77,7 +77,7 @@ public class ChatController {
                         room.put("patientName", appointment.getPatient().getName());
                         room.put("doctorId", appointment.getDoctor().getId());
                     } catch (Exception e) {
-                        log.warn("채팅방 {}에 대한 예약 정보를 찾을 수 없습니다", roomId);
+                        log.error("채팅방 {}에 대한 예약 정보를 찾을 수 없습니다. 에러: {}", roomId, e.getMessage(), e);
                         room.put("patientId", 0);
                         room.put("patientName", "알 수 없음");
                         room.put("doctorId", userId);

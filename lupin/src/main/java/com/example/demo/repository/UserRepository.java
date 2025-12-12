@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -26,4 +28,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // [최적화] userId 중복 확인
     boolean existsByUserId(String userId);
+
+    // 진료과별 의사 조회
+    List<User> findByRoleAndDepartment(Role role, String department);
 }

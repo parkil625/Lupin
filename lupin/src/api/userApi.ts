@@ -106,4 +106,10 @@ export const userApi = {
       return { ...mockUsers[0], avatar: avatarUrl };
     }
   },
+
+  // 진료과별 의사 조회
+  getDoctorsByDepartment: async (department: string): Promise<Array<{ id: number; name: string; department: string }>> => {
+    const response = await apiClient.get(`/users/doctors?department=${department}`);
+    return response.data;
+  },
 };

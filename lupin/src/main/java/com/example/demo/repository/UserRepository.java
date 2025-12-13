@@ -6,6 +6,7 @@ import com.example.demo.domain.enums.SocialProvider;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -32,4 +33,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 진료과별 의사 조회
     List<User> findByRoleAndDepartment(Role role, String department);
+
+    /**
+     * 모든 유저의 totalPoints를 point_logs에서 일괄 동기화
+     * 반정규화 필드 초기 동기화 또는 복구용
+     */
+    @Modifying
+    @Query(value = """
+        UPDATE users u
+        SET total_points = COALESCE((
+            SELECT SUM(p.points)
+            FROM point_logs p
+            WHERE p.user_id = u.id
+        ), 0)
+        """, nativeQuery = true)
+    int syncAllUserTotalPoints();
 }

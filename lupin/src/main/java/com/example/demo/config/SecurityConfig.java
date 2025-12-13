@@ -61,6 +61,7 @@ public class SecurityConfig {
             "/api/users/ranking",
             "/api/users/statistics",
             "/api/users/*/ranking-context",
+            "/api/users/sync-points",
             "/api/notifications/subscribe",
             "/api/auction/stream/**"
     };

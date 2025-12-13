@@ -166,4 +166,17 @@ public class UserController {
 
         return ResponseEntity.ok(doctorList);
     }
+
+    /**
+     * 모든 유저의 totalPoints를 point_logs에서 일괄 동기화
+     * 반정규화 필드 초기 동기화 또는 복구용 (운영 시 관리자 권한 필요)
+     */
+    @PostMapping("/sync-points")
+    public ResponseEntity<Map<String, Object>> syncAllUserTotalPoints() {
+        int updatedCount = userService.syncAllUserTotalPoints();
+        return ResponseEntity.ok(Map.of(
+                "message", "User total points synced successfully",
+                "updatedCount", updatedCount
+        ));
+    }
 }

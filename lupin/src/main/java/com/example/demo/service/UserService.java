@@ -12,7 +12,10 @@ import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -98,5 +102,21 @@ public class UserService {
      */
     public List<User> getDoctorsByDepartment(String department) {
         return userRepository.findByRoleAndDepartment(Role.DOCTOR, department);
+    }
+
+    /**
+     * 모든 유저의 totalPoints를 point_logs에서 일괄 동기화
+     * 반정규화 필드 초기 동기화 또는 복구용
+     * 동시에 랭킹 캐시도 무효화
+     */
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.RANKING_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.USER_RANKING_CONTEXT_CACHE, allEntries = true)
+    })
+    public int syncAllUserTotalPoints() {
+        int updatedCount = userRepository.syncAllUserTotalPoints();
+        log.info("Synced totalPoints for {} users, ranking caches evicted", updatedCount);
+        return updatedCount;
     }
 }

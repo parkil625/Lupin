@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface FeedRepository extends JpaRepository<Feed, Long> {
+public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositoryCustom {
 
     // [최적화] writer만 JOIN FETCH, images는 BatchSize(100)로 처리
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer = :writer ORDER BY f.id DESC")
@@ -52,10 +52,6 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     @Query("SELECT COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer = :writer AND f.createdAt BETWEEN :start AND :end")
     int countDistinctDaysByWriterAndCreatedAtBetween(@Param("writer") User writer, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    // [activeDays] 여러 사용자의 이번 달 activeDays를 한 번에 조회
-    @Query("SELECT f.writer.id, COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer.id IN :writerIds AND f.createdAt BETWEEN :start AND :end GROUP BY f.writer.id")
-    List<Object[]> countActiveDaysByWriterIds(@Param("writerIds") List<Long> writerIds, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
-
     // [동시성] 좋아요 카운트 원자적 증가
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Feed f SET f.likeCount = f.likeCount + 1 WHERE f.id = :feedId")
@@ -78,30 +74,4 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
 
     // 사용자별 피드 수 조회
     long countByWriterId(Long writerId);
-
-    // [동기화] 좋아요 카운트 동기화 - 실제 count와 다른 피드 업데이트
-    @Modifying(clearAutomatically = true)
-    @Query(value = """
-        UPDATE feeds f
-        SET like_count = (
-            SELECT COUNT(*) FROM feed_likes fl WHERE fl.feed_id = f.id
-        )
-        WHERE f.like_count <> (
-            SELECT COUNT(*) FROM feed_likes fl WHERE fl.feed_id = f.id
-        )
-        """, nativeQuery = true)
-    int syncLikeCounts();
-
-    // [동기화] 댓글 카운트 동기화 - 실제 count와 다른 피드 업데이트
-    @Modifying(clearAutomatically = true)
-    @Query(value = """
-        UPDATE feeds f
-        SET comment_count = (
-            SELECT COUNT(*) FROM comments c WHERE c.feed_id = f.id
-        )
-        WHERE f.comment_count <> (
-            SELECT COUNT(*) FROM comments c WHERE c.feed_id = f.id
-        )
-        """, nativeQuery = true)
-    int syncCommentCounts();
 }

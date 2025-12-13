@@ -115,8 +115,7 @@ public class Feed {
         }
     }
 
-    // 썸네일 URL 설정
-    public void setThumbnailUrl(String thumbnailUrl) {
+    public void updateThumbnail(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
     }
 

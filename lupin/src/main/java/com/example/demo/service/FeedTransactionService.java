@@ -73,7 +73,7 @@ public class FeedTransactionService {
                 .build();
 
         Feed savedFeed = feedRepository.save(feed);
-        savedFeed.setThumbnailUrl(startImageKey);
+        savedFeed.updateThumbnail(startImageKey);
 
         // 이미지 저장
         addImages(savedFeed, startImageKey, endImageKey, otherImageKeys);
@@ -121,7 +121,7 @@ public class FeedTransactionService {
         }
 
         feed.updateScore((long) score, calories);
-        feed.setThumbnailUrl(startImageKey);
+        feed.updateThumbnail(startImageKey);
 
         // 기존 이미지 삭제 후 새 이미지 추가
         feed.getImages().clear();

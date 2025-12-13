@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.FeedImageUploadResult;
+import com.example.demo.dto.WriterActiveDays;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedRepository;
@@ -166,6 +167,7 @@ public class FeedService {
 
     /**
      * 피드 목록에서 작성자별 이번 달 활동일수를 배치로 조회
+     * QueryDSL을 통해 타입 안전한 WriterActiveDays DTO로 조회
      */
     public Map<Long, Integer> getActiveDaysMap(List<Feed> feeds) {
         if (feeds.isEmpty()) {
@@ -181,13 +183,11 @@ public class FeedService {
         LocalDateTime startOfMonth = currentMonth.atDay(1).atStartOfDay();
         LocalDateTime endOfMonth = currentMonth.atEndOfMonth().atTime(23, 59, 59);
 
-        List<Object[]> results = feedRepository.countActiveDaysByWriterIds(writerIds, startOfMonth, endOfMonth);
+        List<WriterActiveDays> results = feedRepository.findActiveDaysByWriterIds(writerIds, startOfMonth, endOfMonth);
 
         Map<Long, Integer> activeDaysMap = new HashMap<>();
-        for (Object[] row : results) {
-            Long writerId = (Long) row[0];
-            Long activeDays = (Long) row[1];
-            activeDaysMap.put(writerId, activeDays.intValue());
+        for (WriterActiveDays row : results) {
+            activeDaysMap.put(row.writerId(), row.activeDays().intValue());
         }
         return activeDaysMap;
     }

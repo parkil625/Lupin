@@ -86,11 +86,7 @@ public class FeedController {
             @RequestParam(defaultValue = "10") int size
     ) {
         Slice<Feed> feeds = feedService.getHomeFeeds(user, page, size);
-        Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
-        List<FeedResponse> content = feeds.getContent().stream()
-                .map(feed -> feedMapper.toResponse(feed, user, activeDaysMap))
-                .toList();
-        return ResponseEntity.ok(SliceResponse.of(content, feeds.hasNext(), page, size));
+        return toSliceResponse(feeds, user, page, size);
     }
 
     @GetMapping("/my")
@@ -100,6 +96,11 @@ public class FeedController {
             @RequestParam(defaultValue = "10") int size
     ) {
         Slice<Feed> feeds = feedService.getMyFeeds(user, page, size);
+        return toSliceResponse(feeds, user, page, size);
+    }
+
+    private ResponseEntity<SliceResponse<FeedResponse>> toSliceResponse(
+            Slice<Feed> feeds, User user, int page, int size) {
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
         List<FeedResponse> content = feeds.getContent().stream()
                 .map(feed -> feedMapper.toResponse(feed, user, activeDaysMap))

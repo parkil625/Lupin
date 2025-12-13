@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.dto.WriterActiveDays;
 import com.example.demo.dto.response.CommentResponse;
 import com.example.demo.event.NotificationEvent;
 import com.example.demo.exception.BusinessException;
@@ -280,13 +281,11 @@ public class CommentService {
         LocalDateTime startOfMonth = currentMonth.atDay(1).atStartOfDay();
         LocalDateTime endOfMonth = currentMonth.atEndOfMonth().atTime(23, 59, 59);
 
-        List<Object[]> results = feedRepository.countActiveDaysByWriterIds(writerIds, startOfMonth, endOfMonth);
+        List<WriterActiveDays> results = feedRepository.findActiveDaysByWriterIds(writerIds, startOfMonth, endOfMonth);
 
         Map<Long, Integer> activeDaysMap = new HashMap<>();
-        for (Object[] row : results) {
-            Long writerId = (Long) row[0];
-            Long activeDays = (Long) row[1];
-            activeDaysMap.put(writerId, activeDays.intValue());
+        for (WriterActiveDays row : results) {
+            activeDaysMap.put(row.writerId(), row.activeDays().intValue());
         }
         return activeDaysMap;
     }

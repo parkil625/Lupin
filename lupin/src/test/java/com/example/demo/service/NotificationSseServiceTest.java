@@ -1,20 +1,32 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.response.NotificationResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(MockitoExtension.class)
 class NotificationSseServiceTest {
+
+    @Mock
+    private RedisTemplate<String, String> redisTemplate;
+
+    private ObjectMapper objectMapper;
 
     private NotificationSseService notificationSseService;
 
     @BeforeEach
     void setUp() {
-        notificationSseService = new NotificationSseService();
+        objectMapper = new ObjectMapper();
+        notificationSseService = new NotificationSseService(redisTemplate, objectMapper);
     }
 
     @Test

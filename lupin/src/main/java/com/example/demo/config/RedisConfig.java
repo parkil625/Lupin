@@ -1,6 +1,7 @@
 package com.example.demo.config;
 
 import com.example.demo.service.AuctionSseService;
+import com.example.demo.service.NotificationSseService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,28 +33,44 @@ public class RedisConfig {
     @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
     public RedisMessageListenerContainer redisMessageListener(
             RedisConnectionFactory connectionFactory,
-            MessageListenerAdapter listenerAdapter,
-            ChannelTopic topic) {
+            MessageListenerAdapter auctionListenerAdapter,
+            MessageListenerAdapter notificationListenerAdapter,
+            ChannelTopic auctionTopic,
+            ChannelTopic notificationTopic) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
-        // "auction-update"라는 주제(Topic)로 오는 메시지를 리스너에 연결
-        container.addMessageListener(listenerAdapter, topic);
+        // "auction-update" 채널 리스너
+        container.addMessageListener(auctionListenerAdapter, auctionTopic);
+        // "notification-update" 채널 리스너
+        container.addMessageListener(notificationListenerAdapter, notificationTopic);
         return container;
     }
 
-    // ▼ [추가됨] 메시지가 오면 처리할 서비스 메서드 지정
-    // @Lazy는 혹시 모를 순환 참조(Service <-> Config)를 예방하기 위해 추가하면 좋습니다.
+    // ▼ 경매 메시지 리스너 어댑터
     @Bean
     @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
-    public MessageListenerAdapter listenerAdapter(@Lazy AuctionSseService auctionSseService) {
-        // AuctionSseService의 "handleMessage" 메서드를 실행하라고 지정
+    public MessageListenerAdapter auctionListenerAdapter(@Lazy AuctionSseService auctionSseService) {
         return new MessageListenerAdapter(auctionSseService, "handleMessage");
     }
 
-    // ▼ [추가됨] Pub/Sub 채널 이름 설정
+    // ▼ 알림 메시지 리스너 어댑터
     @Bean
     @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
-    public ChannelTopic topic() {
+    public MessageListenerAdapter notificationListenerAdapter(@Lazy NotificationSseService notificationSseService) {
+        return new MessageListenerAdapter(notificationSseService, "handleMessage");
+    }
+
+    // ▼ 경매 Pub/Sub 채널
+    @Bean
+    @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
+    public ChannelTopic auctionTopic() {
         return new ChannelTopic("auction-update");
+    }
+
+    // ▼ 알림 Pub/Sub 채널
+    @Bean
+    @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
+    public ChannelTopic notificationTopic() {
+        return new ChannelTopic("notification-update");
     }
 }

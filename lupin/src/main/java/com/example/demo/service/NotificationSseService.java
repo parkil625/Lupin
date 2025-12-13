@@ -1,9 +1,14 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.NotificationMessage;
 import com.example.demo.dto.response.NotificationResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -18,7 +23,13 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class NotificationSseService {
+
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ObjectMapper objectMapper;
+
+    private static final String NOTIFICATION_CHANNEL = "notification-update";
 
     // userId -> SseEmitter 매핑
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -119,12 +130,42 @@ public class NotificationSseService {
     }
 
     /**
-     * 특정 사용자에게 알림 전송
+     * 특정 사용자에게 알림 전송 (Redis Pub/Sub 통해 모든 서버로 브로드캐스트)
      */
     public void sendNotification(Long userId, NotificationResponse notification) {
+        try {
+            NotificationMessage message = NotificationMessage.builder()
+                    .userId(userId)
+                    .notification(notification)
+                    .build();
+            String json = objectMapper.writeValueAsString(message);
+            redisTemplate.convertAndSend(NOTIFICATION_CHANNEL, json);
+            log.info("Redis Pub/Sub 알림 발행: userId={}, type={}", userId, notification.getType());
+        } catch (JsonProcessingException e) {
+            log.error("알림 직렬화 실패: userId={}", userId, e);
+        }
+    }
+
+    /**
+     * Redis Pub/Sub 메시지 수신 핸들러
+     * - RedisConfig에서 MessageListenerAdapter가 이 메서드를 호출
+     */
+    public void handleMessage(String message) {
+        try {
+            NotificationMessage notificationMessage = objectMapper.readValue(message, NotificationMessage.class);
+            deliverToLocalEmitter(notificationMessage.getUserId(), notificationMessage.getNotification());
+        } catch (JsonProcessingException e) {
+            log.error("알림 역직렬화 실패: {}", message, e);
+        }
+    }
+
+    /**
+     * 로컬 SSE Emitter로 알림 전달 (내부 메서드)
+     */
+    private void deliverToLocalEmitter(Long userId, NotificationResponse notification) {
         SseEmitter emitter = emitters.get(userId);
         if (emitter == null) {
-            log.debug("SSE 연결 없음: userId={}", userId);
+            log.debug("SSE 연결 없음 (이 서버): userId={}", userId);
             return;
         }
 

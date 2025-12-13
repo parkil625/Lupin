@@ -100,20 +100,21 @@ export default function NotificationPopup({
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  {notif.actorProfileImage ? (
+                  {notif.actorProfileImage && notif.actorProfileImage.trim() !== "" ? (
                     <img
                       src={notif.actorProfileImage}
                       alt="프로필"
                       className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = DEFAULT_PROFILE_IMAGE;
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        target.parentElement?.querySelector(".fallback-avatar")?.classList.remove("hidden");
                       }}
                     />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                      <User className="w-5 h-5 text-gray-400" />
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 fallback-avatar ${notif.actorProfileImage && notif.actorProfileImage.trim() !== "" ? "hidden" : ""}`}>
+                    <User className="w-5 h-5 text-gray-400" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-sm text-gray-900 mb-1">
                       {notif.title}
@@ -179,20 +180,21 @@ export default function NotificationPopup({
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  {notif.actorProfileImage ? (
+                  {notif.actorProfileImage && notif.actorProfileImage.trim() !== "" ? (
                     <img
                       src={notif.actorProfileImage}
                       alt="프로필"
                       className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = DEFAULT_PROFILE_IMAGE;
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        target.parentElement?.querySelector(".fallback-avatar")?.classList.remove("hidden");
                       }}
                     />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                      <User className="w-5 h-5 text-gray-400" />
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 fallback-avatar ${notif.actorProfileImage && notif.actorProfileImage.trim() !== "" ? "hidden" : ""}`}>
+                    <User className="w-5 h-5 text-gray-400" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-sm text-gray-900 mb-1">
                       {notif.title}

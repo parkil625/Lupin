@@ -58,25 +58,13 @@ export const userApi = {
   },
 
   getTopUsersByPoints: async (limit = 10) => {
-    try {
-      const response = await apiClient.get(`/users/ranking?limit=${limit}`);
-      return response.data;
-    } catch {
-      return mockUsers.slice(0, limit).map((u, i) => ({ ...u, points: u.currentPoints, rank: i + 1 }));
-    }
+    const response = await apiClient.get(`/users/ranking?limit=${limit}`);
+    return response.data;
   },
 
   getUserRankingContext: async (userId: number) => {
-    try {
-      const response = await apiClient.get(`/users/${userId}/ranking-context`);
-      return response.data;
-    } catch {
-      const userIndex = mockUsers.findIndex(u => u.id === userId);
-      if (userIndex === -1) return [{ ...mockUsers[0], id: userId, rank: 11 }];
-      const start = Math.max(0, userIndex - 1);
-      const end = Math.min(mockUsers.length, userIndex + 2);
-      return mockUsers.slice(start, end).map((u, i) => ({ ...u, rank: start + i + 1, points: u.currentPoints }));
-    }
+    const response = await apiClient.get(`/users/${userId}/ranking-context`);
+    return response.data;
   },
 
   getUserStats: async (userId: number) => {

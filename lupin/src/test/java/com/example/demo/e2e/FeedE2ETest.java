@@ -88,17 +88,13 @@ class FeedE2ETest {
                 .thenReturn(java.util.Optional.of(startTime))
                 .thenReturn(java.util.Optional.of(endTime));
 
-        org.mockito.Mockito.when(workoutScoreService.calculateScore(
+        // WorkoutScoreService.validateAndCalculate mock 설정
+        org.mockito.Mockito.when(workoutScoreService.validateAndCalculate(
                 org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
-                .thenReturn(10);
-
-        org.mockito.Mockito.when(workoutScoreService.calculateCalories(
-                org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
-                .thenReturn(100);
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDate.class)))
+                .thenReturn(new WorkoutScoreService.WorkoutResult(10, 100, true));
 
         testUser = userRepository.save(User.builder()
                 .userId("testuser")

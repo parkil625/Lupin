@@ -20,7 +20,6 @@ export const useAuctionTimer = (
             const now = Date.now();
             const regularEnd = new Date(selectedAuction.regularEndTime).getTime();
 
-            // [Logic B 핵심 수정]
             // 목표 시간 설정
             let targetEndTime = 0;
             let currentIsOvertime = false;
@@ -30,15 +29,12 @@ export const useAuctionTimer = (
                 targetEndTime = new Date(selectedAuction.overtimeEndTime).getTime();
                 currentIsOvertime = true;
             } else {
-                // 2. 아직 초읽기 플래그는 없지만...
+                // 2. 정규 시간 초과 시 자동 초읽기 간주 로직
                 if (now >= regularEnd) {
-                    // 정규 시간이 지났다면 -> "자동 초읽기(30초)"로 간주!
-                    // 마감 시간 = 정규 종료 + 30초
                     const overtimeSec = selectedAuction.overtimeSeconds ?? 30;
                     targetEndTime = regularEnd + (overtimeSec * 1000);
-                    currentIsOvertime = true; // 화면에는 초읽기로 표시
+                    currentIsOvertime = true;
                 } else {
-                    // 정규 시간 안쪽인 경우
                     targetEndTime = regularEnd;
                     currentIsOvertime = false;
                 }
@@ -48,7 +44,12 @@ export const useAuctionTimer = (
             const diffSeconds = Math.floor((targetEndTime - now) / 1000);
 
             if (diffSeconds >= 0) {
-                setCountdown(diffSeconds);
+                // [수정 1] 중복 제거 및 최적화 적용
+                // 값이 변했을 때만 업데이트 (렌더링 최적화)
+                setCountdown((prev) => {
+                    if (prev !== diffSeconds) return diffSeconds;
+                    return prev;
+                });
                 setIsOvertime(currentIsOvertime);
             } else {
                 // 진짜로 모든 시간이 끝남
@@ -67,7 +68,8 @@ export const useAuctionTimer = (
         };
 
         tick();
-        const interval = setInterval(tick, 1000);
+        // [수정 2] 반응 속도 향상을 위해 1000 -> 100으로 변경
+        const interval = setInterval(tick, 100);
 
         return () => clearInterval(interval);
     }, [
@@ -76,7 +78,7 @@ export const useAuctionTimer = (
         selectedAuction?.overtimeEndTime,
         selectedAuction?.overtimeStarted,
         selectedAuction?.status,
-        refreshData,
+        refreshData, // refreshData 의존성 유지
     ]);
 
     return { countdown, isOvertime };

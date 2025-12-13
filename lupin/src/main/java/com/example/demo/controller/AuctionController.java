@@ -8,6 +8,7 @@ import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.service.AuctionService;
+import com.example.demo.service.AuctionSseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +31,8 @@ import java.util.List;
 public class          AuctionController extends BaseController {
 
     private final AuctionService auctionService;
+
+    private final AuctionSseService auctionSseService;
 
     @Operation(summary = "진행 중인 경매 조회", description = "현재 진행 중인 경매 정보를 조회합니다.")
     @GetMapping("/active")
@@ -62,6 +66,11 @@ public class          AuctionController extends BaseController {
     @GetMapping("/active/history") // 경로 변경: /{auctionId}/history -> /active/history
     public ResponseEntity<List<AuctionBidResponse>> getBidHistory() {
         return ResponseEntity.ok(auctionService.getAuctionStatus());
+    }
+
+    @GetMapping(value = "/stream/{auctionId}", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> streamAuction(@PathVariable Long auctionId) {
+        return ResponseEntity.ok(auctionSseService.subscribe(auctionId));
     }
 
 }

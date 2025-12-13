@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.AuctionBid;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
+import com.example.demo.dto.AuctionSseMessage;
 import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
@@ -34,6 +35,8 @@ public class AuctionService {
     private final PointService pointService;
 
     private final AuctionTaskScheduler auctionTaskScheduler;
+
+    private final AuctionSseService auctionSseService;
 
     //경매 입찰 시켜주는 메소드
     public void placeBid(Long auctionId, Long Id, Long bidAmount, LocalDateTime bidTime) {
@@ -73,6 +76,17 @@ public class AuctionService {
         auctionBidRepository.save(bid);
 
         auctionTaskScheduler.scheduleAuctionEnd(auction.getId(), auction.getEndTime());
+
+        AuctionSseMessage message = AuctionSseMessage.builder()
+                .auctionId(auctionId)
+                .currentPrice(auction.getCurrentPrice()) // 바뀐 가격
+                .bidderName(user.getName())              // 입찰자 이름
+                .bidTime(bidTime.toString())             // 입찰 시간
+                // ★ 핵심: 타이머 동기화를 위해 현재 마감 시간을 같이 보냄
+                .newEndTime(auction.getEndTime().toString())
+                .build();
+
+        auctionSseService.broadcast(message);
     }
 
     //경매 시작 시간이 된 경매 active 시켜주는 메소드

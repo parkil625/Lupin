@@ -29,6 +29,11 @@ spring:
 redisson:
   enabled: false
 
+app:
+  redis:
+    pubsub:
+      enabled: false
+
 logging:
   level:
     org.hibernate.SQL: debug

@@ -30,6 +30,89 @@ export default function Auction() {
   // 타이머 로직 훅 사용
   const { countdown, isOvertime } = useAuctionTimer(selectedAuction);
 
+    // ▼ [SSE 연결 로직]
+    useEffect(() => {
+        if (!selectedAuction?.auctionId) return;
+
+        const sseUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/auction/stream/${selectedAuction.auctionId}`;
+        const eventSource = new EventSource(sseUrl);
+
+        eventSource.onopen = () => {
+            console.log("경매 SSE 연결 성공!");
+        };
+
+        eventSource.addEventListener("refresh", (e: MessageEvent) => {
+            try {
+                const data = JSON.parse(e.data);
+                console.log("⚡ SSE 데이터 도착:", data);
+
+                if (selectedAuction && selectedAuction.auctionId === data.auctionId) {
+                    setSelectedAuction((prev) => {
+                        if (!prev) return null;
+
+                        // [수정 포인트] 무조건 true가 아니라, 실제 시간이 지났는지 체크하거나 기존 상태 유지
+                        // 만약 'useAuctionTimer'가 시간을 기준으로 자동 판단한다면, 이 필드는 굳이 안 건드려도 됩니다.
+                        // 확실하게 하기 위해 '현재 시간이 정규 시간을 지났는지'만 체크해봅니다.
+                        const now = new Date();
+                        const regularEnd = new Date(prev.regularEndTime);
+                        const isActuallyOvertime = prev.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
+
+                        return {
+                            ...prev,
+                            currentPrice: data.currentPrice,
+
+                            // 정규 시간은 유지 (골대 유지)
+                            regularEndTime: prev.regularEndTime,
+
+                            // 연장된 마감 시간 업데이트 (없으면 기존 유지)
+                            overtimeEndTime: data.newEndTime || prev.overtimeEndTime,
+                            overtimeStarted: isActuallyOvertime
+                        };
+                    });
+                }
+
+                // 목록 업데이트 로직 (동일하게 적용)
+                setAuctions((prevAuctions) =>
+                    prevAuctions.map((item) =>
+                        item.auctionId === data.auctionId
+                            ? {
+                                ...item,
+                                currentPrice: data.currentPrice,
+                                // 목록에서도 연장 정보를 갱신하고 싶다면 아래 주석 해제
+                                // overtimeEndTime: data.newEndTime || item.overtimeEndTime,
+                            }
+                            : item
+                    )
+                );
+
+                // ... (입찰 내역 추가 및 포인트 갱신 코드는 기존과 동일)
+                const newBidLog: BidHistory = {
+                    id: Date.now(),
+                    userId: 0,
+                    userName: data.bidderName,
+                    bidAmount: data.currentPrice,
+                    bidTime: data.bidTime,
+                    status: "ACTIVE"
+                };
+                setBidHistory((prev) => [newBidLog, ...prev]);
+                fetchUserPoints();
+
+            } catch (err) {
+                console.error("SSE 파싱 에러:", err);
+            }
+        });
+
+        eventSource.onerror = (err) => {
+            console.error("SSE 연결 오류", err);
+            eventSource.close();
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [selectedAuction?.auctionId]); // 경매방 바뀔 때마다 재실행
+
+
   // 초기 데이터 로드
   useEffect(() => {
     fetchAuctions();

@@ -3,7 +3,9 @@ package com.example.demo.controller;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.dto.request.UserAvatarRequest;
 import com.example.demo.dto.request.UserProfileRequest;
+import com.example.demo.dto.request.UserUpdateRequest;
 import com.example.demo.dto.response.UserResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.CurrentUser;
@@ -75,21 +77,17 @@ public class UserController {
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long userId,
             @CurrentUser User currentUser,
-            @RequestBody Map<String, Object> request
+            @RequestBody UserUpdateRequest request
     ) {
         // 본인만 수정 가능
         if (!currentUser.getId().equals(userId)) {
             return ResponseEntity.status(403).build();
         }
 
-        String name = (String) request.get("name");
-        Number height = (Number) request.get("height");
-        Number weight = (Number) request.get("weight");
-
         userService.updateProfile(currentUser,
-                name,
-                height != null ? height.doubleValue() : null,
-                weight != null ? weight.doubleValue() : null);
+                request.getName(),
+                request.getHeight(),
+                request.getWeight());
 
         User updatedUser = userService.getUserInfo(userId);
         long points = pointService.getTotalPoints(updatedUser);
@@ -105,15 +103,14 @@ public class UserController {
     public ResponseEntity<UserResponse> updateAvatar(
             @PathVariable Long userId,
             @CurrentUser User currentUser,
-            @RequestBody Map<String, String> request
+            @RequestBody UserAvatarRequest request
     ) {
         // 본인만 수정 가능
         if (!currentUser.getId().equals(userId)) {
             return ResponseEntity.status(403).build();
         }
 
-        String avatarUrl = request.get("avatar");
-        userService.updateAvatar(currentUser, avatarUrl);
+        userService.updateAvatar(currentUser, request.getAvatar());
 
         User updatedUser = userService.getUserInfo(userId);
         long points = pointService.getTotalPoints(updatedUser);

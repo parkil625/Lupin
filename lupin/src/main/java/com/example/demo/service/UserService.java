@@ -3,6 +3,8 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.User;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentRepository;
+import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PointLogRepository pointLogRepository;
+    private final FeedRepository feedRepository;
+    private final CommentRepository commentRepository;
 
     public User getUserInfo(Long userId) {
         return userRepository.findById(userId)
@@ -121,12 +125,14 @@ public class UserService {
     public Map<String, Object> getUserStats(Long userId) {
         User user = getUserInfo(userId);
         Long totalPoints = pointLogRepository.sumPointsByUser(user);
+        long feedCount = feedRepository.countByWriterId(userId);
+        long commentCount = commentRepository.countByWriterId(userId);
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("userId", userId);
         stats.put("totalPoints", totalPoints != null ? totalPoints : 0L);
-        stats.put("feedCount", 0); // TODO: FeedRepository에서 조회
-        stats.put("commentCount", 0); // TODO: CommentRepository에서 조회
+        stats.put("feedCount", feedCount);
+        stats.put("commentCount", commentCount);
         return stats;
     }
 

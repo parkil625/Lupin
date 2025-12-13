@@ -69,4 +69,7 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Feed f SET f.commentCount = CASE WHEN f.commentCount > 0 THEN f.commentCount - 1 ELSE 0 END WHERE f.id = :feedId")
     void decrementCommentCount(@Param("feedId") Long feedId);
+
+    // 사용자별 피드 수 조회
+    long countByWriterId(Long writerId);
 }

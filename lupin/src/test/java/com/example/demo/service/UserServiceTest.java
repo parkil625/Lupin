@@ -4,6 +4,8 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentRepository;
+import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +33,12 @@ class UserServiceTest {
 
     @Mock
     private PointLogRepository pointLogRepository;
+
+    @Mock
+    private FeedRepository feedRepository;
+
+    @Mock
+    private CommentRepository commentRepository;
 
     @InjectMocks
     private UserService userService;
@@ -101,6 +109,8 @@ class UserServiceTest {
         Long userId = 1L;
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(pointLogRepository.sumPointsByUser(user)).willReturn(100L);
+        given(feedRepository.countByWriterId(userId)).willReturn(5L);
+        given(commentRepository.countByWriterId(userId)).willReturn(10L);
 
         // when
         Map<String, Object> stats = userService.getUserStats(userId);
@@ -108,6 +118,8 @@ class UserServiceTest {
         // then
         assertThat(stats.get("userId")).isEqualTo(userId);
         assertThat(stats.get("totalPoints")).isEqualTo(100L);
+        assertThat(stats.get("feedCount")).isEqualTo(5L);
+        assertThat(stats.get("commentCount")).isEqualTo(10L);
     }
 
     @Test
@@ -117,12 +129,16 @@ class UserServiceTest {
         Long userId = 1L;
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
         given(pointLogRepository.sumPointsByUser(user)).willReturn(null);
+        given(feedRepository.countByWriterId(userId)).willReturn(0L);
+        given(commentRepository.countByWriterId(userId)).willReturn(0L);
 
         // when
         Map<String, Object> stats = userService.getUserStats(userId);
 
         // then
         assertThat(stats.get("totalPoints")).isEqualTo(0L);
+        assertThat(stats.get("feedCount")).isEqualTo(0L);
+        assertThat(stats.get("commentCount")).isEqualTo(0L);
     }
 
     @Test

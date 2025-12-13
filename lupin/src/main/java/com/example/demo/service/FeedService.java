@@ -14,7 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -173,5 +176,33 @@ public class FeedService {
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
 
         return !feedRepository.existsByWriterAndCreatedAtBetween(user, startOfDay, endOfDay);
+    }
+
+    /**
+     * 피드 목록에서 작성자별 이번 달 활동일수를 배치로 조회
+     */
+    public Map<Long, Integer> getActiveDaysMap(List<Feed> feeds) {
+        if (feeds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> writerIds = feeds.stream()
+                .map(feed -> feed.getWriter().getId())
+                .distinct()
+                .toList();
+
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime startOfMonth = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime endOfMonth = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        List<Object[]> results = feedRepository.countActiveDaysByWriterIds(writerIds, startOfMonth, endOfMonth);
+
+        Map<Long, Integer> activeDaysMap = new HashMap<>();
+        for (Object[] row : results) {
+            Long writerId = (Long) row[0];
+            Long activeDays = (Long) row[1];
+            activeDaysMap.put(writerId, activeDays.intValue());
+        }
+        return activeDaysMap;
     }
 }

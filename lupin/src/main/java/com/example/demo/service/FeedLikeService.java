@@ -80,4 +80,20 @@ public class FeedLikeService {
     public void deleteAllByFeed(Feed feed) {
         feedLikeRepository.deleteByFeed(feed);
     }
+
+    /**
+     * 사용자의 피드 좋아요 여부 확인
+     */
+    public boolean isLiked(Long userId, Long feedId) {
+        return feedLikeRepository.existsByUserIdAndFeedId(userId, feedId);
+    }
+
+    /**
+     * 피드 좋아요 ID로 피드 ID 조회
+     */
+    public Long getFeedIdByFeedLikeId(Long feedLikeId) {
+        return feedLikeRepository.findById(feedLikeId)
+                .map(feedLike -> feedLike.getFeed().getId())
+                .orElse(null);
+    }
 }

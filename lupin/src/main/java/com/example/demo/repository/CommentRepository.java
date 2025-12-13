@@ -50,4 +50,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
            "WHERE c.feed = :feed AND c.parent IS NULL " +
            "GROUP BY c ORDER BY COUNT(cl) DESC")
     List<Comment> findByFeedOrderByLikeCountDesc(@Param("feed") Feed feed);
+
+    // 사용자별 댓글 수 조회
+    long countByWriterId(Long writerId);
 }

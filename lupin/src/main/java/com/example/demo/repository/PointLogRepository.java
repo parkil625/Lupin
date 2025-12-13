@@ -45,6 +45,7 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     /**
      * 특정 사용자의 랭킹과 앞뒤 사용자를 조회 (Window Function 사용)
      * User.totalPoints 반정규화 필드를 사용하여 JOIN 없이 조회
+     * COALESCE로 NULL 값 방어 처리
      */
     @Query(value = """
         WITH ranked_users AS (
@@ -53,8 +54,8 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
                 u.name,
                 u.avatar,
                 u.department,
-                u.total_points,
-                ROW_NUMBER() OVER (ORDER BY u.total_points DESC, u.id ASC) as user_rank
+                COALESCE(u.total_points, 0) as total_points,
+                ROW_NUMBER() OVER (ORDER BY COALESCE(u.total_points, 0) DESC, u.id ASC) as user_rank
             FROM users u
         ),
         target_rank AS (

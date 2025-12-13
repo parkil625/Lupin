@@ -67,7 +67,7 @@ public class User {
     @Column(name = "provider_email", length = 255)
     private String providerEmail;
 
-    @Column(name = "total_points", nullable = false)
+    @Column(name = "current_points", nullable = false)
     @Builder.Default
     private Long totalPoints = 0L;
 

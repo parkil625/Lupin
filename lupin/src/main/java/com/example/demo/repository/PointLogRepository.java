@@ -38,13 +38,13 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     @Query("SELECT COUNT(DISTINCT p.user) FROM PointLog p WHERE p.createdAt BETWEEN :startDateTime AND :endDateTime")
     Long countActiveUsersThisMonth(@Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
 
-    // 전체 유저 평균 포인트 (User.totalPoints 사용)
-    @Query(value = "SELECT COALESCE(AVG(u.total_points), 0) FROM users u", nativeQuery = true)
+    // 전체 유저 평균 포인트 (User.currentPoints 사용)
+    @Query(value = "SELECT COALESCE(AVG(u.current_points), 0) FROM users u", nativeQuery = true)
     Double getAveragePointsPerUser();
 
     /**
      * 특정 사용자의 랭킹과 앞뒤 사용자를 조회 (Window Function 사용)
-     * User.totalPoints 반정규화 필드를 사용하여 JOIN 없이 조회
+     * User.currentPoints 반정규화 필드를 사용하여 JOIN 없이 조회
      * CROSS JOIN + 집계 서브쿼리로 CTE 다중 참조 문제 해결
      */
     @Query(value = """
@@ -54,8 +54,8 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
                 u.name,
                 u.avatar,
                 u.department,
-                COALESCE(u.total_points, 0) as total_points,
-                ROW_NUMBER() OVER (ORDER BY COALESCE(u.total_points, 0) DESC, u.id ASC) as user_rank
+                COALESCE(u.current_points, 0) as total_points,
+                ROW_NUMBER() OVER (ORDER BY COALESCE(u.current_points, 0) DESC, u.id ASC) as user_rank
             FROM users u
         )
         SELECT r.id, r.name, r.avatar, r.department, r.total_points, r.user_rank

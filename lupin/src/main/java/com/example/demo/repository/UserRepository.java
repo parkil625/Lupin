@@ -35,13 +35,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByRoleAndDepartment(Role role, String department);
 
     /**
-     * 모든 유저의 totalPoints를 point_logs에서 일괄 동기화
+     * 모든 유저의 currentPoints를 point_logs에서 일괄 동기화
      * 반정규화 필드 초기 동기화 또는 복구용
      */
     @Modifying
     @Query(value = """
         UPDATE users u
-        SET total_points = COALESCE((
+        SET current_points = COALESCE((
             SELECT SUM(p.points)
             FROM point_logs p
             WHERE p.user_id = u.id

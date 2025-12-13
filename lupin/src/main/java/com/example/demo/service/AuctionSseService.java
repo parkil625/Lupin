@@ -2,8 +2,8 @@ package com.example.demo.service;
 
 import com.example.demo.dto.AuctionSseMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
@@ -13,11 +13,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.lettuce.core.pubsub.PubSubOutput.Type.message;
-
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class AuctionSseService {
 
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -25,6 +22,16 @@ public class AuctionSseService {
     private final StringRedisTemplate redisTemplate;
     private final ChannelTopic topic;
     private final ObjectMapper objectMapper;
+
+    public AuctionSseService(
+            StringRedisTemplate redisTemplate,
+            @Qualifier("auctionTopic") ChannelTopic topic,
+            ObjectMapper objectMapper
+    ) {
+        this.redisTemplate = redisTemplate;
+        this.topic = topic;
+        this.objectMapper = objectMapper;
+    }
 
 
     public SseEmitter subscribe(Long auctionId) {

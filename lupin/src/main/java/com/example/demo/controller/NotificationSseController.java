@@ -35,6 +35,11 @@ public class NotificationSseController {
             @RequestParam("token") String token,
             @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId) {
 
+        // "Bearer " 접두사가 있다면 제거
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
         if (!jwtTokenProvider.validateToken(token)) {
             log.error("SSE 구독 실패: 유효하지 않은 토큰");
             SseEmitter emitter = new SseEmitter();

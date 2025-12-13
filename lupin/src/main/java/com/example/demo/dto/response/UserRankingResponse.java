@@ -34,7 +34,8 @@ public record UserRankingResponse(
                 (String) row[1],
                 (String) row[2],
                 (String) row[3],
-                ((Number) row[4]).longValue(),
+                // total_points가 NULL일 경우 0으로 처리
+                row[4] != null ? ((Number) row[4]).longValue() : 0L,
                 ((Number) row[5]).intValue()
         );
     }

@@ -11,18 +11,18 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledFuture;
 
 @Service
 @Slf4j
@@ -41,23 +41,33 @@ public class NotificationSseService {
     private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
     private static final long HEARTBEAT_INTERVAL = 25; // 25초마다 heartbeat
 
-    private ScheduledExecutorService heartbeatScheduler;
+    // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
+    private ThreadPoolTaskScheduler heartbeatScheduler;
+    private ScheduledFuture<?> heartbeatTask;
 
     @PostConstruct
     public void init() {
-        // Heartbeat 스케줄러 시작
-        heartbeatScheduler = Executors.newSingleThreadScheduledExecutor();
-        heartbeatScheduler.scheduleAtFixedRate(
+        // 전용 스케줄러 초기화 (Spring Bean이 아닌 내부 관리)
+        heartbeatScheduler = new ThreadPoolTaskScheduler();
+        heartbeatScheduler.setPoolSize(1);
+        heartbeatScheduler.setThreadNamePrefix("sse-heartbeat-");
+        heartbeatScheduler.setWaitForTasksToCompleteOnShutdown(true);
+        heartbeatScheduler.setAwaitTerminationSeconds(10);
+        heartbeatScheduler.initialize();
+
+        // Heartbeat 작업 등록
+        heartbeatTask = heartbeatScheduler.scheduleAtFixedRate(
                 this::sendHeartbeatToAll,
-                HEARTBEAT_INTERVAL,
-                HEARTBEAT_INTERVAL,
-                TimeUnit.SECONDS
+                Duration.ofSeconds(HEARTBEAT_INTERVAL)
         );
         log.info("SSE Heartbeat 스케줄러 시작 ({}초 간격)", HEARTBEAT_INTERVAL);
     }
 
     @PreDestroy
     public void destroy() {
+        if (heartbeatTask != null) {
+            heartbeatTask.cancel(false);
+        }
         if (heartbeatScheduler != null) {
             heartbeatScheduler.shutdown();
             log.info("SSE Heartbeat 스케줄러 종료");

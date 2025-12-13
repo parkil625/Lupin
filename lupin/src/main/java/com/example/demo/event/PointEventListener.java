@@ -27,7 +27,8 @@ public class PointEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePointChangedEvent(PointChangedEvent event) {
         try {
-            User user = userRepository.findById(event.userId())
+            // 비관적 락으로 동시성 제어 - 동시 포인트 변경 시 lost update 방지
+            User user = userRepository.findByIdForUpdate(event.userId())
                     .orElse(null);
             if (user == null) {
                 log.warn("User not found for point update: {}", event.userId());

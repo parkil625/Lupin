@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import com.example.demo.config.JpaConfig;
+import com.example.demo.config.QueryDslConfig;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
@@ -14,7 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @DataJpaTest
 @ActiveProfiles("test")
-@Import(JpaConfig.class)
+@Import({JpaConfig.class, QueryDslConfig.class})
 abstract class BaseRepositoryTest {
 
     @Autowired

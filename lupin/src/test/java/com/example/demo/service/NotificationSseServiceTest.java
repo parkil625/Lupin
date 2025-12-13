@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.response.NotificationResponse;
 import com.example.demo.repository.NotificationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,14 @@ class NotificationSseServiceTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         notificationSseService = new NotificationSseService(redisTemplate, objectMapper, notificationRepository);
+        notificationSseService.init(); // @PostConstruct 수동 호출
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (notificationSseService != null) {
+            notificationSseService.destroy(); // @PreDestroy 수동 호출
+        }
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.event.NotificationEvent;
 import com.example.demo.repository.CommentLikeRepository;
@@ -513,11 +514,11 @@ class CommentServiceTest {
 
         // then
         // COMMENT_LIKE 알림 삭제 (refId = commentId)
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
         // 댓글 좋아요 삭제
         verify(commentLikeRepository).deleteByComment(comment);
         // 부모 댓글이므로 REPLY 알림도 삭제 (refId = 부모댓글ID = commentId)
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), "REPLY");
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), NotificationType.REPLY);
         verify(commentRepository).delete(comment);
     }
 }

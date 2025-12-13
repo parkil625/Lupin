@@ -1,5 +1,6 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.enums.NotificationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +13,7 @@ class NotificationTest {
     void markAsReadTest() {
         // given
         Notification notification = Notification.builder()
-                .type("COMMENT")
+                .type(NotificationType.COMMENT)
                 .title("새 댓글")
                 .content("테스트 내용")
                 .build();

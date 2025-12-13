@@ -1,7 +1,7 @@
 package com.example.demo.event;
 
+import com.example.demo.domain.enums.NotificationType;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * 알림 이벤트 - 트랜잭션 커밋 후 비동기로 처리
@@ -9,16 +9,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public class NotificationEvent {
 
-    public enum Type {
-        FEED_LIKE,
-        COMMENT,
-        COMMENT_LIKE,
-        REPLY,
-        FEED_DELETED,
-        COMMENT_DELETED
-    }
-
-    private final Type type;
+    private final NotificationType type;
     private final Long targetUserId;      // 알림 받을 사용자
     private final Long actorUserId;       // 알림 발생시킨 사용자
     private final String actorName;       // 알림 발생시킨 사용자 이름
@@ -27,7 +18,7 @@ public class NotificationEvent {
     private final Long targetId;          // 하이라이트 대상 ID (댓글ID, 답글ID)
     private final String contentPreview;  // 콘텐츠 미리보기 (유튜브 스타일)
 
-    private NotificationEvent(Type type, Long targetUserId, Long actorUserId, String actorName, String actorProfileImage, Long refId, Long targetId, String contentPreview) {
+    private NotificationEvent(NotificationType type, Long targetUserId, Long actorUserId, String actorName, String actorProfileImage, Long refId, Long targetId, String contentPreview) {
         this.type = type;
         this.targetUserId = targetUserId;
         this.actorUserId = actorUserId;
@@ -40,32 +31,32 @@ public class NotificationEvent {
 
     // 피드 좋아요 이벤트
     public static NotificationEvent feedLike(Long targetUserId, Long actorUserId, String actorName, String actorProfileImage, Long feedId, String feedContent) {
-        return new NotificationEvent(Type.FEED_LIKE, targetUserId, actorUserId, actorName, actorProfileImage, feedId, null, truncateContent(feedContent));
+        return new NotificationEvent(NotificationType.FEED_LIKE, targetUserId, actorUserId, actorName, actorProfileImage, feedId, null, truncateContent(feedContent));
     }
 
     // 댓글 이벤트
     public static NotificationEvent comment(Long targetUserId, Long actorUserId, String actorName, String actorProfileImage, Long feedId, Long commentId, String commentContent) {
-        return new NotificationEvent(Type.COMMENT, targetUserId, actorUserId, actorName, actorProfileImage, feedId, commentId, truncateContent(commentContent));
+        return new NotificationEvent(NotificationType.COMMENT, targetUserId, actorUserId, actorName, actorProfileImage, feedId, commentId, truncateContent(commentContent));
     }
 
     // 댓글 좋아요 이벤트
     public static NotificationEvent commentLike(Long targetUserId, Long actorUserId, String actorName, String actorProfileImage, Long commentId, String commentContent) {
-        return new NotificationEvent(Type.COMMENT_LIKE, targetUserId, actorUserId, actorName, actorProfileImage, commentId, commentId, truncateContent(commentContent));
+        return new NotificationEvent(NotificationType.COMMENT_LIKE, targetUserId, actorUserId, actorName, actorProfileImage, commentId, commentId, truncateContent(commentContent));
     }
 
     // 대댓글 이벤트
     public static NotificationEvent reply(Long targetUserId, Long actorUserId, String actorName, String actorProfileImage, Long parentCommentId, Long replyId, String replyContent) {
-        return new NotificationEvent(Type.REPLY, targetUserId, actorUserId, actorName, actorProfileImage, parentCommentId, replyId, truncateContent(replyContent));
+        return new NotificationEvent(NotificationType.REPLY, targetUserId, actorUserId, actorName, actorProfileImage, parentCommentId, replyId, truncateContent(replyContent));
     }
 
     // 피드 삭제 알림
     public static NotificationEvent feedDeleted(Long targetUserId) {
-        return new NotificationEvent(Type.FEED_DELETED, targetUserId, null, null, null, null, null, null);
+        return new NotificationEvent(NotificationType.FEED_DELETED, targetUserId, null, null, null, null, null, null);
     }
 
     // 댓글 삭제 알림
     public static NotificationEvent commentDeleted(Long targetUserId) {
-        return new NotificationEvent(Type.COMMENT_DELETED, targetUserId, null, null, null, null, null, null);
+        return new NotificationEvent(NotificationType.COMMENT_DELETED, targetUserId, null, null, null, null, null, null);
     }
 
     /**

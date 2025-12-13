@@ -115,7 +115,7 @@ public class UserService {
 
     @Transactional
     public void updateAvatar(User user, String avatarUrl) {
-        user.setAvatar(avatarUrl);
+        user.updateAvatar(avatarUrl);
         userRepository.save(user);
     }
 

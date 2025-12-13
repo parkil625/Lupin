@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.dto.response.NotificationResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -84,7 +85,7 @@ public class NotificationService {
 
         Notification notification = Notification.builder()
                 .user(feedOwner)
-                .type("FEED_LIKE")
+                .type(NotificationType.FEED_LIKE)
                 .title(liker.getName() + "님이 피드에 좋아요를 눌렀습니다")
                 .refId(String.valueOf(feedId))
                 .build();
@@ -106,7 +107,7 @@ public class NotificationService {
 
         Notification notification = Notification.builder()
                 .user(feedOwner)
-                .type("COMMENT")
+                .type(NotificationType.COMMENT)
                 .title(commenter.getName() + "님이 댓글을 남겼습니다")
                 .refId(String.valueOf(feedId))
                 .targetId(commentId)
@@ -128,7 +129,7 @@ public class NotificationService {
 
         Notification notification = Notification.builder()
                 .user(commentOwner)
-                .type("COMMENT_LIKE")
+                .type(NotificationType.COMMENT_LIKE)
                 .title(liker.getName() + "님이 댓글에 좋아요를 눌렀습니다")
                 .refId(String.valueOf(commentId))
                 .targetId(commentId)
@@ -151,7 +152,7 @@ public class NotificationService {
 
         Notification notification = Notification.builder()
                 .user(commentOwner)
-                .type("REPLY")
+                .type(NotificationType.REPLY)
                 .title(replier.getName() + "님이 답글을 남겼습니다")
                 .refId(String.valueOf(parentCommentId))
                 .targetId(replyId)
@@ -165,7 +166,7 @@ public class NotificationService {
     public void createFeedDeletedByReportNotification(User feedOwner) {
         Notification notification = Notification.builder()
                 .user(feedOwner)
-                .type("FEED_DELETED")
+                .type(NotificationType.FEED_DELETED)
                 .title("신고 누적으로 피드가 삭제되었습니다")
                 .build();
 
@@ -177,7 +178,7 @@ public class NotificationService {
     public void createCommentDeletedByReportNotification(User commentOwner) {
         Notification notification = Notification.builder()
                 .user(commentOwner)
-                .type("COMMENT_DELETED")
+                .type(NotificationType.COMMENT_DELETED)
                 .title("신고 누적으로 댓글이 삭제되었습니다")
                 .build();
 
@@ -193,8 +194,8 @@ public class NotificationService {
     @Transactional
     public void deleteFeedRelatedNotifications(Long feedId) {
         String feedIdStr = String.valueOf(feedId);
-        notificationRepository.deleteByRefIdAndType(feedIdStr, "FEED_LIKE");
-        notificationRepository.deleteByRefIdAndType(feedIdStr, "COMMENT");
+        notificationRepository.deleteByRefIdAndType(feedIdStr, NotificationType.FEED_LIKE);
+        notificationRepository.deleteByRefIdAndType(feedIdStr, NotificationType.COMMENT);
     }
 
     /**
@@ -208,14 +209,14 @@ public class NotificationService {
             List<String> parentIds = parentCommentIds.stream()
                     .map(String::valueOf)
                     .toList();
-            notificationRepository.deleteByRefIdInAndType(parentIds, "REPLY");
+            notificationRepository.deleteByRefIdInAndType(parentIds, NotificationType.REPLY);
         }
 
         if (!allCommentIds.isEmpty()) {
             List<String> commentIds = allCommentIds.stream()
                     .map(String::valueOf)
                     .toList();
-            notificationRepository.deleteByRefIdInAndType(commentIds, "COMMENT_LIKE");
+            notificationRepository.deleteByRefIdInAndType(commentIds, NotificationType.COMMENT_LIKE);
         }
     }
 }

@@ -50,25 +50,15 @@ public class FeedController {
             @PathVariable Long feedId,
             @Valid @RequestBody FeedRequest request
     ) {
-        Feed feed;
-        String startKey = request.getStartImageKey();
-        String endKey = request.getEndImageKey();
-
-        if (startKey != null && endKey != null) {
-            // 타입별 필드 사용 (권장)
-            feed = feedService.updateFeed(
-                    user,
-                    feedId,
-                    request.getContent(),
-                    request.getActivity(),
-                    startKey,
-                    endKey,
-                    request.getOtherImageKeys()
-            );
-        } else {
-            // 이미지가 없으면 내용만 수정
-            feed = feedService.updateFeed(user, feedId, request.getContent(), request.getActivity());
-        }
+        Feed feed = feedService.updateFeed(
+                user,
+                feedId,
+                request.getContent(),
+                request.getActivity(),
+                request.getStartImageKey(),
+                request.getEndImageKey(),
+                request.getOtherImageKeys()
+        );
         return ResponseEntity.ok(toFeedResponse(feed));
     }
 

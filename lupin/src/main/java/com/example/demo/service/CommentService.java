@@ -12,6 +12,7 @@ import com.example.demo.repository.CommentReportRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.domain.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -89,7 +90,7 @@ public class CommentService {
         feedRepository.decrementCommentCount(comment.getFeed().getId());
 
         // COMMENT_LIKE 알림 삭제 (refId = commentId)
-        notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
+        notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
 
         // 댓글 좋아요 삭제 (외래키 제약조건)
         commentLikeRepository.deleteByComment(comment);
@@ -97,7 +98,7 @@ public class CommentService {
         // 부모 댓글인 경우
         if (comment.getParent() == null) {
             // REPLY 알림 삭제 (refId = 부모 댓글 ID = 본인 ID)
-            notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "REPLY");
+            notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.REPLY);
             // 대댓글들의 좋아요 및 알림 삭제
             deleteRepliesData(comment);
         }
@@ -118,7 +119,7 @@ public class CommentService {
         List<String> replyIds = replies.stream()
                 .map(r -> String.valueOf(r.getId()))
                 .toList();
-        notificationRepository.deleteByRefIdInAndType(replyIds, "COMMENT_LIKE");
+        notificationRepository.deleteByRefIdInAndType(replyIds, NotificationType.COMMENT_LIKE);
 
         // [최적화] 대댓글들의 좋아요 일괄 삭제 (N개 쿼리 → 1개 쿼리)
         commentLikeRepository.deleteByCommentIn(replies);

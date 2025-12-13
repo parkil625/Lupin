@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,15 +35,15 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.refId = :refId AND n.type IN :types")
-    void deleteByRefIdAndTypeIn(@Param("refId") String refId, @Param("types") List<String> types);
+    void deleteByRefIdAndTypeIn(@Param("refId") String refId, @Param("types") List<NotificationType> types);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.refId = :refId AND n.type = :type")
-    void deleteByRefIdAndType(@Param("refId") String refId, @Param("type") String type);
+    void deleteByRefIdAndType(@Param("refId") String refId, @Param("type") NotificationType type);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.refId IN :refIds AND n.type = :type")
-    void deleteByRefIdInAndType(@Param("refIds") List<String> refIds, @Param("type") String type);
+    void deleteByRefIdInAndType(@Param("refIds") List<String> refIds, @Param("type") NotificationType type);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.createdAt < :cutoffDate")

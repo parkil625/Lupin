@@ -8,6 +8,7 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
+import com.example.demo.util.RedisKeyUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -118,7 +119,7 @@ class AuthServiceTest {
         given(jwtTokenProvider.validateToken(refreshToken)).willReturn(true);
         given(jwtTokenProvider.getEmail(refreshToken)).willReturn("test@example.com");
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("test@example.com")).willReturn(refreshToken);
+        given(valueOperations.get(RedisKeyUtils.refreshToken("test@example.com"))).willReturn(refreshToken);
         given(userRepository.findByUserId("test@example.com")).willReturn(Optional.of(user));
         given(jwtTokenProvider.createAccessToken(anyString(), anyString())).willReturn("newAccessToken");
         given(jwtTokenProvider.createRefreshToken(anyString())).willReturn("newRefreshToken");
@@ -152,7 +153,7 @@ class AuthServiceTest {
         given(jwtTokenProvider.validateToken(refreshToken)).willReturn(true);
         given(jwtTokenProvider.getEmail(refreshToken)).willReturn("test@example.com");
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("test@example.com")).willReturn("differentToken");
+        given(valueOperations.get(RedisKeyUtils.refreshToken("test@example.com"))).willReturn("differentToken");
 
         // when & then
         assertThatThrownBy(() -> authService.reissue(refreshToken))
@@ -168,15 +169,15 @@ class AuthServiceTest {
         given(jwtTokenProvider.validateToken("validAccessToken")).willReturn(true);
         given(jwtTokenProvider.getEmail("validAccessToken")).willReturn("test@example.com");
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("test@example.com")).willReturn("someToken");
+        given(valueOperations.get(RedisKeyUtils.refreshToken("test@example.com"))).willReturn("someToken");
         given(jwtTokenProvider.getExpiration("validAccessToken")).willReturn(3600000L);
 
         // when
         authService.logout(accessToken);
 
         // then
-        verify(redisTemplate).delete("test@example.com");
-        verify(valueOperations).set(eq("validAccessToken"), eq("logout"), anyLong(), any());
+        verify(redisTemplate).delete(RedisKeyUtils.refreshToken("test@example.com"));
+        verify(valueOperations).set(eq(RedisKeyUtils.blacklist("validAccessToken")), eq("logout"), anyLong(), any());
     }
 
     @Test
@@ -196,9 +197,7 @@ class AuthServiceTest {
     @DisplayName("OAuth 연동 해제 성공")
     void unlinkOAuthSuccessTest() {
         // given
-        user.setProvider("GOOGLE");
-        user.setProviderId("google123");
-        user.setProviderEmail("test@gmail.com");
+        user.linkOAuth("GOOGLE", "google123", "test@gmail.com");
         given(userRepository.save(any(User.class))).willReturn(user);
 
         // when
@@ -214,8 +213,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("연동되지 않은 OAuth 해제 시 예외가 발생한다")
     void unlinkOAuthNotLinkedTest() {
-        // given
-        user.setProvider(null);
+        // given - user는 기본적으로 provider가 null인 상태
 
         // when & then
         assertThatThrownBy(() -> authService.unlinkOAuth(user, "GOOGLE"))
@@ -227,7 +225,7 @@ class AuthServiceTest {
     @DisplayName("다른 Provider로 연동 해제 시 예외가 발생한다")
     void unlinkOAuthDifferentProviderTest() {
         // given
-        user.setProvider("KAKAO");
+        user.linkOAuth("KAKAO", "kakao123", "test@kakao.com");
 
         // when & then
         assertThatThrownBy(() -> authService.unlinkOAuth(user, "GOOGLE"))

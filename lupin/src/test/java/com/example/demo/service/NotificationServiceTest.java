@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -56,14 +57,14 @@ class NotificationServiceTest {
         // given
         Notification notification1 = Notification.builder()
                 .user(user)
-                .type("LIKE")
+                .type(NotificationType.FEED_LIKE)
                 .title("좋아요 알림")
                 .content("누군가 좋아요를 눌렀습니다")
                 .build();
 
         Notification notification2 = Notification.builder()
                 .user(user)
-                .type("COMMENT")
+                .type(NotificationType.COMMENT)
                 .title("댓글 알림")
                 .content("누군가 댓글을 달았습니다")
                 .build();
@@ -76,7 +77,7 @@ class NotificationServiceTest {
 
         // then
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getType()).isEqualTo("LIKE");
+        assertThat(result.get(0).getType()).isEqualTo(NotificationType.FEED_LIKE);
     }
 
     @Test
@@ -86,7 +87,7 @@ class NotificationServiceTest {
         Long notificationId = 1L;
         Notification notification = Notification.builder()
                 .user(user)
-                .type("LIKE")
+                .type(NotificationType.FEED_LIKE)
                 .title("좋아요 알림")
                 .content("내용")
                 .build();
@@ -206,7 +207,7 @@ class NotificationServiceTest {
         // then
         verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
                 notification.getUser().equals(feedOwner) &&
-                notification.getType().equals("FEED_LIKE") &&
+                notification.getType() == NotificationType.FEED_LIKE &&
                 notification.getRefId().equals(String.valueOf(feedId))
         ));
     }
@@ -256,7 +257,7 @@ class NotificationServiceTest {
         // then
         verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
                 notification.getUser().equals(feedOwner) &&
-                notification.getType().equals("COMMENT") &&
+                notification.getType() == NotificationType.COMMENT &&
                 notification.getRefId().equals(String.valueOf(feedId)) &&
                 notification.getTargetId().equals(commentId)
         ));
@@ -306,7 +307,7 @@ class NotificationServiceTest {
         // then
         verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
                 notification.getUser().equals(commentOwner) &&
-                notification.getType().equals("COMMENT_LIKE") &&
+                notification.getType() == NotificationType.COMMENT_LIKE &&
                 notification.getRefId().equals(String.valueOf(commentId))
         ));
     }
@@ -355,7 +356,7 @@ class NotificationServiceTest {
         // then
         verify(notificationRepository).save(org.mockito.ArgumentMatchers.argThat(notification ->
                 notification.getUser().equals(commentOwner) &&
-                notification.getType().equals("REPLY") &&
+                notification.getType() == NotificationType.REPLY &&
                 notification.getRefId().equals(String.valueOf(parentCommentId)) &&
                 notification.getTargetId().equals(replyId)
         ));

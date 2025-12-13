@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.util.S3UrlUtils;
 import com.sksamuel.scrimage.ImmutableImage;
 import com.sksamuel.scrimage.webp.WebpWriter;
 import io.awspring.cloud.s3.S3Template;
@@ -39,6 +40,7 @@ public class ImageService {
 
     private final S3Template s3Template;
     private final S3Client s3Client;
+    private final ImageMetadataService imageMetadataService;
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
@@ -94,6 +96,11 @@ public class ImageService {
                 .build();
 
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(imageBytes));
+
+        // 피드 이미지인 경우 EXIF 추출 및 캐싱 (나중에 피드 생성 시 재사용)
+        if ("feed".equals(prefix)) {
+            imageMetadataService.extractAndCache(originalBytes, fileName);
+        }
 
         // 썸네일 비동기 생성 (feed, profiles 폴더)
         if ("feed".equals(prefix) || "profiles".equals(prefix)) {
@@ -161,45 +168,7 @@ public class ImageService {
 
     public void deleteImage(String imageIdOrUrl) {
         // URL인 경우 S3 키만 추출
-        String s3Key = extractS3Key(imageIdOrUrl);
+        String s3Key = S3UrlUtils.extractPath(imageIdOrUrl, bucket);
         s3Template.deleteObject(bucket, s3Key);
-    }
-
-    /**
-     * URL 또는 S3 키에서 S3 키만 추출
-     * 예: https://lupin-storage.s3.ap-northeast-2.amazonaws.com/feed/abc123.jpg
-     *     → feed/abc123.jpg
-     */
-    private String extractS3Key(String s3KeyOrUrl) {
-        if (s3KeyOrUrl == null || s3KeyOrUrl.isEmpty()) {
-            return s3KeyOrUrl;
-        }
-
-        // 이미 S3 키인 경우 (http로 시작하지 않음)
-        if (!s3KeyOrUrl.startsWith("http")) {
-            return s3KeyOrUrl;
-        }
-
-        // S3 URL에서 버킷 이름 이후의 전체 경로 추출
-        // 예: https://lupin-storage.s3.ap-northeast-2.amazonaws.com/feed/abc123.jpg
-        //     → feed/abc123.jpg
-        String bucketPrefix = bucket + ".s3";
-        int bucketIndex = s3KeyOrUrl.indexOf(bucketPrefix);
-
-        if (bucketIndex >= 0) {
-            // 버킷 이름 이후 첫 번째 슬래시 찾기
-            int firstSlashAfterBucket = s3KeyOrUrl.indexOf('/', bucketIndex + bucketPrefix.length());
-            if (firstSlashAfterBucket >= 0 && firstSlashAfterBucket < s3KeyOrUrl.length() - 1) {
-                return s3KeyOrUrl.substring(firstSlashAfterBucket + 1);
-            }
-        }
-
-        // 실패 시 기존 로직 (마지막 슬래시 이후)
-        int lastSlashIndex = s3KeyOrUrl.lastIndexOf('/');
-        if (lastSlashIndex >= 0 && lastSlashIndex < s3KeyOrUrl.length() - 1) {
-            return s3KeyOrUrl.substring(lastSlashIndex + 1);
-        }
-
-        return s3KeyOrUrl;
     }
 }

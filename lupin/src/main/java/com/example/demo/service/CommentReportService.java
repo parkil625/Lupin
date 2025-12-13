@@ -10,6 +10,7 @@ import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentReportRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.domain.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,7 +67,7 @@ public class CommentReportService {
                 .map(cl -> String.valueOf(cl.getId()))
                 .toList();
         if (!commentLikeIds.isEmpty()) {
-            notificationRepository.deleteByRefIdInAndType(commentLikeIds, "COMMENT_LIKE");
+            notificationRepository.deleteByRefIdInAndType(commentLikeIds, NotificationType.COMMENT_LIKE);
         }
 
         // REPLY 알림 삭제 (refId = Reply Comment ID)
@@ -74,7 +75,7 @@ public class CommentReportService {
                 .map(r -> String.valueOf(r.getId()))
                 .toList();
         if (!replyIds.isEmpty()) {
-            notificationRepository.deleteByRefIdInAndType(replyIds, "REPLY");
+            notificationRepository.deleteByRefIdInAndType(replyIds, NotificationType.REPLY);
         }
 
         commentLikeRepository.deleteByComment(comment);

@@ -2,6 +2,7 @@ package com.example.demo.e2e;
 
 import com.example.demo.config.TestRedisConfiguration;
 import com.example.demo.domain.entity.*;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.CommentRequest;
 import com.example.demo.dto.request.FeedRequest;
@@ -638,7 +639,7 @@ class FeedE2ETest {
         // given - 알림 생성
         Notification notification = notificationRepository.save(Notification.builder()
                 .user(testUser)
-                .type("TEST")
+                .type(NotificationType.COMMENT)
                 .title("테스트 알림")
                 .build());
 
@@ -670,7 +671,7 @@ class FeedE2ETest {
         for (int i = 1; i <= 3; i++) {
             notificationRepository.save(Notification.builder()
                     .user(testUser)
-                    .type("TEST")
+                    .type(NotificationType.COMMENT)
                     .title("알림 " + i)
                     .build());
         }
@@ -697,7 +698,7 @@ class FeedE2ETest {
         // given
         Notification notification = notificationRepository.save(Notification.builder()
                 .user(testUser)
-                .type("TEST")
+                .type(NotificationType.COMMENT)
                 .title("삭제할 알림")
                 .build());
 

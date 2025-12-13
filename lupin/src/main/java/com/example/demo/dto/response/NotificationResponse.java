@@ -23,7 +23,7 @@ public class NotificationResponse {
     public static NotificationResponse from(Notification notification) {
         return NotificationResponse.builder()
                 .id(notification.getId())
-                .type(notification.getType())
+                .type(notification.getType().name())
                 .title(notification.getTitle())
                 .content(notification.getContent())
                 .isRead(notification.getIsRead())

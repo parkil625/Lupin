@@ -6,6 +6,7 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
+import com.example.demo.util.RedisKeyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
@@ -81,9 +82,7 @@ public abstract class AbstractOAuthService {
             }
 
             // 연동 정보 업데이트
-            user.setProvider(getProviderName());
-            user.setProviderId(oauthUser.providerId());
-            user.setProviderEmail(oauthUser.email());
+            user.linkOAuth(getProviderName(), oauthUser.providerId(), oauthUser.email());
             userRepository.save(user);
 
         } catch (BusinessException e) {
@@ -175,7 +174,7 @@ public abstract class AbstractOAuthService {
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
 
         redisTemplate.opsForValue().set(
-                user.getUserId(),
+                RedisKeyUtils.refreshToken(user.getUserId()),
                 refreshToken,
                 REFRESH_TOKEN_VALIDITY,
                 TimeUnit.DAYS

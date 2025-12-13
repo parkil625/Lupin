@@ -3,6 +3,8 @@ package com.example.demo.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -17,6 +19,8 @@ import java.util.Set;
     @Index(name = "idx_writer_created", columnList = "writer_id, created_at DESC")
 })
 @EntityListeners(AuditingEntityListener.class)
+@SQLDelete(sql = "UPDATE feeds SET deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = {"writer", "images"})
@@ -63,6 +67,9 @@ public class Feed {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @Builder
     public Feed(User writer, String activity, String content, long points, int calories) {

@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.util.S3UrlUtils;
 import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,30 +43,30 @@ class ImageMetadataServiceTest {
     }
 
     @Nested
-    @DisplayName("extractS3Key")
-    class ExtractS3Key {
+    @DisplayName("S3UrlUtils.extractFilename")
+    class ExtractFilename {
 
         @Test
-        @DisplayName("URL에서 S3 키를 추출한다")
-        void extractS3KeyFromUrl() {
+        @DisplayName("URL에서 파일명을 추출한다")
+        void extractFilenameFromUrl() {
             // given
             String url = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/test-image.jpg";
 
             // when
-            String result = ReflectionTestUtils.invokeMethod(imageMetadataService, "extractS3Key", url);
+            String result = S3UrlUtils.extractFilename(url);
 
             // then
             assertThat(result).isEqualTo("test-image.jpg");
         }
 
         @Test
-        @DisplayName("이미 S3 키인 경우 그대로 반환한다")
-        void extractS3KeyFromKey() {
+        @DisplayName("이미 파일명인 경우 그대로 반환한다")
+        void extractFilenameFromKey() {
             // given
             String key = "test-image.jpg";
 
             // when
-            String result = ReflectionTestUtils.invokeMethod(imageMetadataService, "extractS3Key", key);
+            String result = S3UrlUtils.extractFilename(key);
 
             // then
             assertThat(result).isEqualTo("test-image.jpg");
@@ -73,12 +74,12 @@ class ImageMetadataServiceTest {
 
         @Test
         @DisplayName("null인 경우 null을 반환한다")
-        void extractS3KeyFromNull() {
+        void extractFilenameFromNull() {
             // given
             String key = null;
 
             // when
-            String result = ReflectionTestUtils.invokeMethod(imageMetadataService, "extractS3Key", key);
+            String result = S3UrlUtils.extractFilename(key);
 
             // then
             assertThat(result).isNull();
@@ -86,12 +87,12 @@ class ImageMetadataServiceTest {
 
         @Test
         @DisplayName("빈 문자열인 경우 빈 문자열을 반환한다")
-        void extractS3KeyFromEmpty() {
+        void extractFilenameFromEmpty() {
             // given
             String key = "";
 
             // when
-            String result = ReflectionTestUtils.invokeMethod(imageMetadataService, "extractS3Key", key);
+            String result = S3UrlUtils.extractFilename(key);
 
             // then
             assertThat(result).isEmpty();
@@ -99,12 +100,12 @@ class ImageMetadataServiceTest {
 
         @Test
         @DisplayName("경로가 포함된 URL에서 파일명만 추출한다")
-        void extractS3KeyFromUrlWithPath() {
+        void extractFilenameFromUrlWithPath() {
             // given
             String url = "https://test-bucket.s3.amazonaws.com/images/2024/01/test-image.jpg";
 
             // when
-            String result = ReflectionTestUtils.invokeMethod(imageMetadataService, "extractS3Key", url);
+            String result = S3UrlUtils.extractFilename(url);
 
             // then
             assertThat(result).isEqualTo("test-image.jpg");

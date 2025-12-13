@@ -10,7 +10,6 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "users")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -87,5 +86,24 @@ public class User {
 
     public boolean isActive() {
         return this.status == UserStatus.ACTIVE;
+    }
+
+    // OAuth 연동 메서드
+    public void linkOAuth(String provider, String providerId, String providerEmail) {
+        this.provider = provider;
+        this.providerId = providerId;
+        this.providerEmail = providerEmail;
+    }
+
+    // OAuth 연동 해제 메서드
+    public void unlinkOAuth() {
+        this.provider = null;
+        this.providerId = null;
+        this.providerEmail = null;
+    }
+
+    // 아바타 업데이트 메서드
+    public void updateAvatar(String avatarUrl) {
+        this.avatar = avatarUrl;
     }
 }

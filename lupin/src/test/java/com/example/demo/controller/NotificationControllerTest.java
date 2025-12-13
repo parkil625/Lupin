@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.config.TestRedisConfiguration;
 import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.NotificationService;
@@ -58,7 +59,7 @@ class NotificationControllerTest {
         testNotification = Notification.builder()
                 .id(1L)
                 .user(testUser)
-                .type("COMMENT")
+                .type(NotificationType.COMMENT)
                 .title("새 댓글")
                 .content("누군가 댓글을 달았습니다")
                 .isRead(false)

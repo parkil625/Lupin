@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedLike;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.event.NotificationEvent;
 import com.example.demo.exception.BusinessException;
@@ -141,7 +142,7 @@ class FeedLikeServiceTest {
         feedLikeService.unlikeFeed(user, feedId);
 
         // then - refId는 feedId 사용
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE);
         verify(feedLikeRepository).delete(feedLike);
     }
 

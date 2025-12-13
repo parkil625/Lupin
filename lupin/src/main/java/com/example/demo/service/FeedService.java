@@ -84,8 +84,27 @@ public class FeedService {
         return feedTransactionService.createFeed(writer, activity, content, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
     }
 
+    /**
+     * 피드 수정 - 내용만 수정 (이미지 변경 없음)
+     */
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity) {
+        return updateFeedContentOnly(user, feedId, content, activity);
+    }
+
+    /**
+     * 피드 수정 통합 메서드 (이미지 키가 null이면 내용만 수정)
+     */
+    public Feed updateFeed(User user, Long feedId, String content, String activity,
+                           String startImageKey, String endImageKey, List<String> otherImageKeys) {
+        if (startImageKey != null && endImageKey != null) {
+            return updateFeedWithImages(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys);
+        }
+        return updateFeedContentOnly(user, feedId, content, activity);
+    }
+
+    @Transactional
+    private Feed updateFeedContentOnly(User user, Long feedId, String content, String activity) {
         Feed feed = feedRepository.findByIdWithWriterAndImages(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
@@ -103,9 +122,10 @@ public class FeedService {
     }
 
     /**
-     * 피드 수정 (S3 I/O를 트랜잭션 외부에서 수행)
+     * 피드 수정 - 이미지 포함 (S3 I/O를 트랜잭션 외부에서 수행)
      */
-    public Feed updateFeed(User user, Long feedId, String content, String activity, String startImageKey, String endImageKey, List<String> otherImageKeys) {
+    private Feed updateFeedWithImages(User user, Long feedId, String content, String activity,
+                                      String startImageKey, String endImageKey, List<String> otherImageKeys) {
         // [트랜잭션 외부] S3에서 EXIF 시간 추출 (네트워크 I/O)
         Optional<LocalDateTime> startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
         Optional<LocalDateTime> endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);

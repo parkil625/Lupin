@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.config.properties.PenaltyProperties;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.entity.UserPenalty;
 import com.example.demo.domain.enums.PenaltyType;
@@ -15,10 +16,8 @@ import java.time.LocalDateTime;
 @Transactional(readOnly = true)
 public class UserPenaltyService {
 
-    private static final int PENALTY_DURATION_DAYS = 3;
-    private static final int PENALTY_THRESHOLD_MULTIPLIER = 5;
-
     private final UserPenaltyRepository userPenaltyRepository;
+    private final PenaltyProperties penaltyProperties;
 
     @Transactional
     public UserPenalty addPenalty(User user, PenaltyType penaltyType) {
@@ -33,12 +32,12 @@ public class UserPenaltyService {
     }
 
     public boolean hasActivePenalty(User user, PenaltyType penaltyType) {
-        LocalDateTime since = LocalDateTime.now().minusDays(PENALTY_DURATION_DAYS);
+        LocalDateTime since = LocalDateTime.now().minusDays(penaltyProperties.getDurationDays());
         return userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(user, penaltyType, since);
     }
 
     public boolean shouldApplyPenalty(long likeCount, long reportCount) {
         long effectiveLikeCount = Math.max(likeCount, 1);
-        return reportCount >= effectiveLikeCount * PENALTY_THRESHOLD_MULTIPLIER;
+        return reportCount >= effectiveLikeCount * penaltyProperties.getThresholdMultiplier();
     }
 }

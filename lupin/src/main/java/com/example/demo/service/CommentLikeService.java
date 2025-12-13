@@ -9,6 +9,7 @@ import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.domain.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -65,7 +66,7 @@ public class CommentLikeService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
         // refId = commentId (댓글 참조)
-        notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
+        notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
         commentLikeRepository.delete(commentLike);
     }
 

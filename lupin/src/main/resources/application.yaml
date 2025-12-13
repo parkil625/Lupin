@@ -85,6 +85,10 @@ logging:
 app:
   seed-data:
     enabled: false
+  cookie:
+    secure: true           # 운영(HTTPS): true, 개발(HTTP): false
+    same-site: None        # 크로스 도메인: None, 동일 도메인: Lax
+    refresh-token-max-age-days: 7
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://43.202.79.166,https://43.202.79.166,https://lupin-eosin.vercel.app,https://lupin-care.com,https://www.lupin-care.com,https://api.lupin-care.com}
   async:
@@ -92,6 +96,9 @@ app:
     max-pool-size: 10
     queue-capacity: 100
     thread-name-prefix: "AsyncThread-"
+  penalty:
+    duration-days: 3          # 패널티 지속 기간 (일)
+    threshold-multiplier: 5   # 패널티 적용 임계값 배수 (신고 수 >= 좋아요 수 * 배수)
 
 jwt:
   secret: ${JWT_SECRET:bHVwaW5EZXZTZWNyZXRLZXlGb3JKd3RUb2tlbkdlbmVyYXRpb24yNTZiaXRz}

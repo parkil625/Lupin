@@ -82,7 +82,7 @@ public class NotificationEventListener {
 
         return Notification.builder()
                 .user(targetUser)
-                .type(event.getType().name())
+                .type(event.getType())
                 .title(title)
                 .content(event.getContentPreview())
                 .refId(event.getRefId() != null ? String.valueOf(event.getRefId()) : null)

@@ -9,6 +9,7 @@ import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.domain.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,7 @@ public class FeedLikeService {
         feedRepository.decrementLikeCount(feedId);
 
         // refId = feedId (피드 참조)
-        notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");
+        notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE);
         feedLikeRepository.delete(feedLike);
     }
 

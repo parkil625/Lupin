@@ -1,9 +1,11 @@
 package com.example.demo.controller;
 
+import com.example.demo.config.properties.CookieProperties;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.response.LoginResponse;
 import com.example.demo.service.AuthService;
+import com.example.demo.service.GoogleOAuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,8 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final GoogleOAuthService googleOAuthService;
+    private final CookieProperties cookieProperties;
 
     /**
      * 일반 로그인
@@ -49,7 +53,7 @@ public class AuthController {
         String token = request.get("token");
 
         // 1. 구글 로그인도 DTO 반환
-        LoginDto loginDto = authService.googleLogin(token);
+        LoginDto loginDto = googleOAuthService.googleLogin(token);
 
         // 2. ★ 중요: 헬퍼 메서드 재사용 (쿠키 이름 "refresh_token" 통일됨)
         setRefreshTokenCookie(response, loginDto.getRefreshToken());
@@ -111,11 +115,11 @@ public class AuthController {
     // =========================================================================
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
-                .httpOnly(true)       // JS 접근 불가
-                .secure(true)         // HTTPS 필수 (로컬에선 false 가능하지만 true 권장)
+                .httpOnly(true)
+                .secure(cookieProperties.isSecure())
                 .path("/")
-                .maxAge(7 * 24 * 60 * 60) // 7일
-                .sameSite("None")     // 크로스 도메인 요청 시 필수
+                .maxAge(cookieProperties.getRefreshTokenMaxAgeDays() * 24L * 60 * 60)
+                .sameSite(cookieProperties.getSameSite())
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

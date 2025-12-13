@@ -1,28 +1,21 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
-import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-import jakarta.annotation.PostConstruct;
+import com.example.demo.util.RedisKeyUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -36,20 +29,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String, String> redisTemplate;
 
-    private static final String GOOGLE_CLIENT_ID_DEFAULT = "dummy";
-
-    @Value("${GOOGLE_CLIENT_ID:" + GOOGLE_CLIENT_ID_DEFAULT + "}")
-    private String googleClientId;
-
     // Refresh Token 만료 시간 (7일)
-    private final long REFRESH_TOKEN_VALIDITY = 7;
-
-    @PostConstruct
-    public void init() {
-        if (GOOGLE_CLIENT_ID_DEFAULT.equals(googleClientId)) {
-            log.warn("GOOGLE_CLIENT_ID가 설정되지 않았습니다. 구글 로그인 기능이 정상 동작하지 않습니다.");
-        }
-    }
+    private static final long REFRESH_TOKEN_VALIDITY = 7;
 
     /**
      * 일반 로그인
@@ -66,38 +47,6 @@ public class AuthService {
     }
 
     /**
-     * 구글 로그인
-     */
-    public LoginDto googleLogin(String googleIdToken) {
-        try {
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                    new NetHttpTransport(), GsonFactory.getDefaultInstance())
-                    .setAudience(Collections.singletonList(googleClientId))
-                    .build();
-
-            GoogleIdToken idToken = verifier.verify(googleIdToken);
-            if (idToken == null) {
-                throw new BusinessException(ErrorCode.INVALID_TOKEN);
-            }
-
-            GoogleIdToken.Payload payload = idToken.getPayload();
-            String email = payload.getEmail();
-
-            User user = userRepository.findByProviderEmail(email)
-                    .or(() -> userRepository.findByUserId(email))
-                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-
-            return generateTokens(user);
-
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("구글 로그인 실패", e);
-            throw new BusinessException(ErrorCode.INVALID_TOKEN);
-        }
-    }
-
-    /**
      * 토큰 재발급
      */
     public LoginDto reissue(String refreshToken) {
@@ -106,7 +55,7 @@ public class AuthService {
         }
 
         String userId = jwtTokenProvider.getEmail(refreshToken);
-        String storedRefreshToken = redisTemplate.opsForValue().get(userId);
+        String storedRefreshToken = redisTemplate.opsForValue().get(RedisKeyUtils.refreshToken(userId));
 
         // Redis에 저장된 토큰이 없으면 만료된 것
         if (storedRefreshToken == null) {
@@ -137,59 +86,20 @@ public class AuthService {
         }
 
         String userId = jwtTokenProvider.getEmail(accessToken);
-        if (redisTemplate.opsForValue().get(userId) != null) {
-            redisTemplate.delete(userId);
+        String refreshTokenKey = RedisKeyUtils.refreshToken(userId);
+        if (redisTemplate.opsForValue().get(refreshTokenKey) != null) {
+            redisTemplate.delete(refreshTokenKey);
         }
 
         long expiration = jwtTokenProvider.getExpiration(accessToken);
 
         if (expiration > 0) {
             redisTemplate.opsForValue().set(
-                    accessToken,
+                    RedisKeyUtils.blacklist(accessToken),
                     "logout",
                     expiration,
                     TimeUnit.MILLISECONDS
             );
-        }
-    }
-
-    /**
-     * 구글 계정 연동
-     */
-    public void linkGoogle(User user, String googleIdToken) {
-        try {
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                    new NetHttpTransport(), GsonFactory.getDefaultInstance())
-                    .setAudience(Collections.singletonList(googleClientId))
-                    .build();
-
-            GoogleIdToken idToken = verifier.verify(googleIdToken);
-            if (idToken == null) {
-                throw new BusinessException(ErrorCode.INVALID_TOKEN);
-            }
-
-            GoogleIdToken.Payload payload = idToken.getPayload();
-            String email = payload.getEmail();
-            String googleId = payload.getSubject();
-
-            // 이미 다른 계정에 연동된 이메일인지 확인
-            userRepository.findByProviderEmail(email)
-                    .filter(existingUser -> !existingUser.getId().equals(user.getId()))
-                    .ifPresent(existingUser -> {
-                        throw new BusinessException(ErrorCode.OAUTH_ALREADY_USED);
-                    });
-
-            // 연동 정보 업데이트
-            user.setProvider(SocialProvider.GOOGLE.name());
-            user.setProviderId(googleId);
-            user.setProviderEmail(email);
-            userRepository.save(user);
-
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("구글 계정 연동 실패", e);
-            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
     }
 
@@ -203,9 +113,7 @@ public class AuthService {
         }
 
         // 연동 정보 제거
-        user.setProvider(null);
-        user.setProviderId(null);
-        user.setProviderEmail(null);
+        user.unlinkOAuth();
         userRepository.save(user);
     }
 
@@ -215,7 +123,7 @@ public class AuthService {
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
 
         redisTemplate.opsForValue().set(
-                user.getUserId(),
+                RedisKeyUtils.refreshToken(user.getUserId()),
                 refreshToken,
                 REFRESH_TOKEN_VALIDITY,
                 TimeUnit.DAYS

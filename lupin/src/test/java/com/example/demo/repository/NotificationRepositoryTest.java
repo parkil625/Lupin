@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +23,10 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
         User user = createAndSaveUser("user1");
         User otherUser = createAndSaveUser("user2");
 
-        createAndSaveNotification(user, "LIKE", "좋아요 알림 1");
-        createAndSaveNotification(user, "COMMENT", "댓글 알림");
-        createAndSaveNotification(user, "LIKE", "좋아요 알림 2");
-        createAndSaveNotification(otherUser, "LIKE", "다른 사용자 알림");
+        createAndSaveNotification(user, NotificationType.FEED_LIKE, "좋아요 알림 1");
+        createAndSaveNotification(user, NotificationType.COMMENT, "댓글 알림");
+        createAndSaveNotification(user, NotificationType.FEED_LIKE, "좋아요 알림 2");
+        createAndSaveNotification(otherUser, NotificationType.FEED_LIKE, "다른 사용자 알림");
 
         // when
         List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDescIdDesc(user);
@@ -44,8 +45,8 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
         User user = createAndSaveUser("user1");
         User allReadUser = createAndSaveUser("user2");
 
-        createAndSaveNotification(user, "LIKE", "읽지 않은 알림");
-        createAndSaveNotification(allReadUser, "LIKE", "읽은 알림", true);
+        createAndSaveNotification(user, NotificationType.FEED_LIKE, "읽지 않은 알림");
+        createAndSaveNotification(allReadUser, NotificationType.FEED_LIKE, "읽은 알림", true);
 
         // when
         boolean hasUnread = notificationRepository.existsByUserAndIsReadFalse(user);
@@ -65,39 +66,39 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
         String commentId = "200";
 
         // 피드 관련 알림
-        createAndSaveNotification(user, "FEED_LIKE", "피드 좋아요", feedId);
-        createAndSaveNotification(user, "COMMENT", "댓글 알림", feedId);
+        createAndSaveNotification(user, NotificationType.FEED_LIKE, "피드 좋아요", feedId);
+        createAndSaveNotification(user, NotificationType.COMMENT, "댓글 알림", feedId);
 
         // 댓글 관련 알림
-        createAndSaveNotification(user, "COMMENT_LIKE", "댓글 좋아요", commentId);
-        createAndSaveNotification(user, "REPLY", "답글 알림", commentId);
+        createAndSaveNotification(user, NotificationType.COMMENT_LIKE, "댓글 좋아요", commentId);
+        createAndSaveNotification(user, NotificationType.REPLY, "답글 알림", commentId);
 
         // 삭제되면 안 되는 알림
-        createAndSaveNotification(user, "FEED_LIKE", "다른 피드 좋아요", "999");
+        createAndSaveNotification(user, NotificationType.FEED_LIKE, "다른 피드 좋아요", "999");
 
         // when - 피드 관련 알림 삭제
-        notificationRepository.deleteByRefIdAndTypeIn(feedId, List.of("FEED_LIKE", "COMMENT"));
+        notificationRepository.deleteByRefIdAndTypeIn(feedId, List.of(NotificationType.FEED_LIKE, NotificationType.COMMENT));
 
         // then
         List<Notification> remaining = notificationRepository.findByUserOrderByCreatedAtDescIdDesc(user);
         assertThat(remaining).hasSize(3);
         assertThat(remaining).extracting("type")
-                .containsExactlyInAnyOrder("COMMENT_LIKE", "REPLY", "FEED_LIKE");
+                .containsExactlyInAnyOrder(NotificationType.COMMENT_LIKE, NotificationType.REPLY, NotificationType.FEED_LIKE);
     }
 
-    private Notification createAndSaveNotification(User user, String type, String title) {
+    private Notification createAndSaveNotification(User user, NotificationType type, String title) {
         return createAndSaveNotification(user, type, title, null, false);
     }
 
-    private Notification createAndSaveNotification(User user, String type, String title, boolean isRead) {
+    private Notification createAndSaveNotification(User user, NotificationType type, String title, boolean isRead) {
         return createAndSaveNotification(user, type, title, null, isRead);
     }
 
-    private Notification createAndSaveNotification(User user, String type, String title, String refId) {
+    private Notification createAndSaveNotification(User user, NotificationType type, String title, String refId) {
         return createAndSaveNotification(user, type, title, refId, false);
     }
 
-    private Notification createAndSaveNotification(User user, String type, String title, String refId, boolean isRead) {
+    private Notification createAndSaveNotification(User user, NotificationType type, String title, String refId, boolean isRead) {
         Notification notification = Notification.builder()
                 .user(user)
                 .type(type)

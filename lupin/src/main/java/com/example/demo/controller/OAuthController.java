@@ -5,6 +5,7 @@ import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.AuthService;
+import com.example.demo.service.GoogleOAuthService;
 import com.example.demo.service.KakaoOAuthService;
 import com.example.demo.service.NaverOAuthService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class OAuthController {
 
     private final AuthService authService;
+    private final GoogleOAuthService googleOAuthService;
     private final NaverOAuthService naverOAuthService;
     private final KakaoOAuthService kakaoOAuthService;
 
@@ -34,7 +36,7 @@ public class OAuthController {
     ) {
         String googleToken = request.get("token");
 
-        authService.linkGoogle(user, googleToken);
+        googleOAuthService.linkGoogle(user, googleToken);
 
         return ResponseEntity.ok(Map.of(
                 "id", user.getId(),

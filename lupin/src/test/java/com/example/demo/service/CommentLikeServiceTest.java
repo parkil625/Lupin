@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.event.NotificationEvent;
 import com.example.demo.exception.BusinessException;
@@ -149,7 +150,7 @@ class CommentLikeServiceTest {
         commentLikeService.unlikeComment(user, commentId);
 
         // then - refId는 commentId 사용
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
+        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
         verify(commentLikeRepository).delete(commentLike);
     }
 

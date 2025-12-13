@@ -13,6 +13,7 @@ import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedReportRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.domain.enums.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,8 +78,8 @@ public class FeedReportService {
         String feedIdStr = String.valueOf(feed.getId());
 
         // FEED_LIKE, COMMENT 알림 삭제 (refId = feedId)
-        notificationRepository.deleteByRefIdAndType(feedIdStr, "FEED_LIKE");
-        notificationRepository.deleteByRefIdAndType(feedIdStr, "COMMENT");
+        notificationRepository.deleteByRefIdAndType(feedIdStr, NotificationType.FEED_LIKE);
+        notificationRepository.deleteByRefIdAndType(feedIdStr, NotificationType.COMMENT);
 
         // 댓글 ID 수집 (부모 댓글만)
         List<String> parentCommentIds = commentRepository.findByFeed(feed).stream()
@@ -88,7 +89,7 @@ public class FeedReportService {
 
         // REPLY 알림 삭제 (refId = 부모 댓글 ID)
         if (!parentCommentIds.isEmpty()) {
-            notificationRepository.deleteByRefIdInAndType(parentCommentIds, "REPLY");
+            notificationRepository.deleteByRefIdInAndType(parentCommentIds, NotificationType.REPLY);
         }
 
         // 모든 댓글 ID 수집 (COMMENT_LIKE 삭제용)
@@ -98,7 +99,7 @@ public class FeedReportService {
 
         // COMMENT_LIKE 알림 삭제 (refId = commentId)
         if (!allCommentIds.isEmpty()) {
-            notificationRepository.deleteByRefIdInAndType(allCommentIds, "COMMENT_LIKE");
+            notificationRepository.deleteByRefIdInAndType(allCommentIds, NotificationType.COMMENT_LIKE);
         }
 
         feedLikeRepository.deleteByFeed(feed);

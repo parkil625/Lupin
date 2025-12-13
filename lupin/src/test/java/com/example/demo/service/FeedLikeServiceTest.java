@@ -45,6 +45,9 @@ class FeedLikeServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private LikeCountCacheService likeCountCacheService;
+
     @InjectMocks
     private FeedLikeService feedLikeService;
 

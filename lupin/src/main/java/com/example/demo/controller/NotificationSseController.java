@@ -26,9 +26,15 @@ public class NotificationSseController {
      * SSE 구독 엔드포인트
      * GET /api/notifications/subscribe?token=xxx
      * SSE는 Authorization 헤더를 지원하지 않으므로 토큰을 쿼리 파라미터로 받음
+     *
+     * @param token JWT 토큰
+     * @param lastEventId 마지막으로 받은 이벤트 ID (재연결 시 브라우저가 자동 전송)
      */
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe(@RequestParam("token") String token) {
+    public SseEmitter subscribe(
+            @RequestParam("token") String token,
+            @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId) {
+
         if (!jwtTokenProvider.validateToken(token)) {
             log.error("SSE 구독 실패: 유효하지 않은 토큰");
             SseEmitter emitter = new SseEmitter();
@@ -42,8 +48,23 @@ public class NotificationSseController {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        log.info("SSE 구독 요청: userId={}", user.getId());
-        return notificationSseService.subscribe(user.getId());
+        // Last-Event-ID를 Long으로 파싱 (없거나 파싱 실패 시 null)
+        Long lastEventIdLong = parseLastEventId(lastEventId);
+
+        log.info("SSE 구독 요청: userId={}, lastEventId={}", user.getId(), lastEventIdLong);
+        return notificationSseService.subscribe(user.getId(), lastEventIdLong);
+    }
+
+    private Long parseLastEventId(String lastEventId) {
+        if (lastEventId == null || lastEventId.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(lastEventId);
+        } catch (NumberFormatException e) {
+            log.warn("Last-Event-ID 파싱 실패: {}", lastEventId);
+            return null;
+        }
     }
 
     /**

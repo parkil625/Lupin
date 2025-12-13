@@ -71,6 +71,9 @@ public class User {
     @Builder.Default
     private Long totalPoints = 0L;
 
+    @Version
+    private Long version;
+
     public void updateProfile(String name, Double height, Double weight) {
         this.name = name;
         this.height = height;

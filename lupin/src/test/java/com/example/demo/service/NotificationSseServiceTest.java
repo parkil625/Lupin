@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.response.NotificationResponse;
+import com.example.demo.repository.NotificationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,9 @@ class NotificationSseServiceTest {
     @Mock
     private RedisTemplate<String, String> redisTemplate;
 
+    @Mock
+    private NotificationRepository notificationRepository;
+
     private ObjectMapper objectMapper;
 
     private NotificationSseService notificationSseService;
@@ -26,7 +30,7 @@ class NotificationSseServiceTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        notificationSseService = new NotificationSseService(redisTemplate, objectMapper);
+        notificationSseService = new NotificationSseService(redisTemplate, objectMapper, notificationRepository);
     }
 
     @Test

@@ -48,4 +48,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.createdAt < :cutoffDate")
     int deleteByCreatedAtBefore(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+    // [Last-Event-ID] 특정 ID 이후의 알림 조회 (재연결 시 사용)
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.id > :lastEventId ORDER BY n.id ASC")
+    List<Notification> findByUserIdAndIdGreaterThan(@Param("userId") Long userId, @Param("lastEventId") Long lastEventId);
 }

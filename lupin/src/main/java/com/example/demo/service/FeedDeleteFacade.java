@@ -30,6 +30,7 @@ public class FeedDeleteFacade {
     private final FeedLikeService feedLikeService;
     private final FeedReportService feedReportService;
     private final NotificationService notificationService;
+    private final LikeCountCacheService likeCountCacheService;
 
     /**
      * 피드 삭제 - 관련된 모든 데이터(댓글, 좋아요, 신고, 알림)를 함께 삭제
@@ -79,5 +80,8 @@ public class FeedDeleteFacade {
         // 좋아요, 신고 삭제
         feedLikeService.deleteAllByFeed(feed);
         feedReportService.deleteAllByFeed(feed);
+
+        // Redis 캐시 삭제
+        likeCountCacheService.deleteLikeCount(feedId);
     }
 }

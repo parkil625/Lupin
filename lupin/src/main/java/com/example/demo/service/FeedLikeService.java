@@ -24,6 +24,7 @@ public class FeedLikeService {
     private final FeedRepository feedRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final LikeCountCacheService likeCountCacheService;
 
     @Transactional
     public FeedLike likeFeed(User user, Long feedId) {
@@ -42,8 +43,8 @@ public class FeedLikeService {
 
         FeedLike savedFeedLike = feedLikeRepository.save(feedLike);
 
-        // 좋아요 카운트 증가 (원자적 업데이트로 동시성 문제 해결)
-        feedRepository.incrementLikeCount(feedId);
+        // [Hot Write 최적화] Redis 카운트 증가 → 스케줄러가 DB 동기화
+        likeCountCacheService.incrementLikeCount(feedId);
 
         // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
         eventPublisher.publishEvent(NotificationEvent.feedLike(
@@ -66,8 +67,8 @@ public class FeedLikeService {
         FeedLike feedLike = feedLikeRepository.findByUserAndFeed(user, feed)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
-        // 좋아요 카운트 감소 (원자적 업데이트로 동시성 문제 해결)
-        feedRepository.decrementLikeCount(feedId);
+        // [Hot Write 최적화] Redis 카운트 감소 → 스케줄러가 DB 동기화
+        likeCountCacheService.decrementLikeCount(feedId);
 
         // refId = feedId (피드 참조)
         notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE);

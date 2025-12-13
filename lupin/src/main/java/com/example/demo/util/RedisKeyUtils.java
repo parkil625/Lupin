@@ -8,6 +8,8 @@ public final class RedisKeyUtils {
 
     private static final String REFRESH_TOKEN_PREFIX = "refresh:";
     private static final String BLACKLIST_PREFIX = "blacklist:";
+    private static final String FEED_LIKE_COUNT_PREFIX = "feed:like:";
+    private static final String FEED_LIKE_DIRTY_SET = "feed:like:dirty";
 
     private RedisKeyUtils() {
     }
@@ -28,5 +30,23 @@ public final class RedisKeyUtils {
      */
     public static String blacklist(String accessToken) {
         return BLACKLIST_PREFIX + accessToken;
+    }
+
+    /**
+     * 피드 좋아요 카운트 캐시 키 생성
+     * @param feedId 피드 ID
+     * @return "feed:like:{feedId}" 형식의 키
+     */
+    public static String feedLikeCount(Long feedId) {
+        return FEED_LIKE_COUNT_PREFIX + feedId;
+    }
+
+    /**
+     * 피드 좋아요 Dirty Set 키 반환
+     * DB 동기화가 필요한 피드 ID들을 저장하는 Set
+     * @return "feed:like:dirty" 키
+     */
+    public static String feedLikeDirtySet() {
+        return FEED_LIKE_DIRTY_SET;
     }
 }

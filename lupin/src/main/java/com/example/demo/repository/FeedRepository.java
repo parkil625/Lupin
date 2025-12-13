@@ -74,4 +74,9 @@ public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositor
 
     // 사용자별 피드 수 조회
     long countByWriterId(Long writerId);
+
+    // [Redis 동기화] 좋아요 카운트 직접 설정
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Feed f SET f.likeCount = :count WHERE f.id = :feedId")
+    void updateLikeCount(@Param("feedId") Long feedId, @Param("count") int count);
 }

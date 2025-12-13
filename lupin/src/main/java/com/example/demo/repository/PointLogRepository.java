@@ -44,7 +44,7 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
 
     /**
      * 특정 사용자의 랭킹과 앞뒤 사용자를 조회
-     * CTE 없이 서브쿼리로 구현하여 MySQL 호환성 확보
+     * 변수를 사용하여 MySQL 호환성 확보 및 NULL 안전 처리
      */
     @Query(value = """
         SELECT r.id, r.name, r.avatar, r.department, r.total_points, r.user_rank
@@ -58,22 +58,14 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
                 ROW_NUMBER() OVER (ORDER BY COALESCE(u.total_points, 0) DESC, u.id ASC) as user_rank
             FROM users u
         ) r
-        WHERE r.user_rank >= GREATEST(1, (
-            SELECT rr.user_rank - 1
+        INNER JOIN (
+            SELECT ranked.user_rank as target_rank
             FROM (
                 SELECT u2.id, ROW_NUMBER() OVER (ORDER BY COALESCE(u2.total_points, 0) DESC, u2.id ASC) as user_rank
                 FROM users u2
-            ) rr
-            WHERE rr.id = :userId
-        ))
-        AND r.user_rank <= (
-            SELECT rr.user_rank + 1
-            FROM (
-                SELECT u2.id, ROW_NUMBER() OVER (ORDER BY COALESCE(u2.total_points, 0) DESC, u2.id ASC) as user_rank
-                FROM users u2
-            ) rr
-            WHERE rr.id = :userId
-        )
+            ) ranked
+            WHERE ranked.id = :userId
+        ) target ON r.user_rank BETWEEN GREATEST(1, target.target_rank - 1) AND target.target_rank + 1
         ORDER BY r.user_rank
         """, nativeQuery = true)
     List<Object[]> findUserRankingContext(@Param("userId") Long userId);

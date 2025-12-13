@@ -48,8 +48,13 @@ public class TestRedisConfiguration {
 
 
     @Bean
-    public ChannelTopic topic() {
-        return new ChannelTopic("test-topic");
+    public ChannelTopic auctionTopic() {
+        return new ChannelTopic("test-auction-topic");
+    }
+
+    @Bean
+    public ChannelTopic notificationTopic() {
+        return new ChannelTopic("test-notification-topic");
     }
     @Bean
     public RedissonClient redissonClient() {

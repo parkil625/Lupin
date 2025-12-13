@@ -120,7 +120,7 @@ export default function NotificationPopup({
                     </div>
                     {notif.content && (
                       <div className="text-xs text-gray-700 mb-1 line-clamp-2">
-                        "{notif.content}"
+                        &ldquo;{notif.content}&rdquo;
                       </div>
                     )}
                     <div className="text-xs text-gray-500">{getRelativeTime(notif.createdAt)}</div>
@@ -199,7 +199,7 @@ export default function NotificationPopup({
                     </div>
                     {notif.content && (
                       <div className="text-xs text-gray-700 mb-1 line-clamp-2">
-                        "{notif.content}"
+                        &ldquo;{notif.content}&rdquo;
                       </div>
                     )}
                     <div className="text-xs text-gray-500">{getRelativeTime(notif.createdAt)}</div>

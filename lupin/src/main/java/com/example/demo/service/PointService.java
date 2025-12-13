@@ -24,8 +24,9 @@ public class PointService {
     }
 
     public long getMonthlyPoints(User user, YearMonth yearMonth) {
-        long sum = pointLogRepository.sumPointsByUserAndMonth(
-                user,
+        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
+        long sum = pointLogRepository.sumPointsByUserIdAndMonth(
+                user.getId(),
                 yearMonth.atDay(1).atStartOfDay(),
                 yearMonth.atEndOfMonth().atTime(23, 59, 59)
         );

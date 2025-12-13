@@ -16,7 +16,7 @@ class FeedLikeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     @DisplayName("사용자가 피드에 좋아요를 눌렀는지 확인한다")
-    void existsByUserAndFeedTest() {
+    void existsByUserIdAndFeedIdTest() {
         // given
         User user = createAndSaveUser("user1");
         User otherUser = createAndSaveUser("user2");
@@ -24,9 +24,9 @@ class FeedLikeRepositoryTest extends BaseRepositoryTest {
 
         createAndSaveFeedLike(otherUser, feed);
 
-        // when
-        boolean exists = feedLikeRepository.existsByUserAndFeed(otherUser, feed);
-        boolean notExists = feedLikeRepository.existsByUserAndFeed(user, feed);
+        // when - userId만 사용하여 detached entity 문제 방지
+        boolean exists = feedLikeRepository.existsByUserIdAndFeedId(otherUser.getId(), feed.getId());
+        boolean notExists = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feed.getId());
 
         // then
         assertThat(exists).isTrue();
@@ -35,17 +35,17 @@ class FeedLikeRepositoryTest extends BaseRepositoryTest {
 
     @Test
     @DisplayName("사용자의 피드 좋아요를 삭제한다")
-    void deleteByUserAndFeedTest() {
+    void deleteByUserIdAndFeedIdTest() {
         // given
         User user = createAndSaveUser("user1");
         Feed feed = createAndSaveFeed(user, "running");
         createAndSaveFeedLike(user, feed);
 
-        // when
-        feedLikeRepository.deleteByUserAndFeed(user, feed);
+        // when - userId만 사용하여 detached entity 문제 방지
+        feedLikeRepository.deleteByUserIdAndFeedId(user.getId(), feed.getId());
 
         // then
-        boolean exists = feedLikeRepository.existsByUserAndFeed(user, feed);
+        boolean exists = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feed.getId());
         assertThat(exists).isFalse();
     }
 
@@ -65,10 +65,10 @@ class FeedLikeRepositoryTest extends BaseRepositoryTest {
         // when
         feedLikeRepository.deleteByFeed(feed);
 
-        // then
-        assertThat(feedLikeRepository.existsByUserAndFeed(user1, feed)).isFalse();
-        assertThat(feedLikeRepository.existsByUserAndFeed(user2, feed)).isFalse();
-        assertThat(feedLikeRepository.existsByUserAndFeed(user3, feed)).isFalse();
+        // then - userId만 사용하여 detached entity 문제 방지
+        assertThat(feedLikeRepository.existsByUserIdAndFeedId(user1.getId(), feed.getId())).isFalse();
+        assertThat(feedLikeRepository.existsByUserIdAndFeedId(user2.getId(), feed.getId())).isFalse();
+        assertThat(feedLikeRepository.existsByUserIdAndFeedId(user3.getId(), feed.getId())).isFalse();
     }
 
     @Test

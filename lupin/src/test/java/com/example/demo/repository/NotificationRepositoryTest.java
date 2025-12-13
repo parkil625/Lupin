@@ -18,7 +18,7 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
 
     @Test
     @DisplayName("사용자의 알림을 최신순으로 조회한다")
-    void findByUserOrderByCreatedAtDescTest() {
+    void findByUserIdOrderByCreatedAtDescTest() {
         // given
         User user = createAndSaveUser("user1");
         User otherUser = createAndSaveUser("user2");
@@ -28,8 +28,8 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
         createAndSaveNotification(user, NotificationType.FEED_LIKE, "좋아요 알림 2");
         createAndSaveNotification(otherUser, NotificationType.FEED_LIKE, "다른 사용자 알림");
 
-        // when
-        List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDescIdDesc(user);
+        // when - userId만 사용하여 detached entity 문제 방지
+        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
 
         // then
         assertThat(notifications).hasSize(3);
@@ -40,7 +40,7 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
 
     @Test
     @DisplayName("읽지 않은 알림이 있는지 확인한다")
-    void existsByUserAndIsReadFalseTest() {
+    void existsByUserIdAndIsReadFalseTest() {
         // given
         User user = createAndSaveUser("user1");
         User allReadUser = createAndSaveUser("user2");
@@ -48,9 +48,9 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
         createAndSaveNotification(user, NotificationType.FEED_LIKE, "읽지 않은 알림");
         createAndSaveNotification(allReadUser, NotificationType.FEED_LIKE, "읽은 알림", true);
 
-        // when
-        boolean hasUnread = notificationRepository.existsByUserAndIsReadFalse(user);
-        boolean noUnread = notificationRepository.existsByUserAndIsReadFalse(allReadUser);
+        // when - userId만 사용하여 detached entity 문제 방지
+        boolean hasUnread = notificationRepository.existsByUserIdAndIsReadFalse(user.getId());
+        boolean noUnread = notificationRepository.existsByUserIdAndIsReadFalse(allReadUser.getId());
 
         // then
         assertThat(hasUnread).isTrue();
@@ -79,8 +79,8 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
         // when - 피드 관련 알림 삭제
         notificationRepository.deleteByRefIdAndTypeIn(feedId, List.of(NotificationType.FEED_LIKE, NotificationType.COMMENT));
 
-        // then
-        List<Notification> remaining = notificationRepository.findByUserOrderByCreatedAtDescIdDesc(user);
+        // then - userId만 사용하여 detached entity 문제 방지
+        List<Notification> remaining = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
         assertThat(remaining).hasSize(3);
         assertThat(remaining).extracting("type")
                 .containsExactlyInAnyOrder(NotificationType.COMMENT_LIKE, NotificationType.REPLY, NotificationType.FEED_LIKE);

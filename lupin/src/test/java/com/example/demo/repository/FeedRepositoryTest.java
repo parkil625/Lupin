@@ -13,13 +13,13 @@ class FeedRepositoryTest extends BaseRepositoryTest {
 
     @Test
     @DisplayName("사용자의 피드를 ID 내림차순으로 조회한다")
-    void findByWriterOrderByIdDescTest() {
+    void findByWriterIdOrderByIdDescTest() {
         // given
         User me = createAndSaveUser("me");
         createAndSaveFeed(me, "running");
 
-        // when
-        Slice<Feed> feeds = feedRepository.findByWriterOrderByIdDesc(me, PageRequest.of(0, 15));
+        // when - userId만 사용하여 detached entity 문제 방지
+        Slice<Feed> feeds = feedRepository.findByWriterIdOrderByIdDesc(me.getId(), PageRequest.of(0, 15));
 
         // then
         assertThat(feeds.getContent()).hasSize(1);
@@ -28,7 +28,7 @@ class FeedRepositoryTest extends BaseRepositoryTest {
 
     @Test
     @DisplayName("타 사용자의 피드를 ID 내림차순으로 조회한다")
-    void findByWriterNotOrderByIdDescTest() {
+    void findByWriterIdNotOrderByIdDescTest() {
         // given
         User me = createAndSaveUser("me");
         User other1 = createAndSaveUser("other1");
@@ -37,8 +37,8 @@ class FeedRepositoryTest extends BaseRepositoryTest {
         createAndSaveFeed(other1, "running");
         createAndSaveFeed(other2, "running");
 
-        // when
-        Slice<Feed> feeds = feedRepository.findByWriterNotOrderByIdDesc(me, PageRequest.of(0, 5));
+        // when - userId만 사용하여 detached entity 문제 방지
+        Slice<Feed> feeds = feedRepository.findByWriterIdNotOrderByIdDesc(me.getId(), PageRequest.of(0, 5));
 
         // then
         assertThat(feeds.getContent()).hasSize(2);

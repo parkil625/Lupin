@@ -15,19 +15,18 @@ import java.util.Optional;
 @Repository
 public interface FeedLikeRepository extends JpaRepository<FeedLike, Long> {
 
-    // [최적화] 존재 확인 - LIMIT 1로 바로 종료
-    boolean existsByUserAndFeed(User user, Feed feed);
-
-    // ID로 존재 확인 (더 빠름)
+    // ID로 존재 확인 (userId만 사용하여 detached entity 문제 방지)
     @Query("SELECT COUNT(fl) > 0 FROM FeedLike fl WHERE fl.user.id = :userId AND fl.feed.id = :feedId")
     boolean existsByUserIdAndFeedId(@Param("userId") Long userId, @Param("feedId") Long feedId);
 
-    Optional<FeedLike> findByUserAndFeed(User user, Feed feed);
+    // ID로 조회 (userId만 사용하여 detached entity 문제 방지)
+    @Query("SELECT fl FROM FeedLike fl WHERE fl.user.id = :userId AND fl.feed.id = :feedId")
+    Optional<FeedLike> findByUserIdAndFeedId(@Param("userId") Long userId, @Param("feedId") Long feedId);
 
-    // [최적화] 벌크 삭제 - 조회 없이 바로 삭제
+    // [최적화] 벌크 삭제 - ID로 바로 삭제 (userId만 사용하여 detached entity 문제 방지)
     @Modifying
-    @Query("DELETE FROM FeedLike fl WHERE fl.user = :user AND fl.feed = :feed")
-    void deleteByUserAndFeed(@Param("user") User user, @Param("feed") Feed feed);
+    @Query("DELETE FROM FeedLike fl WHERE fl.user.id = :userId AND fl.feed.id = :feedId")
+    void deleteByUserIdAndFeedId(@Param("userId") Long userId, @Param("feedId") Long feedId);
 
     // [최적화] 피드 삭제 시 벌크 삭제
     @Modifying

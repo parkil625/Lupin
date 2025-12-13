@@ -138,8 +138,9 @@ class FeedLikeServiceTest {
                 .feed(feed)
                 .build();
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
-        given(feedLikeRepository.findByUserAndFeed(user, feed)).willReturn(Optional.of(feedLike));
+        given(feedRepository.existsById(feedId)).willReturn(true);
+        // userId만 사용하여 detached entity 문제 방지
+        given(feedLikeRepository.findByUserIdAndFeedId(user.getId(), feedId)).willReturn(Optional.of(feedLike));
 
         // when
         feedLikeService.unlikeFeed(user, feedId);
@@ -154,8 +155,9 @@ class FeedLikeServiceTest {
     void unlikeFeedNotLikedTest() {
         // given
         Long feedId = 1L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
-        given(feedLikeRepository.findByUserAndFeed(user, feed)).willReturn(Optional.empty());
+        given(feedRepository.existsById(feedId)).willReturn(true);
+        // userId만 사용하여 detached entity 문제 방지
+        given(feedLikeRepository.findByUserIdAndFeedId(user.getId(), feedId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> feedLikeService.unlikeFeed(user, feedId))

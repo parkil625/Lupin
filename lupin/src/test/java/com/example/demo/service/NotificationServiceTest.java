@@ -66,7 +66,8 @@ class NotificationServiceTest {
                 .content("누군가 댓글을 달았습니다")
                 .build();
 
-        given(notificationRepository.findByUserOrderByCreatedAtDescIdDesc(user))
+        // userId만 사용하여 detached entity 문제 방지
+        given(notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId()))
                 .willReturn(List.of(notification1, notification2));
 
         // when
@@ -114,8 +115,8 @@ class NotificationServiceTest {
     @Test
     @DisplayName("읽지 않은 알림이 있는지 확인한다")
     void hasUnreadNotificationsTest() {
-        // given
-        given(notificationRepository.existsByUserAndIsReadFalse(user)).willReturn(true);
+        // given - userId만 사용하여 detached entity 문제 방지
+        given(notificationRepository.existsByUserIdAndIsReadFalse(user.getId())).willReturn(true);
 
         // when
         boolean result = notificationService.hasUnreadNotifications(user);
@@ -127,8 +128,8 @@ class NotificationServiceTest {
     @Test
     @DisplayName("읽지 않은 알림이 없으면 false를 반환한다")
     void hasNoUnreadNotificationsTest() {
-        // given
-        given(notificationRepository.existsByUserAndIsReadFalse(user)).willReturn(false);
+        // given - userId만 사용하여 detached entity 문제 방지
+        given(notificationRepository.existsByUserIdAndIsReadFalse(user.getId())).willReturn(false);
 
         // when
         boolean result = notificationService.hasUnreadNotifications(user);
@@ -143,8 +144,8 @@ class NotificationServiceTest {
         // when
         notificationService.markAllAsRead(user);
 
-        // then - 벌크 업데이트 메서드 호출 확인
-        verify(notificationRepository).markAllAsRead(user);
+        // then - 벌크 업데이트 메서드 호출 확인 (userId만 사용)
+        verify(notificationRepository).markAllAsReadByUserId(user.getId());
     }
 
     @Test

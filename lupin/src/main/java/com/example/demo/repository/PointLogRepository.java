@@ -14,11 +14,13 @@ import org.springframework.data.domain.Pageable;
 @Repository
 public interface PointLogRepository extends JpaRepository<PointLog, Long> {
 
-    @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user = :user")
-    Long sumPointsByUser(@Param("user") User user);
+    // userId만 사용하여 detached entity 문제 방지
+    @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user.id = :userId")
+    Long sumPointsByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user = :user AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
-    Long sumPointsByUserAndMonth(@Param("user") User user, @Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
+    // userId만 사용하여 detached entity 문제 방지
+    @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user.id = :userId AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
+    Long sumPointsByUserIdAndMonth(@Param("userId") Long userId, @Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
 
     @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
     List<Object[]> findUsersRankedByPoints(Pageable pageable);

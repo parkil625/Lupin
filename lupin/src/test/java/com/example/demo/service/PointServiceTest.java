@@ -75,7 +75,9 @@ class PointServiceTest {
     void getMonthlyPointsTest() {
         // given
         YearMonth yearMonth = YearMonth.of(2024, 11);
-        given(pointLogRepository.sumPointsByUserAndMonth(user, yearMonth.atDay(1).atStartOfDay(), yearMonth.atEndOfMonth().atTime(23, 59, 59)))
+        ReflectionTestUtils.setField(user, "id", 1L);
+        // userId만 사용하여 detached entity 문제 방지
+        given(pointLogRepository.sumPointsByUserIdAndMonth(user.getId(), yearMonth.atDay(1).atStartOfDay(), yearMonth.atEndOfMonth().atTime(23, 59, 59)))
                 .willReturn(300L);
 
         // when
@@ -90,7 +92,9 @@ class PointServiceTest {
     void getMonthlyPointsNegativeReturnsZeroTest() {
         // given
         YearMonth yearMonth = YearMonth.of(2024, 11);
-        given(pointLogRepository.sumPointsByUserAndMonth(user, yearMonth.atDay(1).atStartOfDay(), yearMonth.atEndOfMonth().atTime(23, 59, 59)))
+        ReflectionTestUtils.setField(user, "id", 1L);
+        // userId만 사용하여 detached entity 문제 방지
+        given(pointLogRepository.sumPointsByUserIdAndMonth(user.getId(), yearMonth.atDay(1).atStartOfDay(), yearMonth.atEndOfMonth().atTime(23, 59, 59)))
                 .willReturn(-200L);
 
         // when

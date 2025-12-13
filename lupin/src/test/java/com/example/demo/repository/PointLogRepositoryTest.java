@@ -14,16 +14,16 @@ class PointLogRepositoryTest extends BaseRepositoryTest {
     private PointLogRepository pointLogRepository;
 
     @Test
-    @DisplayName("sumPointsByUser로 사용자의 총 포인트를 계산한다")
-    void sumPointsByUserTest() {
+    @DisplayName("sumPointsByUserId로 사용자의 총 포인트를 계산한다")
+    void sumPointsByUserIdTest() {
         // given
         User user = createAndSaveUser("testUser");
         pointLogRepository.save(PointLog.builder().user(user).points(100L).build());
         pointLogRepository.save(PointLog.builder().user(user).points(50L).build());
         pointLogRepository.save(PointLog.builder().user(user).points(-30L).build());
 
-        // when
-        Long totalPoints = pointLogRepository.sumPointsByUser(user);
+        // when - userId만 사용하여 detached entity 문제 방지
+        Long totalPoints = pointLogRepository.sumPointsByUserId(user.getId());
 
         // then
         assertThat(totalPoints).isEqualTo(120L);
@@ -31,12 +31,12 @@ class PointLogRepositoryTest extends BaseRepositoryTest {
 
     @Test
     @DisplayName("포인트 로그가 없으면 0을 반환한다")
-    void sumPointsByUserReturnsZeroWhenNoLogsTest() {
+    void sumPointsByUserIdReturnsZeroWhenNoLogsTest() {
         // given
         User user = createAndSaveUser("testUser");
 
-        // when
-        Long totalPoints = pointLogRepository.sumPointsByUser(user);
+        // when - userId만 사용하여 detached entity 문제 방지
+        Long totalPoints = pointLogRepository.sumPointsByUserId(user.getId());
 
         // then
         assertThat(totalPoints).isEqualTo(0L);

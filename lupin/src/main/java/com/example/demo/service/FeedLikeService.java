@@ -61,10 +61,12 @@ public class FeedLikeService {
 
     @Transactional
     public void unlikeFeed(User user, Long feedId) {
-        Feed feed = feedRepository.findById(feedId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
+        if (!feedRepository.existsById(feedId)) {
+            throw new BusinessException(ErrorCode.FEED_NOT_FOUND);
+        }
 
-        FeedLike feedLike = feedLikeRepository.findByUserAndFeed(user, feed)
+        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
+        FeedLike feedLike = feedLikeRepository.findByUserIdAndFeedId(user.getId(), feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
         // [Hot Write 최적화] Redis 카운트 감소 → 스케줄러가 DB 동기화

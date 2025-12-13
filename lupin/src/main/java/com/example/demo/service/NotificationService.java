@@ -42,7 +42,8 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
 
     public List<Notification> getNotifications(User user) {
-        return notificationRepository.findByUserOrderByCreatedAtDescIdDesc(user);
+        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
+        return notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
     }
 
     @Transactional
@@ -54,13 +55,15 @@ public class NotificationService {
     }
 
     public boolean hasUnreadNotifications(User user) {
-        return notificationRepository.existsByUserAndIsReadFalse(user);
+        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
+        return notificationRepository.existsByUserIdAndIsReadFalse(user.getId());
     }
 
     @Transactional
     public void markAllAsRead(User user) {
         // [최적화] 벌크 업데이트 - 개별 엔티티 로딩 없이 한 번에 처리
-        notificationRepository.markAllAsRead(user);
+        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
+        notificationRepository.markAllAsReadByUserId(user.getId());
     }
 
     @Transactional

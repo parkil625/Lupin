@@ -18,13 +18,13 @@ import java.util.Optional;
 @Repository
 public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositoryCustom {
 
-    // [최적화] writer만 JOIN FETCH, images는 BatchSize(100)로 처리
-    @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer = :writer ORDER BY f.id DESC")
-    Slice<Feed> findByWriterOrderByIdDesc(@Param("writer") User writer, Pageable pageable);
+    // [최적화] writer만 JOIN FETCH, images는 BatchSize(100)로 처리 (writerId만 사용하여 detached entity 문제 방지)
+    @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer.id = :writerId ORDER BY f.id DESC")
+    Slice<Feed> findByWriterIdOrderByIdDesc(@Param("writerId") Long writerId, Pageable pageable);
 
-    // [최적화] 홈 피드 - 본인 제외
-    @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer <> :writer ORDER BY f.id DESC")
-    Slice<Feed> findByWriterNotOrderByIdDesc(@Param("writer") User writer, Pageable pageable);
+    // [최적화] 홈 피드 - 본인 제외 (writerId만 사용하여 detached entity 문제 방지)
+    @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer.id <> :writerId ORDER BY f.id DESC")
+    Slice<Feed> findByWriterIdNotOrderByIdDesc(@Param("writerId") Long writerId, Pageable pageable);
 
     // [최적화] 이름 검색
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer.name LIKE %:name% ORDER BY f.id DESC")

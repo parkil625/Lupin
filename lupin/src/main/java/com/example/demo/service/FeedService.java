@@ -36,12 +36,14 @@ public class FeedService {
 
     public Slice<Feed> getHomeFeeds(User user, int page, int size) {
         // @BatchSize(100)로 images 지연 로딩 최적화 (N+1 방지)
-        return feedRepository.findByWriterNotOrderByIdDesc(user, PageRequest.of(page, size));
+        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
+        return feedRepository.findByWriterIdNotOrderByIdDesc(user.getId(), PageRequest.of(page, size));
     }
 
     public Slice<Feed> getMyFeeds(User user, int page, int size) {
         // @BatchSize(100)로 images 지연 로딩 최적화 (N+1 방지)
-        return feedRepository.findByWriterOrderByIdDesc(user, PageRequest.of(page, size));
+        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
+        return feedRepository.findByWriterIdOrderByIdDesc(user.getId(), PageRequest.of(page, size));
     }
 
     @Transactional

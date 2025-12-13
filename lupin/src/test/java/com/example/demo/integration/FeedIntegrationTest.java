@@ -147,15 +147,15 @@ class FeedIntegrationTest {
         mockMvc.perform(post("/api/feeds/" + feed.getId() + "/like"))
                 .andExpect(status().isOk());
 
-        // 2. 좋아요 저장 확인
-        assertThat(feedLikeRepository.existsByUserAndFeed(testUser, feed)).isTrue();
+        // 2. 좋아요 저장 확인 - userId만 사용하여 detached entity 문제 방지
+        assertThat(feedLikeRepository.existsByUserIdAndFeedId(testUser.getId(), feed.getId())).isTrue();
 
         // 3. 좋아요 취소
         mockMvc.perform(delete("/api/feeds/" + feed.getId() + "/like"))
                 .andExpect(status().isOk());
 
-        // 4. 좋아요 삭제 확인
-        assertThat(feedLikeRepository.existsByUserAndFeed(testUser, feed)).isFalse();
+        // 4. 좋아요 삭제 확인 - userId만 사용하여 detached entity 문제 방지
+        assertThat(feedLikeRepository.existsByUserIdAndFeedId(testUser.getId(), feed.getId())).isFalse();
     }
 
     @Test

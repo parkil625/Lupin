@@ -458,8 +458,8 @@ class ChatServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        // 이제 patientId 파싱이 아니라 appointmentId 파싱 후 DB 조회
-        given(appointmentRepository.findById(appointmentId))
+        // Eager Loading으로 Patient와 Doctor를 함께 조회
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // When
@@ -470,8 +470,8 @@ class ChatServiceTest {
         assertThat(result.getId()).isEqualTo(patient.getId());
         assertThat(result.getUserId()).isEqualTo("patient01");
         assertThat(result.getName()).isEqualTo("환자1");
-        
-        verify(appointmentRepository, times(1)).findById(appointmentId);
+
+        verify(appointmentRepository, times(1)).findByIdWithPatientAndDoctor(appointmentId);
     }
 
     @Test
@@ -546,7 +546,8 @@ class ChatServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(targetAptId))
+        // Eager Loading으로 Patient와 Doctor를 함께 조회
+        given(appointmentRepository.findByIdWithPatientAndDoctor(targetAptId))
                 .willReturn(java.util.Optional.of(appointment));
 
         // When
@@ -557,7 +558,7 @@ class ChatServiceTest {
         assertThat(result.getId()).isEqualTo(targetAptId);
         assertThat(result.getPatient()).isEqualTo(patient);
         assertThat(result.getDoctor()).isEqualTo(doctor);
-        verify(appointmentRepository, times(1)).findById(targetAptId);
+        verify(appointmentRepository, times(1)).findByIdWithPatientAndDoctor(targetAptId);
     }
 
     @Test
@@ -588,7 +589,8 @@ class ChatServiceTest {
                 .status(AppointmentStatus.CANCELLED)
                 .build();
 
-        given(appointmentRepository.findById(targetAptId))
+        // Eager Loading으로 Patient와 Doctor를 함께 조회
+        given(appointmentRepository.findByIdWithPatientAndDoctor(targetAptId))
                 .willReturn(java.util.Optional.of(cancelledAppointment));
 
         // When
@@ -596,7 +598,7 @@ class ChatServiceTest {
 
         // Then
         assertThat(result.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
-        verify(appointmentRepository, times(1)).findById(targetAptId);
+        verify(appointmentRepository, times(1)).findByIdWithPatientAndDoctor(targetAptId);
     }
 
     @Test
@@ -631,5 +633,40 @@ class ChatServiceTest {
         assertThat(roomIds).hasSize(2);
         assertThat(roomIds).containsExactlyInAnyOrder("appointment_1", "appointment_2");
         verify(appointmentRepository, times(1)).findByDoctorIdOrderByDateDesc(doctorId);
+    }
+
+    @Test
+    @DisplayName("Eager Loading으로 환자 이름 조회 시 Lazy Loading 에러 없음")
+    void getPatientNameWithoutLazyLoadingException() {
+        // Given
+        String targetRoomId = "appointment_1";
+        Long targetAptId = 1L;
+
+        Appointment appointment = Appointment.builder()
+                .id(targetAptId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 13, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        // findByIdWithPatientAndDoctor()는 JOIN FETCH로 Patient와 Doctor를 즉시 로딩
+        given(appointmentRepository.findByIdWithPatientAndDoctor(targetAptId))
+                .willReturn(Optional.of(appointment));
+
+        // When
+        Appointment result = chatService.getAppointmentFromRoomId(targetRoomId);
+
+        // Then - Lazy Loading 없이 Patient와 Doctor 정보에 접근 가능
+        assertThat(result).isNotNull();
+        assertThat(result.getPatient()).isNotNull();
+        assertThat(result.getPatient().getName()).isEqualTo("환자1");
+        assertThat(result.getDoctor()).isNotNull();
+        assertThat(result.getDoctor().getName()).isEqualTo("의사1");
+
+        // Eager Loading 메서드가 호출되었는지 검증
+        verify(appointmentRepository, times(1)).findByIdWithPatientAndDoctor(targetAptId);
+        // 일반 findById()는 호출되지 않아야 함
+        verify(appointmentRepository, never()).findById(targetAptId);
     }
 }

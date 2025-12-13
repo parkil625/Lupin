@@ -127,7 +127,7 @@ public class ChatService {
     public Appointment getAppointmentFromRoomId(String roomId) {
         if (roomId.startsWith("appointment_")) {
             Long appointmentId = Long.parseLong(roomId.substring("appointment_".length()));
-            return appointmentRepository.findById(appointmentId)
+            return appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
                     .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
         }
         throw new IllegalArgumentException("유효하지 않은 채팅방 ID 형식입니다.");

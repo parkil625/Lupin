@@ -52,16 +52,6 @@ public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositor
     @Query("SELECT COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer = :writer AND f.createdAt BETWEEN :start AND :end")
     int countDistinctDaysByWriterAndCreatedAtBetween(@Param("writer") User writer, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    // [동시성] 좋아요 카운트 원자적 증가
-    @Modifying(clearAutomatically = true)
-    @Query("UPDATE Feed f SET f.likeCount = f.likeCount + 1 WHERE f.id = :feedId")
-    void incrementLikeCount(@Param("feedId") Long feedId);
-
-    // [동시성] 좋아요 카운트 원자적 감소
-    @Modifying(clearAutomatically = true)
-    @Query("UPDATE Feed f SET f.likeCount = CASE WHEN f.likeCount > 0 THEN f.likeCount - 1 ELSE 0 END WHERE f.id = :feedId")
-    void decrementLikeCount(@Param("feedId") Long feedId);
-
     // [동시성] 댓글 카운트 원자적 증가
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Feed f SET f.commentCount = f.commentCount + 1 WHERE f.id = :feedId")

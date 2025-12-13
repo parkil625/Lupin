@@ -43,12 +43,12 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     Double getAveragePointsPerUser();
 
     /**
-     * 특정 사용자의 랭킹과 앞뒤 사용자를 조회 (Window Function 사용)
-     * User.totalPoints 반정규화 필드를 사용하여 JOIN 없이 조회
-     * 다중 CTE로 MySQL 호환성 확보, 사용자 미존재 시 빈 결과 반환
+     * 특정 사용자의 랭킹과 앞뒤 사용자를 조회
+     * CTE 없이 서브쿼리로 구현하여 MySQL 호환성 확보
      */
     @Query(value = """
-        WITH ranked_users AS (
+        SELECT r.id, r.name, r.avatar, r.department, r.total_points, r.user_rank
+        FROM (
             SELECT
                 u.id,
                 u.name,
@@ -57,15 +57,23 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
                 COALESCE(u.total_points, 0) as total_points,
                 ROW_NUMBER() OVER (ORDER BY COALESCE(u.total_points, 0) DESC, u.id ASC) as user_rank
             FROM users u
-        ),
-        target_rank_cte AS (
-            SELECT user_rank as target_rank
-            FROM ranked_users
-            WHERE id = :userId
+        ) r
+        WHERE r.user_rank >= GREATEST(1, (
+            SELECT rr.user_rank - 1
+            FROM (
+                SELECT u2.id, ROW_NUMBER() OVER (ORDER BY COALESCE(u2.total_points, 0) DESC, u2.id ASC) as user_rank
+                FROM users u2
+            ) rr
+            WHERE rr.id = :userId
+        ))
+        AND r.user_rank <= (
+            SELECT rr.user_rank + 1
+            FROM (
+                SELECT u2.id, ROW_NUMBER() OVER (ORDER BY COALESCE(u2.total_points, 0) DESC, u2.id ASC) as user_rank
+                FROM users u2
+            ) rr
+            WHERE rr.id = :userId
         )
-        SELECT r.id, r.name, r.avatar, r.department, r.total_points, r.user_rank
-        FROM ranked_users r
-        INNER JOIN target_rank_cte t ON r.user_rank BETWEEN GREATEST(1, t.target_rank - 1) AND t.target_rank + 1
         ORDER BY r.user_rank
         """, nativeQuery = true)
     List<Object[]> findUserRankingContext(@Param("userId") Long userId);

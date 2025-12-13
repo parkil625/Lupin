@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
@@ -30,9 +30,9 @@ public class NaverOAuthService extends AbstractOAuthService {
             UserRepository userRepository,
             JwtTokenProvider jwtTokenProvider,
             RefreshTokenRepository refreshTokenRepository,
-            RestTemplate restTemplate
+            RestClient restClient
     ) {
-        super(userRepository, jwtTokenProvider, refreshTokenRepository, restTemplate);
+        super(userRepository, jwtTokenProvider, refreshTokenRepository, restClient);
     }
 
     /**

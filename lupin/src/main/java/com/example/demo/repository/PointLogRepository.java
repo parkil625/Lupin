@@ -45,7 +45,7 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     /**
      * 특정 사용자의 랭킹과 앞뒤 사용자를 조회 (Window Function 사용)
      * User.totalPoints 반정규화 필드를 사용하여 JOIN 없이 조회
-     * COALESCE로 NULL 값 방어 처리, 서브쿼리 방식으로 cross join 문제 해결
+     * CROSS JOIN + 집계 서브쿼리로 CTE 다중 참조 문제 해결
      */
     @Query(value = """
         WITH ranked_users AS (
@@ -60,10 +60,12 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
         )
         SELECT r.id, r.name, r.avatar, r.department, r.total_points, r.user_rank
         FROM ranked_users r
-        WHERE r.user_rank BETWEEN
-            GREATEST(1, COALESCE((SELECT user_rank FROM ranked_users WHERE id = :userId), 1) - 1)
-            AND
-            COALESCE((SELECT user_rank FROM ranked_users WHERE id = :userId), 1) + 1
+        CROSS JOIN (
+            SELECT COALESCE(MAX(user_rank), 1) as target_rank
+            FROM ranked_users
+            WHERE id = :userId
+        ) t
+        WHERE r.user_rank BETWEEN GREATEST(1, t.target_rank - 1) AND t.target_rank + 1
         ORDER BY r.user_rank
         """, nativeQuery = true)
     List<Object[]> findUserRankingContext(@Param("userId") Long userId);

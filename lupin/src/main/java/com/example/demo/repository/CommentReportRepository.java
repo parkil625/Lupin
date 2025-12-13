@@ -25,4 +25,9 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
     @Modifying
     @Query("DELETE FROM CommentReport cr WHERE cr.comment.feed = :feed")
     void deleteByFeed(@Param("feed") Feed feed);
+
+    // [이벤트 기반 삭제] feedId로 삭제 (Soft Delete 후에도 사용 가능)
+    @Modifying
+    @Query("DELETE FROM CommentReport cr WHERE cr.comment.feed.id = :feedId")
+    void deleteByFeedId(@Param("feedId") Long feedId);
 }

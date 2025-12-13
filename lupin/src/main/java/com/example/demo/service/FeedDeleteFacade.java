@@ -6,6 +6,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.event.FeedDeletedEvent;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,11 +15,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 /**
  * 피드 삭제 관련 로직을 담당하는 Facade 서비스
- * FeedService의 책임 분리 및 관심사 분리를 위해 별도 서비스로 추출
+ *
+ * [리팩토링] 이벤트 기반 느슨한 결합 (Event-Driven Loose Coupling)
+ * - 기존: NotificationService, CommentService, FeedLikeService 등 직접 의존 (7개 의존성)
+ * - 변경: FeedRepository, CommentRepository, PointService만 의존 (4개 의존성)
+ * - 관련 데이터 정리는 FeedDeletedEvent 리스너들이 각자 도메인을 담당
  */
 @Slf4j
 @Service
@@ -27,30 +33,32 @@ public class FeedDeleteFacade {
 
     private final FeedProperties feedProperties;
     private final FeedRepository feedRepository;
+    private final CommentRepository commentRepository;
     private final PointService pointService;
-    private final CommentService commentService;
-    private final FeedLikeService feedLikeService;
-    private final FeedReportService feedReportService;
-    private final NotificationService notificationService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * 피드 삭제 - 관련된 모든 데이터(댓글, 좋아요, 신고, 알림)를 함께 삭제
-     * 트랜잭션 커밋 후 FeedDeletedEvent 발행하여 캐시 정리 등 비동기 처리
+     * 피드 삭제 - Soft Delete 후 이벤트 발행
+     * 관련 데이터 정리(댓글, 좋아요, 신고, 알림, 캐시)는 이벤트 리스너에서 비동기 처리
      */
     @Transactional
     public void deleteFeed(User user, Long feedId) {
         Feed feed = feedRepository.findByIdForDelete(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
-        Long writerId = feed.getWriter().getId();
         validateOwnership(feed, user);
         recoverPointsIfWithinPeriod(feed);
-        deleteRelatedData(feed, feedId);
+
+        // 삭제 전에 관련 데이터 ID 수집 (Soft Delete 후에는 조회 불가)
+        List<Long> parentCommentIds = commentRepository.findParentCommentIdsByFeed(feed);
+        List<Long> allCommentIds = commentRepository.findCommentIdsByFeed(feed);
+        Long writerId = feed.getWriter().getId();
+
+        // Soft Delete (실제 삭제는 이벤트 리스너에서 처리)
         feedRepository.delete(feed);
 
-        // 트랜잭션 커밋 후 비동기 정리 작업을 위한 이벤트 발행
-        eventPublisher.publishEvent(FeedDeletedEvent.of(feedId, writerId));
+        // 트랜잭션 커밋 후 각 도메인별 리스너가 자신의 데이터 정리
+        eventPublisher.publishEvent(FeedDeletedEvent.of(feedId, writerId, parentCommentIds, allCommentIds));
 
         log.info("Feed deleted: feedId={}, userId={}", feedId, user.getId());
     }
@@ -71,23 +79,5 @@ public class FeedDeleteFacade {
             pointService.deductPoints(feed.getWriter(), feed.getPoints());
             log.debug("Points recovered for deleted feed: feedId={}, points={}", feed.getId(), feed.getPoints());
         }
-    }
-
-    private void deleteRelatedData(Feed feed, Long feedId) {
-        // 알림 삭제 (피드 관련)
-        notificationService.deleteFeedRelatedNotifications(feedId);
-
-        // 댓글 삭제 및 관련 알림 삭제
-        CommentService.CommentDeleteResult commentResult = commentService.deleteAllByFeed(feed);
-        notificationService.deleteCommentRelatedNotifications(
-                commentResult.parentCommentIds(),
-                commentResult.allCommentIds()
-        );
-
-        // 좋아요, 신고 삭제
-        feedLikeService.deleteAllByFeed(feed);
-        feedReportService.deleteAllByFeed(feed);
-
-        // Redis 캐시 삭제는 FeedDeletedEvent 리스너에서 트랜잭션 커밋 후 처리
     }
 }

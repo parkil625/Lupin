@@ -31,6 +31,15 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("DELETE FROM Comment c WHERE c.feed = :feed AND c.parent IS NULL")
     void deleteParentCommentsByFeed(@Param("feed") Feed feed);
 
+    // [이벤트 기반 삭제] feedId로 삭제 (Soft Delete 후에도 사용 가능)
+    @Modifying
+    @Query("DELETE FROM Comment c WHERE c.feed.id = :feedId AND c.parent IS NOT NULL")
+    void deleteRepliesByFeedId(@Param("feedId") Long feedId);
+
+    @Modifying
+    @Query("DELETE FROM Comment c WHERE c.feed.id = :feedId AND c.parent IS NULL")
+    void deleteParentCommentsByFeedId(@Param("feedId") Long feedId);
+
     @EntityGraph(attributePaths = {"writer", "feed"})
     List<Comment> findByParentOrderByIdAsc(Comment parent);
 

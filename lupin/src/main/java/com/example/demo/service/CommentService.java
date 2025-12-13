@@ -166,6 +166,11 @@ public class CommentService {
         Comment parent = commentRepository.findById(parentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
+        // 대댓글에 답글 불가 (depth 1 제한)
+        if (parent.getParent() != null) {
+            throw new BusinessException(ErrorCode.REPLY_DEPTH_EXCEEDED);
+        }
+
         Comment reply = Comment.builder()
                 .writer(writer)
                 .feed(feed)

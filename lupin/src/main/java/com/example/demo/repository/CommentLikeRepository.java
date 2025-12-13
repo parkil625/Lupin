@@ -37,6 +37,11 @@ public interface CommentLikeRepository extends JpaRepository<CommentLike, Long> 
     @Query("DELETE FROM CommentLike cl WHERE cl.comment.feed = :feed")
     void deleteByFeed(@Param("feed") Feed feed);
 
+    // [이벤트 기반 삭제] feedId로 삭제 (Soft Delete 후에도 사용 가능)
+    @Modifying
+    @Query("DELETE FROM CommentLike cl WHERE cl.comment.feed.id = :feedId")
+    void deleteByFeedId(@Param("feedId") Long feedId);
+
     List<CommentLike> findByComment(Comment comment);
 
     @Query("SELECT cl FROM CommentLike cl JOIN FETCH cl.comment WHERE cl.id = :id")

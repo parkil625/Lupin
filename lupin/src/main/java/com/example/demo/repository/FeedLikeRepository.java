@@ -33,6 +33,11 @@ public interface FeedLikeRepository extends JpaRepository<FeedLike, Long> {
     @Query("DELETE FROM FeedLike fl WHERE fl.feed = :feed")
     void deleteByFeed(@Param("feed") Feed feed);
 
+    // [이벤트 기반 삭제] feedId로 삭제 (Soft Delete 후에도 사용 가능)
+    @Modifying
+    @Query("DELETE FROM FeedLike fl WHERE fl.feed.id = :feedId")
+    void deleteByFeedId(@Param("feedId") Long feedId);
+
     long countByFeed(Feed feed);
 
     List<FeedLike> findByFeed(Feed feed);

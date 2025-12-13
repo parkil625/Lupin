@@ -9,14 +9,18 @@ import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
 /**
  * OAuth 서비스 공통 로직을 담은 추상 클래스 (Template Method 패턴)
+ *
+ * [리팩토링] RestTemplate → RestClient 전환 (Spring 6.1+ Modern API)
+ * - Fluent API로 가독성 향상
+ * - 더 나은 타입 안전성
  */
 @Slf4j
 public abstract class AbstractOAuthService {
@@ -24,18 +28,18 @@ public abstract class AbstractOAuthService {
     protected final UserRepository userRepository;
     protected final JwtTokenProvider jwtTokenProvider;
     protected final RefreshTokenRepository refreshTokenRepository;
-    protected final RestTemplate restTemplate;
+    protected final RestClient restClient;
 
     protected AbstractOAuthService(
             UserRepository userRepository,
             JwtTokenProvider jwtTokenProvider,
             RefreshTokenRepository refreshTokenRepository,
-            RestTemplate restTemplate
+            RestClient restClient
     ) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.refreshTokenRepository = refreshTokenRepository;
-        this.restTemplate = restTemplate;
+        this.restClient = restClient;
     }
 
     /**
@@ -119,15 +123,16 @@ public abstract class AbstractOAuthService {
 
     // ===================== Template Methods (공통 구현) =====================
 
+    @SuppressWarnings("unchecked")
     protected String getAccessToken(String code, String stateOrRedirectUri) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
         MultiValueMap<String, String> params = buildTokenParams(code, stateOrRedirectUri);
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> response = restTemplate.postForObject(getTokenUrl(), request, Map.class);
+        Map<String, Object> response = restClient.post()
+                .uri(getTokenUrl())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(params)
+                .retrieve()
+                .body(Map.class);
 
         if (response == null || response.get("access_token") == null) {
             throw new BusinessException(ErrorCode.OAUTH_TOKEN_ERROR);
@@ -138,19 +143,17 @@ public abstract class AbstractOAuthService {
 
     @SuppressWarnings("unchecked")
     protected Map<String, Object> getUserInfo(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
+        Map<String, Object> response = restClient.get()
+                .uri(getUserInfoUrl())
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(Map.class);
 
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-
-        ResponseEntity<Map> response = restTemplate.exchange(
-                getUserInfoUrl(), HttpMethod.GET, request, Map.class);
-
-        if (response.getBody() == null) {
+        if (response == null) {
             throw new BusinessException(ErrorCode.OAUTH_USER_INFO_ERROR);
         }
 
-        return response.getBody();
+        return response;
     }
 
     /**

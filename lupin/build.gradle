@@ -22,6 +22,11 @@ java {
 	}
 }
 
+// Java Record 역직렬화를 위한 컴파일러 옵션
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs.add('-parameters')
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
@@ -113,6 +118,9 @@ dependencies {
 	// Image Processing (WebP Conversion)
 	implementation 'com.sksamuel.scrimage:scrimage-core:4.1.3'
 	implementation 'com.sksamuel.scrimage:scrimage-webp:4.1.3'
+
+	// Jackson module for Java Records support
+	implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
 }
 
 tasks.named('test') {

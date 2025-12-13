@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.dto.response.NotificationResponse;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.NotificationFactory;
 import com.example.demo.service.NotificationSseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class NotificationEventListener {
 
     private final NotificationRepository notificationRepository;
     private final NotificationSseService notificationSseService;
+    private final NotificationFactory notificationFactory;
     private final UserRepository userRepository;
 
     /**
@@ -53,7 +55,8 @@ public class NotificationEventListener {
                 return;
             }
 
-            Notification notification = createNotification(event, targetUser);
+            // Factory 패턴으로 알림 생성 로직 위임
+            Notification notification = notificationFactory.create(event, targetUser);
             Notification saved = notificationRepository.save(notification);
 
             // SSE로 실시간 알림 전송
@@ -68,26 +71,5 @@ public class NotificationEventListener {
             log.error("Failed to process notification event: {}", event, e);
             // 알림 처리 실패해도 메인 로직에 영향 없음
         }
-    }
-
-    private Notification createNotification(NotificationEvent event, User targetUser) {
-        String title = switch (event.getType()) {
-            case FEED_LIKE -> event.getActorName() + "님이 피드에 좋아요를 눌렀습니다";
-            case COMMENT -> event.getActorName() + "님이 댓글을 남겼습니다";
-            case COMMENT_LIKE -> event.getActorName() + "님이 댓글에 좋아요를 눌렀습니다";
-            case REPLY -> event.getActorName() + "님이 답글을 남겼습니다";
-            case FEED_DELETED -> "신고 누적으로 피드가 삭제되었습니다";
-            case COMMENT_DELETED -> "신고 누적으로 댓글이 삭제되었습니다";
-        };
-
-        return Notification.builder()
-                .user(targetUser)
-                .type(event.getType())
-                .title(title)
-                .content(event.getContentPreview())
-                .refId(event.getRefId() != null ? String.valueOf(event.getRefId()) : null)
-                .targetId(event.getTargetId())
-                .actorProfileImage(event.getActorProfileImage())
-                .build();
     }
 }

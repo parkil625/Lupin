@@ -1,22 +1,20 @@
 package com.example.demo.controller;
 
-import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.dto.command.FeedCreateCommand;
+import com.example.demo.dto.command.FeedUpdateCommand;
 import com.example.demo.dto.request.FeedRequest;
 import com.example.demo.dto.response.FeedResponse;
 import com.example.demo.dto.response.SliceResponse;
-import com.example.demo.mapper.FeedMapper;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.FeedLikeService;
+import com.example.demo.service.FeedQueryFacade;
 import com.example.demo.service.FeedReportService;
-import com.example.demo.service.FeedService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -24,26 +22,17 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class FeedController {
 
-    private final FeedService feedService;
+    private final FeedQueryFacade feedQueryFacade;
     private final FeedLikeService feedLikeService;
     private final FeedReportService feedReportService;
-    private final FeedMapper feedMapper;
 
     @PostMapping
     public ResponseEntity<FeedResponse> createFeed(
             @CurrentUser User user,
             @Valid @RequestBody FeedRequest request
     ) {
-        // 타입별 필드 우선 사용, 없으면 기존 images 배열 사용 (하위 호환)
-        Feed feed = feedService.createFeed(
-                user,
-                request.getActivity(),
-                request.getContent(),
-                request.getStartImageKey(),
-                request.getEndImageKey(),
-                request.getOtherImageKeys()
-        );
-        return ResponseEntity.ok(feedMapper.toResponse(feed));
+        FeedCreateCommand command = FeedCreateCommand.of(user, request);
+        return ResponseEntity.ok(feedQueryFacade.createFeed(command));
     }
 
     @PutMapping("/{feedId}")
@@ -52,16 +41,8 @@ public class FeedController {
             @PathVariable Long feedId,
             @Valid @RequestBody FeedRequest request
     ) {
-        Feed feed = feedService.updateFeed(
-                user,
-                feedId,
-                request.getContent(),
-                request.getActivity(),
-                request.getStartImageKey(),
-                request.getEndImageKey(),
-                request.getOtherImageKeys()
-        );
-        return ResponseEntity.ok(feedMapper.toResponse(feed));
+        FeedUpdateCommand command = FeedUpdateCommand.of(user, feedId, request);
+        return ResponseEntity.ok(feedQueryFacade.updateFeed(command));
     }
 
     @DeleteMapping("/{feedId}")
@@ -69,14 +50,13 @@ public class FeedController {
             @CurrentUser User user,
             @PathVariable Long feedId
     ) {
-        feedService.deleteFeed(user, feedId);
+        feedQueryFacade.deleteFeed(user, feedId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{feedId}")
     public ResponseEntity<FeedResponse> getFeedDetail(@PathVariable Long feedId) {
-        Feed feed = feedService.getFeedDetail(feedId);
-        return ResponseEntity.ok(feedMapper.toResponse(feed));
+        return ResponseEntity.ok(feedQueryFacade.getFeedDetail(feedId));
     }
 
     @GetMapping
@@ -85,8 +65,7 @@ public class FeedController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Slice<Feed> feeds = feedService.getHomeFeeds(user, page, size);
-        return toSliceResponse(feeds, user, page, size);
+        return ResponseEntity.ok(feedQueryFacade.getHomeFeeds(user, page, size));
     }
 
     @GetMapping("/my")
@@ -95,24 +74,14 @@ public class FeedController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Slice<Feed> feeds = feedService.getMyFeeds(user, page, size);
-        return toSliceResponse(feeds, user, page, size);
-    }
-
-    private ResponseEntity<SliceResponse<FeedResponse>> toSliceResponse(
-            Slice<Feed> feeds, User user, int page, int size) {
-        Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
-        List<FeedResponse> content = feeds.getContent().stream()
-                .map(feed -> feedMapper.toResponse(feed, user, activeDaysMap))
-                .toList();
-        return ResponseEntity.ok(SliceResponse.of(content, feeds.hasNext(), page, size));
+        return ResponseEntity.ok(feedQueryFacade.getMyFeeds(user, page, size));
     }
 
     @GetMapping("/can-post-today")
     public ResponseEntity<Boolean> canPostToday(
             @CurrentUser User user
     ) {
-        return ResponseEntity.ok(feedService.canPostToday(user));
+        return ResponseEntity.ok(feedQueryFacade.canPostToday(user));
     }
 
     @PostMapping("/{feedId}/like")

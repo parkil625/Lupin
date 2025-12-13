@@ -8,6 +8,7 @@ import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.response.CommentResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.CommentLikeService;
+import com.example.demo.service.CommentReadService;
 import com.example.demo.service.CommentReportService;
 import com.example.demo.service.CommentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +36,11 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * CommentController 테스트 - CQRS 패턴 적용
+ * Write: CommentService
+ * Read: CommentReadService
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -49,6 +55,9 @@ class CommentControllerTest {
 
     @MockBean
     private CommentService commentService;
+
+    @MockBean
+    private CommentReadService commentReadService;
 
     @MockBean
     private CommentLikeService commentLikeService;
@@ -145,8 +154,8 @@ class CommentControllerTest {
     @WithMockUser(username = "testuser")
     @DisplayName("GET /api/comments/{commentId} - 댓글 단건 조회 성공")
     void getComment_Success() throws Exception {
-        // given
-        given(commentService.getComment(1L)).willReturn(testComment);
+        // given - CQRS: CommentReadService 사용
+        given(commentReadService.getComment(1L)).willReturn(testComment);
 
         // when & then
         mockMvc.perform(get("/api/comments/1"))
@@ -160,9 +169,9 @@ class CommentControllerTest {
     @WithMockUser(username = "testuser")
     @DisplayName("GET /api/feeds/{feedId}/comments - 댓글 목록 조회 성공")
     void getComments_Success() throws Exception {
-        // given
+        // given - CQRS: CommentReadService 사용
         CommentResponse response = CommentResponse.from(testComment);
-        given(commentService.getCommentResponsesByFeed(eq(1L), any())).willReturn(List.of(response));
+        given(commentReadService.getCommentResponsesByFeed(eq(1L), any())).willReturn(List.of(response));
 
         // when & then
         mockMvc.perform(get("/api/feeds/1/comments"))
@@ -200,7 +209,7 @@ class CommentControllerTest {
     @WithMockUser(username = "testuser")
     @DisplayName("GET /api/comments/{commentId}/replies - 대댓글 목록 조회 성공")
     void getReplies_Success() throws Exception {
-        // given
+        // given - CQRS: CommentReadService 사용
         Comment reply = Comment.builder()
                 .id(2L)
                 .writer(testUser)
@@ -209,7 +218,7 @@ class CommentControllerTest {
                 .content("대댓글 내용")
                 .build();
         CommentResponse replyResponse = CommentResponse.from(reply);
-        given(commentService.getReplyResponses(eq(1L), any())).willReturn(List.of(replyResponse));
+        given(commentReadService.getReplyResponses(eq(1L), any())).willReturn(List.of(replyResponse));
 
         // when & then
         mockMvc.perform(get("/api/comments/1/replies"))

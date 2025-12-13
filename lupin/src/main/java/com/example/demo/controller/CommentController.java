@@ -6,6 +6,7 @@ import com.example.demo.dto.request.CommentRequest;
 import com.example.demo.dto.response.CommentResponse;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.CommentLikeService;
+import com.example.demo.service.CommentReadService;
 import com.example.demo.service.CommentReportService;
 import com.example.demo.service.CommentService;
 import jakarta.validation.Valid;
@@ -16,12 +17,18 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 댓글 컨트롤러 - CQRS 패턴 적용
+ * Write: CommentService
+ * Read: CommentReadService
+ */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class CommentController {
 
     private final CommentService commentService;
+    private final CommentReadService commentReadService;
     private final CommentLikeService commentLikeService;
     private final CommentReportService commentReportService;
 
@@ -66,13 +73,13 @@ public class CommentController {
             @CurrentUser User currentUser,
             @PathVariable Long feedId
     ) {
-        List<CommentResponse> responses = commentService.getCommentResponsesByFeed(feedId, currentUser);
+        List<CommentResponse> responses = commentReadService.getCommentResponsesByFeed(feedId, currentUser);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/comments/{commentId}")
     public ResponseEntity<CommentResponse> getComment(@PathVariable Long commentId) {
-        Comment comment = commentService.getComment(commentId);
+        Comment comment = commentReadService.getComment(commentId);
         return ResponseEntity.ok(CommentResponse.from(comment));
     }
 
@@ -92,7 +99,7 @@ public class CommentController {
             @CurrentUser User currentUser,
             @PathVariable Long commentId
     ) {
-        List<CommentResponse> responses = commentService.getReplyResponses(commentId, currentUser);
+        List<CommentResponse> responses = commentReadService.getReplyResponses(commentId, currentUser);
         return ResponseEntity.ok(responses);
     }
 

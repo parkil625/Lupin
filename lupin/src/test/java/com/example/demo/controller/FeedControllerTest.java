@@ -4,12 +4,14 @@ import com.example.demo.config.TestRedisConfiguration;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.dto.command.FeedCreateCommand;
+import com.example.demo.dto.command.FeedUpdateCommand;
 import com.example.demo.dto.response.FeedResponse;
-import com.example.demo.mapper.FeedMapper;
+import com.example.demo.dto.response.SliceResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.FeedLikeService;
+import com.example.demo.service.FeedQueryFacade;
 import com.example.demo.service.FeedReportService;
-import com.example.demo.service.FeedService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,8 +21,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.SliceImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -32,7 +32,6 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -51,7 +50,7 @@ class FeedControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private FeedService feedService;
+    private FeedQueryFacade feedQueryFacade;
 
     @MockBean
     private FeedLikeService feedLikeService;
@@ -60,13 +59,11 @@ class FeedControllerTest {
     private FeedReportService feedReportService;
 
     @MockBean
-    private FeedMapper feedMapper;
-
-    @MockBean
     private UserRepository userRepository;
 
     private User testUser;
     private Feed testFeed;
+    private FeedResponse testFeedResponse;
 
     @BeforeEach
     void setUp() {
@@ -86,26 +83,18 @@ class FeedControllerTest {
                 .build();
         ReflectionTestUtils.setField(testFeed, "id", 1L);
 
-        given(userRepository.findByUserId("testuser")).willReturn(Optional.of(testUser));
+        testFeedResponse = FeedResponse.from(testFeed);
 
-        // FeedMapper mock 설정 - Feed를 FeedResponse로 변환
-        given(feedMapper.toResponse(any(Feed.class))).willAnswer(invocation -> {
-            Feed feed = invocation.getArgument(0);
-            return FeedResponse.from(feed);
-        });
-        given(feedMapper.toResponse(any(Feed.class), any(), any())).willAnswer(invocation -> {
-            Feed feed = invocation.getArgument(0);
-            return FeedResponse.from(feed);
-        });
+        given(userRepository.findByUserId("testuser")).willReturn(Optional.of(testUser));
     }
 
     @Test
     @WithMockUser(username = "testuser")
     @DisplayName("POST /api/feeds - 피드 작성 성공")
     void createFeed_Success() throws Exception {
-        // given - 새 API 시그니처: createFeed(User, activity, content, startImage, endImage, otherImages)
-        given(feedService.createFeed(any(User.class), eq("달리기"), eq("오늘 달리기 완료!"), eq("start.jpg"), eq("end.jpg"), any()))
-                .willReturn(testFeed);
+        // given - FeedQueryFacade.createFeed(FeedCreateCommand) 사용
+        given(feedQueryFacade.createFeed(any(FeedCreateCommand.class)))
+                .willReturn(testFeedResponse);
 
         // when & then - startImage, endImage를 타입별로 전송
         mockMvc.perform(post("/api/feeds")
@@ -129,9 +118,11 @@ class FeedControllerTest {
                 .calories(0)
                 .build();
         ReflectionTestUtils.setField(updatedFeed, "id", 1L);
-        // 7개 파라미터 버전 mock (이미지가 null일 때)
-        given(feedService.updateFeed(any(User.class), eq(1L), eq("수영 완료!"), eq("수영"), isNull(), isNull(), any()))
-                .willReturn(updatedFeed);
+        FeedResponse updatedResponse = FeedResponse.from(updatedFeed);
+
+        // FeedQueryFacade.updateFeed(FeedUpdateCommand) 사용
+        given(feedQueryFacade.updateFeed(any(FeedUpdateCommand.class)))
+                .willReturn(updatedResponse);
 
         // when & then
         mockMvc.perform(put("/api/feeds/1")
@@ -149,7 +140,7 @@ class FeedControllerTest {
         mockMvc.perform(delete("/api/feeds/1"))
                 .andExpect(status().isOk());
 
-        verify(feedService).deleteFeed(any(User.class), eq(1L));
+        verify(feedQueryFacade).deleteFeed(any(User.class), eq(1L));
     }
 
     @Test
@@ -157,7 +148,7 @@ class FeedControllerTest {
     @DisplayName("GET /api/feeds/{feedId} - 피드 상세 조회 성공")
     void getFeedDetail_Success() throws Exception {
         // given
-        given(feedService.getFeedDetail(1L)).willReturn(testFeed);
+        given(feedQueryFacade.getFeedDetail(1L)).willReturn(testFeedResponse);
 
         // when & then
         mockMvc.perform(get("/api/feeds/1"))
@@ -171,8 +162,9 @@ class FeedControllerTest {
     @DisplayName("GET /api/feeds - 홈 피드 목록 조회 성공")
     void getHomeFeeds_Success() throws Exception {
         // given
-        given(feedService.getHomeFeeds(any(User.class), eq(0), eq(10)))
-                .willReturn(new SliceImpl<>(List.of(testFeed)));
+        SliceResponse<FeedResponse> sliceResponse = SliceResponse.of(List.of(testFeedResponse), false, 0, 10);
+        given(feedQueryFacade.getHomeFeeds(any(User.class), eq(0), eq(10)))
+                .willReturn(sliceResponse);
 
         // when & then
         mockMvc.perform(get("/api/feeds")
@@ -187,8 +179,9 @@ class FeedControllerTest {
     @DisplayName("GET /api/feeds/my - 내 피드 목록 조회 성공")
     void getMyFeeds_Success() throws Exception {
         // given
-        given(feedService.getMyFeeds(any(User.class), eq(0), eq(10)))
-                .willReturn(new SliceImpl<>(List.of(testFeed)));
+        SliceResponse<FeedResponse> sliceResponse = SliceResponse.of(List.of(testFeedResponse), false, 0, 10);
+        given(feedQueryFacade.getMyFeeds(any(User.class), eq(0), eq(10)))
+                .willReturn(sliceResponse);
 
         // when & then
         mockMvc.perform(get("/api/feeds/my")
@@ -236,7 +229,7 @@ class FeedControllerTest {
     @DisplayName("GET /api/feeds/can-post-today - 오늘 피드 작성 가능 여부 조회 성공")
     void canPostToday_Success() throws Exception {
         // given
-        given(feedService.canPostToday(any(User.class))).willReturn(true);
+        given(feedQueryFacade.canPostToday(any(User.class))).willReturn(true);
 
         // when & then
         mockMvc.perform(get("/api/feeds/can-post-today"))
@@ -249,7 +242,7 @@ class FeedControllerTest {
     @DisplayName("GET /api/feeds/can-post-today - 오늘 이미 피드 작성함")
     void canPostToday_AlreadyPosted() throws Exception {
         // given
-        given(feedService.canPostToday(any(User.class))).willReturn(false);
+        given(feedQueryFacade.canPostToday(any(User.class))).willReturn(false);
 
         // when & then
         mockMvc.perform(get("/api/feeds/can-post-today"))

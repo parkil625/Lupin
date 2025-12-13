@@ -4,6 +4,8 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.FeedImageUploadResult;
 import com.example.demo.dto.WriterActiveDays;
+import com.example.demo.dto.command.FeedCreateCommand;
+import com.example.demo.dto.command.FeedUpdateCommand;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedRepository;
@@ -61,6 +63,20 @@ public class FeedService {
      */
     public Feed createFeed(User writer, String activity, String content, FeedImageUploadResult images) {
         return createFeed(writer, activity, content, images.startImageKey(), images.endImageKey(), images.otherImageKeys());
+    }
+
+    /**
+     * 피드 생성 (Parameter Object 패턴)
+     */
+    public Feed createFeed(FeedCreateCommand command) {
+        return createFeed(
+                command.writer(),
+                command.activity(),
+                command.content(),
+                command.startImageKey(),
+                command.endImageKey(),
+                command.otherImageKeys()
+        );
     }
 
     /**
@@ -122,6 +138,21 @@ public class FeedService {
      */
     public Feed updateFeed(User user, Long feedId, String content, String activity, FeedImageUploadResult images) {
         return updateFeed(user, feedId, content, activity, images.startImageKey(), images.endImageKey(), images.otherImageKeys());
+    }
+
+    /**
+     * 피드 수정 (Parameter Object 패턴)
+     */
+    public Feed updateFeed(FeedUpdateCommand command) {
+        return updateFeed(
+                command.user(),
+                command.feedId(),
+                command.content(),
+                command.activity(),
+                command.startImageKey(),
+                command.endImageKey(),
+                command.otherImageKeys()
+        );
     }
 
     /**

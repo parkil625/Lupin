@@ -49,8 +49,10 @@ public class CommentService {
                 feed.getWriter().getId(),
                 writer.getId(),
                 writer.getName(),
+                writer.getAvatar(),
                 feedId,
-                savedComment.getId()
+                savedComment.getId(),
+                content
         ));
 
         return savedComment;
@@ -169,8 +171,10 @@ public class CommentService {
                 parent.getWriter().getId(),
                 writer.getId(),
                 writer.getName(),
+                writer.getAvatar(),
                 parentId,
-                savedReply.getId()
+                savedReply.getId(),
+                content
         ));
 
         return savedReply;

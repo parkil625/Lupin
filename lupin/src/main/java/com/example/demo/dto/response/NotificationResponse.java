@@ -17,6 +17,7 @@ public class NotificationResponse {
     private Boolean isRead;
     private String refId;
     private Long targetId;
+    private String actorProfileImage;
     private LocalDateTime createdAt;
 
     public static NotificationResponse from(Notification notification) {
@@ -28,6 +29,7 @@ public class NotificationResponse {
                 .isRead(notification.getIsRead())
                 .refId(notification.getRefId())
                 .targetId(notification.getTargetId())
+                .actorProfileImage(notification.getActorProfileImage())
                 .createdAt(notification.getCreatedAt())
                 .build();
     }

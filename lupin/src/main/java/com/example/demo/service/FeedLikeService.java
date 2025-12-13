@@ -49,7 +49,9 @@ public class FeedLikeService {
                 feed.getWriter().getId(),
                 user.getId(),
                 user.getName(),
-                feedId
+                user.getAvatar(),
+                feedId,
+                feed.getContent()
         ));
 
         return savedFeedLike;

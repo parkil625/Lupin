@@ -40,6 +40,9 @@ public class Notification {
     @Column(name = "target_id")
     private Long targetId;
 
+    @Column(name = "actor_profile_image")
+    private String actorProfileImage;
+
     @Column(name = "created_at", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -46,7 +46,9 @@ public class CommentLikeService {
                 comment.getWriter().getId(),
                 user.getId(),
                 user.getName(),
-                commentId
+                user.getAvatar(),
+                commentId,
+                comment.getContent()
         ));
 
         return savedCommentLike;

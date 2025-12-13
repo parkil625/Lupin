@@ -61,6 +61,7 @@ export interface Notification {
   isRead: boolean;
   refId?: string;
   targetId?: number;  // 하이라이트할 댓글/답글 ID
+  actorProfileImage?: string;  // 알림 발생시킨 사용자 프로필 이미지
   createdAt: string;
 }
 

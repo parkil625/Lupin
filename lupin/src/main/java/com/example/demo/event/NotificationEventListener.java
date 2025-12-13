@@ -84,8 +84,10 @@ public class NotificationEventListener {
                 .user(targetUser)
                 .type(event.getType().name())
                 .title(title)
+                .content(event.getContentPreview())
                 .refId(event.getRefId() != null ? String.valueOf(event.getRefId()) : null)
                 .targetId(event.getTargetId())
+                .actorProfileImage(event.getActorProfileImage())
                 .build();
     }
 }

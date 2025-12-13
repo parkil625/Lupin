@@ -8,15 +8,12 @@
  */
 
 import { useEffect, useRef } from "react";
-import {
-  Heart,
-  MessageCircle,
-  Reply,
-  CheckCheck,
-} from "lucide-react";
+import { CheckCheck, User } from "lucide-react";
 import { Notification } from "@/types/dashboard.types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getRelativeTime } from "@/lib/utils";
+
+const DEFAULT_PROFILE_IMAGE = "/default-profile.png";
 
 interface NotificationPopupProps {
   notifications: Notification[];
@@ -103,32 +100,27 @@ export default function NotificationPopup({
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      notif.type === "FEED_LIKE" || notif.type === "COMMENT_LIKE"
-                        ? "bg-gradient-to-br from-red-400 to-pink-500"
-                        : notif.type === "COMMENT"
-                        ? "bg-gradient-to-br from-green-400 to-emerald-500"
-                        : "bg-gradient-to-br from-blue-400 to-cyan-500"
-                    }`}
-                  >
-                    {(notif.type === "FEED_LIKE" || notif.type === "COMMENT_LIKE") && (
-                      <Heart className="w-4 h-4 text-white" />
-                    )}
-                    {notif.type === "COMMENT" && (
-                      <MessageCircle className="w-4 h-4 text-white" />
-                    )}
-                    {notif.type === "REPLY" && (
-                      <Reply className="w-4 h-4 text-white" />
-                    )}
-                  </div>
+                  {notif.actorProfileImage ? (
+                    <img
+                      src={notif.actorProfileImage}
+                      alt="프로필"
+                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = DEFAULT_PROFILE_IMAGE;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 text-gray-400" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-sm text-gray-900 mb-1">
                       {notif.title}
                     </div>
                     {notif.content && (
                       <div className="text-xs text-gray-700 mb-1 line-clamp-2">
-                        {notif.content}
+                        "{notif.content}"
                       </div>
                     )}
                     <div className="text-xs text-gray-500">{getRelativeTime(notif.createdAt)}</div>
@@ -187,32 +179,27 @@ export default function NotificationPopup({
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      notif.type === "FEED_LIKE" || notif.type === "COMMENT_LIKE"
-                        ? "bg-gradient-to-br from-red-400 to-pink-500"
-                        : notif.type === "COMMENT"
-                        ? "bg-gradient-to-br from-green-400 to-emerald-500"
-                        : "bg-gradient-to-br from-blue-400 to-cyan-500"
-                    }`}
-                  >
-                    {(notif.type === "FEED_LIKE" || notif.type === "COMMENT_LIKE") && (
-                      <Heart className="w-4 h-4 text-white" />
-                    )}
-                    {notif.type === "COMMENT" && (
-                      <MessageCircle className="w-4 h-4 text-white" />
-                    )}
-                    {notif.type === "REPLY" && (
-                      <Reply className="w-4 h-4 text-white" />
-                    )}
-                  </div>
+                  {notif.actorProfileImage ? (
+                    <img
+                      src={notif.actorProfileImage}
+                      alt="프로필"
+                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = DEFAULT_PROFILE_IMAGE;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 text-gray-400" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-sm text-gray-900 mb-1">
                       {notif.title}
                     </div>
                     {notif.content && (
                       <div className="text-xs text-gray-700 mb-1 line-clamp-2">
-                        {notif.content}
+                        "{notif.content}"
                       </div>
                     )}
                     <div className="text-xs text-gray-500">{getRelativeTime(notif.createdAt)}</div>

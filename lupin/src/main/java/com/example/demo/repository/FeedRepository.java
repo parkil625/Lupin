@@ -30,8 +30,8 @@ public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositor
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer.name LIKE %:name% ORDER BY f.id DESC")
     Slice<Feed> findByWriterNameContainingOrderByIdDesc(@Param("name") String name, Pageable pageable);
 
-    // [최적화] 오늘 글 존재 여부 - exists 사용
-    boolean existsByWriterAndCreatedAtBetween(User writer, LocalDateTime start, LocalDateTime end);
+    // [최적화] 오늘 글 존재 여부 - exists 사용 (writerId만 사용하여 detached entity 문제 방지)
+    boolean existsByWriter_IdAndCreatedAtBetween(Long writerId, LocalDateTime start, LocalDateTime end);
 
     // [최적화] 상세 조회 - writer만 페치
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.id = :id")
@@ -48,9 +48,9 @@ public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositor
 
     // 기본 findById는 JpaRepository에서 제공
 
-    // [activeDays] 사용자의 이번 달 피드 작성 고유 날짜 수
-    @Query("SELECT COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer = :writer AND f.createdAt BETWEEN :start AND :end")
-    int countDistinctDaysByWriterAndCreatedAtBetween(@Param("writer") User writer, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    // [activeDays] 사용자의 이번 달 피드 작성 고유 날짜 수 (writerId만 사용하여 detached entity 문제 방지)
+    @Query("SELECT COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer.id = :writerId AND f.createdAt BETWEEN :start AND :end")
+    int countDistinctDaysByWriterIdAndCreatedAtBetween(@Param("writerId") Long writerId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     // [동시성] 댓글 카운트 원자적 증가
     @Modifying(clearAutomatically = true)

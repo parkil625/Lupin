@@ -163,7 +163,7 @@ class FeedServiceTest {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
 
-        given(feedRepository.existsByWriterAndCreatedAtBetween(writer, startOfDay, endOfDay))
+        given(feedRepository.existsByWriter_IdAndCreatedAtBetween(writer.getId(), startOfDay, endOfDay))
                 .willReturn(false);
 
         // when
@@ -181,7 +181,7 @@ class FeedServiceTest {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
 
-        given(feedRepository.existsByWriterAndCreatedAtBetween(writer, startOfDay, endOfDay))
+        given(feedRepository.existsByWriter_IdAndCreatedAtBetween(writer.getId(), startOfDay, endOfDay))
                 .willReturn(true);
 
         // when

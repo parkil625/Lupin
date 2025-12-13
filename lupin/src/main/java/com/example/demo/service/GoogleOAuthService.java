@@ -5,9 +5,9 @@ import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
-import com.example.demo.util.RedisKeyUtils;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -16,13 +16,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Google OAuth 서비스
@@ -34,11 +32,9 @@ import java.util.concurrent.TimeUnit;
 @Transactional(readOnly = true)
 public class GoogleOAuthService {
 
-    private static final long REFRESH_TOKEN_VALIDITY = 7;
-
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${GOOGLE_CLIENT_ID:}")
     private String googleClientId;
@@ -117,11 +113,11 @@ public class GoogleOAuthService {
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
 
-        redisTemplate.opsForValue().set(
-                RedisKeyUtils.refreshToken(user.getUserId()),
+        // RefreshTokenRepository 사용 (AuthService와 동일한 추상화 계층)
+        refreshTokenRepository.save(
+                user.getUserId(),
                 refreshToken,
-                REFRESH_TOKEN_VALIDITY,
-                TimeUnit.DAYS
+                jwtTokenProvider.getRefreshTokenValidityMs()
         );
 
         return LoginDto.builder()

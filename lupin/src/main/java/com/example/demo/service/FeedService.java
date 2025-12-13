@@ -162,7 +162,8 @@ public class FeedService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
 
-        return !feedRepository.existsByWriterAndCreatedAtBetween(user, startOfDay, endOfDay);
+        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
+        return !feedRepository.existsByWriter_IdAndCreatedAtBetween(user.getId(), startOfDay, endOfDay);
     }
 
     /**

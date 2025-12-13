@@ -17,6 +17,7 @@ import javax.crypto.SecretKey;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -79,9 +80,14 @@ public class JwtTokenProvider {
      * 토큰에서 인증 정보 조회 (DB 조회 X -> 고성능)
      */
     public Authentication getAuthentication(String accessToken) {
-        // 토큰 복호화
-        Claims claims = parseClaims(accessToken);
+        return getAuthentication(parseClaims(accessToken));
+    }
 
+    /**
+     * Claims에서 인증 정보 조회 (중복 파싱 방지용)
+     * - validateAndParseClaims()와 함께 사용하면 파싱 1회로 검증 + 인증 처리 가능
+     */
+    public Authentication getAuthentication(Claims claims) {
         if (claims.get(AUTHORITIES_KEY) == null) {
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
         }
@@ -98,12 +104,18 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰 유효성 검증
+     * 토큰 검증 + Claims 반환 (중복 파싱 방지)
+     * - 유효한 토큰: Claims 반환
+     * - 무효한 토큰: Optional.empty() 반환
      */
-    public boolean validateToken(String token) {
+    public Optional<Claims> validateAndParseClaims(String token) {
         try {
-            parseClaims(token);
-            return true;
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return Optional.of(claims);
         } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
             log.error("잘못된 JWT 서명입니다.");
         } catch (ExpiredJwtException e) {
@@ -113,7 +125,14 @@ public class JwtTokenProvider {
         } catch (IllegalArgumentException e) {
             log.error("JWT 토큰이 잘못되었습니다.");
         }
-        return false;
+        return Optional.empty();
+    }
+
+    /**
+     * 토큰 유효성 검증 (기존 호환용)
+     */
+    public boolean validateToken(String token) {
+        return validateAndParseClaims(token).isPresent();
     }
 
     public String getEmail(String token) {

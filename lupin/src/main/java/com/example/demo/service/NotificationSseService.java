@@ -78,6 +78,7 @@ public class NotificationSseService {
      * 모든 연결에 heartbeat 전송 (연결 유지용)
      * - 병렬 처리로 대량 연결 시 병목 방지
      * - ConcurrentLinkedQueue로 스레드 안전한 dead connection 수집
+     * - SseEmitter는 Thread-Safe 하지 않으므로 synchronized 처리
      */
     private void sendHeartbeatToAll() {
         if (emitters.isEmpty()) {
@@ -90,13 +91,16 @@ public class NotificationSseService {
         emitters.entrySet().parallelStream().forEach(entry -> {
             Long userId = entry.getKey();
             SseEmitter emitter = entry.getValue();
-            try {
-                emitter.send(SseEmitter.event()
-                        .name("heartbeat")
-                        .data("ping"));
-            } catch (IOException e) {
-                log.debug("Heartbeat 전송 실패, 연결 제거: userId={}", userId);
-                deadConnections.add(userId);
+            // SseEmitter Thread-Safety: 동시 send 방지
+            synchronized (emitter) {
+                try {
+                    emitter.send(SseEmitter.event()
+                            .name("heartbeat")
+                            .data("ping"));
+                } catch (IOException e) {
+                    log.debug("Heartbeat 전송 실패, 연결 제거: userId={}", userId);
+                    deadConnections.add(userId);
+                }
             }
         });
 
@@ -219,6 +223,7 @@ public class NotificationSseService {
     /**
      * 로컬 SSE Emitter로 알림 전달 (내부 메서드)
      * - id 필드에 알림 ID를 포함하여 Last-Event-ID 지원
+     * - SseEmitter는 Thread-Safe 하지 않으므로 synchronized 처리
      */
     private void deliverToLocalEmitter(Long userId, NotificationResponse notification) {
         SseEmitter emitter = emitters.get(userId);
@@ -227,16 +232,19 @@ public class NotificationSseService {
             return;
         }
 
-        try {
-            emitter.send(SseEmitter.event()
-                    .id(String.valueOf(notification.getId()))
-                    .name("notification")
-                    .data(notification));
-            log.info("SSE 알림 전송 성공: userId={}, type={}, eventId={}",
-                    userId, notification.getType(), notification.getId());
-        } catch (IOException e) {
-            log.error("SSE 알림 전송 실패: userId={}", userId, e);
-            emitters.remove(userId);
+        // SseEmitter Thread-Safety: heartbeat와 동시 send 방지
+        synchronized (emitter) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .id(String.valueOf(notification.getId()))
+                        .name("notification")
+                        .data(notification));
+                log.info("SSE 알림 전송 성공: userId={}, type={}, eventId={}",
+                        userId, notification.getType(), notification.getId());
+            } catch (IOException e) {
+                log.error("SSE 알림 전송 실패: userId={}", userId, e);
+                emitters.remove(userId);
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,8 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -45,10 +44,7 @@ class NaverOAuthServiceTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
-    private RedisTemplate<String, String> redisTemplate;
-
-    @Mock
-    private ValueOperations<String, String> valueOperations;
+    private RefreshTokenRepository refreshTokenRepository;
 
     @Mock
     private RestTemplate restTemplate;
@@ -99,7 +95,7 @@ class NaverOAuthServiceTest {
         given(userRepository.findByProviderEmail("test@example.com")).willReturn(Optional.of(user));
         given(jwtTokenProvider.createAccessToken(anyString(), anyString())).willReturn("accessToken");
         given(jwtTokenProvider.createRefreshToken(anyString())).willReturn("refreshToken");
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(jwtTokenProvider.getRefreshTokenValidityMs()).willReturn(604800000L);
 
         // when
         LoginDto result = naverOAuthService.naverLogin(code, state);

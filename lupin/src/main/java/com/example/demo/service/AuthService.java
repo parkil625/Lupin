@@ -27,14 +27,24 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    // Timing Attack 방어용 더미 해시 (BCrypt 형식)
+    // 실제 비밀번호가 아닌 더미값으로, matches() 연산 시간을 일정하게 유지
+    private static final String DUMMY_PASSWORD_HASH = "$2a$10$dummyHashForTimingAttackDefense000000000000000000000";
+
     /**
      * 일반 로그인
-     * 보안 강화: 사용자 미존재와 비밀번호 불일치를 동일한 에러로 처리
+     * 보안 강화:
+     * 1. 사용자 미존재와 비밀번호 불일치를 동일한 에러로 처리
+     * 2. Timing Attack 방어: 유저 존재 여부와 관계없이 동일한 연산 시간 보장
      */
     public LoginDto login(LoginRequest request) {
         User user = userRepository.findByUserId(request.getEmail()).orElse(null);
 
-        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        // Timing Attack 방어: 유저가 없어도 BCrypt 연산을 수행하여 응답 시간을 일정하게 유지
+        String storedPassword = (user != null) ? user.getPassword() : DUMMY_PASSWORD_HASH;
+        boolean passwordMatch = passwordEncoder.matches(request.getPassword(), storedPassword);
+
+        if (user == null || !passwordMatch) {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 

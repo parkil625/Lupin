@@ -3,11 +3,11 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
+import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
 import com.example.demo.service.oauth.AbstractOAuthService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -29,10 +29,10 @@ public class NaverOAuthService extends AbstractOAuthService {
     public NaverOAuthService(
             UserRepository userRepository,
             JwtTokenProvider jwtTokenProvider,
-            RedisTemplate<String, String> redisTemplate,
+            RefreshTokenRepository refreshTokenRepository,
             RestTemplate restTemplate
     ) {
-        super(userRepository, jwtTokenProvider, redisTemplate, restTemplate);
+        super(userRepository, jwtTokenProvider, refreshTokenRepository, restTemplate);
     }
 
     /**

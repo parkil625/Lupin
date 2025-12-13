@@ -4,7 +4,10 @@ import com.example.demo.util.RedisKeyUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
 
 /**
  * 좋아요 카운트 Redis 캐싱 서비스
@@ -36,18 +39,24 @@ public class LikeCountCacheService {
 
     /**
      * 좋아요 카운트 감소 (Redis)
+     * - Lua Script로 원자적 처리 (Check-Then-Act 경합 방지)
      * @param feedId 피드 ID
      * @return 감소 후 카운트
      */
     public Long decrementLikeCount(Long feedId) {
         String key = RedisKeyUtils.feedLikeCount(feedId);
-        Long count = redisTemplate.opsForValue().decrement(key);
 
-        // 음수 방지
-        if (count != null && count < 0) {
-            redisTemplate.opsForValue().set(key, "0");
-            count = 0L;
-        }
+        // Lua Script: 감소 후 음수면 0으로 설정 (원자적 연산)
+        String script =
+                "local current = redis.call('decr', KEYS[1]); " +
+                "if current < 0 then " +
+                "   redis.call('set', KEYS[1], 0); " +
+                "   return 0; " +
+                "end; " +
+                "return current;";
+
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>(script, Long.class);
+        Long count = redisTemplate.execute(redisScript, Collections.singletonList(key));
 
         // Dirty Set에 추가
         redisTemplate.opsForSet().add(RedisKeyUtils.feedLikeDirtySet(), feedId.toString());

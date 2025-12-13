@@ -5,18 +5,15 @@ import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
-import com.example.demo.util.RedisKeyUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.*;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * OAuth 서비스 공통 로직을 담은 추상 클래스 (Template Method 패턴)
@@ -24,22 +21,20 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public abstract class AbstractOAuthService {
 
-    protected static final long REFRESH_TOKEN_VALIDITY = 7;
-
     protected final UserRepository userRepository;
     protected final JwtTokenProvider jwtTokenProvider;
-    protected final RedisTemplate<String, String> redisTemplate;
+    protected final RefreshTokenRepository refreshTokenRepository;
     protected final RestTemplate restTemplate;
 
     protected AbstractOAuthService(
             UserRepository userRepository,
             JwtTokenProvider jwtTokenProvider,
-            RedisTemplate<String, String> redisTemplate,
+            RefreshTokenRepository refreshTokenRepository,
             RestTemplate restTemplate
     ) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.redisTemplate = redisTemplate;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.restTemplate = restTemplate;
     }
 
@@ -175,11 +170,11 @@ public abstract class AbstractOAuthService {
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
 
-        redisTemplate.opsForValue().set(
-                RedisKeyUtils.refreshToken(user.getUserId()),
+        // RefreshTokenRepository 사용 (AuthService와 동일한 추상화 계층)
+        refreshTokenRepository.save(
+                user.getUserId(),
                 refreshToken,
-                REFRESH_TOKEN_VALIDITY,
-                TimeUnit.DAYS
+                jwtTokenProvider.getRefreshTokenValidityMs()
         );
 
         return LoginDto.builder()

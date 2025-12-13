@@ -350,7 +350,8 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
         {/* 댓글 내용 영역 - 하이라이트 대상 */}
         <div
           ref={(el) => { commentRefs.current[comment.id] = el; }}
-          className={`flex gap-3 transition-colors duration-500 rounded-lg ${isHighlighted ? "bg-amber-50" : ""}`}
+          className="flex gap-3 transition-colors duration-500 rounded-lg"
+          style={{ backgroundColor: isHighlighted ? '#fef3c7' : undefined }}
         >
           <UserHoverCard
             name={comment.author}

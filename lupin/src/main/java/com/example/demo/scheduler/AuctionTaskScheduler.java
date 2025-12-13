@@ -2,6 +2,7 @@ package com.example.demo.scheduler;
 
 import com.example.demo.service.AuctionService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,9 @@ public class AuctionTaskScheduler {
     // Key: 경매 ID, Value: 예약된 작업(ScheduledFuture)
     private final Map<Long, ScheduledFuture<?>> scheduledEndTasks = new ConcurrentHashMap<>();
 
-    public AuctionTaskScheduler(TaskScheduler taskScheduler, @Lazy AuctionService auctionService) {
+    public AuctionTaskScheduler(
+            @Qualifier("messageBrokerTaskScheduler") TaskScheduler taskScheduler,
+            @Lazy AuctionService auctionService) {
         this.taskScheduler = taskScheduler;
         this.auctionService = auctionService;
     }

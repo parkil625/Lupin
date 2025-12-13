@@ -11,6 +11,7 @@ import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.ImageMetadataService;
+import com.example.demo.service.LikeCountCacheService;
 import com.example.demo.service.WorkoutScoreService;
 
 import java.util.List;
@@ -63,6 +64,9 @@ class FeedIntegrationTest {
     @org.springframework.boot.test.mock.mockito.MockBean
     private WorkoutScoreService workoutScoreService;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private LikeCountCacheService likeCountCacheService;
+
     private User testUser;
     private User otherUser;
 
@@ -76,17 +80,13 @@ class FeedIntegrationTest {
                 .thenReturn(java.util.Optional.of(startTime))
                 .thenReturn(java.util.Optional.of(endTime));
 
-        org.mockito.Mockito.when(workoutScoreService.calculateScore(
+        // validateAndCalculate 메서드 Mock (FeedTransactionService에서 사용)
+        org.mockito.Mockito.when(workoutScoreService.validateAndCalculate(
                 org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
-                .thenReturn(10);
-
-        org.mockito.Mockito.when(workoutScoreService.calculateCalories(
-                org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
-                .thenReturn(100);
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(java.time.LocalDate.class)))
+                .thenReturn(new WorkoutScoreService.WorkoutResult(10, 100, true));
 
         testUser = userRepository.save(User.builder()
                 .userId("testuser")

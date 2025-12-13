@@ -73,6 +73,9 @@ class FeedE2ETest {
     @org.springframework.boot.test.mock.mockito.MockBean
     private WorkoutScoreService workoutScoreService;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.demo.service.LikeCountCacheService likeCountCacheService;
+
     private User testUser;
 
     @BeforeEach
@@ -756,11 +759,13 @@ class FeedE2ETest {
         mockMvc.perform(post("/api/feeds/" + feed.getId() + "/like"))
                 .andExpect(status().isOk());
 
-        // 6. 피드 조회로 상태 확인
+        // 6. 피드 조회로 상태 확인 (likeCount는 Redis 캐싱으로 DB에 즉시 반영되지 않음)
         mockMvc.perform(get("/api/feeds/" + feed.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.likes").value(1))
                 .andExpect(jsonPath("$.comments").value(3));
+
+        // 좋아요는 DB에서 직접 확인 (Redis → DB 동기화는 스케줄러가 처리)
+        assertThat(feedLikeRepository.countByFeed(feed)).isEqualTo(1);
     }
 
     @Test

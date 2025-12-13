@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -29,7 +30,9 @@ public class TestRedisConfiguration {
     public RedisTemplate<String, String> redisTemplate() {
         RedisTemplate<String, String> template = mock(RedisTemplate.class);
         ValueOperations<String, String> valueOps = mock(ValueOperations.class);
+        SetOperations<String, String> setOps = mock(SetOperations.class);
         when(template.opsForValue()).thenReturn(valueOps);
+        when(template.opsForSet()).thenReturn(setOps);
         return template;
     }
 

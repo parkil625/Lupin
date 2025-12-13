@@ -13,8 +13,6 @@ import { Notification } from "@/types/dashboard.types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getRelativeTime } from "@/lib/utils";
 
-const DEFAULT_PROFILE_IMAGE = "/default-profile.png";
-
 interface NotificationPopupProps {
   notifications: Notification[];
   onClose: (closeSidebar?: boolean) => void;

@@ -6,6 +6,7 @@
  * - 피드, 댓글 등에서 재사용
  */
 
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   HoverCard,
@@ -50,13 +51,27 @@ export function UserHoverCard({
   avatarUrl,
   className,
 }: UserHoverCardProps) {
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  const showFallback = !avatarUrl || imageError;
+
   return (
     <HoverCard openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>
         <div className={className}>
           <Avatar className={`${sizeClasses[size]} border-2 border-white shadow-lg cursor-pointer`}>
-            {avatarUrl ? (
-              <img src={getProfileThumbnailUrl(avatarUrl)} alt={name} className="w-full h-full object-cover" loading="lazy" />
+            {!showFallback ? (
+              <img
+                src={getProfileThumbnailUrl(avatarUrl)}
+                alt={name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={handleImageError}
+              />
             ) : (
               <AvatarFallback className="bg-white">
                 <User className={`${iconSizes[size]} text-gray-400`} />
@@ -68,8 +83,14 @@ export function UserHoverCard({
       <HoverCardContent className="w-80 bg-white/95 backdrop-blur-xl border border-gray-200">
         <div className="flex gap-4">
           <Avatar className="w-14 h-14 border-2 border-white shadow-lg bg-white">
-            {avatarUrl ? (
-              <img src={getProfileThumbnailUrl(avatarUrl)} alt={name} className="w-full h-full object-cover" loading="lazy" />
+            {!showFallback ? (
+              <img
+                src={getProfileThumbnailUrl(avatarUrl)}
+                alt={name}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={handleImageError}
+              />
             ) : (
               <AvatarFallback className="bg-white">
                 <User className="w-7 h-7 text-gray-400" />

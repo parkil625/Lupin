@@ -283,15 +283,11 @@ export default function FeedDetailDialogHome({
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
 
-          // 하이라이트 효과 - 더 명확한 스타일 (배경색 + 테두리)
+          // 하이라이트 효과 - 배경색만 변경
           el.style.backgroundColor = '#fef3c7'; // amber-100
-          el.style.borderRadius = '8px';
-          el.style.boxShadow = '0 0 0 2px #f59e0b'; // amber-500 ring
 
           setTimeout(() => {
             el.style.backgroundColor = '';
-            el.style.borderRadius = '';
-            el.style.boxShadow = '';
           }, 3000);
         });
       }, 500);

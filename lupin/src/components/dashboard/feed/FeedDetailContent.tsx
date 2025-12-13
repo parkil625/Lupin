@@ -205,14 +205,10 @@ export function FeedDetailContent({
         const commentElement = document.getElementById(`comment-${targetCommentId}`);
         if (commentElement) {
           commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // 하이라이트 효과 (3초)
+          // 하이라이트 효과 (3초) - 배경색만 변경
           commentElement.style.backgroundColor = '#fef3c7';
-          commentElement.style.borderRadius = '8px';
-          commentElement.style.padding = '8px';
           setTimeout(() => {
             commentElement.style.backgroundColor = '';
-            commentElement.style.borderRadius = '';
-            commentElement.style.padding = '';
           }, 3000);
         }
       }, 300);
@@ -392,8 +388,9 @@ export function FeedDetailContent({
     const isDeleted = comment.isDeleted;
 
     return (
-      <div key={comment.id} id={`comment-${comment.id}`} className={`transition-colors duration-500 ${isReply ? "ml-8 mt-3" : ""}`}>
-        <div className="flex gap-3">
+      <div key={comment.id} className={isReply ? "ml-8 mt-3" : ""}>
+        {/* 댓글 내용 영역 - 하이라이트 대상 */}
+        <div id={`comment-${comment.id}`} className="flex gap-3 transition-colors duration-500 rounded-lg">
           <Avatar className="w-8 h-8 flex-shrink-0">
             {comment.avatar && comment.avatar.startsWith("http") ? (
               <img src={comment.avatar} alt={comment.author} className="w-full h-full object-cover" />
@@ -468,6 +465,7 @@ export function FeedDetailContent({
           </div>
         </div>
 
+        {/* 답글 영역 - 하이라이트 대상에서 분리 */}
         {hasReplies && !isCollapsed && (
           <div className="relative mt-2 pl-2 border-l-2 border-gray-300">
             {comment.replies!.map((reply) => renderComment(reply, depth + 1))}

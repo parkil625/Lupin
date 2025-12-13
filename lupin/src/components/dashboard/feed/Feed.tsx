@@ -346,12 +346,12 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
     const isHighlighted = highlightedCommentId !== null && Number(highlightedCommentId) === Number(comment.id);
 
     return (
-      <div
-        key={comment.id}
-        ref={(el) => { commentRefs.current[comment.id] = el; }}
-        className={`transition-colors duration-500 rounded-lg ${depth > 0 ? "ml-8 mt-3" : ""} ${isHighlighted ? "bg-amber-50" : ""}`}
-      >
-        <div className="flex gap-3">
+      <div key={comment.id} className={depth > 0 ? "ml-8 mt-3" : ""}>
+        {/* 댓글 내용 영역 - 하이라이트 대상 */}
+        <div
+          ref={(el) => { commentRefs.current[comment.id] = el; }}
+          className={`flex gap-3 transition-colors duration-500 rounded-lg ${isHighlighted ? "bg-amber-50" : ""}`}
+        >
           <UserHoverCard
             name={comment.author}
             department={comment.department}
@@ -423,6 +423,7 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
           </div>
         </div>
 
+        {/* 답글 영역 - 하이라이트 대상에서 분리 */}
         {hasReplies && !isCollapsed && (
           <div className="relative mt-2 pl-2 border-l-2 border-gray-300">
             {comment.replies!.map((reply) => renderComment(reply, depth + 1))}

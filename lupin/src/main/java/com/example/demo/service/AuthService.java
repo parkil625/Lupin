@@ -29,13 +29,13 @@ public class AuthService {
 
     /**
      * 일반 로그인
+     * 보안 강화: 사용자 미존재와 비밀번호 불일치를 동일한 에러로 처리
      */
     public LoginDto login(LoginRequest request) {
-        User user = userRepository.findByUserId(request.getEmail())
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByUserId(request.getEmail()).orElse(null);
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
         return generateTokens(user);

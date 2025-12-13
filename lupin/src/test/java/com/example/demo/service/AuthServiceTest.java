@@ -87,10 +87,10 @@ class AuthServiceTest {
         LoginRequest request = new LoginRequest("unknown@example.com", "password");
         given(userRepository.findByUserId("unknown@example.com")).willReturn(Optional.empty());
 
-        // when & then
+        // when & then (보안: 통합 에러 메시지)
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LOGIN_FAILED);
     }
 
     @Test
@@ -101,10 +101,10 @@ class AuthServiceTest {
         given(userRepository.findByUserId("test@example.com")).willReturn(Optional.of(user));
         given(passwordEncoder.matches("wrongPassword", "encodedPassword")).willReturn(false);
 
-        // when & then
+        // when & then (보안: 통합 에러 메시지)
         assertThatThrownBy(() -> authService.login(request))
                 .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_PASSWORD);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.LOGIN_FAILED);
     }
 
     @Test

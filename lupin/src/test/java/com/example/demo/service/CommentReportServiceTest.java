@@ -13,6 +13,7 @@ import com.example.demo.repository.CommentReportRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class CommentReportServiceTest {
     private NotificationRepository notificationRepository;
 
     @Mock
-    private NotificationService notificationService;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private UserPenaltyService userPenaltyService;

@@ -11,7 +11,9 @@ import com.example.demo.repository.CommentReportRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.domain.enums.NotificationType;
+import com.example.demo.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +28,7 @@ public class CommentReportService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final NotificationRepository notificationRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
     private final UserPenaltyService userPenaltyService;
 
     @Transactional
@@ -56,7 +58,7 @@ public class CommentReportService {
             if (!userPenaltyService.hasActivePenalty(writer, PenaltyType.COMMENT)) {
                 userPenaltyService.addPenalty(writer, PenaltyType.COMMENT);
                 deleteCommentByReport(comment);
-                notificationService.createCommentDeletedByReportNotification(writer);
+                eventPublisher.publishEvent(NotificationEvent.commentDeleted(writer.getId()));
             }
         }
     }

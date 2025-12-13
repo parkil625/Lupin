@@ -14,7 +14,9 @@ import com.example.demo.repository.FeedReportRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.domain.enums.NotificationType;
+import com.example.demo.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +34,7 @@ public class FeedReportService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final NotificationRepository notificationRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
     private final UserPenaltyService userPenaltyService;
 
     @Transactional
@@ -62,7 +64,7 @@ public class FeedReportService {
             if (!userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)) {
                 userPenaltyService.addPenalty(writer, PenaltyType.FEED);
                 deleteFeedByReport(feed);
-                notificationService.createFeedDeletedByReportNotification(writer);
+                eventPublisher.publishEvent(NotificationEvent.feedDeleted(writer.getId()));
             }
         }
     }

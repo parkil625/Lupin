@@ -6,7 +6,9 @@ import com.example.demo.dto.request.UserAvatarRequest;
 import com.example.demo.dto.request.UserProfileRequest;
 import com.example.demo.dto.request.UserUpdateRequest;
 import com.example.demo.dto.response.DoctorResponse;
+import com.example.demo.dto.response.UserRankingResponse;
 import com.example.demo.dto.response.UserResponse;
+import com.example.demo.dto.response.UserStatsResponse;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.PointService;
 import com.example.demo.service.UserPenaltyService;
@@ -38,14 +40,14 @@ public class UserController {
     }
 
     @GetMapping("/ranking")
-    public ResponseEntity<List<Map<String, Object>>> getTopUsersByPoints(
+    public ResponseEntity<List<UserRankingResponse>> getTopUsersByPoints(
             @RequestParam(defaultValue = "10") int limit
     ) {
         return ResponseEntity.ok(userService.getTopUsersByPoints(limit));
     }
 
     @GetMapping("/{userId}/ranking-context")
-    public ResponseEntity<List<Map<String, Object>>> getUserRankingContext(
+    public ResponseEntity<List<UserRankingResponse>> getUserRankingContext(
             @PathVariable Long userId
     ) {
         return ResponseEntity.ok(userService.getUserRankingContext(userId));
@@ -92,7 +94,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/stats")
-    public ResponseEntity<Map<String, Object>> getUserStats(@PathVariable Long userId) {
+    public ResponseEntity<UserStatsResponse> getUserStats(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getUserStats(userId));
     }
 

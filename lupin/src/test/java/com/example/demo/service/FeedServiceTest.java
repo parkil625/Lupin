@@ -1,9 +1,7 @@
 package com.example.demo.service;
 
-import com.example.demo.config.properties.FeedProperties;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
-import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -25,11 +23,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,13 +32,7 @@ import static org.mockito.Mockito.verify;
 class FeedServiceTest {
 
     @Mock
-    private FeedProperties feedProperties;
-
-    @Mock
     private FeedRepository feedRepository;
-
-    @Mock
-    private PointService pointService;
 
     @Mock
     private ImageMetadataService imageMetadataService;
@@ -52,16 +41,7 @@ class FeedServiceTest {
     private FeedTransactionService feedTransactionService;
 
     @Mock
-    private CommentService commentService;
-
-    @Mock
-    private FeedLikeService feedLikeService;
-
-    @Mock
-    private FeedReportService feedReportService;
-
-    @Mock
-    private NotificationService notificationService;
+    private FeedDeleteFacade feedDeleteFacade;
 
     @InjectMocks
     private FeedService feedService;
@@ -77,9 +57,6 @@ class FeedServiceTest {
                 .role(Role.MEMBER)
                 .build();
         ReflectionTestUtils.setField(writer, "id", 1L);
-
-        // FeedProperties mock 설정 (lenient - 모든 테스트에서 사용되지 않아도 에러 발생 안함)
-        lenient().when(feedProperties.getPointRecoveryDays()).thenReturn(7);
     }
 
     @Test
@@ -133,112 +110,16 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("피드를 삭제한다")
-    void deleteFeedTest() {
+    @DisplayName("피드 삭제는 FeedDeleteFacade에 위임한다")
+    void deleteFeedDelegatesToFacadeTest() {
         // given
         Long feedId = 1L;
-        Feed feed = Feed.builder()
-                .writer(writer)
-                .activity("running")
-                .content("내용")
-                .build();
-        ReflectionTestUtils.setField(feed, "id", feedId);
-
-        given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentService.deleteAllByFeed(feed))
-                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
 
         // when
         feedService.deleteFeed(writer, feedId);
 
         // then
-        verify(notificationService).deleteFeedRelatedNotifications(feedId);
-        verify(commentService).deleteAllByFeed(feed);
-        verify(feedLikeService).deleteAllByFeed(feed);
-        verify(feedReportService).deleteAllByFeed(feed);
-        verify(feedRepository).delete(feed);
-    }
-
-    @Test
-    @DisplayName("7일 이내 피드 삭제 시 포인트를 회수한다")
-    void deleteFeedWithin7DaysRecoverPointsTest() {
-        // given
-        Long feedId = 1L;
-        Long earnedPoints = 100L;
-        Feed feed = Feed.builder()
-                .writer(writer)
-                .activity("running")
-                .content("내용")
-                .points(earnedPoints)
-                .build();
-        ReflectionTestUtils.setField(feed, "id", feedId);
-        // 3일 전에 생성된 피드
-        ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(3));
-
-        given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentService.deleteAllByFeed(feed))
-                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
-
-        // when
-        feedService.deleteFeed(writer, feedId);
-
-        // then
-        verify(pointService).deductPoints(writer, earnedPoints);
-        verify(feedRepository).delete(feed);
-    }
-
-    @Test
-    @DisplayName("7일 초과 피드 삭제 시 포인트를 회수하지 않는다")
-    void deleteFeedAfter7DaysNoRecoverTest() {
-        // given
-        Long feedId = 1L;
-        Long earnedPoints = 100L;
-        Feed feed = Feed.builder()
-                .writer(writer)
-                .activity("running")
-                .content("내용")
-                .points(earnedPoints)
-                .build();
-        ReflectionTestUtils.setField(feed, "id", feedId);
-        // 10일 전에 생성된 피드
-        ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
-
-        given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentService.deleteAllByFeed(feed))
-                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
-
-        // when
-        feedService.deleteFeed(writer, feedId);
-
-        // then
-        verify(pointService, never()).deductPoints(any(User.class), anyLong());
-        verify(feedRepository).delete(feed);
-    }
-
-    @Test
-    @DisplayName("포인트가 0인 피드 삭제 시 회수하지 않는다")
-    void deleteFeedWithZeroPointsTest() {
-        // given
-        Long feedId = 1L;
-        Feed feed = Feed.builder()
-                .writer(writer)
-                .activity("running")
-                .content("내용")
-                .points(0L)
-                .build();
-        ReflectionTestUtils.setField(feed, "id", feedId);
-        ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(3));
-
-        given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentService.deleteAllByFeed(feed))
-                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
-
-        // when
-        feedService.deleteFeed(writer, feedId);
-
-        // then
-        verify(pointService, never()).deductPoints(any(User.class), anyLong());
-        verify(feedRepository).delete(feed);
+        verify(feedDeleteFacade).deleteFeed(writer, feedId);
     }
 
     @Test
@@ -560,44 +441,6 @@ class FeedServiceTest {
     }
 
     @Test
-    @DisplayName("피드 삭제 시 연관된 이미지도 삭제된다 (cascade)")
-    void deleteFeedWithImagesTest() {
-        // given
-        Long feedId = 1L;
-        Feed feed = Feed.builder()
-                .writer(writer)
-                .activity("running")
-                .content("내용")
-                .points(0L)
-                .build();
-        ReflectionTestUtils.setField(feed, "id", feedId);
-        ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
-
-        given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentService.deleteAllByFeed(feed))
-                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
-
-        // when
-        feedService.deleteFeed(writer, feedId);
-
-        // then - 이미지 삭제는 Feed의 cascade + orphanRemoval로 처리됨
-        verify(feedRepository).delete(feed);
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 피드를 삭제하면 예외가 발생한다")
-    void deleteFeedNotFoundTest() {
-        // given
-        Long feedId = 999L;
-        given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> feedService.deleteFeed(writer, feedId))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_FOUND);
-    }
-
-    @Test
     @DisplayName("본인이 아닌 사용자가 피드를 수정하면 예외가 발생한다")
     void updateFeedByNonOwnerThrowsExceptionTest() {
         // given
@@ -621,60 +464,6 @@ class FeedServiceTest {
         assertThatThrownBy(() -> feedService.updateFeed(otherUser, feedId, "수정 내용", "walking"))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_OWNER);
-    }
-
-    @Test
-    @DisplayName("본인이 아닌 사용자가 피드를 삭제하면 예외가 발생한다")
-    void deleteFeedByNonOwnerThrowsExceptionTest() {
-        // given
-        Long feedId = 1L;
-        User otherUser = User.builder()
-                .userId("other")
-                .password("password")
-                .name("다른사람")
-                .role(Role.MEMBER)
-                .build();
-        ReflectionTestUtils.setField(otherUser, "id", 2L);
-        Feed feed = Feed.builder()
-                .writer(writer)
-                .activity("running")
-                .content("내용")
-                .points(0L)
-                .build();
-        ReflectionTestUtils.setField(feed, "id", feedId);
-
-        given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-
-        // when & then
-        assertThatThrownBy(() -> feedService.deleteFeed(otherUser, feedId))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FEED_NOT_OWNER);
-    }
-
-    @Test
-    @DisplayName("피드 삭제 시 관련 알림도 삭제된다")
-    void deleteFeedDeletesRelatedNotificationsTest() {
-        // given
-        Long feedId = 1L;
-        Feed feed = Feed.builder()
-                .writer(writer)
-                .activity("running")
-                .content("내용")
-                .points(0L)
-                .build();
-        ReflectionTestUtils.setField(feed, "id", feedId);
-        ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
-
-        given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentService.deleteAllByFeed(feed))
-                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
-
-        // when
-        feedService.deleteFeed(writer, feedId);
-
-        // then
-        verify(notificationService).deleteFeedRelatedNotifications(feedId);
-        verify(feedRepository).delete(feed);
     }
 
     @Test
@@ -747,8 +536,6 @@ class FeedServiceTest {
         // then
         assertThat(result.getContent()).isEqualTo(newContent);
         assertThat(result.getActivity()).isEqualTo(newActivity);
-        assertThat(result.getPoints()).isEqualTo(30L); // 포인트 변경 없음
-        verify(pointService, never()).deductPoints(any(), anyLong());
-        verify(pointService, never()).addPoints(any(), anyLong());
+        assertThat(result.getPoints()).isEqualTo(30L); // 기존 포인트 유지
     }
 }

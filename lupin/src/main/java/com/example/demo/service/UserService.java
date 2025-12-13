@@ -3,6 +3,8 @@ package com.example.demo.service;
 import com.example.demo.config.CacheConfig;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.dto.response.UserRankingResponse;
+import com.example.demo.dto.response.UserStatsResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentRepository;
@@ -18,9 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -43,43 +43,24 @@ public class UserService {
     }
 
     @Cacheable(value = CacheConfig.RANKING_CACHE, key = "#limit")
-    public List<Map<String, Object>> getTopUsersByPoints(int limit) {
-        // 모든 사용자를 포함 (PointLog가 없어도 0점으로 포함)
+    public List<UserRankingResponse> getTopUsersByPoints(int limit) {
         List<Object[]> results = pointLogRepository.findAllUsersWithPointsRanked(PageRequest.of(0, limit));
-        List<Map<String, Object>> rankings = new ArrayList<>();
+        List<UserRankingResponse> rankings = new ArrayList<>();
         int rank = 1;
         for (Object[] row : results) {
             User user = (User) row[0];
             Long points = (Long) row[1];
-            Map<String, Object> entry = new HashMap<>();
-            entry.put("id", user.getId());
-            entry.put("name", user.getName());
-            entry.put("avatar", user.getAvatar());
-            entry.put("department", user.getDepartment());
-            entry.put("points", points);
-            entry.put("rank", rank++);
-            rankings.add(entry);
+            rankings.add(UserRankingResponse.of(user, points != null ? points : 0L, rank++));
         }
         return rankings;
     }
 
     @Cacheable(value = CacheConfig.USER_RANKING_CONTEXT_CACHE, key = "#userId")
-    public List<Map<String, Object>> getUserRankingContext(Long userId) {
-        // Window Function을 사용하여 해당 사용자와 앞뒤 사용자만 조회 (메모리 효율적)
+    public List<UserRankingResponse> getUserRankingContext(Long userId) {
         List<Object[]> results = pointLogRepository.findUserRankingContext(userId);
-
-        List<Map<String, Object>> context = new ArrayList<>();
-        for (Object[] row : results) {
-            Map<String, Object> entry = new HashMap<>();
-            entry.put("id", ((Number) row[0]).longValue());
-            entry.put("name", row[1]);
-            entry.put("avatar", row[2]);
-            entry.put("department", row[3]);
-            entry.put("points", ((Number) row[4]).longValue());
-            entry.put("rank", ((Number) row[5]).intValue());
-            context.add(entry);
-        }
-        return context;
+        return results.stream()
+                .map(UserRankingResponse::fromNativeQuery)
+                .toList();
     }
 
     public long getTotalUserCount() {
@@ -99,18 +80,12 @@ public class UserService {
         return avg != null ? Math.round(avg) : 0L;
     }
 
-    public Map<String, Object> getUserStats(Long userId) {
+    public UserStatsResponse getUserStats(Long userId) {
         User user = getUserInfo(userId);
         Long totalPoints = pointLogRepository.sumPointsByUser(user);
         long feedCount = feedRepository.countByWriterId(userId);
         long commentCount = commentRepository.countByWriterId(userId);
-
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("userId", userId);
-        stats.put("totalPoints", totalPoints != null ? totalPoints : 0L);
-        stats.put("feedCount", feedCount);
-        stats.put("commentCount", commentCount);
-        return stats;
+        return UserStatsResponse.of(userId, totalPoints, feedCount, commentCount);
     }
 
     @Transactional

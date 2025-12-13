@@ -1,8 +1,8 @@
 package com.example.demo.service;
 
-import com.example.demo.config.properties.FeedProperties;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.dto.FeedImageUploadResult;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedRepository;
@@ -28,15 +28,10 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class FeedService {
 
-    private final FeedProperties feedProperties;
     private final FeedRepository feedRepository;
-    private final PointService pointService;
     private final ImageMetadataService imageMetadataService;
     private final FeedTransactionService feedTransactionService;
-    private final CommentService commentService;
-    private final FeedLikeService feedLikeService;
-    private final FeedReportService feedReportService;
-    private final NotificationService notificationService;
+    private final FeedDeleteFacade feedDeleteFacade;
 
     public Slice<Feed> getHomeFeeds(User user, int page, int size) {
         // @BatchSize(100)로 images 지연 로딩 최적화 (N+1 방지)
@@ -55,13 +50,14 @@ public class FeedService {
 
     @Transactional
     public Feed createFeed(User writer, String activity, String content, List<String> s3Keys) {
-        if (s3Keys.size() < 2) {
-            throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED);
-        }
-        String startImageKey = s3Keys.get(0);
-        String endImageKey = s3Keys.get(1);
-        List<String> otherImageKeys = s3Keys.size() > 2 ? s3Keys.subList(2, s3Keys.size()) : List.of();
-        return createFeed(writer, activity, content, startImageKey, endImageKey, otherImageKeys);
+        return createFeed(writer, activity, content, FeedImageUploadResult.fromList(s3Keys));
+    }
+
+    /**
+     * 피드 생성 (타입 안전한 이미지 파라미터)
+     */
+    public Feed createFeed(User writer, String activity, String content, FeedImageUploadResult images) {
+        return createFeed(writer, activity, content, images.startImageKey(), images.endImageKey(), images.otherImageKeys());
     }
 
     /**
@@ -115,10 +111,14 @@ public class FeedService {
 
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity, List<String> s3Keys) {
-        String startImageKey = s3Keys.get(0);
-        String endImageKey = s3Keys.get(1);
-        List<String> otherImageKeys = s3Keys.size() > 2 ? s3Keys.subList(2, s3Keys.size()) : List.of();
-        return updateFeed(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys);
+        return updateFeed(user, feedId, content, activity, FeedImageUploadResult.fromList(s3Keys));
+    }
+
+    /**
+     * 피드 수정 (타입 안전한 이미지 파라미터)
+     */
+    public Feed updateFeed(User user, Long feedId, String content, String activity, FeedImageUploadResult images) {
+        return updateFeed(user, feedId, content, activity, images.startImageKey(), images.endImageKey(), images.otherImageKeys());
     }
 
     /**
@@ -138,45 +138,16 @@ public class FeedService {
         return feedTransactionService.updateFeed(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
     }
 
-    @Transactional
+    /**
+     * 피드 삭제 - FeedDeleteFacade에 위임
+     */
     public void deleteFeed(User user, Long feedId) {
-        Feed feed = feedRepository.findByIdForDelete(feedId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
-
-        validateOwnership(feed, user);
-        recoverPointsIfWithinPeriod(feed);
-
-        // 알림 삭제 (피드 관련)
-        notificationService.deleteFeedRelatedNotifications(feedId);
-
-        // 댓글 삭제 및 관련 알림 삭제
-        CommentService.CommentDeleteResult commentResult = commentService.deleteAllByFeed(feed);
-        notificationService.deleteCommentRelatedNotifications(
-                commentResult.parentCommentIds(),
-                commentResult.allCommentIds()
-        );
-
-        // 좋아요, 신고 삭제
-        feedLikeService.deleteAllByFeed(feed);
-        feedReportService.deleteAllByFeed(feed);
-
-        feedRepository.delete(feed);
+        feedDeleteFacade.deleteFeed(user, feedId);
     }
 
     private void validateOwnership(Feed feed, User user) {
         if (!Objects.equals(feed.getWriter().getId(), user.getId())) {
             throw new BusinessException(ErrorCode.FEED_NOT_OWNER);
-        }
-    }
-
-    private void recoverPointsIfWithinPeriod(Feed feed) {
-        if (feed.getPoints() <= 0) {
-            return;
-        }
-
-        LocalDateTime recoveryDeadline = LocalDateTime.now().minusDays(feedProperties.getPointRecoveryDays());
-        if (feed.getCreatedAt().isAfter(recoveryDeadline)) {
-            pointService.deductPoints(feed.getWriter(), feed.getPoints());
         }
     }
 

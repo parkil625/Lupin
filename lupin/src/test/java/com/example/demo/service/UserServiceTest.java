@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.dto.response.UserStatsResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentRepository;
@@ -16,7 +17,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -113,13 +113,13 @@ class UserServiceTest {
         given(commentRepository.countByWriterId(userId)).willReturn(10L);
 
         // when
-        Map<String, Object> stats = userService.getUserStats(userId);
+        UserStatsResponse stats = userService.getUserStats(userId);
 
         // then
-        assertThat(stats.get("userId")).isEqualTo(userId);
-        assertThat(stats.get("totalPoints")).isEqualTo(100L);
-        assertThat(stats.get("feedCount")).isEqualTo(5L);
-        assertThat(stats.get("commentCount")).isEqualTo(10L);
+        assertThat(stats.userId()).isEqualTo(userId);
+        assertThat(stats.totalPoints()).isEqualTo(100L);
+        assertThat(stats.feedCount()).isEqualTo(5L);
+        assertThat(stats.commentCount()).isEqualTo(10L);
     }
 
     @Test
@@ -133,12 +133,12 @@ class UserServiceTest {
         given(commentRepository.countByWriterId(userId)).willReturn(0L);
 
         // when
-        Map<String, Object> stats = userService.getUserStats(userId);
+        UserStatsResponse stats = userService.getUserStats(userId);
 
         // then
-        assertThat(stats.get("totalPoints")).isEqualTo(0L);
-        assertThat(stats.get("feedCount")).isEqualTo(0L);
-        assertThat(stats.get("commentCount")).isEqualTo(0L);
+        assertThat(stats.totalPoints()).isEqualTo(0L);
+        assertThat(stats.feedCount()).isEqualTo(0L);
+        assertThat(stats.commentCount()).isEqualTo(0L);
     }
 
     @Test

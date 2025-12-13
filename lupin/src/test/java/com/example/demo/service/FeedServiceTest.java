@@ -91,6 +91,10 @@ class FeedServiceTest {
                 .role(Role.MEMBER)
                 .build();
         ReflectionTestUtils.setField(writer, "id", 1L);
+
+        // Self-injection: 트랜잭션 프록시를 위해 self 필드 설정
+        // 단위 테스트에서는 프록시가 없으므로 자기 자신을 직접 주입
+        ReflectionTestUtils.setField(feedService, "self", feedService);
     }
 
     @Test

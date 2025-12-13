@@ -16,6 +16,8 @@ import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,11 @@ public class FeedService {
     private static final int POINT_RECOVERY_DAYS = 7;
     private static final int MAX_WORKOUT_HOURS = 24;
     private static final int PHOTO_TIME_TOLERANCE_HOURS = 6; // 자정 넘어 운동 허용 (±6시간)
+
+    // Self-injection for @Transactional proxy to work on internal method calls
+    @Autowired
+    @Lazy
+    private FeedService self;
 
     private final FeedRepository feedRepository;
     private final FeedImageRepository feedImageRepository;
@@ -98,15 +105,16 @@ public class FeedService {
                 startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
                 endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
 
-        // [트랜잭션 내부] 피드 저장
-        return createFeedInternal(writer, activity, content, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
+        // [트랜잭션 내부] 피드 저장 - self를 통해 호출해야 @Transactional 프록시가 동작
+        return self.createFeedInternal(writer, activity, content, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
     }
 
     /**
      * 피드 생성 내부 로직 (트랜잭션 내에서 실행)
+     * Note: public으로 선언해야 AOP 프록시가 @Transactional을 적용할 수 있음
      */
     @Transactional
-    protected Feed createFeedInternal(User writer, String activity, String content,
+    public Feed createFeedInternal(User writer, String activity, String content,
                                       String startImageKey, String endImageKey, List<String> otherImageKeys,
                                       Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt) {
         // 점수 계산
@@ -219,15 +227,16 @@ public class FeedService {
                 startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
                 endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
 
-        // [트랜잭션 내부] 피드 수정
-        return updateFeedInternal(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
+        // [트랜잭션 내부] 피드 수정 - self를 통해 호출해야 @Transactional 프록시가 동작
+        return self.updateFeedInternal(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
     }
 
     /**
      * 피드 수정 내부 로직 (트랜잭션 내에서 실행)
+     * Note: public으로 선언해야 AOP 프록시가 @Transactional을 적용할 수 있음
      */
     @Transactional
-    protected Feed updateFeedInternal(User user, Long feedId, String content, String activity,
+    public Feed updateFeedInternal(User user, Long feedId, String content, String activity,
                                       String startImageKey, String endImageKey, List<String> otherImageKeys,
                                       Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt) {
         Feed feed = feedRepository.findByIdWithWriter(feedId)

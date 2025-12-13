@@ -1,8 +1,7 @@
 package com.example.demo.service;
 
-import io.awspring.cloud.s3.S3Resource;
-import io.awspring.cloud.s3.S3Template;
-import org.junit.jupiter.api.BeforeEach;
+import com.example.demo.component.ImageProcessor;
+import com.example.demo.infrastructure.FileStorage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,20 +9,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -34,23 +26,16 @@ import static org.mockito.Mockito.verify;
 class ImageServiceTest {
 
     @Mock
-    private S3Template s3Template;
+    private FileStorage fileStorage;
 
     @Mock
-    private S3Client s3Client;
+    private ImageProcessor imageProcessor;
 
     @Mock
-    private S3Resource s3Resource;
+    private ImageMetadataService imageMetadataService;
 
     @InjectMocks
     private ImageService imageService;
-
-    private static final String BUCKET = "test-bucket";
-
-    @BeforeEach
-    void setUp() {
-        ReflectionTestUtils.setField(imageService, "bucket", BUCKET);
-    }
 
     @Test
     @DisplayName("이미지를 업로드한다")
@@ -62,18 +47,46 @@ class ImageServiceTest {
                 "image/jpeg",
                 "test image content".getBytes()
         );
-        // S3Client putObject mock 설정
-        given(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-                .willReturn(PutObjectResponse.builder().build());
+
+        byte[] processedBytes = "converted webp".getBytes();
+        given(imageProcessor.convertToWebp(any(byte[].class), anyInt(), anyInt(), anyInt()))
+                .willReturn(processedBytes);
+        given(fileStorage.getPublicUrl(anyString()))
+                .willAnswer(invocation -> "https://cdn.lupin-care.com/" + invocation.getArgument(0));
 
         // when
         String result = imageService.uploadImage(file);
 
-        // then (CDN URL 형식으로 반환됨)
+        // then
         assertThat(result).startsWith("https://cdn.lupin-care.com/");
-        // WebP 변환 실패 시 원본 확장자 유지
-        assertThat(result).containsPattern("\\.(jpg|webp)$");
-        verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+        assertThat(result).endsWith(".webp");
+        verify(imageProcessor).convertToWebp(any(byte[].class), eq(800), eq(800), eq(60));
+        verify(fileStorage).upload(anyString(), eq(processedBytes), eq("image/webp"));
+    }
+
+    @Test
+    @DisplayName("피드 이미지 업로드 시 EXIF 추출 및 썸네일 생성")
+    void uploadFeedImageTest() throws Exception {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "image",
+                "test.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
+
+        byte[] processedBytes = "converted webp".getBytes();
+        given(imageProcessor.convertToWebp(any(byte[].class), anyInt(), anyInt(), anyInt()))
+                .willReturn(processedBytes);
+        given(fileStorage.getPublicUrl(anyString()))
+                .willAnswer(invocation -> "https://cdn.lupin-care.com/" + invocation.getArgument(0));
+
+        // when
+        String result = imageService.uploadImage(file, "feed");
+
+        // then
+        assertThat(result).startsWith("https://cdn.lupin-care.com/feed/");
+        verify(imageMetadataService).extractAndCache(any(byte[].class), anyString());
     }
 
     @Test
@@ -92,14 +105,17 @@ class ImageServiceTest {
                 "image/jpeg",
                 "test image 2".getBytes()
         );
-        // S3Client putObject mock 설정
-        given(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-                .willReturn(PutObjectResponse.builder().build());
+
+        byte[] processedBytes = "converted webp".getBytes();
+        given(imageProcessor.convertToWebp(any(byte[].class), anyInt(), anyInt(), anyInt()))
+                .willReturn(processedBytes);
+        given(fileStorage.getPublicUrl(anyString()))
+                .willAnswer(invocation -> "https://cdn.lupin-care.com/" + invocation.getArgument(0));
 
         // when
         List<String> results = imageService.uploadImages(List.of(file1, file2));
 
-        // then (CDN URL 형식으로 반환됨)
+        // then
         assertThat(results).hasSize(2);
         assertThat(results.get(0)).startsWith("https://cdn.lupin-care.com/");
         assertThat(results.get(1)).startsWith("https://cdn.lupin-care.com/");
@@ -109,12 +125,12 @@ class ImageServiceTest {
     @DisplayName("이미지를 삭제한다")
     void deleteImageTest() {
         // given
-        String imageId = "test-image-id.jpg";
+        String imageUrl = "https://cdn.lupin-care.com/feed/test-image.webp";
 
         // when
-        imageService.deleteImage(imageId);
+        imageService.deleteImage(imageUrl);
 
         // then
-        verify(s3Template).deleteObject(BUCKET, imageId);
+        verify(fileStorage).delete(imageUrl);
     }
 }

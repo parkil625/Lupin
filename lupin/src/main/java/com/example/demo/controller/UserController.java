@@ -2,12 +2,11 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.PenaltyType;
-import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.UserAvatarRequest;
 import com.example.demo.dto.request.UserProfileRequest;
 import com.example.demo.dto.request.UserUpdateRequest;
+import com.example.demo.dto.response.DoctorResponse;
 import com.example.demo.dto.response.UserResponse;
-import com.example.demo.repository.UserRepository;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.PointService;
 import com.example.demo.service.UserPenaltyService;
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -30,7 +28,6 @@ public class UserController {
     private final UserService userService;
     private final PointService pointService;
     private final UserPenaltyService userPenaltyService;
-    private final UserRepository userRepository;
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getMe(
@@ -156,20 +153,15 @@ public class UserController {
      * GET /api/users/doctors?department=internal
      */
     @GetMapping("/doctors")
-    public ResponseEntity<List<Map<String, Object>>> getDoctorsByDepartment(
+    public ResponseEntity<List<DoctorResponse>> getDoctorsByDepartment(
             @RequestParam String department
     ) {
-        List<User> doctors = userRepository.findByRoleAndDepartment(Role.DOCTOR, department);
+        List<User> doctors = userService.getDoctorsByDepartment(department);
 
-        List<Map<String, Object>> doctorList = doctors.stream()
-                .map(doctor -> Map.of(
-                        "id", (Object) doctor.getId(),
-                        "name", (Object) doctor.getName(),
-                        "department", (Object) (doctor.getDepartment() != null ? doctor.getDepartment() : "")
-                ))
-                .collect(Collectors.toList());
+        List<DoctorResponse> doctorList = doctors.stream()
+                .map(DoctorResponse::from)
+                .toList();
 
         return ResponseEntity.ok(doctorList);
     }
-
 }

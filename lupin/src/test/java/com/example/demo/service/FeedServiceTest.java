@@ -101,7 +101,7 @@ class FeedServiceTest {
         String newContent = "수정된 내용";
         String newActivity = "walking";
 
-        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriterAndImages(feedId)).willReturn(Optional.of(feed));
 
         // when
         Feed result = feedService.updateFeed(writer, feedId, newContent, newActivity);
@@ -116,7 +116,7 @@ class FeedServiceTest {
     void updateFeedNotFoundTest() {
         // given
         Long feedId = 999L;
-        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.empty());
+        given(feedRepository.findByIdWithWriterAndImages(feedId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> feedService.updateFeed(writer, feedId, "내용", "activity"))
@@ -244,7 +244,7 @@ class FeedServiceTest {
                 .content("내용")
                 .build();
 
-        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriterAndImages(feedId)).willReturn(Optional.of(feed));
 
         // when
         Feed result = feedService.getFeedDetail(feedId);
@@ -258,7 +258,7 @@ class FeedServiceTest {
     void getFeedDetailNotFoundTest() {
         // given
         Long feedId = 999L;
-        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.empty());
+        given(feedRepository.findByIdWithWriterAndImages(feedId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> feedService.getFeedDetail(feedId))
@@ -607,7 +607,7 @@ class FeedServiceTest {
                 .content("원래 내용")
                 .build();
 
-        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriterAndImages(feedId)).willReturn(Optional.of(feed));
 
         // when & then
         assertThatThrownBy(() -> feedService.updateFeed(otherUser, feedId, "수정 내용", "walking"))
@@ -731,7 +731,7 @@ class FeedServiceTest {
         String newContent = "수정된 내용";
         String newActivity = "walking";
 
-        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.findByIdWithWriterAndImages(feedId)).willReturn(Optional.of(feed));
 
         // when - 이미지 없이 호출 (기존 메서드)
         Feed result = feedService.updateFeed(writer, feedId, newContent, newActivity);

@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.FeedRequest;
 import com.example.demo.dto.response.FeedResponse;
+import com.example.demo.dto.response.SliceResponse;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.FeedLikeService;
 import com.example.demo.service.FeedReportService;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -86,35 +88,31 @@ public class FeedController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getHomeFeeds(
+    public ResponseEntity<SliceResponse<FeedResponse>> getHomeFeeds(
             @CurrentUser User user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Slice<Feed> feeds = feedService.getHomeFeeds(user, page, size);
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
-        return ResponseEntity.ok(Map.of(
-                "content", feeds.getContent().stream()
-                        .map(feed -> toFeedResponseWithActiveDays(feed, user, activeDaysMap))
-                        .toList(),
-                "hasNext", feeds.hasNext()
-        ));
+        List<FeedResponse> content = feeds.getContent().stream()
+                .map(feed -> toFeedResponseWithActiveDays(feed, user, activeDaysMap))
+                .toList();
+        return ResponseEntity.ok(SliceResponse.of(content, feeds.hasNext(), page, size));
     }
 
     @GetMapping("/my")
-    public ResponseEntity<Map<String, Object>> getMyFeeds(
+    public ResponseEntity<SliceResponse<FeedResponse>> getMyFeeds(
             @CurrentUser User user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Slice<Feed> feeds = feedService.getMyFeeds(user, page, size);
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
-        return ResponseEntity.ok(Map.of(
-                "content", feeds.getContent().stream()
-                        .map(feed -> toFeedResponseWithActiveDays(feed, user, activeDaysMap))
-                        .toList(),
-                "hasNext", feeds.hasNext()
-        ));
+        List<FeedResponse> content = feeds.getContent().stream()
+                .map(feed -> toFeedResponseWithActiveDays(feed, user, activeDaysMap))
+                .toList();
+        return ResponseEntity.ok(SliceResponse.of(content, feeds.hasNext(), page, size));
     }
 
     @GetMapping("/can-post-today")

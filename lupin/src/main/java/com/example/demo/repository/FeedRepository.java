@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -35,6 +36,11 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     // [최적화] 상세 조회 - writer만 페치
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.id = :id")
     Optional<Feed> findByIdWithWriter(@Param("id") Long id);
+
+    // [최적화] 상세 조회 - writer와 images 함께 페치 (EntityGraph 사용)
+    @EntityGraph(attributePaths = {"writer", "images"})
+    @Query("SELECT f FROM Feed f WHERE f.id = :id")
+    Optional<Feed> findByIdWithWriterAndImages(@Param("id") Long id);
 
     // [삭제용] writer와 images 함께 페치 - cascade delete 지원
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer LEFT JOIN FETCH f.images WHERE f.id = :id")
@@ -72,4 +78,30 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
 
     // 사용자별 피드 수 조회
     long countByWriterId(Long writerId);
+
+    // [동기화] 좋아요 카운트 동기화 - 실제 count와 다른 피드 업데이트
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+        UPDATE feeds f
+        SET like_count = (
+            SELECT COUNT(*) FROM feed_likes fl WHERE fl.feed_id = f.id
+        )
+        WHERE f.like_count <> (
+            SELECT COUNT(*) FROM feed_likes fl WHERE fl.feed_id = f.id
+        )
+        """, nativeQuery = true)
+    int syncLikeCounts();
+
+    // [동기화] 댓글 카운트 동기화 - 실제 count와 다른 피드 업데이트
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+        UPDATE feeds f
+        SET comment_count = (
+            SELECT COUNT(*) FROM comments c WHERE c.feed_id = f.id
+        )
+        WHERE f.comment_count <> (
+            SELECT COUNT(*) FROM comments c WHERE c.feed_id = f.id
+        )
+        """, nativeQuery = true)
+    int syncCommentCounts();
 }

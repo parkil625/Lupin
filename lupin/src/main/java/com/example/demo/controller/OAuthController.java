@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.AuthService;
@@ -37,7 +38,7 @@ public class OAuthController {
 
         return ResponseEntity.ok(Map.of(
                 "id", user.getId(),
-                "provider", "GOOGLE",
+                "provider", SocialProvider.GOOGLE.name(),
                 "providerEmail", user.getProviderEmail() != null ? user.getProviderEmail() : "",
                 "connectedAt", ""
         ));
@@ -103,7 +104,7 @@ public class OAuthController {
 
         return ResponseEntity.ok(Map.of(
                 "id", user.getId(),
-                "provider", "NAVER",
+                "provider", SocialProvider.NAVER.name(),
                 "providerEmail", user.getProviderEmail() != null ? user.getProviderEmail() : "",
                 "connectedAt", ""
         ));
@@ -135,7 +136,7 @@ public class OAuthController {
 
         return ResponseEntity.ok(Map.of(
                 "id", user.getId(),
-                "provider", "KAKAO",
+                "provider", SocialProvider.KAKAO.name(),
                 "providerEmail", user.getProviderEmail() != null ? user.getProviderEmail() : "",
                 "connectedAt", ""
         ));

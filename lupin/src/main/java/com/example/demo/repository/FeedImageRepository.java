@@ -18,4 +18,10 @@ public interface FeedImageRepository extends JpaRepository<FeedImage, Long> {
     @Modifying
     @Query("DELETE FROM FeedImage fi WHERE fi.feed = :feed")
     void deleteByFeed(@Param("feed") Feed feed);
+
+    /**
+     * 모든 S3 키 조회 (고아 이미지 정리용)
+     */
+    @Query("SELECT fi.s3Key FROM FeedImage fi")
+    List<String> findAllS3Keys();
 }

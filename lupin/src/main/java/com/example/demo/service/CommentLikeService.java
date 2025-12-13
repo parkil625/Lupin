@@ -14,6 +14,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -65,5 +67,13 @@ public class CommentLikeService {
         // refId = commentId (댓글 참조)
         notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
         commentLikeRepository.delete(commentLike);
+    }
+
+    /**
+     * 댓글 좋아요 ID로 댓글 ID 조회
+     */
+    public Optional<Long> getCommentIdByLikeId(Long commentLikeId) {
+        return commentLikeRepository.findByIdWithComment(commentLikeId)
+                .map(commentLike -> commentLike.getComment().getId());
     }
 }

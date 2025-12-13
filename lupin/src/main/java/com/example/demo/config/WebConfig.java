@@ -1,13 +1,12 @@
 package com.example.demo.config;
 
+import com.example.demo.config.properties.AsyncProperties;
 import com.example.demo.security.CurrentUserArgumentResolver;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
@@ -15,8 +14,8 @@ import java.util.concurrent.Executor;
 
 /**
  * Web 설정
- * - CORS: 프론트엔드와 백엔드 간의 cross-origin 요청 허용 (설정 파일에서 origin 주입)
- * - Async: @Async 비동기 처리를 위한 스레드 풀 설정
+ * - CORS: SecurityConfig에서 일원화하여 관리
+ * - Async: @Async 비동기 처리를 위한 스레드 풀 설정 (yml에서 관리)
  * - @CurrentUser ArgumentResolver 등록
  */
 @Configuration
@@ -24,40 +23,24 @@ import java.util.concurrent.Executor;
 public class WebConfig implements WebMvcConfigurer {
 
     private final CurrentUserArgumentResolver currentUserArgumentResolver;
-
-    @Value("${app.cors.allowed-origins}")
-    private String allowedOriginsConfig;
+    private final AsyncProperties asyncProperties;
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(currentUserArgumentResolver);
     }
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        String[] allowedOrigins = allowedOriginsConfig.split(",");
-        registry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigins)
-                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
-    }
-
     /**
      * @Async 비동기 처리를 위한 스레드 풀 설정
-     * - corePoolSize: 기본 스레드 수 (5)
-     * - maxPoolSize: 최대 스레드 수 (10)
-     * - queueCapacity: 큐 용량 (100)
-     * - 알림 발송 등 비동기 작업에 사용
+     * 설정값은 application.yml의 app.async.* 에서 관리
      */
     @Bean(name = "taskExecutor")
     public Executor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(5);
-        executor.setMaxPoolSize(10);
-        executor.setQueueCapacity(100);
-        executor.setThreadNamePrefix("AsyncThread-");
+        executor.setCorePoolSize(asyncProperties.getCorePoolSize());
+        executor.setMaxPoolSize(asyncProperties.getMaxPoolSize());
+        executor.setQueueCapacity(asyncProperties.getQueueCapacity());
+        executor.setThreadNamePrefix(asyncProperties.getThreadNamePrefix());
         executor.initialize();
         return executor;
     }

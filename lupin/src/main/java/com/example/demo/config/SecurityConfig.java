@@ -1,10 +1,11 @@
 package com.example.demo.config;
 
+import com.example.demo.config.properties.CorsProperties;
 import com.example.demo.security.JwtAccessDeniedHandler;
 import com.example.demo.security.JwtAuthenticationEntryPoint;
 import com.example.demo.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -20,25 +21,54 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Spring Security 설정 (Modern Spring Security 6.x 방식)
  */
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(securedEnabled = true, prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    // URL 상수 정의
+    private static final String[] PUBLIC_URLS = {
+            "/",
+            "/api/health"
+    };
+
+    private static final String[] AUTH_URLS = {
+            "/api/auth/**"
+    };
+
+    private static final String[] OAUTH_URLS = {
+            "/api/oauth/*/login"
+    };
+
+    private static final String[] WEBSOCKET_URLS = {
+            "/ws/**"
+    };
+
+    private static final String[] SWAGGER_URLS = {
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**"
+    };
+
+    private static final String[] PUBLIC_API_URLS = {
+            "/api/users/ranking",
+            "/api/users/statistics",
+            "/api/users/*/ranking-context",
+            "/api/notifications/subscribe",
+            "/api/auction/stream/**"
+    };
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-
-    @Value("${app.cors.allowed-origins}")
-    private String allowedOriginsConfig;
+    private final CorsProperties corsProperties;
 
     /**
      * BCrypt 패스워드 인코더 빈 등록
@@ -49,17 +79,20 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS 설정 (설정 파일에서 origin 목록 주입)
+     * CORS 설정 (CorsProperties를 통한 타입 안전한 설정 관리)
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> allowedOrigins = Arrays.asList(allowedOriginsConfig.split(","));
-        configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Collections.singletonList("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+
+        List<String> effectiveOrigins = corsProperties.getEffectiveOrigins();
+        configuration.setAllowedOrigins(effectiveOrigins);
+        log.info("CORS 허용 origin 설정: {}", effectiveOrigins);
+
+        configuration.setAllowedMethods(corsProperties.getAllowedMethods());
+        configuration.setAllowedHeaders(corsProperties.getAllowedHeaders());
+        configuration.setAllowCredentials(corsProperties.isAllowCredentials());
+        configuration.setMaxAge(corsProperties.getMaxAge());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -93,21 +126,17 @@ public class SecurityConfig {
                         // CORS preflight 요청 허용
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         // 헬스체크 엔드포인트
-                        .requestMatchers("/", "/api/health").permitAll()
+                        .requestMatchers(PUBLIC_URLS).permitAll()
                         // 로그인 엔드포인트는 인증 없이 접근 가능
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(AUTH_URLS).permitAll()
                         // OAuth 로그인 엔드포인트
-                        .requestMatchers("/api/oauth/*/login").permitAll()
+                        .requestMatchers(OAUTH_URLS).permitAll()
                         // WebSocket 엔드포인트 (SockJS 관련 경로 포함)
-                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(WEBSOCKET_URLS).permitAll()
                         // Swagger UI
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
-                        // 랭킹 및 통계 엔드포인트 (공개)
-                        .requestMatchers("/api/users/ranking", "/api/users/statistics", "/api/users/*/ranking-context").permitAll()
-                        // SSE 알림 구독 (토큰을 쿼리 파라미터로 받아 컨트롤러에서 검증)
-                        .requestMatchers("/api/notifications/subscribe").permitAll()
-                        // 경매 SSE 스트림
-                        .requestMatchers("/api/auction/stream/**").permitAll()
+                        .requestMatchers(SWAGGER_URLS).permitAll()
+                        // 공개 API (랭킹, 통계, SSE 등)
+                        .requestMatchers(PUBLIC_API_URLS).permitAll()
                         // 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
                 )

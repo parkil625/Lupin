@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
@@ -49,7 +50,7 @@ public class KakaoOAuthService extends AbstractOAuthService {
 
     @Override
     protected String getProviderName() {
-        return "KAKAO";
+        return SocialProvider.KAKAO.name();
     }
 
     @Override

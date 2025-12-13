@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.exception.BusinessException;
@@ -11,6 +12,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,11 +36,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String, String> redisTemplate;
 
-    @Value("${GOOGLE_CLIENT_ID:dummy}")
+    private static final String GOOGLE_CLIENT_ID_DEFAULT = "dummy";
+
+    @Value("${GOOGLE_CLIENT_ID:" + GOOGLE_CLIENT_ID_DEFAULT + "}")
     private String googleClientId;
 
     // Refresh Token 만료 시간 (7일)
     private final long REFRESH_TOKEN_VALIDITY = 7;
+
+    @PostConstruct
+    public void init() {
+        if (GOOGLE_CLIENT_ID_DEFAULT.equals(googleClientId)) {
+            log.warn("GOOGLE_CLIENT_ID가 설정되지 않았습니다. 구글 로그인 기능이 정상 동작하지 않습니다.");
+        }
+    }
 
     /**
      * 일반 로그인
@@ -169,7 +180,7 @@ public class AuthService {
                     });
 
             // 연동 정보 업데이트
-            user.setProvider("GOOGLE");
+            user.setProvider(SocialProvider.GOOGLE.name());
             user.setProviderId(googleId);
             user.setProviderEmail(email);
             userRepository.save(user);

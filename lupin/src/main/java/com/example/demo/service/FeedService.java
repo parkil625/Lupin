@@ -39,15 +39,13 @@ public class FeedService {
     private final NotificationService notificationService;
 
     public Slice<Feed> getHomeFeeds(User user, int page, int size) {
-        Slice<Feed> feeds = feedRepository.findByWriterNotOrderByIdDesc(user, PageRequest.of(page, size));
-        feeds.getContent().forEach(feed -> feed.getImages().size());
-        return feeds;
+        // @BatchSize(100)로 images 지연 로딩 최적화 (N+1 방지)
+        return feedRepository.findByWriterNotOrderByIdDesc(user, PageRequest.of(page, size));
     }
 
     public Slice<Feed> getMyFeeds(User user, int page, int size) {
-        Slice<Feed> feeds = feedRepository.findByWriterOrderByIdDesc(user, PageRequest.of(page, size));
-        feeds.getContent().forEach(feed -> feed.getImages().size());
-        return feeds;
+        // @BatchSize(100)로 images 지연 로딩 최적화 (N+1 방지)
+        return feedRepository.findByWriterOrderByIdDesc(user, PageRequest.of(page, size));
     }
 
     @Transactional
@@ -88,12 +86,11 @@ public class FeedService {
 
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity) {
-        Feed feed = feedRepository.findByIdWithWriter(feedId)
+        Feed feed = feedRepository.findByIdWithWriterAndImages(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
         validateOwnership(feed, user);
         feed.update(content, activity);
-        feed.getImages().size();
         return feed;
     }
 
@@ -164,10 +161,8 @@ public class FeedService {
     }
 
     public Feed getFeedDetail(Long feedId) {
-        Feed feed = feedRepository.findByIdWithWriter(feedId)
+        return feedRepository.findByIdWithWriterAndImages(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
-        feed.getImages().size();
-        return feed;
     }
 
     public boolean canPostToday(User user) {

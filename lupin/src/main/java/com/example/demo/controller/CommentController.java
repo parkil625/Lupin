@@ -4,8 +4,6 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.CommentRequest;
 import com.example.demo.dto.response.CommentResponse;
-import com.example.demo.repository.CommentLikeRepository;
-import com.example.demo.repository.FeedRepository;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.CommentLikeService;
 import com.example.demo.service.CommentReportService;
@@ -15,10 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.time.YearMonth;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -28,8 +24,6 @@ public class CommentController {
     private final CommentService commentService;
     private final CommentLikeService commentLikeService;
     private final CommentReportService commentReportService;
-    private final CommentLikeRepository commentLikeRepository; // [최적화] 배치 조회용
-    private final FeedRepository feedRepository; // [activeDays] 계산용
 
     @PostMapping("/feeds/{feedId}/comments")
     public ResponseEntity<CommentResponse> createComment(
@@ -72,24 +66,7 @@ public class CommentController {
             @CurrentUser User currentUser,
             @PathVariable Long feedId
     ) {
-        List<Comment> comments = commentService.getCommentsByFeed(feedId);
-
-        // [최적화] 배치 조회로 N+1 문제 해결
-        List<Long> commentIds = comments.stream().map(Comment::getId).toList();
-        Map<Long, Long> likeCounts = getLikeCountMap(commentIds);
-        Set<Long> likedIds = currentUser != null ? getLikedCommentIds(currentUser.getId(), commentIds) : Collections.emptySet();
-
-        // [activeDays] 작성자별 활동일 배치 조회
-        Map<Long, Integer> activeDaysMap = getActiveDaysMap(comments);
-
-        List<CommentResponse> responses = comments.stream()
-                .map(comment -> CommentResponse.from(
-                        comment,
-                        likeCounts.getOrDefault(comment.getId(), 0L),
-                        likedIds.contains(comment.getId()),
-                        activeDaysMap.getOrDefault(comment.getWriter().getId(), 0)
-                ))
-                .toList();
+        List<CommentResponse> responses = commentService.getCommentResponsesByFeed(feedId, currentUser);
         return ResponseEntity.ok(responses);
     }
 
@@ -115,24 +92,7 @@ public class CommentController {
             @CurrentUser User currentUser,
             @PathVariable Long commentId
     ) {
-        List<Comment> replies = commentService.getReplies(commentId);
-
-        // [최적화] 배치 조회로 N+1 문제 해결
-        List<Long> replyIds = replies.stream().map(Comment::getId).toList();
-        Map<Long, Long> likeCounts = getLikeCountMap(replyIds);
-        Set<Long> likedIds = currentUser != null ? getLikedCommentIds(currentUser.getId(), replyIds) : Collections.emptySet();
-
-        // [activeDays] 작성자별 활동일 배치 조회
-        Map<Long, Integer> activeDaysMap = getActiveDaysMap(replies);
-
-        List<CommentResponse> responses = replies.stream()
-                .map(reply -> CommentResponse.from(
-                        reply,
-                        likeCounts.getOrDefault(reply.getId(), 0L),
-                        likedIds.contains(reply.getId()),
-                        activeDaysMap.getOrDefault(reply.getWriter().getId(), 0)
-                ))
-                .toList();
+        List<CommentResponse> responses = commentService.getReplyResponses(commentId, currentUser);
         return ResponseEntity.ok(responses);
     }
 
@@ -165,53 +125,8 @@ public class CommentController {
 
     @GetMapping("/comment-likes/{commentLikeId}")
     public ResponseEntity<Map<String, Long>> getCommentLike(@PathVariable Long commentLikeId) {
-        return commentLikeRepository.findByIdWithComment(commentLikeId)
-                .map(commentLike -> ResponseEntity.ok(Map.of("commentId", commentLike.getComment().getId())))
+        return commentLikeService.getCommentIdByLikeId(commentLikeId)
+                .map(commentId -> ResponseEntity.ok(Map.of("commentId", commentId)))
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    // [최적화] 배치 조회 헬퍼 메서드 - N개의 댓글 좋아요 수를 2개 쿼리로 조회
-    private Map<Long, Long> getLikeCountMap(List<Long> commentIds) {
-        if (commentIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        return commentLikeRepository.countByCommentIds(commentIds).stream()
-                .collect(Collectors.toMap(
-                        row -> (Long) row[0],
-                        row -> (Long) row[1]
-                ));
-    }
-
-    private Set<Long> getLikedCommentIds(Long userId, List<Long> commentIds) {
-        if (commentIds.isEmpty()) {
-            return Collections.emptySet();
-        }
-        return Set.copyOf(commentLikeRepository.findLikedCommentIdsByUserId(userId, commentIds));
-    }
-
-    // [activeDays] 댓글 작성자별 이번 달 활동일 배치 조회
-    private Map<Long, Integer> getActiveDaysMap(List<Comment> comments) {
-        if (comments.isEmpty()) {
-            return Map.of();
-        }
-
-        List<Long> writerIds = comments.stream()
-                .map(comment -> comment.getWriter().getId())
-                .distinct()
-                .toList();
-
-        YearMonth currentMonth = YearMonth.now();
-        LocalDateTime startOfMonth = currentMonth.atDay(1).atStartOfDay();
-        LocalDateTime endOfMonth = currentMonth.atEndOfMonth().atTime(23, 59, 59);
-
-        List<Object[]> results = feedRepository.countActiveDaysByWriterIds(writerIds, startOfMonth, endOfMonth);
-
-        Map<Long, Integer> activeDaysMap = new HashMap<>();
-        for (Object[] row : results) {
-            Long writerId = (Long) row[0];
-            Long activeDays = (Long) row[1];
-            activeDaysMap.put(writerId, activeDays.intValue());
-        }
-        return activeDaysMap;
     }
 }

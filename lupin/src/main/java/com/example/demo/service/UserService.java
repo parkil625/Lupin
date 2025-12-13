@@ -1,6 +1,8 @@
 package com.example.demo.service;
 
+import com.example.demo.config.CacheConfig;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentRepository;
@@ -8,6 +10,7 @@ import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +42,7 @@ public class UserService {
         user.updateProfile(name, height, weight);
     }
 
+    @Cacheable(value = CacheConfig.RANKING_CACHE, key = "#limit")
     public List<Map<String, Object>> getTopUsersByPoints(int limit) {
         // 모든 사용자를 포함 (PointLog가 없어도 0점으로 포함)
         List<Object[]> results = pointLogRepository.findAllUsersWithPointsRanked(PageRequest.of(0, limit));
@@ -59,47 +63,20 @@ public class UserService {
         return rankings;
     }
 
+    @Cacheable(value = CacheConfig.USER_RANKING_CONTEXT_CACHE, key = "#userId")
     public List<Map<String, Object>> getUserRankingContext(Long userId) {
-        // 모든 사용자를 포함 (PointLog가 없어도 0점으로 포함)
-        List<Object[]> allRankings = pointLogRepository.findAllUsersWithPointsRankedAll();
-        int userRank = -1;
-        for (int i = 0; i < allRankings.size(); i++) {
-            User u = (User) allRankings.get(i)[0];
-            if (u.getId().equals(userId)) {
-                userRank = i;
-                break;
-            }
-        }
+        // Window Function을 사용하여 해당 사용자와 앞뒤 사용자만 조회 (메모리 효율적)
+        List<Object[]> results = pointLogRepository.findUserRankingContext(userId);
 
         List<Map<String, Object>> context = new ArrayList<>();
-        if (userRank == -1) {
-            // 이 경우는 발생하지 않아야 함 (모든 사용자가 포함되므로)
-            User user = getUserInfo(userId);
+        for (Object[] row : results) {
             Map<String, Object> entry = new HashMap<>();
-            entry.put("id", user.getId());
-            entry.put("name", user.getName());
-            entry.put("avatar", user.getAvatar());
-            entry.put("department", user.getDepartment());
-            entry.put("points", 0L);
-            entry.put("rank", allRankings.size() + 1);
-            context.add(entry);
-            return context;
-        }
-
-        int start = Math.max(0, userRank - 1);
-        int end = Math.min(allRankings.size(), userRank + 2);
-
-        for (int i = start; i < end; i++) {
-            Object[] row = allRankings.get(i);
-            User user = (User) row[0];
-            Long points = (Long) row[1];
-            Map<String, Object> entry = new HashMap<>();
-            entry.put("id", user.getId());
-            entry.put("name", user.getName());
-            entry.put("avatar", user.getAvatar());
-            entry.put("department", user.getDepartment());
-            entry.put("points", points);
-            entry.put("rank", i + 1);
+            entry.put("id", ((Number) row[0]).longValue());
+            entry.put("name", row[1]);
+            entry.put("avatar", row[2]);
+            entry.put("department", row[3]);
+            entry.put("points", ((Number) row[4]).longValue());
+            entry.put("rank", ((Number) row[5]).intValue());
             context.add(entry);
         }
         return context;
@@ -140,5 +117,12 @@ public class UserService {
     public void updateAvatar(User user, String avatarUrl) {
         user.setAvatar(avatarUrl);
         userRepository.save(user);
+    }
+
+    /**
+     * 진료과별 의사 목록 조회
+     */
+    public List<User> getDoctorsByDepartment(String department) {
+        return userRepository.findByRoleAndDepartment(Role.DOCTOR, department);
     }
 }

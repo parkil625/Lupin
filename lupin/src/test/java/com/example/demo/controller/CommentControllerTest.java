@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.dto.response.CommentResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.CommentLikeService;
 import com.example.demo.service.CommentReportService;
@@ -160,7 +161,8 @@ class CommentControllerTest {
     @DisplayName("GET /api/feeds/{feedId}/comments - 댓글 목록 조회 성공")
     void getComments_Success() throws Exception {
         // given
-        given(commentService.getCommentsByFeed(1L)).willReturn(List.of(testComment));
+        CommentResponse response = CommentResponse.from(testComment);
+        given(commentService.getCommentResponsesByFeed(eq(1L), any())).willReturn(List.of(response));
 
         // when & then
         mockMvc.perform(get("/api/feeds/1/comments"))
@@ -206,7 +208,8 @@ class CommentControllerTest {
                 .parent(testComment)
                 .content("대댓글 내용")
                 .build();
-        given(commentService.getReplies(1L)).willReturn(List.of(reply));
+        CommentResponse replyResponse = CommentResponse.from(reply);
+        given(commentService.getReplyResponses(eq(1L), any())).willReturn(List.of(replyResponse));
 
         // when & then
         mockMvc.perform(get("/api/comments/1/replies"))

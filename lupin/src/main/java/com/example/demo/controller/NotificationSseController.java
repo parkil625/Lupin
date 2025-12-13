@@ -41,9 +41,16 @@ public class NotificationSseController {
         }
 
         if (!jwtTokenProvider.validateToken(token)) {
-            log.error("SSE 구독 실패: 유효하지 않은 토큰");
-            SseEmitter emitter = new SseEmitter();
-            emitter.completeWithError(new RuntimeException("Invalid token"));
+            log.warn("SSE 구독 실패: 유효하지 않은 토큰");
+            SseEmitter emitter = new SseEmitter(0L);
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("Invalid token"));
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.complete();
+            }
             return emitter;
         }
 

@@ -125,10 +125,10 @@ public class CommentService {
         // [최적화] 대댓글들의 좋아요 일괄 삭제 (N개 쿼리 → 1개 쿼리)
         commentLikeRepository.deleteByCommentIn(replies);
 
-        // 대댓글 카운트 감소 후 일괄 삭제 (원자적 업데이트)
+        // 대댓글 카운트 벌크 감소 후 일괄 삭제 (N번 쿼리 → 1번 쿼리로 최적화)
         Long feedId = parentComment.getFeed().getId();
-        for (int i = 0; i < replies.size(); i++) {
-            feedRepository.decrementCommentCount(feedId);
+        if (!replies.isEmpty()) {
+            feedRepository.decrementCommentCountBy(feedId, replies.size());
         }
         commentRepository.deleteAll(replies);
     }

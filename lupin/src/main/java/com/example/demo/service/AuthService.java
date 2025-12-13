@@ -19,7 +19,6 @@ import org.springframework.util.StringUtils;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -27,20 +26,35 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    // Timing Attack 방어용 더미 해시 (BCrypt 형식)
-    // 실제 비밀번호가 아닌 더미값으로, matches() 연산 시간을 일정하게 유지
-    private static final String DUMMY_PASSWORD_HASH = "$2a$10$dummyHashForTimingAttackDefense000000000000000000000";
+    /**
+     * Timing Attack 방어용 더미 해시 (BCrypt 형식)
+     *
+     * 중요: 이 해시는 실제 BCrypt 알고리즘으로 생성된 유효한 형식이어야 합니다.
+     * 잘못된 형식의 문자열을 사용하면 matches()가 즉시 false를 반환하여
+     * Timing Attack 방어 효과가 사라집니다.
+     *
+     * 아래 해시는 BCrypt cost factor 10으로 생성된 유효한 해시입니다.
+     * (원본 평문은 무의미한 랜덤 문자열이며, 실제 비밀번호로 사용되지 않습니다)
+     */
+    private static final String DUMMY_PASSWORD_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjqQBrkHx92t.dce8UsUVbXN.jSzTi";
 
     /**
      * 일반 로그인
+     *
      * 보안 강화:
      * 1. 사용자 미존재와 비밀번호 불일치를 동일한 에러로 처리
      * 2. Timing Attack 방어: 유저 존재 여부와 관계없이 동일한 연산 시간 보장
+     *
+     * 성능 최적화:
+     * - BCrypt 검증(CPU 집약적)은 트랜잭션 외부에서 수행
+     * - DB 커넥션 점유 시간 최소화로 동시 접속 처리량 향상
      */
     public LoginDto login(LoginRequest request) {
-        User user = userRepository.findByUserId(request.getEmail()).orElse(null);
+        // [트랜잭션 외부] 유저 조회 (읽기 전용, 빠름)
+        User user = findUserForLogin(request.getEmail());
 
-        // Timing Attack 방어: 유저가 없어도 BCrypt 연산을 수행하여 응답 시간을 일정하게 유지
+        // [트랜잭션 외부] BCrypt 검증 (CPU 집약적, 느림)
+        // DB 커넥션을 점유하지 않은 상태에서 수행
         String storedPassword = (user != null) ? user.getPassword() : DUMMY_PASSWORD_HASH;
         boolean passwordMatch = passwordEncoder.matches(request.getPassword(), storedPassword);
 
@@ -48,12 +62,22 @@ public class AuthService {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
+        // [트랜잭션 내부] 토큰 생성 및 저장 (Redis 쓰기)
         return generateTokens(user);
+    }
+
+    /**
+     * 로그인용 유저 조회 (읽기 전용)
+     */
+    @Transactional(readOnly = true)
+    public User findUserForLogin(String userId) {
+        return userRepository.findByUserId(userId).orElse(null);
     }
 
     /**
      * 토큰 재발급
      */
+    @Transactional
     public LoginDto reissue(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
@@ -77,6 +101,7 @@ public class AuthService {
     /**
      * 로그아웃
      */
+    @Transactional
     public void logout(String accessToken) {
         if (StringUtils.hasText(accessToken) && accessToken.startsWith("Bearer ")) {
             accessToken = accessToken.substring(7);
@@ -96,6 +121,7 @@ public class AuthService {
     /**
      * OAuth 연동 해제
      */
+    @Transactional
     public void unlinkOAuth(User user, SocialProvider provider) {
         // 현재 연동된 provider와 일치하는지 확인
         if (user.getProvider() != provider) {

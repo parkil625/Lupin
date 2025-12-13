@@ -26,7 +26,6 @@ import { Prescription } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { appointmentApi } from "@/api/appointmentApi";
-import { userApi } from "@/api/userApi";
 import { toast } from "sonner";
 
 interface MedicalProps {
@@ -163,27 +162,21 @@ MedicalProps) {
   const handleConfirmAppointment = async () => {
     if (!selectedDepartment || !selectedDate || !selectedTime) return;
 
-    // 진료과 이름 매핑
-    const departmentDisplayNames: Record<string, string> = {
-      internal: "내과",
-      surgery: "외과",
-      psychiatry: "신경정신과",
-      dermatology: "피부과",
+    // 진료과별 의사 ID 및 이름 매핑 (하드코딩)
+    const departmentMapping: Record<string, { id: number; name: string; displayName: string }> = {
+      internal: { id: 22, name: "김민수", displayName: "내과" },
+      surgery: { id: 23, name: "이준호", displayName: "외과" },
+      psychiatry: { id: 24, name: "박서연", displayName: "신경정신과" },
+      dermatology: { id: 25, name: "최지은", displayName: "피부과" },
     };
 
+    const selectedDoctor = departmentMapping[selectedDepartment];
+    if (!selectedDoctor) {
+      toast.error("올바른 진료과를 선택해주세요.");
+      return;
+    }
+
     try {
-      // API를 통해 진료과별 의사 조회
-      const doctors = await userApi.getDoctorsByDepartment(selectedDepartment);
-
-      if (doctors.length === 0) {
-        toast.error("해당 진료과에 배정된 의사가 없습니다.");
-        return;
-      }
-
-      // 첫 번째 의사 선택 (추후 여러 의사 중 선택 가능하도록 확장 가능)
-      const selectedDoctor = doctors[0];
-      const displayName = departmentDisplayNames[selectedDepartment] || selectedDepartment;
-
       // 날짜 + 시간 조합 (ISO 8601 형식)
       const [hours, minutes] = selectedTime.split(":").map(Number);
       const appointmentDateTime = new Date(selectedDate);
@@ -202,7 +195,7 @@ MedicalProps) {
         id: appointmentId,
         doctorId: selectedDoctor.id,
         doctorName: selectedDoctor.name,
-        type: `${displayName} 상담`,
+        type: `${selectedDoctor.displayName} 상담`,
       });
       setIsChatEnded(false);
       setShowAppointmentView(false);
@@ -210,7 +203,7 @@ MedicalProps) {
       toast.success(
         `${selectedDate.toLocaleDateString(
           "ko-KR"
-        )} ${selectedTime} ${displayName} 예약이 완료되었습니다`
+        )} ${selectedTime} ${selectedDoctor.displayName} 예약이 완료되었습니다`
       );
 
       // 상태 초기화

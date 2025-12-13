@@ -17,6 +17,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.test.util.ReflectionTestUtils;
+
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,12 +105,12 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 통계를 조회한다")
+    @DisplayName("사용자 통계를 조회한다 (반정규화된 totalPoints 사용)")
     void getUserStatsTest() {
         // given
         Long userId = 1L;
+        ReflectionTestUtils.setField(user, "totalPoints", 100L);
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(pointLogRepository.sumPointsByUser(user)).willReturn(100L);
         given(feedRepository.countByWriterId(userId)).willReturn(5L);
         given(commentRepository.countByWriterId(userId)).willReturn(10L);
 
@@ -123,12 +125,12 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 통계 조회시 포인트가 없으면 0을 반환한다")
+    @DisplayName("사용자 통계 조회시 포인트가 없으면 기본값 0을 반환한다")
     void getUserStatsNoPointsTest() {
         // given
         Long userId = 1L;
+        // totalPoints 기본값은 0L
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(pointLogRepository.sumPointsByUser(user)).willReturn(null);
         given(feedRepository.countByWriterId(userId)).willReturn(0L);
         given(commentRepository.countByWriterId(userId)).willReturn(0L);
 
@@ -136,9 +138,9 @@ class UserServiceTest {
         UserStatsResponse stats = userService.getUserStats(userId);
 
         // then
-        assertThat(stats.totalPoints()).isEqualTo(0L);
-        assertThat(stats.feedCount()).isEqualTo(0L);
-        assertThat(stats.commentCount()).isEqualTo(0L);
+        assertThat(stats.totalPoints()).isZero();
+        assertThat(stats.feedCount()).isZero();
+        assertThat(stats.commentCount()).isZero();
     }
 
     @Test

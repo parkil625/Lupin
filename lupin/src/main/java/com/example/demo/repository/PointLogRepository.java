@@ -20,29 +20,29 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user = :user AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
     Long sumPointsByUserAndMonth(@Param("user") User user, @Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
 
-    @Query("SELECT p.user, COALESCE(SUM(p.points), 0) as totalPoints FROM PointLog p GROUP BY p.user ORDER BY totalPoints DESC")
+    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
     List<Object[]> findUsersRankedByPoints(Pageable pageable);
 
-    @Query("SELECT p.user, COALESCE(SUM(p.points), 0) as totalPoints FROM PointLog p GROUP BY p.user ORDER BY totalPoints DESC")
+    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
     List<Object[]> findAllUsersRankedByPoints();
 
-    @Query("SELECT u, COALESCE(SUM(p.points), 0) as totalPoints FROM User u LEFT JOIN PointLog p ON p.user = u GROUP BY u ORDER BY totalPoints DESC, u.id ASC")
+    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
     List<Object[]> findAllUsersWithPointsRanked(Pageable pageable);
 
-    @Query("SELECT u, COALESCE(SUM(p.points), 0) as totalPoints FROM User u LEFT JOIN PointLog p ON p.user = u GROUP BY u ORDER BY totalPoints DESC, u.id ASC")
+    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
     List<Object[]> findAllUsersWithPointsRankedAll();
 
     // 이번 달 활동한 유저 수 (PointLog 기록이 있는 유저)
     @Query("SELECT COUNT(DISTINCT p.user) FROM PointLog p WHERE p.createdAt BETWEEN :startDateTime AND :endDateTime")
     Long countActiveUsersThisMonth(@Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
 
-    // 전체 유저 평균 포인트 (Native Query)
-    @Query(value = "SELECT COALESCE(AVG(total_points), 0) FROM (SELECT COALESCE(SUM(p.points), 0) as total_points FROM users u LEFT JOIN point_logs p ON p.user_id = u.id GROUP BY u.id) as user_totals", nativeQuery = true)
+    // 전체 유저 평균 포인트 (User.totalPoints 사용)
+    @Query(value = "SELECT COALESCE(AVG(u.total_points), 0) FROM users u", nativeQuery = true)
     Double getAveragePointsPerUser();
 
     /**
      * 특정 사용자의 랭킹과 앞뒤 사용자를 조회 (Window Function 사용)
-     * 전체 사용자를 메모리에 로드하지 않고 DB에서 필요한 데이터만 조회
+     * User.totalPoints 반정규화 필드를 사용하여 JOIN 없이 조회
      */
     @Query(value = """
         WITH ranked_users AS (
@@ -51,11 +51,9 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
                 u.name,
                 u.avatar,
                 u.department,
-                COALESCE(SUM(p.points), 0) as total_points,
-                ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(p.points), 0) DESC, u.id ASC) as user_rank
+                u.total_points,
+                ROW_NUMBER() OVER (ORDER BY u.total_points DESC, u.id ASC) as user_rank
             FROM users u
-            LEFT JOIN point_logs p ON p.user_id = u.id
-            GROUP BY u.id, u.name, u.avatar, u.department
         ),
         target_rank AS (
             SELECT user_rank FROM ranked_users WHERE id = :userId

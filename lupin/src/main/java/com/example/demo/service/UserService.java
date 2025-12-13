@@ -82,10 +82,9 @@ public class UserService {
 
     public UserStatsResponse getUserStats(Long userId) {
         User user = getUserInfo(userId);
-        Long totalPoints = pointLogRepository.sumPointsByUser(user);
         long feedCount = feedRepository.countByWriterId(userId);
         long commentCount = commentRepository.countByWriterId(userId);
-        return UserStatsResponse.of(userId, totalPoints, feedCount, commentCount);
+        return UserStatsResponse.of(userId, user.getTotalPoints(), feedCount, commentCount);
     }
 
     @Transactional

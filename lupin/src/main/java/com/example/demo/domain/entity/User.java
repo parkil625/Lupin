@@ -67,6 +67,10 @@ public class User {
     @Column(name = "provider_email", length = 255)
     private String providerEmail;
 
+    @Column(name = "total_points", nullable = false)
+    @Builder.Default
+    private Long totalPoints = 0L;
+
     public void updateProfile(String name, Double height, Double weight) {
         this.name = name;
         this.height = height;
@@ -107,5 +111,15 @@ public class User {
     // 아바타 업데이트 메서드
     public void updateAvatar(String avatarUrl) {
         this.avatar = avatarUrl;
+    }
+
+    // 포인트 추가
+    public void addPoints(long amount) {
+        this.totalPoints += amount;
+    }
+
+    // 포인트 차감
+    public void deductPoints(long amount) {
+        this.totalPoints = Math.max(0, this.totalPoints - amount);
     }
 }

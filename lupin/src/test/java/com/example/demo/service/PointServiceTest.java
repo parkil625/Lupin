@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.PointLog;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.event.PointChangedEvent;
 import com.example.demo.repository.PointLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.YearMonth;
 
@@ -25,6 +28,9 @@ class PointServiceTest {
 
     @Mock
     private PointLogRepository pointLogRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private PointService pointService;
@@ -42,10 +48,10 @@ class PointServiceTest {
     }
 
     @Test
-    @DisplayName("사용자의 총 포인트를 조회한다")
+    @DisplayName("사용자의 총 포인트를 조회한다 (반정규화 필드 사용)")
     void getTotalPointsTest() {
         // given
-        given(pointLogRepository.sumPointsByUser(user)).willReturn(1500L);
+        ReflectionTestUtils.setField(user, "totalPoints", 1500L);
 
         // when
         long result = pointService.getTotalPoints(user);
@@ -55,16 +61,13 @@ class PointServiceTest {
     }
 
     @Test
-    @DisplayName("총 포인트가 음수일 수 있다")
-    void getTotalPointsNegativeTest() {
-        // given
-        given(pointLogRepository.sumPointsByUser(user)).willReturn(-500L);
-
+    @DisplayName("총 포인트 기본값은 0이다")
+    void getTotalPointsDefaultZeroTest() {
         // when
         long result = pointService.getTotalPoints(user);
 
         // then
-        assertThat(result).isEqualTo(-500L);
+        assertThat(result).isZero();
     }
 
     @Test
@@ -98,10 +101,11 @@ class PointServiceTest {
     }
 
     @Test
-    @DisplayName("포인트를 적립한다")
+    @DisplayName("포인트를 적립하면 PointLog 저장 및 이벤트 발행")
     void addPointsTest() {
         // given
         long amount = 100L;
+        ReflectionTestUtils.setField(user, "id", 1L);
         given(pointLogRepository.save(any(PointLog.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -109,13 +113,15 @@ class PointServiceTest {
 
         // then
         verify(pointLogRepository).save(any(PointLog.class));
+        verify(eventPublisher).publishEvent(any(PointChangedEvent.class));
     }
 
     @Test
-    @DisplayName("포인트를 차감한다")
+    @DisplayName("포인트를 차감하면 PointLog 저장 및 이벤트 발행")
     void deductPointsTest() {
         // given
         long amount = 50L;
+        ReflectionTestUtils.setField(user, "id", 1L);
         given(pointLogRepository.save(any(PointLog.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -123,5 +129,6 @@ class PointServiceTest {
 
         // then
         verify(pointLogRepository).save(any(PointLog.class));
+        verify(eventPublisher).publishEvent(any(PointChangedEvent.class));
     }
 }

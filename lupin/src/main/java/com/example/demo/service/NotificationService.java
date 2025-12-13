@@ -184,4 +184,38 @@ public class NotificationService {
         Notification saved = notificationRepository.save(notification);
         notificationSseService.sendNotification(commentOwner.getId(), NotificationResponse.from(saved));
     }
+
+    /**
+     * 피드 삭제 시 관련 알림 삭제
+     * - FEED_LIKE: refId = feedId
+     * - COMMENT: refId = feedId
+     */
+    @Transactional
+    public void deleteFeedRelatedNotifications(Long feedId) {
+        String feedIdStr = String.valueOf(feedId);
+        notificationRepository.deleteByRefIdAndType(feedIdStr, "FEED_LIKE");
+        notificationRepository.deleteByRefIdAndType(feedIdStr, "COMMENT");
+    }
+
+    /**
+     * 댓글 관련 알림 삭제 (REPLY, COMMENT_LIKE)
+     * @param parentCommentIds 부모 댓글 ID 목록 (REPLY 알림 삭제용)
+     * @param allCommentIds 모든 댓글 ID 목록 (COMMENT_LIKE 알림 삭제용)
+     */
+    @Transactional
+    public void deleteCommentRelatedNotifications(List<Long> parentCommentIds, List<Long> allCommentIds) {
+        if (!parentCommentIds.isEmpty()) {
+            List<String> parentIds = parentCommentIds.stream()
+                    .map(String::valueOf)
+                    .toList();
+            notificationRepository.deleteByRefIdInAndType(parentIds, "REPLY");
+        }
+
+        if (!allCommentIds.isEmpty()) {
+            List<String> commentIds = allCommentIds.stream()
+                    .map(String::valueOf)
+                    .toList();
+            notificationRepository.deleteByRefIdInAndType(commentIds, "COMMENT_LIKE");
+        }
+    }
 }

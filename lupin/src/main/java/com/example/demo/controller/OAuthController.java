@@ -2,13 +2,12 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.LoginDto;
+import com.example.demo.security.CurrentUser;
 import com.example.demo.service.AuthService;
 import com.example.demo.service.KakaoOAuthService;
 import com.example.demo.service.NaverOAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -18,7 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/oauth")
 @RequiredArgsConstructor
-public class OAuthController extends BaseController {
+public class OAuthController {
 
     private final AuthService authService;
     private final NaverOAuthService naverOAuthService;
@@ -29,10 +28,9 @@ public class OAuthController extends BaseController {
      */
     @PostMapping("/google/link")
     public ResponseEntity<Map<String, Object>> linkGoogle(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @RequestBody Map<String, String> request
     ) {
-        User user = getCurrentUser(userDetails);
         String googleToken = request.get("token");
 
         authService.linkGoogle(user, googleToken);
@@ -51,9 +49,8 @@ public class OAuthController extends BaseController {
      */
     @GetMapping("/connections")
     public ResponseEntity<List<Map<String, Object>>> getConnections(
-            @AuthenticationPrincipal UserDetails userDetails
+            @CurrentUser User user
     ) {
-        User user = getCurrentUser(userDetails);
         List<Map<String, Object>> connections = new ArrayList<>();
 
         if (user.getProvider() != null && !user.getProvider().isEmpty()) {
@@ -73,10 +70,9 @@ public class OAuthController extends BaseController {
      */
     @DeleteMapping("/connections/{provider}")
     public ResponseEntity<Void> unlinkOAuth(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @PathVariable String provider
     ) {
-        User user = getCurrentUser(userDetails);
         authService.unlinkOAuth(user, provider);
         return ResponseEntity.ok().build();
     }
@@ -97,10 +93,9 @@ public class OAuthController extends BaseController {
      */
     @PostMapping("/naver/link")
     public ResponseEntity<Map<String, Object>> linkNaver(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @RequestBody Map<String, String> request
     ) {
-        User user = getCurrentUser(userDetails);
         String code = request.get("code");
         String state = request.get("state");
 
@@ -130,10 +125,9 @@ public class OAuthController extends BaseController {
      */
     @PostMapping("/kakao/link")
     public ResponseEntity<Map<String, Object>> linkKakao(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @RequestBody Map<String, String> request
     ) {
-        User user = getCurrentUser(userDetails);
         String code = request.get("code");
         String redirectUri = request.get("redirectUri");
 

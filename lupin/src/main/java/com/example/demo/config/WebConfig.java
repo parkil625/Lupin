@@ -1,24 +1,37 @@
 package com.example.demo.config;
 
+import com.example.demo.security.CurrentUserArgumentResolver;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
  * Web 설정
  * - CORS: 프론트엔드와 백엔드 간의 cross-origin 요청 허용 (설정 파일에서 origin 주입)
  * - Async: @Async 비동기 처리를 위한 스레드 풀 설정
+ * - @CurrentUser ArgumentResolver 등록
  */
 @Configuration
+@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
+
+    private final CurrentUserArgumentResolver currentUserArgumentResolver;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOriginsConfig;
+
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        resolvers.add(currentUserArgumentResolver);
+    }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {

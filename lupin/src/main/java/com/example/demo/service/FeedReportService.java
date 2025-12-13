@@ -106,4 +106,12 @@ public class FeedReportService {
         feedReportRepository.deleteByFeed(feed);
         feedRepository.delete(feed);
     }
+
+    /**
+     * 피드 삭제 시 신고 일괄 삭제
+     */
+    @Transactional
+    public void deleteAllByFeed(Feed feed) {
+        feedReportRepository.deleteByFeed(feed);
+    }
 }

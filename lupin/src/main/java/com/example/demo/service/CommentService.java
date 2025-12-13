@@ -7,6 +7,7 @@ import com.example.demo.event.NotificationEvent;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
+import com.example.demo.repository.CommentReportRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
@@ -24,6 +25,7 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final CommentReportRepository commentReportRepository;
     private final FeedRepository feedRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -186,4 +188,30 @@ public class CommentService {
 
         return commentRepository.findByParentOrderByIdAsc(parent);
     }
+
+    /**
+     * 피드 삭제 시 관련 댓글 데이터 일괄 삭제
+     * @return 삭제 대상 댓글 ID 정보 (부모 댓글 ID, 전체 댓글 ID)
+     */
+    @Transactional
+    public CommentDeleteResult deleteAllByFeed(Feed feed) {
+        List<Long> parentCommentIds = commentRepository.findParentCommentIdsByFeed(feed);
+        List<Long> allCommentIds = commentRepository.findCommentIdsByFeed(feed);
+
+        // 댓글 좋아요 삭제
+        commentLikeRepository.deleteByFeed(feed);
+        // 댓글 신고 삭제
+        commentReportRepository.deleteByFeed(feed);
+        // 대댓글 삭제
+        commentRepository.deleteRepliesByFeed(feed);
+        // 부모 댓글 삭제
+        commentRepository.deleteParentCommentsByFeed(feed);
+
+        return new CommentDeleteResult(parentCommentIds, allCommentIds);
+    }
+
+    /**
+     * 댓글 삭제 결과 (알림 삭제용)
+     */
+    public record CommentDeleteResult(List<Long> parentCommentIds, List<Long> allCommentIds) {}
 }

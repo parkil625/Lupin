@@ -2,14 +2,13 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.security.CurrentUser;
 import com.example.demo.security.JwtTokenProvider;
 import com.example.demo.service.NotificationSseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -17,7 +16,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 @Slf4j
-public class NotificationSseController extends BaseController {
+public class NotificationSseController {
 
     private final NotificationSseService notificationSseService;
     private final JwtTokenProvider jwtTokenProvider;
@@ -52,8 +51,7 @@ public class NotificationSseController extends BaseController {
      * DELETE /api/notifications/subscribe
      */
     @DeleteMapping("/subscribe")
-    public void unsubscribe(@AuthenticationPrincipal UserDetails userDetails) {
-        User user = getCurrentUser(userDetails);
+    public void unsubscribe(@CurrentUser User user) {
         notificationSseService.disconnect(user.getId());
     }
 }

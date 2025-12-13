@@ -6,6 +6,7 @@ import com.example.demo.dto.request.FeedRequest;
 import com.example.demo.dto.response.FeedResponse;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.security.CurrentUser;
 import com.example.demo.service.FeedLikeService;
 import com.example.demo.service.FeedReportService;
 import com.example.demo.service.FeedService;
@@ -13,8 +14,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -26,7 +25,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/feeds")
 @RequiredArgsConstructor
-public class FeedController extends BaseController {
+public class FeedController {
 
     private final FeedService feedService;
     private final FeedLikeService feedLikeService;
@@ -36,10 +35,9 @@ public class FeedController extends BaseController {
 
     @PostMapping
     public ResponseEntity<FeedResponse> createFeed(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @Valid @RequestBody FeedRequest request
     ) {
-        User user = getCurrentUser(userDetails);
         // 타입별 필드 우선 사용, 없으면 기존 images 배열 사용 (하위 호환)
         Feed feed = feedService.createFeed(
                 user,
@@ -54,11 +52,10 @@ public class FeedController extends BaseController {
 
     @PutMapping("/{feedId}")
     public ResponseEntity<FeedResponse> updateFeed(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @PathVariable Long feedId,
             @Valid @RequestBody FeedRequest request
     ) {
-        User user = getCurrentUser(userDetails);
         Feed feed;
         String startKey = request.getStartImageKey();
         String endKey = request.getEndImageKey();
@@ -83,10 +80,9 @@ public class FeedController extends BaseController {
 
     @DeleteMapping("/{feedId}")
     public ResponseEntity<Void> deleteFeed(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @PathVariable Long feedId
     ) {
-        User user = getCurrentUser(userDetails);
         feedService.deleteFeed(user, feedId);
         return ResponseEntity.ok().build();
     }
@@ -99,11 +95,10 @@ public class FeedController extends BaseController {
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getHomeFeeds(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        User user = getCurrentUser(userDetails);
         Slice<Feed> feeds = feedService.getHomeFeeds(user, page, size);
         Map<Long, Integer> activeDaysMap = getActiveDaysMap(feeds.getContent());
         return ResponseEntity.ok(Map.of(
@@ -116,11 +111,10 @@ public class FeedController extends BaseController {
 
     @GetMapping("/my")
     public ResponseEntity<Map<String, Object>> getMyFeeds(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        User user = getCurrentUser(userDetails);
         Slice<Feed> feeds = feedService.getMyFeeds(user, page, size);
         Map<Long, Integer> activeDaysMap = getActiveDaysMap(feeds.getContent());
         return ResponseEntity.ok(Map.of(
@@ -133,38 +127,34 @@ public class FeedController extends BaseController {
 
     @GetMapping("/can-post-today")
     public ResponseEntity<Boolean> canPostToday(
-            @AuthenticationPrincipal UserDetails userDetails
+            @CurrentUser User user
     ) {
-        User user = getCurrentUser(userDetails);
         return ResponseEntity.ok(feedService.canPostToday(user));
     }
 
     @PostMapping("/{feedId}/like")
     public ResponseEntity<Void> likeFeed(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @PathVariable Long feedId
     ) {
-        User user = getCurrentUser(userDetails);
         feedLikeService.likeFeed(user, feedId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{feedId}/like")
     public ResponseEntity<Void> unlikeFeed(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @PathVariable Long feedId
     ) {
-        User user = getCurrentUser(userDetails);
         feedLikeService.unlikeFeed(user, feedId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{feedId}/report")
     public ResponseEntity<Void> reportFeed(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @CurrentUser User user,
             @PathVariable Long feedId
     ) {
-        User user = getCurrentUser(userDetails);
         feedReportService.toggleReport(user, feedId);
         return ResponseEntity.ok().build();
     }

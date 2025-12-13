@@ -1,20 +1,12 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.Feed;
-import com.example.demo.domain.entity.FeedImage;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
-import com.example.demo.repository.CommentLikeRepository;
-import com.example.demo.repository.CommentReportRepository;
-import com.example.demo.repository.CommentRepository;
-import com.example.demo.repository.FeedImageRepository;
-import com.example.demo.repository.FeedLikeRepository;
-import com.example.demo.repository.FeedReportRepository;
 import com.example.demo.repository.FeedRepository;
-import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,8 +25,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -48,34 +38,25 @@ class FeedServiceTest {
     private FeedRepository feedRepository;
 
     @Mock
-    private FeedImageRepository feedImageRepository;
-
-    @Mock
-    private FeedLikeRepository feedLikeRepository;
-
-    @Mock
-    private FeedReportRepository feedReportRepository;
-
-    @Mock
-    private CommentRepository commentRepository;
-
-    @Mock
-    private CommentLikeRepository commentLikeRepository;
-
-    @Mock
-    private CommentReportRepository commentReportRepository;
-
-    @Mock
     private PointService pointService;
-
-    @Mock
-    private NotificationRepository notificationRepository;
 
     @Mock
     private ImageMetadataService imageMetadataService;
 
     @Mock
-    private WorkoutScoreService workoutScoreService;
+    private FeedTransactionService feedTransactionService;
+
+    @Mock
+    private CommentService commentService;
+
+    @Mock
+    private FeedLikeService feedLikeService;
+
+    @Mock
+    private FeedReportService feedReportService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private FeedService feedService;
@@ -91,10 +72,6 @@ class FeedServiceTest {
                 .role(Role.MEMBER)
                 .build();
         ReflectionTestUtils.setField(writer, "id", 1L);
-
-        // Self-injection: 트랜잭션 프록시를 위해 self 필드 설정
-        // 단위 테스트에서는 프록시가 없으므로 자기 자신을 직접 주입
-        ReflectionTestUtils.setField(feedService, "self", feedService);
     }
 
     @Test
@@ -160,13 +137,17 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "id", feedId);
 
         given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentRepository.findParentCommentIdsByFeed(feed)).willReturn(List.of());
-        given(commentRepository.findCommentIdsByFeed(feed)).willReturn(List.of());
+        given(commentService.deleteAllByFeed(feed))
+                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
 
         // when
         feedService.deleteFeed(writer, feedId);
 
         // then
+        verify(notificationService).deleteFeedRelatedNotifications(feedId);
+        verify(commentService).deleteAllByFeed(feed);
+        verify(feedLikeService).deleteAllByFeed(feed);
+        verify(feedReportService).deleteAllByFeed(feed);
         verify(feedRepository).delete(feed);
     }
 
@@ -187,8 +168,8 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(3));
 
         given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentRepository.findParentCommentIdsByFeed(feed)).willReturn(List.of());
-        given(commentRepository.findCommentIdsByFeed(feed)).willReturn(List.of());
+        given(commentService.deleteAllByFeed(feed))
+                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -215,8 +196,8 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
 
         given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentRepository.findParentCommentIdsByFeed(feed)).willReturn(List.of());
-        given(commentRepository.findCommentIdsByFeed(feed)).willReturn(List.of());
+        given(commentService.deleteAllByFeed(feed))
+                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -241,8 +222,8 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(3));
 
         given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentRepository.findParentCommentIdsByFeed(feed)).willReturn(List.of());
-        given(commentRepository.findCommentIdsByFeed(feed)).willReturn(List.of());
+        given(commentService.deleteAllByFeed(feed))
+                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -332,21 +313,24 @@ class FeedServiceTest {
         LocalDateTime startTime = LocalDate.now().atTime(10, 0);
         LocalDateTime endTime = LocalDate.now().atTime(11, 0); // 1시간 운동
 
+        Feed createdFeed = Feed.builder()
+                .writer(writer)
+                .activity(activity)
+                .content(content)
+                .points(30L)
+                .calories(600)
+                .build();
+        ReflectionTestUtils.setField(createdFeed, "id", 1L);
+
         given(imageMetadataService.extractPhotoDateTime("start.jpg"))
                 .willReturn(Optional.of(startTime));
         given(imageMetadataService.extractPhotoDateTime("end.jpg"))
                 .willReturn(Optional.of(endTime));
-        given(workoutScoreService.calculateScore(eq(activity), eq(startTime), eq(endTime)))
-                .willReturn(30); // 달리기 1시간 = 60분 * 1.5 = 90 -> max 30
-        given(workoutScoreService.calculateCalories(eq(activity), eq(startTime), eq(endTime)))
-                .willReturn(600);
-        given(workoutScoreService.calculateDurationMinutes(eq(startTime), eq(endTime)))
-                .willReturn(60L);
-        given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> {
-            Feed feed = invocation.getArgument(0);
-            ReflectionTestUtils.setField(feed, "id", 1L);
-            return feed;
-        });
+        given(feedTransactionService.createFeed(
+                eq(writer), eq(activity), eq(content),
+                eq("start.jpg"), eq("end.jpg"), eq(List.of()),
+                any(), any()))
+                .willReturn(createdFeed);
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
@@ -357,14 +341,10 @@ class FeedServiceTest {
         assertThat(result.getContent()).isEqualTo(content);
         assertThat(result.getPoints()).isEqualTo(30L);
         assertThat(result.getCalories()).isEqualTo(600);
-        verify(feedRepository).save(any(Feed.class));
-        // cascade로 저장되므로 Set에 추가되었는지 확인
-        assertThat(result.getImages()).hasSize(2);
-        assertThat(result.getImages()).anyMatch(img ->
-                img.getS3Key().equals("start.jpg") && img.getSortOrder() == 0 && img.getImgType() == ImageType.START);
-        assertThat(result.getImages()).anyMatch(img ->
-                img.getS3Key().equals("end.jpg") && img.getSortOrder() == 1 && img.getImgType() == ImageType.END);
-        verify(pointService).addPoints(writer, 30);
+        verify(feedTransactionService).createFeed(
+                eq(writer), eq(activity), eq(content),
+                eq("start.jpg"), eq("end.jpg"), eq(List.of()),
+                any(), any());
     }
 
     @Test
@@ -392,11 +372,6 @@ class FeedServiceTest {
         LocalDateTime startTime = LocalDate.now().atTime(12, 0); // 늦은 시간
         LocalDateTime endTime = LocalDate.now().atTime(10, 0);   // 이른 시간
 
-        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
-                .willReturn(Optional.of(startTime));
-        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
-                .willReturn(Optional.of(endTime));
-
         Feed savedFeed = Feed.builder()
                 .writer(writer)
                 .activity(activity)
@@ -405,7 +380,16 @@ class FeedServiceTest {
                 .calories(0)
                 .build();
         ReflectionTestUtils.setField(savedFeed, "id", 1L);
-        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.of(startTime));
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.of(endTime));
+        given(feedTransactionService.createFeed(
+                eq(writer), eq(activity), eq(content),
+                eq("start.jpg"), eq("end.jpg"), eq(List.of()),
+                any(), any()))
+                .willReturn(savedFeed);
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
@@ -423,11 +407,6 @@ class FeedServiceTest {
         String content = "오늘 운동했습니다";
         List<String> s3Keys = List.of("start.jpg", "end.jpg");
 
-        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
-                .willReturn(Optional.empty());
-        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
-                .willReturn(Optional.empty());
-
         Feed savedFeed = Feed.builder()
                 .writer(writer)
                 .activity(activity)
@@ -436,7 +415,16 @@ class FeedServiceTest {
                 .calories(0)
                 .build();
         ReflectionTestUtils.setField(savedFeed, "id", 1L);
-        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.empty());
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.empty());
+        given(feedTransactionService.createFeed(
+                eq(writer), eq(activity), eq(content),
+                eq("start.jpg"), eq("end.jpg"), eq(List.of()),
+                any(), any()))
+                .willReturn(savedFeed);
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
@@ -457,11 +445,6 @@ class FeedServiceTest {
         LocalDateTime startTime = LocalDate.now().atTime(10, 0);
         LocalDateTime endTime = LocalDate.now().plusDays(2).atTime(10, 0); // 48시간 후
 
-        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
-                .willReturn(Optional.of(startTime));
-        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
-                .willReturn(Optional.of(endTime));
-
         Feed savedFeed = Feed.builder()
                 .writer(writer)
                 .activity(activity)
@@ -470,7 +453,16 @@ class FeedServiceTest {
                 .calories(0)
                 .build();
         ReflectionTestUtils.setField(savedFeed, "id", 1L);
-        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.of(startTime));
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.of(endTime));
+        given(feedTransactionService.createFeed(
+                eq(writer), eq(activity), eq(content),
+                eq("start.jpg"), eq("end.jpg"), eq(List.of()),
+                any(), any()))
+                .willReturn(savedFeed);
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
@@ -491,11 +483,6 @@ class FeedServiceTest {
         LocalDateTime startTime = LocalDate.now().minusDays(7).atTime(10, 0);
         LocalDateTime endTime = LocalDate.now().minusDays(7).atTime(11, 0);
 
-        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
-                .willReturn(Optional.of(startTime));
-        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
-                .willReturn(Optional.of(endTime));
-
         Feed savedFeed = Feed.builder()
                 .writer(writer)
                 .activity(activity)
@@ -504,7 +491,16 @@ class FeedServiceTest {
                 .calories(0)
                 .build();
         ReflectionTestUtils.setField(savedFeed, "id", 1L);
-        given(feedRepository.save(any(Feed.class))).willReturn(savedFeed);
+
+        given(imageMetadataService.extractPhotoDateTime("start.jpg"))
+                .willReturn(Optional.of(startTime));
+        given(imageMetadataService.extractPhotoDateTime("end.jpg"))
+                .willReturn(Optional.of(endTime));
+        given(feedTransactionService.createFeed(
+                eq(writer), eq(activity), eq(content),
+                eq("start.jpg"), eq("end.jpg"), eq(List.of()),
+                any(), any()))
+                .willReturn(savedFeed);
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
@@ -525,28 +521,34 @@ class FeedServiceTest {
         LocalDateTime startTime = LocalDate.now().minusDays(1).atTime(23, 0);
         LocalDateTime endTime = LocalDate.now().atTime(1, 0);
 
+        Feed savedFeed = Feed.builder()
+                .writer(writer)
+                .activity(activity)
+                .content(content)
+                .points(5L)
+                .calories(200)
+                .build();
+        ReflectionTestUtils.setField(savedFeed, "id", 1L);
+
         given(imageMetadataService.extractPhotoDateTime("start.jpg"))
                 .willReturn(Optional.of(startTime));
         given(imageMetadataService.extractPhotoDateTime("end.jpg"))
                 .willReturn(Optional.of(endTime));
-        given(workoutScoreService.calculateScore(eq(activity), eq(startTime), eq(endTime)))
-                .willReturn(5);
-        given(workoutScoreService.calculateCalories(eq(activity), eq(startTime), eq(endTime)))
-                .willReturn(200);
-        given(workoutScoreService.calculateDurationMinutes(eq(startTime), eq(endTime)))
-                .willReturn(120L);
-        given(feedRepository.save(any(Feed.class))).willAnswer(invocation -> {
-            Feed feed = invocation.getArgument(0);
-            ReflectionTestUtils.setField(feed, "id", 1L);
-            return feed;
-        });
+        given(feedTransactionService.createFeed(
+                eq(writer), eq(activity), eq(content),
+                eq("start.jpg"), eq("end.jpg"), eq(List.of()),
+                any(), any()))
+                .willReturn(savedFeed);
 
         // when
         Feed result = feedService.createFeed(writer, activity, content, s3Keys);
 
         // then
         assertThat(result).isNotNull();
-        verify(feedRepository).save(any(Feed.class));
+        verify(feedTransactionService).createFeed(
+                eq(writer), eq(activity), eq(content),
+                eq("start.jpg"), eq("end.jpg"), eq(List.of()),
+                any(), any());
     }
 
     @Test
@@ -564,8 +566,8 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
 
         given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentRepository.findParentCommentIdsByFeed(feed)).willReturn(List.of());
-        given(commentRepository.findCommentIdsByFeed(feed)).willReturn(List.of());
+        given(commentService.deleteAllByFeed(feed))
+                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
 
         // when
         feedService.deleteFeed(writer, feedId);
@@ -656,16 +658,14 @@ class FeedServiceTest {
         ReflectionTestUtils.setField(feed, "createdAt", LocalDateTime.now().minusDays(10));
 
         given(feedRepository.findByIdForDelete(feedId)).willReturn(Optional.of(feed));
-        given(commentRepository.findParentCommentIdsByFeed(feed)).willReturn(List.of());
-        given(commentRepository.findCommentIdsByFeed(feed)).willReturn(List.of());
+        given(commentService.deleteAllByFeed(feed))
+                .willReturn(new CommentService.CommentDeleteResult(List.of(), List.of()));
 
         // when
         feedService.deleteFeed(writer, feedId);
 
         // then
-        // FEED_LIKE, COMMENT 알림 삭제 (refId = feedId)
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedId), "COMMENT");
+        verify(notificationService).deleteFeedRelatedNotifications(feedId);
         verify(feedRepository).delete(feed);
     }
 
@@ -674,14 +674,14 @@ class FeedServiceTest {
     void updateFeedWithImagesTest() {
         // given
         Long feedId = 1L;
-        Feed feed = Feed.builder()
+        Feed updatedFeed = Feed.builder()
                 .writer(writer)
-                .activity("running")
-                .content("원래 내용")
-                .points(30L)
-                .calories(500)
+                .activity("walking")
+                .content("수정된 내용")
+                .points(25L)
+                .calories(400)
                 .build();
-        ReflectionTestUtils.setField(feed, "id", feedId);
+        ReflectionTestUtils.setField(updatedFeed, "id", feedId);
 
         List<String> newS3Keys = List.of("new-start.jpg", "new-end.jpg");
         String newContent = "수정된 내용";
@@ -691,17 +691,15 @@ class FeedServiceTest {
         LocalDateTime newStartTime = LocalDate.now().atTime(14, 0);
         LocalDateTime newEndTime = LocalDate.now().atTime(15, 30); // 1.5시간 운동
 
-        given(feedRepository.findByIdWithWriter(feedId)).willReturn(Optional.of(feed));
         given(imageMetadataService.extractPhotoDateTime("new-start.jpg"))
                 .willReturn(Optional.of(newStartTime));
         given(imageMetadataService.extractPhotoDateTime("new-end.jpg"))
                 .willReturn(Optional.of(newEndTime));
-        given(workoutScoreService.calculateScore(eq(newActivity), eq(newStartTime), eq(newEndTime)))
-                .willReturn(25);
-        given(workoutScoreService.calculateCalories(eq(newActivity), eq(newStartTime), eq(newEndTime)))
-                .willReturn(400);
-        given(workoutScoreService.calculateDurationMinutes(eq(newStartTime), eq(newEndTime)))
-                .willReturn(90L);
+        given(feedTransactionService.updateFeed(
+                eq(writer), eq(feedId), eq(newContent), eq(newActivity),
+                eq("new-start.jpg"), eq("new-end.jpg"), eq(List.of()),
+                any(), any()))
+                .willReturn(updatedFeed);
 
         // when
         Feed result = feedService.updateFeed(writer, feedId, newContent, newActivity, newS3Keys);
@@ -711,14 +709,10 @@ class FeedServiceTest {
         assertThat(result.getActivity()).isEqualTo(newActivity);
         assertThat(result.getPoints()).isEqualTo(25L);
         assertThat(result.getCalories()).isEqualTo(400);
-        // cascade로 저장되므로 Set에 추가되었는지 확인
-        assertThat(result.getImages()).hasSize(2);
-        assertThat(result.getImages()).anyMatch(img ->
-                img.getS3Key().equals("new-start.jpg") && img.getImgType() == ImageType.START);
-        assertThat(result.getImages()).anyMatch(img ->
-                img.getS3Key().equals("new-end.jpg") && img.getImgType() == ImageType.END);
-        verify(pointService).deductPoints(writer, 30L); // 기존 포인트 차감
-        verify(pointService).addPoints(writer, 25L);    // 새 포인트 적립
+        verify(feedTransactionService).updateFeed(
+                eq(writer), eq(feedId), eq(newContent), eq(newActivity),
+                eq("new-start.jpg"), eq("new-end.jpg"), eq(List.of()),
+                any(), any());
     }
 
     @Test
@@ -746,7 +740,6 @@ class FeedServiceTest {
         assertThat(result.getContent()).isEqualTo(newContent);
         assertThat(result.getActivity()).isEqualTo(newActivity);
         assertThat(result.getPoints()).isEqualTo(30L); // 포인트 변경 없음
-        verify(feedImageRepository, never()).deleteByFeed(any());
         verify(pointService, never()).deductPoints(any(), anyLong());
         verify(pointService, never()).addPoints(any(), anyLong());
     }

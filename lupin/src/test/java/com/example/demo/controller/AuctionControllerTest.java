@@ -29,7 +29,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.util.ReflectionTestUtils; // 필수 Import
 import org.springframework.test.web.servlet.MockMvc;
 
 
@@ -58,10 +57,6 @@ class AuctionControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    // 테스트 대상 컨트롤러를 직접 주입받음 (Reflection으로 필드 설정을 위해)
-    @Autowired
-    private AuctionController auctionController;
 
     @MockBean
     private AuctionService auctionService;
@@ -93,12 +88,8 @@ class AuctionControllerTest {
                 .role(Role.MEMBER)
                 .build();
 
-        // 3. Mock Repository 설정
+        // 3. Mock Repository 설정 (CurrentUserArgumentResolver에서 사용)
         given(userRepository.findByUserId(anyString())).willReturn(Optional.of(testUser));
-
-        // 4. [핵심] ReflectionTestUtils로 부모 클래스(BaseController)의 필드 강제 주입
-        // 이 부분이 없으면 BaseController의 userRepository가 null이거나 실제 빈이 들어가서 Mock이 동작 안 할 수 있음
-        ReflectionTestUtils.setField(auctionController, "userRepository", userRepository);
     }
 
     @Test

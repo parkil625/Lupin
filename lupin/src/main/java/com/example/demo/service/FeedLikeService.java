@@ -72,4 +72,12 @@ public class FeedLikeService {
         notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");
         feedLikeRepository.delete(feedLike);
     }
+
+    /**
+     * 피드 삭제 시 좋아요 일괄 삭제
+     */
+    @Transactional
+    public void deleteAllByFeed(Feed feed) {
+        feedLikeRepository.deleteByFeed(feed);
+    }
 }

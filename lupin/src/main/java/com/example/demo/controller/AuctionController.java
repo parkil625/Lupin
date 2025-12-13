@@ -1,12 +1,11 @@
 package com.example.demo.controller;
 
-import com.example.demo.domain.entity.AuctionBid;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.AuctionRequest;
 import com.example.demo.dto.response.AuctionBidResponse;
-import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
+import com.example.demo.security.CurrentUser;
 import com.example.demo.service.AuctionService;
 import com.example.demo.service.AuctionSseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,8 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -27,8 +24,7 @@ import java.util.List;
 @RequestMapping("/api/auction")
 @RequiredArgsConstructor
 @Tag(name = "Auction Controller", description = "경매 관련 API")
-
-public class          AuctionController extends BaseController {
+public class AuctionController {
 
     private final AuctionService auctionService;
 
@@ -51,10 +47,8 @@ public class          AuctionController extends BaseController {
     public ResponseEntity<Void> placeBid(
             @PathVariable Long auctionId,
             @RequestBody AuctionRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
+            @CurrentUser User user
     ) {
-        // 2. 이제 상속받았으므로 정상 작동합니다.
-        User user = getCurrentUser(userDetails);
 
         // 서비스 호출 (입찰 시간은 서버 시간 기준)
         auctionService.placeBid(auctionId, user.getId(), request.getBidAmount(), LocalDateTime.now());

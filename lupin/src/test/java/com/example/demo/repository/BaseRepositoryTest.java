@@ -6,6 +6,7 @@ import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.domain.enums.SocialProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
@@ -53,7 +54,7 @@ abstract class BaseRepositoryTest {
         return userRepository.save(user);
     }
 
-    protected User createAndSaveUserWithProvider(String userId, String provider, String providerId) {
+    protected User createAndSaveUserWithProvider(String userId, SocialProvider provider, String providerId) {
         User user = User.builder()
                 .userId(userId)
                 .password("testPassword")

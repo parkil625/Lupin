@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.domain.enums.SocialProvider;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -19,7 +20,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByProviderEmail(String providerEmail);
 
-    Optional<User> findByProviderAndProviderId(String provider, String providerId);
+    Optional<User> findByProviderAndProviderId(SocialProvider provider, String providerId);
 
     // [최적화] 포인트 수정 시 비관적 락 (동시성 제어)
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.config.properties.FeedProperties;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.exception.BusinessException;
@@ -27,8 +28,7 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class FeedService {
 
-    private static final int POINT_RECOVERY_DAYS = 7;
-
+    private final FeedProperties feedProperties;
     private final FeedRepository feedRepository;
     private final PointService pointService;
     private final ImageMetadataService imageMetadataService;
@@ -174,7 +174,7 @@ public class FeedService {
             return;
         }
 
-        LocalDateTime recoveryDeadline = LocalDateTime.now().minusDays(POINT_RECOVERY_DAYS);
+        LocalDateTime recoveryDeadline = LocalDateTime.now().minusDays(feedProperties.getPointRecoveryDays());
         if (feed.getCreatedAt().isAfter(recoveryDeadline)) {
             pointService.deductPoints(feed.getWriter(), feed.getPoints());
         }

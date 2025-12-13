@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.exception.BusinessException;
@@ -197,11 +198,11 @@ class AuthServiceTest {
     @DisplayName("OAuth 연동 해제 성공")
     void unlinkOAuthSuccessTest() {
         // given
-        user.linkOAuth("GOOGLE", "google123", "test@gmail.com");
+        user.linkOAuth(SocialProvider.GOOGLE, "google123", "test@gmail.com");
         given(userRepository.save(any(User.class))).willReturn(user);
 
         // when
-        authService.unlinkOAuth(user, "GOOGLE");
+        authService.unlinkOAuth(user, SocialProvider.GOOGLE);
 
         // then
         assertThat(user.getProvider()).isNull();
@@ -216,7 +217,7 @@ class AuthServiceTest {
         // given - user는 기본적으로 provider가 null인 상태
 
         // when & then
-        assertThatThrownBy(() -> authService.unlinkOAuth(user, "GOOGLE"))
+        assertThatThrownBy(() -> authService.unlinkOAuth(user, SocialProvider.GOOGLE))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OAUTH_NOT_LINKED);
     }
@@ -225,10 +226,10 @@ class AuthServiceTest {
     @DisplayName("다른 Provider로 연동 해제 시 예외가 발생한다")
     void unlinkOAuthDifferentProviderTest() {
         // given
-        user.linkOAuth("KAKAO", "kakao123", "test@kakao.com");
+        user.linkOAuth(SocialProvider.KAKAO, "kakao123", "test@kakao.com");
 
         // when & then
-        assertThatThrownBy(() -> authService.unlinkOAuth(user, "GOOGLE"))
+        assertThatThrownBy(() -> authService.unlinkOAuth(user, SocialProvider.GOOGLE))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.OAUTH_NOT_LINKED);
     }

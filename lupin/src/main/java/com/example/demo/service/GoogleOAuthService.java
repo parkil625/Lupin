@@ -88,7 +88,7 @@ public class GoogleOAuthService {
                 });
 
         // 연동 정보 업데이트
-        user.linkOAuth(SocialProvider.GOOGLE.name(), googleId, email);
+        user.linkOAuth(SocialProvider.GOOGLE, googleId, email);
         userRepository.save(user);
     }
 

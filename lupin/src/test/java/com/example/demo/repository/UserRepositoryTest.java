@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.SocialProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -42,14 +43,14 @@ class UserRepositoryTest extends BaseRepositoryTest {
     @DisplayName("findByProviderAndProviderId로 OAuth 사용자를 조회한다")
     void findByProviderAndProviderIdTest() {
         // given
-        User user = createAndSaveUserWithProvider("testUser", "kakao", "kakao123");
+        User user = createAndSaveUserWithProvider("testUser", SocialProvider.KAKAO, "kakao123");
 
         // when
-        Optional<User> found = userRepository.findByProviderAndProviderId("kakao", "kakao123");
+        Optional<User> found = userRepository.findByProviderAndProviderId(SocialProvider.KAKAO, "kakao123");
 
         // then
         assertThat(found).isPresent();
-        assertThat(found.get().getProvider()).isEqualTo("kakao");
+        assertThat(found.get().getProvider()).isEqualTo(SocialProvider.KAKAO);
         assertThat(found.get().getProviderId()).isEqualTo("kakao123");
     }
 }

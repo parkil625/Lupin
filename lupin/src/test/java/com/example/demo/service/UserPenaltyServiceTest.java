@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.config.properties.PenaltyProperties;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.entity.UserPenalty;
 import com.example.demo.domain.enums.PenaltyType;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,6 +29,9 @@ class UserPenaltyServiceTest {
 
     @Mock
     private UserPenaltyRepository userPenaltyRepository;
+
+    @Mock
+    private PenaltyProperties penaltyProperties;
 
     @InjectMocks
     private UserPenaltyService userPenaltyService;
@@ -41,6 +46,10 @@ class UserPenaltyServiceTest {
                 .name("테스트유저")
                 .role(Role.MEMBER)
                 .build();
+
+        // PenaltyProperties mock 설정 (lenient - 모든 테스트에서 사용되지 않아도 에러 발생 안함)
+        lenient().when(penaltyProperties.getDurationDays()).thenReturn(3);
+        lenient().when(penaltyProperties.getThresholdMultiplier()).thenReturn(5);
     }
 
     @Test

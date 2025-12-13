@@ -1,6 +1,7 @@
 package com.example.demo.service.oauth;
 
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -57,7 +58,7 @@ public abstract class AbstractOAuthService {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("{} 로그인 실패", getProviderName(), e);
+            log.error("{} 로그인 실패", getProvider(), e);
             throw new BusinessException(ErrorCode.OAUTH_TOKEN_ERROR);
         }
     }
@@ -82,13 +83,13 @@ public abstract class AbstractOAuthService {
             }
 
             // 연동 정보 업데이트
-            user.linkOAuth(getProviderName(), oauthUser.providerId(), oauthUser.email());
+            user.linkOAuth(getProvider(), oauthUser.providerId(), oauthUser.email());
             userRepository.save(user);
 
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("{} 계정 연동 실패", getProviderName(), e);
+            log.error("{} 계정 연동 실패", getProvider(), e);
             throw new BusinessException(ErrorCode.OAUTH_TOKEN_ERROR);
         }
     }
@@ -96,9 +97,9 @@ public abstract class AbstractOAuthService {
     // ===================== Abstract Methods (Provider별 구현 필요) =====================
 
     /**
-     * OAuth 제공자 이름 (KAKAO, NAVER 등)
+     * OAuth 제공자 (KAKAO, NAVER, GOOGLE)
      */
-    protected abstract String getProviderName();
+    protected abstract SocialProvider getProvider();
 
     /**
      * 토큰 요청 URL
@@ -165,7 +166,7 @@ public abstract class AbstractOAuthService {
                     .or(() -> userRepository.findByUserId(oauthUser.email()))
                     .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         }
-        return userRepository.findByProviderAndProviderId(getProviderName(), oauthUser.providerId())
+        return userRepository.findByProviderAndProviderId(getProvider(), oauthUser.providerId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 

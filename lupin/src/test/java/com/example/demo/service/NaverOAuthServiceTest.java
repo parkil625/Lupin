@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -164,7 +165,7 @@ class NaverOAuthServiceTest {
         naverOAuthService.linkNaver(user, code, state);
 
         // then
-        assertThat(user.getProvider()).isEqualTo("NAVER");
+        assertThat(user.getProvider()).isEqualTo(SocialProvider.NAVER);
         assertThat(user.getProviderId()).isEqualTo("naverId123");
         assertThat(user.getProviderEmail()).isEqualTo("naver@example.com");
         verify(userRepository).save(user);

@@ -1,6 +1,7 @@
 package com.example.demo.domain.entity;
 
 import com.example.demo.domain.enums.Role;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.domain.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -56,8 +57,9 @@ public class User {
     @Column(length = 500)
     private String avatar;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String provider;
+    private SocialProvider provider;
 
     @Column(name = "provider_id", length = 255)
     private String providerId;
@@ -89,7 +91,7 @@ public class User {
     }
 
     // OAuth 연동 메서드
-    public void linkOAuth(String provider, String providerId, String providerEmail) {
+    public void linkOAuth(SocialProvider provider, String providerId, String providerEmail) {
         this.provider = provider;
         this.providerId = providerId;
         this.providerEmail = providerEmail;

@@ -56,10 +56,10 @@ public class OAuthController {
     ) {
         List<Map<String, Object>> connections = new ArrayList<>();
 
-        if (user.getProvider() != null && !user.getProvider().isEmpty()) {
+        if (user.getProvider() != null) {
             connections.add(Map.of(
                     "id", user.getId(),
-                    "provider", user.getProvider(),
+                    "provider", user.getProvider().name(),
                     "providerEmail", user.getProviderEmail() != null ? user.getProviderEmail() : "",
                     "connectedAt", ""
             ));
@@ -76,7 +76,8 @@ public class OAuthController {
             @CurrentUser User user,
             @PathVariable String provider
     ) {
-        authService.unlinkOAuth(user, provider);
+        SocialProvider socialProvider = SocialProvider.fromString(provider);
+        authService.unlinkOAuth(user, socialProvider);
         return ResponseEntity.ok().build();
     }
 

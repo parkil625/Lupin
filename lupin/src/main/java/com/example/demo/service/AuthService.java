@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.exception.BusinessException;
@@ -106,9 +107,9 @@ public class AuthService {
     /**
      * OAuth 연동 해제
      */
-    public void unlinkOAuth(User user, String provider) {
+    public void unlinkOAuth(User user, SocialProvider provider) {
         // 현재 연동된 provider와 일치하는지 확인
-        if (user.getProvider() == null || !user.getProvider().equalsIgnoreCase(provider)) {
+        if (user.getProvider() != provider) {
             throw new BusinessException(ErrorCode.OAUTH_NOT_LINKED);
         }
 

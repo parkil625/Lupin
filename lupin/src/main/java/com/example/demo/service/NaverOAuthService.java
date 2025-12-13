@@ -49,8 +49,8 @@ public class NaverOAuthService extends AbstractOAuthService {
     }
 
     @Override
-    protected String getProviderName() {
-        return SocialProvider.NAVER.name();
+    protected SocialProvider getProvider() {
+        return SocialProvider.NAVER;
     }
 
     @Override

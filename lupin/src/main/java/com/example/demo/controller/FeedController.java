@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.FeedRequest;
 import com.example.demo.dto.response.FeedResponse;
 import com.example.demo.dto.response.SliceResponse;
+import com.example.demo.mapper.FeedMapper;
 import com.example.demo.security.CurrentUser;
 import com.example.demo.service.FeedLikeService;
 import com.example.demo.service.FeedReportService;
@@ -26,6 +27,7 @@ public class FeedController {
     private final FeedService feedService;
     private final FeedLikeService feedLikeService;
     private final FeedReportService feedReportService;
+    private final FeedMapper feedMapper;
 
     @PostMapping
     public ResponseEntity<FeedResponse> createFeed(
@@ -41,7 +43,7 @@ public class FeedController {
                 request.getEndImageKey(),
                 request.getOtherImageKeys()
         );
-        return ResponseEntity.ok(toFeedResponse(feed));
+        return ResponseEntity.ok(feedMapper.toResponse(feed));
     }
 
     @PutMapping("/{feedId}")
@@ -59,7 +61,7 @@ public class FeedController {
                 request.getEndImageKey(),
                 request.getOtherImageKeys()
         );
-        return ResponseEntity.ok(toFeedResponse(feed));
+        return ResponseEntity.ok(feedMapper.toResponse(feed));
     }
 
     @DeleteMapping("/{feedId}")
@@ -74,7 +76,7 @@ public class FeedController {
     @GetMapping("/{feedId}")
     public ResponseEntity<FeedResponse> getFeedDetail(@PathVariable Long feedId) {
         Feed feed = feedService.getFeedDetail(feedId);
-        return ResponseEntity.ok(toFeedResponse(feed));
+        return ResponseEntity.ok(feedMapper.toResponse(feed));
     }
 
     @GetMapping
@@ -86,7 +88,7 @@ public class FeedController {
         Slice<Feed> feeds = feedService.getHomeFeeds(user, page, size);
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
         List<FeedResponse> content = feeds.getContent().stream()
-                .map(feed -> toFeedResponseWithActiveDays(feed, user, activeDaysMap))
+                .map(feed -> feedMapper.toResponse(feed, user, activeDaysMap))
                 .toList();
         return ResponseEntity.ok(SliceResponse.of(content, feeds.hasNext(), page, size));
     }
@@ -100,7 +102,7 @@ public class FeedController {
         Slice<Feed> feeds = feedService.getMyFeeds(user, page, size);
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
         List<FeedResponse> content = feeds.getContent().stream()
-                .map(feed -> toFeedResponseWithActiveDays(feed, user, activeDaysMap))
+                .map(feed -> feedMapper.toResponse(feed, user, activeDaysMap))
                 .toList();
         return ResponseEntity.ok(SliceResponse.of(content, feeds.hasNext(), page, size));
     }
@@ -146,23 +148,5 @@ public class FeedController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(Map.of("feedId", feedId));
-    }
-
-    // Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음
-    private FeedResponse toFeedResponse(Feed feed) {
-        return FeedResponse.from(feed);
-    }
-
-    // Feed 엔티티의 반정규화 필드 사용 - isLiked만 DB 조회
-    private FeedResponse toFeedResponse(Feed feed, User currentUser) {
-        boolean isLiked = currentUser != null && feedLikeService.isLiked(currentUser.getId(), feed.getId());
-        return FeedResponse.from(feed, isLiked);
-    }
-
-    // activeDays 포함 응답 생성
-    private FeedResponse toFeedResponseWithActiveDays(Feed feed, User currentUser, Map<Long, Integer> activeDaysMap) {
-        boolean isLiked = currentUser != null && feedLikeService.isLiked(currentUser.getId(), feed.getId());
-        Integer activeDays = activeDaysMap.getOrDefault(feed.getWriter().getId(), 0);
-        return FeedResponse.from(feed, isLiked, activeDays);
     }
 }

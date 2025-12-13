@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.domain.enums.SocialProvider;
 import com.example.demo.dto.LoginDto;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -164,7 +165,7 @@ class KakaoOAuthServiceTest {
         kakaoOAuthService.linkKakao(user, code, redirectUri);
 
         // then
-        assertThat(user.getProvider()).isEqualTo("KAKAO");
+        assertThat(user.getProvider()).isEqualTo(SocialProvider.KAKAO);
         assertThat(user.getProviderId()).isEqualTo("12345");
         assertThat(user.getProviderEmail()).isEqualTo("kakao@example.com");
         verify(userRepository).save(user);

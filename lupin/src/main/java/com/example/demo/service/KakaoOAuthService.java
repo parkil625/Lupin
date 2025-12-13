@@ -49,8 +49,8 @@ public class KakaoOAuthService extends AbstractOAuthService {
     }
 
     @Override
-    protected String getProviderName() {
-        return SocialProvider.KAKAO.name();
+    protected SocialProvider getProvider() {
+        return SocialProvider.KAKAO;
     }
 
     @Override

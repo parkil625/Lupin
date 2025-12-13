@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.config.properties.FeedProperties;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.ImageType;
@@ -27,12 +28,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("FeedService 테스트")
 class FeedServiceTest {
+
+    @Mock
+    private FeedProperties feedProperties;
 
     @Mock
     private FeedRepository feedRepository;
@@ -72,6 +77,9 @@ class FeedServiceTest {
                 .role(Role.MEMBER)
                 .build();
         ReflectionTestUtils.setField(writer, "id", 1L);
+
+        // FeedProperties mock 설정 (lenient - 모든 테스트에서 사용되지 않아도 에러 발생 안함)
+        lenient().when(feedProperties.getPointRecoveryDays()).thenReturn(7);
     }
 
     @Test

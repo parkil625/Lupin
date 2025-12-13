@@ -4,6 +4,8 @@ import com.example.demo.config.TestRedisConfiguration;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.dto.response.FeedResponse;
+import com.example.demo.mapper.FeedMapper;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.FeedLikeService;
 import com.example.demo.service.FeedReportService;
@@ -30,6 +32,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -57,6 +60,9 @@ class FeedControllerTest {
     private FeedReportService feedReportService;
 
     @MockBean
+    private FeedMapper feedMapper;
+
+    @MockBean
     private UserRepository userRepository;
 
     private User testUser;
@@ -81,6 +87,16 @@ class FeedControllerTest {
         ReflectionTestUtils.setField(testFeed, "id", 1L);
 
         given(userRepository.findByUserId("testuser")).willReturn(Optional.of(testUser));
+
+        // FeedMapper mock 설정 - Feed를 FeedResponse로 변환
+        given(feedMapper.toResponse(any(Feed.class))).willAnswer(invocation -> {
+            Feed feed = invocation.getArgument(0);
+            return FeedResponse.from(feed);
+        });
+        given(feedMapper.toResponse(any(Feed.class), any(), any())).willAnswer(invocation -> {
+            Feed feed = invocation.getArgument(0);
+            return FeedResponse.from(feed);
+        });
     }
 
     @Test
@@ -113,7 +129,8 @@ class FeedControllerTest {
                 .calories(0)
                 .build();
         ReflectionTestUtils.setField(updatedFeed, "id", 1L);
-        given(feedService.updateFeed(any(User.class), eq(1L), eq("수영 완료!"), eq("수영")))
+        // 7개 파라미터 버전 mock (이미지가 null일 때)
+        given(feedService.updateFeed(any(User.class), eq(1L), eq("수영 완료!"), eq("수영"), isNull(), isNull(), any()))
                 .willReturn(updatedFeed);
 
         // when & then

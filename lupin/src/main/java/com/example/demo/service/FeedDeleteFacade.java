@@ -3,11 +3,13 @@ package com.example.demo.service;
 import com.example.demo.config.properties.FeedProperties;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.event.FeedDeletedEvent;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,20 +32,25 @@ public class FeedDeleteFacade {
     private final FeedLikeService feedLikeService;
     private final FeedReportService feedReportService;
     private final NotificationService notificationService;
-    private final LikeCountCacheService likeCountCacheService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 피드 삭제 - 관련된 모든 데이터(댓글, 좋아요, 신고, 알림)를 함께 삭제
+     * 트랜잭션 커밋 후 FeedDeletedEvent 발행하여 캐시 정리 등 비동기 처리
      */
     @Transactional
     public void deleteFeed(User user, Long feedId) {
         Feed feed = feedRepository.findByIdForDelete(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
+        Long writerId = feed.getWriter().getId();
         validateOwnership(feed, user);
         recoverPointsIfWithinPeriod(feed);
         deleteRelatedData(feed, feedId);
         feedRepository.delete(feed);
+
+        // 트랜잭션 커밋 후 비동기 정리 작업을 위한 이벤트 발행
+        eventPublisher.publishEvent(FeedDeletedEvent.of(feedId, writerId));
 
         log.info("Feed deleted: feedId={}, userId={}", feedId, user.getId());
     }
@@ -81,7 +88,6 @@ public class FeedDeleteFacade {
         feedLikeService.deleteAllByFeed(feed);
         feedReportService.deleteAllByFeed(feed);
 
-        // Redis 캐시 삭제
-        likeCountCacheService.deleteLikeCount(feedId);
+        // Redis 캐시 삭제는 FeedDeletedEvent 리스너에서 트랜잭션 커밋 후 처리
     }
 }

@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,9 +29,6 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class FeedTransactionService {
 
-    private static final int MAX_WORKOUT_HOURS = 24;
-    private static final int PHOTO_TIME_TOLERANCE_HOURS = 6;
-
     private final FeedRepository feedRepository;
     private final PointService pointService;
     private final WorkoutScoreService workoutScoreService;
@@ -44,23 +40,12 @@ public class FeedTransactionService {
     public Feed createFeed(User writer, String activity, String content,
                            String startImageKey, String endImageKey, List<String> otherImageKeys,
                            Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt) {
-        // 점수 계산
-        int score = 0;
-        int calories = 0;
+        // 점수 계산 (WorkoutScoreService에 위임)
+        WorkoutScoreService.WorkoutResult workoutResult =
+                workoutScoreService.validateAndCalculate(activity, startTimeOpt, endTimeOpt, LocalDate.now());
 
-        if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
-            LocalDateTime startTime = startTimeOpt.get();
-            LocalDateTime endTime = endTimeOpt.get();
-
-            if (isValidWorkoutTime(startTime, endTime, LocalDate.now())) {
-                score = workoutScoreService.calculateScore(activity, startTime, endTime);
-                calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
-
-                log.info("Workout verified: activity={}, duration={}min, score={}, calories={}",
-                        activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
-            } else {
-                log.warn("Workout time validation failed - score set to 0");
-            }
+        if (!workoutResult.valid() && (startTimeOpt.isPresent() || endTimeOpt.isPresent())) {
+            log.warn("Workout time validation failed - score set to 0");
         }
 
         // 피드 저장
@@ -68,8 +53,8 @@ public class FeedTransactionService {
                 .writer(writer)
                 .activity(activity)
                 .content(content)
-                .points((long) score)
-                .calories(calories)
+                .points((long) workoutResult.score())
+                .calories(workoutResult.calories())
                 .build();
 
         Feed savedFeed = feedRepository.save(feed);
@@ -79,8 +64,8 @@ public class FeedTransactionService {
         addImages(savedFeed, startImageKey, endImageKey, otherImageKeys);
 
         // 포인트 부여
-        if (score > 0) {
-            pointService.addPoints(writer, score);
+        if (workoutResult.score() > 0) {
+            pointService.addPoints(writer, workoutResult.score());
         }
 
         return savedFeed;
@@ -101,26 +86,15 @@ public class FeedTransactionService {
         long oldPoints = feed.getPoints();
         feed.update(content, activity);
 
-        // 점수 계산
-        int score = 0;
-        int calories = 0;
+        // 점수 계산 (WorkoutScoreService에 위임)
+        WorkoutScoreService.WorkoutResult workoutResult =
+                workoutScoreService.validateAndCalculate(activity, startTimeOpt, endTimeOpt, LocalDate.now());
 
-        if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
-            LocalDateTime startTime = startTimeOpt.get();
-            LocalDateTime endTime = endTimeOpt.get();
-
-            if (isValidWorkoutTime(startTime, endTime, LocalDate.now())) {
-                score = workoutScoreService.calculateScore(activity, startTime, endTime);
-                calories = workoutScoreService.calculateCalories(activity, startTime, endTime);
-
-                log.info("Feed update - Workout verified: activity={}, duration={}min, score={}, calories={}",
-                        activity, workoutScoreService.calculateDurationMinutes(startTime, endTime), score, calories);
-            } else {
-                log.warn("Feed update - Workout time validation failed - score set to 0");
-            }
+        if (!workoutResult.valid() && (startTimeOpt.isPresent() || endTimeOpt.isPresent())) {
+            log.warn("Feed update - Workout time validation failed - score set to 0");
         }
 
-        feed.updateScore((long) score, calories);
+        feed.updateScore((long) workoutResult.score(), workoutResult.calories());
         feed.updateThumbnail(startImageKey);
 
         // 기존 이미지 삭제 후 새 이미지 추가
@@ -131,8 +105,8 @@ public class FeedTransactionService {
         if (oldPoints > 0) {
             pointService.deductPoints(user, oldPoints);
         }
-        if (score > 0) {
-            pointService.addPoints(user, score);
+        if (workoutResult.score() > 0) {
+            pointService.addPoints(user, workoutResult.score());
         }
 
         feedRepository.flush();
@@ -177,31 +151,5 @@ public class FeedTransactionService {
         if (!Objects.equals(feed.getWriter().getId(), user.getId())) {
             throw new BusinessException(ErrorCode.FEED_NOT_OWNER);
         }
-    }
-
-    private boolean isValidWorkoutTime(LocalDateTime startTime, LocalDateTime endTime, LocalDate feedDate) {
-        if (!startTime.isBefore(endTime)) {
-            log.warn("Invalid workout time: start={} is not before end={}", startTime, endTime);
-            return false;
-        }
-
-        if (Duration.between(startTime, endTime).toHours() > MAX_WORKOUT_HOURS) {
-            log.warn("Workout too long: {} hours", Duration.between(startTime, endTime).toHours());
-            return false;
-        }
-
-        LocalDateTime allowedStart = feedDate.atStartOfDay().minusHours(PHOTO_TIME_TOLERANCE_HOURS);
-        LocalDateTime allowedEnd = feedDate.atTime(23, 59, 59).plusHours(PHOTO_TIME_TOLERANCE_HOURS);
-
-        boolean startTimeValid = !startTime.isBefore(allowedStart) && !startTime.isAfter(allowedEnd);
-        boolean endTimeValid = !endTime.isBefore(allowedStart) && !endTime.isAfter(allowedEnd);
-
-        if (!startTimeValid || !endTimeValid) {
-            log.warn("Photo time outside allowed range: start={}, end={}, allowed=[{} ~ {}]",
-                    startTime, endTime, allowedStart, allowedEnd);
-            return false;
-        }
-
-        return true;
     }
 }

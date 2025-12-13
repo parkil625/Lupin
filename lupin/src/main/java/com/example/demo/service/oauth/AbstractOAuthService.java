@@ -34,12 +34,13 @@ public abstract class AbstractOAuthService {
     protected AbstractOAuthService(
             UserRepository userRepository,
             JwtTokenProvider jwtTokenProvider,
-            RedisTemplate<String, String> redisTemplate
+            RedisTemplate<String, String> redisTemplate,
+            RestTemplate restTemplate
     ) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.redisTemplate = redisTemplate;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
     /**

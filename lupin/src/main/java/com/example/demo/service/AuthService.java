@@ -6,18 +6,15 @@ import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
-import com.example.demo.util.RedisKeyUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -28,7 +25,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     /**
      * 일반 로그인
@@ -53,14 +50,10 @@ public class AuthService {
         }
 
         String userId = jwtTokenProvider.getEmail(refreshToken);
-        String storedRefreshToken = redisTemplate.opsForValue().get(RedisKeyUtils.refreshToken(userId));
+        String storedRefreshToken = refreshTokenRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
 
-        // Redis에 저장된 토큰이 없으면 만료된 것
-        if (storedRefreshToken == null) {
-            throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
-        }
-
-        // Redis에 다른 토큰이 있으면 다른 기기에서 로그인한 것
+        // 저장된 토큰과 다르면 다른 기기에서 로그인한 것
         if (!storedRefreshToken.equals(refreshToken)) {
             throw new BusinessException(ErrorCode.SESSION_EXPIRED_BY_OTHER_LOGIN);
         }
@@ -84,21 +77,10 @@ public class AuthService {
         }
 
         String userId = jwtTokenProvider.getEmail(accessToken);
-        String refreshTokenKey = RedisKeyUtils.refreshToken(userId);
-        if (redisTemplate.opsForValue().get(refreshTokenKey) != null) {
-            redisTemplate.delete(refreshTokenKey);
-        }
+        refreshTokenRepository.deleteByUserId(userId);
 
         long expiration = jwtTokenProvider.getExpiration(accessToken);
-
-        if (expiration > 0) {
-            redisTemplate.opsForValue().set(
-                    RedisKeyUtils.blacklist(accessToken),
-                    "logout",
-                    expiration,
-                    TimeUnit.MILLISECONDS
-            );
-        }
+        refreshTokenRepository.addToBlacklist(accessToken, expiration);
     }
 
     /**
@@ -120,12 +102,11 @@ public class AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
 
-        // JWT 토큰과 Redis TTL을 동일한 설정값으로 일원화
-        redisTemplate.opsForValue().set(
-                RedisKeyUtils.refreshToken(user.getUserId()),
+        // JWT 토큰과 저장소 TTL을 동일한 설정값으로 일원화
+        refreshTokenRepository.save(
+                user.getUserId(),
                 refreshToken,
-                jwtTokenProvider.getRefreshTokenValidityMs(),
-                TimeUnit.MILLISECONDS
+                jwtTokenProvider.getRefreshTokenValidityMs()
         );
 
         return LoginDto.builder()

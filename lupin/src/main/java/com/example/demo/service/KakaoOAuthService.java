@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
@@ -28,9 +29,10 @@ public class KakaoOAuthService extends AbstractOAuthService {
     public KakaoOAuthService(
             UserRepository userRepository,
             JwtTokenProvider jwtTokenProvider,
-            RedisTemplate<String, String> redisTemplate
+            RedisTemplate<String, String> redisTemplate,
+            RestTemplate restTemplate
     ) {
-        super(userRepository, jwtTokenProvider, redisTemplate);
+        super(userRepository, jwtTokenProvider, redisTemplate, restTemplate);
     }
 
     /**

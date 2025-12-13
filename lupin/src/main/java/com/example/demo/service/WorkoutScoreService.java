@@ -4,12 +4,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
 public class WorkoutScoreService {
+
+    private static final int MAX_WORKOUT_HOURS = 24;
+    private static final int PHOTO_TIME_TOLERANCE_HOURS = 6;
 
     // 운동 종류별 강도 (imageMetadata.ts와 동일)
     private static final Map<String, Double> INTENSITY_VALUES = Map.ofEntries(
@@ -95,5 +100,76 @@ public class WorkoutScoreService {
      */
     public double getIntensity(String activity) {
         return INTENSITY_VALUES.getOrDefault(activity, DEFAULT_INTENSITY);
+    }
+
+    /**
+     * 운동 검증 및 점수/칼로리 계산
+     * @param activity 운동 종류
+     * @param startTimeOpt 시작 시간 (없으면 검증 없이 0점 반환)
+     * @param endTimeOpt 종료 시간 (없으면 검증 없이 0점 반환)
+     * @param feedDate 피드 기준 날짜
+     * @return 점수와 칼로리를 담은 결과 (검증 실패 시 둘 다 0)
+     */
+    public WorkoutResult validateAndCalculate(String activity,
+                                               Optional<LocalDateTime> startTimeOpt,
+                                               Optional<LocalDateTime> endTimeOpt,
+                                               LocalDate feedDate) {
+        if (startTimeOpt.isEmpty() || endTimeOpt.isEmpty()) {
+            return WorkoutResult.empty();
+        }
+
+        LocalDateTime startTime = startTimeOpt.get();
+        LocalDateTime endTime = endTimeOpt.get();
+
+        if (!isValidWorkoutTime(startTime, endTime, feedDate)) {
+            return WorkoutResult.empty();
+        }
+
+        int score = calculateScore(activity, startTime, endTime);
+        int calories = calculateCalories(activity, startTime, endTime);
+        long durationMinutes = calculateDurationMinutes(startTime, endTime);
+
+        log.info("Workout verified: activity={}, duration={}min, score={}, calories={}",
+                activity, durationMinutes, score, calories);
+
+        return new WorkoutResult(score, calories, true);
+    }
+
+    /**
+     * 운동 시간 유효성 검증
+     */
+    public boolean isValidWorkoutTime(LocalDateTime startTime, LocalDateTime endTime, LocalDate feedDate) {
+        if (!startTime.isBefore(endTime)) {
+            log.warn("Invalid workout time: start={} is not before end={}", startTime, endTime);
+            return false;
+        }
+
+        if (Duration.between(startTime, endTime).toHours() > MAX_WORKOUT_HOURS) {
+            log.warn("Workout too long: {} hours", Duration.between(startTime, endTime).toHours());
+            return false;
+        }
+
+        LocalDateTime allowedStart = feedDate.atStartOfDay().minusHours(PHOTO_TIME_TOLERANCE_HOURS);
+        LocalDateTime allowedEnd = feedDate.atTime(23, 59, 59).plusHours(PHOTO_TIME_TOLERANCE_HOURS);
+
+        boolean startTimeValid = !startTime.isBefore(allowedStart) && !startTime.isAfter(allowedEnd);
+        boolean endTimeValid = !endTime.isBefore(allowedStart) && !endTime.isAfter(allowedEnd);
+
+        if (!startTimeValid || !endTimeValid) {
+            log.warn("Photo time outside allowed range: start={}, end={}, allowed=[{} ~ {}]",
+                    startTime, endTime, allowedStart, allowedEnd);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * 운동 계산 결과
+     */
+    public record WorkoutResult(int score, int calories, boolean valid) {
+        public static WorkoutResult empty() {
+            return new WorkoutResult(0, 0, false);
+        }
     }
 }

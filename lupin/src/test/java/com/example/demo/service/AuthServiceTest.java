@@ -7,9 +7,9 @@ import com.example.demo.dto.LoginDto;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
-import com.example.demo.util.RedisKeyUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,8 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -44,10 +42,7 @@ class AuthServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private RedisTemplate<String, String> redisTemplate;
-
-    @Mock
-    private ValueOperations<String, String> valueOperations;
+    private RefreshTokenRepository refreshTokenRepository;
 
     @InjectMocks
     private AuthService authService;
@@ -74,7 +69,6 @@ class AuthServiceTest {
         given(passwordEncoder.matches("password", "encodedPassword")).willReturn(true);
         given(jwtTokenProvider.createAccessToken(anyString(), anyString())).willReturn("accessToken");
         given(jwtTokenProvider.createRefreshToken(anyString())).willReturn("refreshToken");
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // when
         LoginDto result = authService.login(request);
@@ -83,6 +77,7 @@ class AuthServiceTest {
         assertThat(result.getUserId()).isEqualTo("test@example.com");
         assertThat(result.getAccessToken()).isEqualTo("accessToken");
         assertThat(result.getRefreshToken()).isEqualTo("refreshToken");
+        verify(refreshTokenRepository).save(eq("test@example.com"), eq("refreshToken"), anyLong());
     }
 
     @Test
@@ -119,8 +114,7 @@ class AuthServiceTest {
         String refreshToken = "validRefreshToken";
         given(jwtTokenProvider.validateToken(refreshToken)).willReturn(true);
         given(jwtTokenProvider.getEmail(refreshToken)).willReturn("test@example.com");
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(RedisKeyUtils.refreshToken("test@example.com"))).willReturn(refreshToken);
+        given(refreshTokenRepository.findByUserId("test@example.com")).willReturn(Optional.of(refreshToken));
         given(userRepository.findByUserId("test@example.com")).willReturn(Optional.of(user));
         given(jwtTokenProvider.createAccessToken(anyString(), anyString())).willReturn("newAccessToken");
         given(jwtTokenProvider.createRefreshToken(anyString())).willReturn("newRefreshToken");
@@ -147,14 +141,13 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("Redis에 저장된 토큰과 다르면 다른 기기 로그인 예외가 발생한다")
+    @DisplayName("저장된 토큰과 다르면 다른 기기 로그인 예외가 발생한다")
     void reissueTokenMismatchTest() {
         // given
         String refreshToken = "validRefreshToken";
         given(jwtTokenProvider.validateToken(refreshToken)).willReturn(true);
         given(jwtTokenProvider.getEmail(refreshToken)).willReturn("test@example.com");
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(RedisKeyUtils.refreshToken("test@example.com"))).willReturn("differentToken");
+        given(refreshTokenRepository.findByUserId("test@example.com")).willReturn(Optional.of("differentToken"));
 
         // when & then
         assertThatThrownBy(() -> authService.reissue(refreshToken))
@@ -169,16 +162,14 @@ class AuthServiceTest {
         String accessToken = "Bearer validAccessToken";
         given(jwtTokenProvider.validateToken("validAccessToken")).willReturn(true);
         given(jwtTokenProvider.getEmail("validAccessToken")).willReturn("test@example.com");
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(RedisKeyUtils.refreshToken("test@example.com"))).willReturn("someToken");
         given(jwtTokenProvider.getExpiration("validAccessToken")).willReturn(3600000L);
 
         // when
         authService.logout(accessToken);
 
         // then
-        verify(redisTemplate).delete(RedisKeyUtils.refreshToken("test@example.com"));
-        verify(valueOperations).set(eq(RedisKeyUtils.blacklist("validAccessToken")), eq("logout"), anyLong(), any());
+        verify(refreshTokenRepository).deleteByUserId("test@example.com");
+        verify(refreshTokenRepository).addToBlacklist("validAccessToken", 3600000L);
     }
 
     @Test

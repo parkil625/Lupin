@@ -7,7 +7,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -241,6 +243,152 @@ class WorkoutScoreServiceTest {
 
             // then
             assertThat(intensity).isEqualTo(0.8);
+        }
+    }
+
+    @Nested
+    @DisplayName("validateAndCalculate")
+    class ValidateAndCalculate {
+
+        @Test
+        @DisplayName("유효한 운동 시간으로 점수와 칼로리를 계산한다")
+        void validateAndCalculateWithValidTime() {
+            // given
+            String activity = "헬스";
+            LocalDate feedDate = LocalDate.of(2024, 1, 15);
+            LocalDateTime startTime = LocalDateTime.of(2024, 1, 15, 10, 0);
+            LocalDateTime endTime = LocalDateTime.of(2024, 1, 15, 10, 30);
+
+            // when
+            WorkoutScoreService.WorkoutResult result = workoutScoreService.validateAndCalculate(
+                    activity, Optional.of(startTime), Optional.of(endTime), feedDate);
+
+            // then
+            assertThat(result.valid()).isTrue();
+            assertThat(result.score()).isEqualTo(24); // 30분 * 0.8 강도
+            assertThat(result.calories()).isGreaterThan(0);
+        }
+
+        @Test
+        @DisplayName("시작 시간이 없으면 빈 결과를 반환한다")
+        void validateAndCalculateWithoutStartTime() {
+            // given
+            String activity = "헬스";
+            LocalDate feedDate = LocalDate.of(2024, 1, 15);
+            LocalDateTime endTime = LocalDateTime.of(2024, 1, 15, 10, 30);
+
+            // when
+            WorkoutScoreService.WorkoutResult result = workoutScoreService.validateAndCalculate(
+                    activity, Optional.empty(), Optional.of(endTime), feedDate);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.score()).isEqualTo(0);
+            assertThat(result.calories()).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("종료 시간이 없으면 빈 결과를 반환한다")
+        void validateAndCalculateWithoutEndTime() {
+            // given
+            String activity = "헬스";
+            LocalDate feedDate = LocalDate.of(2024, 1, 15);
+            LocalDateTime startTime = LocalDateTime.of(2024, 1, 15, 10, 0);
+
+            // when
+            WorkoutScoreService.WorkoutResult result = workoutScoreService.validateAndCalculate(
+                    activity, Optional.of(startTime), Optional.empty(), feedDate);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.score()).isEqualTo(0);
+            assertThat(result.calories()).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("시작 시간이 종료 시간보다 늦으면 빈 결과를 반환한다")
+        void validateAndCalculateWithInvalidTimeOrder() {
+            // given
+            String activity = "헬스";
+            LocalDate feedDate = LocalDate.of(2024, 1, 15);
+            LocalDateTime startTime = LocalDateTime.of(2024, 1, 15, 11, 0);
+            LocalDateTime endTime = LocalDateTime.of(2024, 1, 15, 10, 0);
+
+            // when
+            WorkoutScoreService.WorkoutResult result = workoutScoreService.validateAndCalculate(
+                    activity, Optional.of(startTime), Optional.of(endTime), feedDate);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.score()).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("24시간을 초과하는 운동은 빈 결과를 반환한다")
+        void validateAndCalculateWithTooLongWorkout() {
+            // given
+            String activity = "헬스";
+            LocalDate feedDate = LocalDate.of(2024, 1, 15);
+            LocalDateTime startTime = LocalDateTime.of(2024, 1, 15, 10, 0);
+            LocalDateTime endTime = LocalDateTime.of(2024, 1, 16, 11, 0); // 25시간
+
+            // when
+            WorkoutScoreService.WorkoutResult result = workoutScoreService.validateAndCalculate(
+                    activity, Optional.of(startTime), Optional.of(endTime), feedDate);
+
+            // then
+            assertThat(result.valid()).isFalse();
+            assertThat(result.score()).isEqualTo(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("isValidWorkoutTime")
+    class IsValidWorkoutTime {
+
+        @Test
+        @DisplayName("허용 범위 내 시간은 유효하다")
+        void validTimeWithinAllowedRange() {
+            // given
+            LocalDate feedDate = LocalDate.of(2024, 1, 15);
+            LocalDateTime startTime = LocalDateTime.of(2024, 1, 15, 10, 0);
+            LocalDateTime endTime = LocalDateTime.of(2024, 1, 15, 11, 0);
+
+            // when
+            boolean result = workoutScoreService.isValidWorkoutTime(startTime, endTime, feedDate);
+
+            // then
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("시작 시간이 종료 시간보다 늦으면 유효하지 않다")
+        void invalidWhenStartAfterEnd() {
+            // given
+            LocalDate feedDate = LocalDate.of(2024, 1, 15);
+            LocalDateTime startTime = LocalDateTime.of(2024, 1, 15, 12, 0);
+            LocalDateTime endTime = LocalDateTime.of(2024, 1, 15, 11, 0);
+
+            // when
+            boolean result = workoutScoreService.isValidWorkoutTime(startTime, endTime, feedDate);
+
+            // then
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("24시간을 초과하면 유효하지 않다")
+        void invalidWhenTooLong() {
+            // given
+            LocalDate feedDate = LocalDate.of(2024, 1, 15);
+            LocalDateTime startTime = LocalDateTime.of(2024, 1, 14, 10, 0);
+            LocalDateTime endTime = LocalDateTime.of(2024, 1, 15, 11, 0); // 25시간
+
+            // when
+            boolean result = workoutScoreService.isValidWorkoutTime(startTime, endTime, feedDate);
+
+            // then
+            assertThat(result).isFalse();
         }
     }
 }

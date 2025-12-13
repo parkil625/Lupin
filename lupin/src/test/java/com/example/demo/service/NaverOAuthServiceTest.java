@@ -13,15 +13,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,15 +44,16 @@ class NaverOAuthServiceTest {
     private RefreshTokenRepository refreshTokenRepository;
 
     @Mock
-    private RestTemplate restTemplate;
+    private RestClient restClient;
 
-    @InjectMocks
     private NaverOAuthService naverOAuthService;
-
     private User user;
 
     @BeforeEach
     void setUp() {
+        naverOAuthService = new NaverOAuthService(
+                userRepository, jwtTokenProvider, refreshTokenRepository, restClient);
+
         user = User.builder()
                 .userId("test@example.com")
                 .password("password")
@@ -64,10 +62,35 @@ class NaverOAuthServiceTest {
                 .build();
         ReflectionTestUtils.setField(user, "id", 1L);
 
-        // RestTemplate 주입
-        ReflectionTestUtils.setField(naverOAuthService, "restTemplate", restTemplate);
         ReflectionTestUtils.setField(naverOAuthService, "clientId", "testClientId");
         ReflectionTestUtils.setField(naverOAuthService, "clientSecret", "testClientSecret");
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mockTokenRequest(Map<String, Object> tokenResponse) {
+        RestClient.RequestBodyUriSpec requestBodyUriSpec = mock(RestClient.RequestBodyUriSpec.class);
+        RestClient.RequestBodySpec requestBodySpec = mock(RestClient.RequestBodySpec.class);
+        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
+
+        given(restClient.post()).willReturn(requestBodyUriSpec);
+        given(requestBodyUriSpec.uri(anyString(), any(Object[].class))).willReturn(requestBodySpec);
+        given(requestBodySpec.contentType(any())).willReturn(requestBodySpec);
+        given(requestBodySpec.body(any(MultiValueMap.class))).willReturn(requestBodySpec);
+        given(requestBodySpec.retrieve()).willReturn(responseSpec);
+        given(responseSpec.body(Map.class)).willReturn(tokenResponse);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mockUserInfoRequest(Map<String, Object> userInfoResponse) {
+        RestClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(RestClient.RequestHeadersUriSpec.class);
+        RestClient.RequestHeadersSpec requestHeadersSpec = mock(RestClient.RequestHeadersSpec.class);
+        RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
+
+        given(restClient.get()).willReturn(requestHeadersUriSpec);
+        given(requestHeadersUriSpec.uri(anyString())).willReturn(requestHeadersSpec);
+        given(requestHeadersSpec.header(anyString(), anyString())).willReturn(requestHeadersSpec);
+        given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
+        given(responseSpec.body(Map.class)).willReturn(userInfoResponse);
     }
 
     @Test
@@ -77,20 +100,16 @@ class NaverOAuthServiceTest {
         String code = "authCode";
         String state = "randomState";
 
-        // 토큰 응답 mock
         Map<String, Object> tokenResponse = new HashMap<>();
         tokenResponse.put("access_token", "naverAccessToken");
-        given(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(tokenResponse);
+        mockTokenRequest(tokenResponse);
 
-        // 사용자 정보 응답 mock
         Map<String, Object> userInfoResponse = new HashMap<>();
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("email", "test@example.com");
         responseData.put("id", "naverId123");
         userInfoResponse.put("response", responseData);
-        given(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(new ResponseEntity<>(userInfoResponse, HttpStatus.OK));
+        mockUserInfoRequest(userInfoResponse);
 
         given(userRepository.findByProviderEmail("test@example.com")).willReturn(Optional.of(user));
         given(jwtTokenProvider.createAccessToken(anyString(), anyString())).willReturn("accessToken");
@@ -114,16 +133,14 @@ class NaverOAuthServiceTest {
 
         Map<String, Object> tokenResponse = new HashMap<>();
         tokenResponse.put("access_token", "naverAccessToken");
-        given(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(tokenResponse);
+        mockTokenRequest(tokenResponse);
 
         Map<String, Object> userInfoResponse = new HashMap<>();
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("email", "unknown@example.com");
         responseData.put("id", "naverId123");
         userInfoResponse.put("response", responseData);
-        given(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(new ResponseEntity<>(userInfoResponse, HttpStatus.OK));
+        mockUserInfoRequest(userInfoResponse);
 
         given(userRepository.findByProviderEmail("unknown@example.com")).willReturn(Optional.empty());
         given(userRepository.findByUserId("unknown@example.com")).willReturn(Optional.empty());
@@ -143,16 +160,14 @@ class NaverOAuthServiceTest {
 
         Map<String, Object> tokenResponse = new HashMap<>();
         tokenResponse.put("access_token", "naverAccessToken");
-        given(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(tokenResponse);
+        mockTokenRequest(tokenResponse);
 
         Map<String, Object> userInfoResponse = new HashMap<>();
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("email", "naver@example.com");
         responseData.put("id", "naverId123");
         userInfoResponse.put("response", responseData);
-        given(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(new ResponseEntity<>(userInfoResponse, HttpStatus.OK));
+        mockUserInfoRequest(userInfoResponse);
 
         given(userRepository.findByProviderEmail("naver@example.com")).willReturn(Optional.empty());
         given(userRepository.save(any(User.class))).willReturn(user);
@@ -184,16 +199,14 @@ class NaverOAuthServiceTest {
 
         Map<String, Object> tokenResponse = new HashMap<>();
         tokenResponse.put("access_token", "naverAccessToken");
-        given(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(tokenResponse);
+        mockTokenRequest(tokenResponse);
 
         Map<String, Object> userInfoResponse = new HashMap<>();
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("email", "already@example.com");
         responseData.put("id", "naverId123");
         userInfoResponse.put("response", responseData);
-        given(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(new ResponseEntity<>(userInfoResponse, HttpStatus.OK));
+        mockUserInfoRequest(userInfoResponse);
 
         given(userRepository.findByProviderEmail("already@example.com")).willReturn(Optional.of(otherUser));
 
@@ -210,8 +223,7 @@ class NaverOAuthServiceTest {
         String code = "invalidCode";
         String state = "randomState";
 
-        given(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(Map.class)))
-                .willReturn(null);
+        mockTokenRequest(null);
 
         // when & then
         assertThatThrownBy(() -> naverOAuthService.naverLogin(code, state))

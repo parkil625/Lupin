@@ -30,9 +30,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String, String> redisTemplate;
 
-    // Refresh Token 만료 시간 (7일)
-    private static final long REFRESH_TOKEN_VALIDITY = 7;
-
     /**
      * 일반 로그인
      */
@@ -123,11 +120,12 @@ public class AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
 
+        // JWT 토큰과 Redis TTL을 동일한 설정값으로 일원화
         redisTemplate.opsForValue().set(
                 RedisKeyUtils.refreshToken(user.getUserId()),
                 refreshToken,
-                REFRESH_TOKEN_VALIDITY,
-                TimeUnit.DAYS
+                jwtTokenProvider.getRefreshTokenValidityMs(),
+                TimeUnit.MILLISECONDS
         );
 
         return LoginDto.builder()

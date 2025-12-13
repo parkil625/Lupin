@@ -25,19 +25,17 @@ public class JwtTokenProvider {
 
     private static final String AUTHORITIES_KEY = "role";
 
-    @Value("${jwt.secret}")
-    private String secretKey;
+    private final long accessTokenValidityMs;
+    private final long refreshTokenValidityMs;
+    private final SecretKey key;
 
-    // Access Token: 30분
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 30;
-    // Refresh Token: 7일
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;
-
-    private SecretKey key;
-
-    @Value("${jwt.secret}")
-    public void setKey(String secretKey) {
-        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
+    public JwtTokenProvider(
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.access-token-validity-ms}") long accessTokenValidityMs,
+            @Value("${jwt.refresh-token-validity-ms}") long refreshTokenValidityMs) {
+        this.accessTokenValidityMs = accessTokenValidityMs;
+        this.refreshTokenValidityMs = refreshTokenValidityMs;
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
     }
 
     /**
@@ -45,7 +43,7 @@ public class JwtTokenProvider {
      */
     public String createAccessToken(String userId, String role) {
         long now = (new Date()).getTime();
-        Date validity = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
+        Date validity = new Date(now + accessTokenValidityMs);
 
         return Jwts.builder()
                 .subject(userId)
@@ -61,13 +59,20 @@ public class JwtTokenProvider {
      */
     public String createRefreshToken(String userId) {
         long now = (new Date()).getTime();
-        Date validity = new Date(now + REFRESH_TOKEN_EXPIRE_TIME);
+        Date validity = new Date(now + refreshTokenValidityMs);
 
         return Jwts.builder()
                 .subject(userId)
                 .expiration(validity)
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
+    }
+
+    /**
+     * Refresh Token 만료 시간 (Redis 저장 시 사용)
+     */
+    public long getRefreshTokenValidityMs() {
+        return refreshTokenValidityMs;
     }
 
     /**

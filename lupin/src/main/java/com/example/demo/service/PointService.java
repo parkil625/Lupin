@@ -45,6 +45,20 @@ public class PointService {
         eventPublisher.publishEvent(PointChangedEvent.deduct(user.getId(), amount));
     }
 
+    /**
+     * 피드 포인트 조정 (수정 시 기존 포인트 회수 후 새 포인트 부여)
+     * 포인트 정책은 PointService가 담당 (SRP)
+     */
+    @Transactional
+    public void adjustFeedPoints(User user, long oldPoints, long newPoints) {
+        if (oldPoints > 0) {
+            deductPoints(user, oldPoints);
+        }
+        if (newPoints > 0) {
+            addPoints(user, newPoints);
+        }
+    }
+
     private void savePointLog(User user, long points) {
         PointLog pointLog = PointLog.builder()
                 .user(user)

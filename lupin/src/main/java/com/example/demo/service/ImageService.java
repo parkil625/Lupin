@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.component.ImageProcessor;
+import com.example.demo.config.ImagePolicyProperties;
 import com.example.demo.infrastructure.FileStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,26 +17,12 @@ import java.util.UUID;
 /**
  * 이미지 서비스 (Orchestrator)
  * - ImageProcessor와 FileStorage를 조율하여 이미지 업로드 흐름 관리
- * - 비즈니스 정책(크기, 품질 등) 정의
+ * - 비즈니스 정책은 ImagePolicyProperties에서 주입 (12-Factor App)
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageService {
-
-    // 원본 이미지 설정
-    private static final int MAX_WIDTH = 800;
-    private static final int MAX_HEIGHT = 800;
-    private static final int WEBP_QUALITY = 60;
-
-    // 피드 썸네일 설정
-    private static final int FEED_THUMB_WIDTH = 300;
-    private static final int FEED_THUMB_HEIGHT = 400;
-    private static final int FEED_THUMB_QUALITY = 50;
-
-    // 프로필 썸네일 설정
-    private static final int PROFILE_THUMB_SIZE = 100;
-    private static final int PROFILE_THUMB_QUALITY = 60;
 
     private static final String CONTENT_TYPE_WEBP = "image/webp";
     private static final String EXTENSION_WEBP = ".webp";
@@ -43,6 +30,7 @@ public class ImageService {
     private final FileStorage fileStorage;
     private final ImageProcessor imageProcessor;
     private final ImageMetadataService imageMetadataService;
+    private final ImagePolicyProperties imagePolicy;
 
     public String uploadImage(MultipartFile file) throws IOException {
         return uploadImage(file, null);
@@ -60,8 +48,10 @@ public class ImageService {
         byte[] originalBytes = file.getBytes();
         String uuid = UUID.randomUUID().toString();
 
+        var original = imagePolicy.original();
         // 1. WebP 변환 (ImageProcessor에 위임)
-        byte[] processedBytes = imageProcessor.convertToWebp(originalBytes, MAX_WIDTH, MAX_HEIGHT, WEBP_QUALITY);
+        byte[] processedBytes = imageProcessor.convertToWebp(
+                originalBytes, original.maxWidth(), original.maxHeight(), original.quality());
         log.info("Image converted: {} -> {} bytes", file.getOriginalFilename(), processedBytes.length);
 
         // 2. 파일명 생성 및 업로드 (FileStorage에 위임)
@@ -90,14 +80,16 @@ public class ImageService {
             byte[] thumbBytes;
 
             if ("feed".equals(prefix)) {
+                var feedThumb = imagePolicy.feedThumbnail();
                 thumbBytes = imageProcessor.createFeedThumbnail(
-                        originalBytes, FEED_THUMB_WIDTH, FEED_THUMB_HEIGHT, FEED_THUMB_QUALITY);
-                log.info("Feed thumbnail created async: {}x{}", FEED_THUMB_WIDTH, FEED_THUMB_HEIGHT);
+                        originalBytes, feedThumb.width(), feedThumb.height(), feedThumb.quality());
+                log.info("Feed thumbnail created async: {}x{}", feedThumb.width(), feedThumb.height());
             } else {
                 // profiles
+                var profileThumb = imagePolicy.profileThumbnail();
                 thumbBytes = imageProcessor.createSquareThumbnail(
-                        originalBytes, PROFILE_THUMB_SIZE, PROFILE_THUMB_QUALITY);
-                log.info("Profile thumbnail created async: {}x{}", PROFILE_THUMB_SIZE, PROFILE_THUMB_SIZE);
+                        originalBytes, profileThumb.width(), profileThumb.quality());
+                log.info("Profile thumbnail created async: {}x{}", profileThumb.width(), profileThumb.width());
             }
 
             String thumbFileName = prefix + "/thumb/" + uuid + EXTENSION_WEBP;

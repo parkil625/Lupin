@@ -75,7 +75,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
-        validateOwnership(comment, user);
+        comment.validateOwner(user);
         comment.update(content);
         return comment;
     }
@@ -85,7 +85,7 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
-        validateOwnership(comment, user);
+        comment.validateOwner(user);
 
         // 댓글 카운트 감소 (원자적 업데이트로 동시성 문제 해결)
         feedRepository.decrementCommentCount(comment.getFeed().getId());
@@ -131,12 +131,6 @@ public class CommentService {
             feedRepository.decrementCommentCountBy(feedId, replies.size());
         }
         commentRepository.deleteAll(replies);
-    }
-
-    private void validateOwnership(Comment comment, User user) {
-        if (!comment.getWriter().getId().equals(user.getId())) {
-            throw new BusinessException(ErrorCode.COMMENT_NOT_OWNER);
-        }
     }
 
     public Comment getComment(Long commentId) {

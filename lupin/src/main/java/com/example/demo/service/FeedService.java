@@ -22,7 +22,6 @@ import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -123,7 +122,7 @@ public class FeedService {
         Feed feed = feedRepository.findByIdWithWriterAndImages(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
-        validateOwnership(feed, user);
+        feed.validateOwner(user);
         feed.update(content, activity);
         return feed;
     }
@@ -177,12 +176,6 @@ public class FeedService {
      */
     public void deleteFeed(User user, Long feedId) {
         feedDeleteFacade.deleteFeed(user, feedId);
-    }
-
-    private void validateOwnership(Feed feed, User user) {
-        if (!Objects.equals(feed.getWriter().getId(), user.getId())) {
-            throw new BusinessException(ErrorCode.FEED_NOT_OWNER);
-        }
     }
 
     public Feed getFeedDetail(Long feedId) {

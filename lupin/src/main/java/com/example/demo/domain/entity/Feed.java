@@ -1,5 +1,7 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.exception.BusinessException;
+import com.example.demo.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
@@ -117,6 +119,16 @@ public class Feed {
 
     public void updateThumbnail(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    /**
+     * 소유권 검증 (Rich Domain Model)
+     * @throws BusinessException FEED_NOT_OWNER if not the owner
+     */
+    public void validateOwner(User user) {
+        if (!Objects.equals(this.writer.getId(), user.getId())) {
+            throw new BusinessException(ErrorCode.FEED_NOT_OWNER);
+        }
     }
 
     @Override

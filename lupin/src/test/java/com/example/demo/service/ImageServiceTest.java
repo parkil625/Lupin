@@ -1,16 +1,16 @@
 package com.example.demo.service;
 
 import com.example.demo.component.ImageProcessor;
+import com.example.demo.config.ImagePolicyProperties;
 import com.example.demo.infrastructure.FileStorage;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,8 +34,19 @@ class ImageServiceTest {
     @Mock
     private ImageMetadataService imageMetadataService;
 
-    @InjectMocks
+    private ImagePolicyProperties imagePolicy;
+
     private ImageService imageService;
+
+    @BeforeEach
+    void setUp() {
+        imagePolicy = new ImagePolicyProperties(
+                new ImagePolicyProperties.OriginalPolicy(800, 800, 60),
+                new ImagePolicyProperties.ThumbnailPolicy(300, 400, 50),
+                new ImagePolicyProperties.ThumbnailPolicy(100, 100, 60)
+        );
+        imageService = new ImageService(fileStorage, imageProcessor, imageMetadataService, imagePolicy);
+    }
 
     @Test
     @DisplayName("이미지를 업로드한다")

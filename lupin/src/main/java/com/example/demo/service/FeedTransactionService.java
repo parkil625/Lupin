@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -81,7 +80,7 @@ public class FeedTransactionService {
         Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
-        validateOwnership(feed, user);
+        feed.validateOwner(user);
 
         long oldPoints = feed.getPoints();
         feed.update(content, activity);
@@ -101,13 +100,8 @@ public class FeedTransactionService {
         feed.getImages().clear();
         addImages(feed, startImageKey, endImageKey, otherImageKeys);
 
-        // 포인트 조정
-        if (oldPoints > 0) {
-            pointService.deductPoints(user, oldPoints);
-        }
-        if (workoutResult.score() > 0) {
-            pointService.addPoints(user, workoutResult.score());
-        }
+        // 포인트 조정 (PointService에 위임)
+        pointService.adjustFeedPoints(user, oldPoints, workoutResult.score());
 
         feedRepository.flush();
         feed.getImages().size();
@@ -144,12 +138,6 @@ public class FeedTransactionService {
                         .build();
                 feed.getImages().add(otherImg);
             }
-        }
-    }
-
-    private void validateOwnership(Feed feed, User user) {
-        if (!Objects.equals(feed.getWriter().getId(), user.getId())) {
-            throw new BusinessException(ErrorCode.FEED_NOT_OWNER);
         }
     }
 }

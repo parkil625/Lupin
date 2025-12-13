@@ -1,5 +1,7 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.exception.BusinessException;
+import com.example.demo.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
@@ -58,5 +60,15 @@ public class Comment {
     public void update(String content) {
         this.content = content;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 소유권 검증 (Rich Domain Model)
+     * @throws BusinessException COMMENT_NOT_OWNER if not the owner
+     */
+    public void validateOwner(User user) {
+        if (!this.writer.getId().equals(user.getId())) {
+            throw new BusinessException(ErrorCode.COMMENT_NOT_OWNER);
+        }
     }
 }

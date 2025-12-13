@@ -41,8 +41,8 @@ public class CommentService {
 
         Comment savedComment = commentRepository.save(comment);
 
-        // 댓글 카운트 증가 (반정규화)
-        feed.incrementCommentCount();
+        // 댓글 카운트 증가 (원자적 업데이트로 동시성 문제 해결)
+        feedRepository.incrementCommentCount(feedId);
 
         // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
         eventPublisher.publishEvent(NotificationEvent.comment(
@@ -75,8 +75,8 @@ public class CommentService {
 
         validateOwnership(comment, user);
 
-        // 댓글 카운트 감소 (반정규화)
-        comment.getFeed().decrementCommentCount();
+        // 댓글 카운트 감소 (원자적 업데이트로 동시성 문제 해결)
+        feedRepository.decrementCommentCount(comment.getFeed().getId());
 
         // COMMENT_LIKE 알림 삭제 (refId = commentId)
         notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), "COMMENT_LIKE");
@@ -113,10 +113,10 @@ public class CommentService {
         // [최적화] 대댓글들의 좋아요 일괄 삭제 (N개 쿼리 → 1개 쿼리)
         commentLikeRepository.deleteByCommentIn(replies);
 
-        // 대댓글 카운트 감소 후 일괄 삭제
-        int replyCount = replies.size();
-        for (int i = 0; i < replyCount; i++) {
-            parentComment.getFeed().decrementCommentCount();
+        // 대댓글 카운트 감소 후 일괄 삭제 (원자적 업데이트)
+        Long feedId = parentComment.getFeed().getId();
+        for (int i = 0; i < replies.size(); i++) {
+            feedRepository.decrementCommentCount(feedId);
         }
         commentRepository.deleteAll(replies);
     }
@@ -163,8 +163,8 @@ public class CommentService {
 
         Comment savedReply = commentRepository.save(reply);
 
-        // 대댓글도 댓글 카운트 증가 (반정규화)
-        feed.incrementCommentCount();
+        // 대댓글도 댓글 카운트 증가 (원자적 업데이트로 동시성 문제 해결)
+        feedRepository.incrementCommentCount(feedId);
 
         // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
         eventPublisher.publishEvent(NotificationEvent.reply(

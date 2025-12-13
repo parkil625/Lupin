@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -80,19 +81,37 @@ public class FeedService {
         return createFeed(writer, activity, content, startImageKey, endImageKey, otherImageKeys);
     }
 
-    @Transactional
+    /**
+     * 피드 생성 (S3 I/O를 트랜잭션 외부에서 수행)
+     */
     public Feed createFeed(User writer, String activity, String content, String startImageKey, String endImageKey, List<String> otherImageKeys) {
         // 시작/끝 사진 필수 검증
         if (startImageKey == null || endImageKey == null) {
             throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED);
         }
 
-        // EXIF 시간 추출 시도 및 점수 계산
+        // [트랜잭션 외부] S3에서 EXIF 시간 추출 (네트워크 I/O)
+        Optional<LocalDateTime> startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
+        Optional<LocalDateTime> endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
+
+        log.info("EXIF extraction completed: startImage={}, endImage={}",
+                startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
+                endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
+
+        // [트랜잭션 내부] 피드 저장
+        return createFeedInternal(writer, activity, content, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
+    }
+
+    /**
+     * 피드 생성 내부 로직 (트랜잭션 내에서 실행)
+     */
+    @Transactional
+    protected Feed createFeedInternal(User writer, String activity, String content,
+                                      String startImageKey, String endImageKey, List<String> otherImageKeys,
+                                      Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt) {
+        // 점수 계산
         int score = 0;
         int calories = 0;
-
-        var startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
-        var endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
 
         if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
             LocalDateTime startTime = startTimeOpt.get();
@@ -109,11 +128,6 @@ public class FeedService {
             } else {
                 log.warn("Workout time validation failed - score set to 0");
             }
-        } else {
-            log.warn("EXIF time not found: startImage={}, endImage={}",
-                    startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
-                    endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
-            // EXIF 없으면 점수=0으로 피드 생성
         }
 
         // 피드 저장 (EXIF 없어도 점수=0으로 저장)
@@ -193,8 +207,29 @@ public class FeedService {
         return updateFeed(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys);
     }
 
-    @Transactional
+    /**
+     * 피드 수정 (S3 I/O를 트랜잭션 외부에서 수행)
+     */
     public Feed updateFeed(User user, Long feedId, String content, String activity, String startImageKey, String endImageKey, List<String> otherImageKeys) {
+        // [트랜잭션 외부] S3에서 EXIF 시간 추출 (네트워크 I/O)
+        Optional<LocalDateTime> startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
+        Optional<LocalDateTime> endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
+
+        log.info("Feed update - EXIF extraction completed: startImage={}, endImage={}",
+                startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
+                endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
+
+        // [트랜잭션 내부] 피드 수정
+        return updateFeedInternal(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
+    }
+
+    /**
+     * 피드 수정 내부 로직 (트랜잭션 내에서 실행)
+     */
+    @Transactional
+    protected Feed updateFeedInternal(User user, Long feedId, String content, String activity,
+                                      String startImageKey, String endImageKey, List<String> otherImageKeys,
+                                      Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt) {
         Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
@@ -206,12 +241,9 @@ public class FeedService {
         // 내용/운동종류 업데이트
         feed.update(content, activity);
 
-        // EXIF 시간 추출 및 점수 계산
+        // 점수 계산
         int score = 0;
         int calories = 0;
-
-        var startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
-        var endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
 
         if (startTimeOpt.isPresent() && endTimeOpt.isPresent()) {
             LocalDateTime startTime = startTimeOpt.get();

@@ -5,6 +5,7 @@ import com.example.demo.domain.entity.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -48,4 +49,24 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     // [activeDays] 여러 사용자의 이번 달 activeDays를 한 번에 조회
     @Query("SELECT f.writer.id, COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer.id IN :writerIds AND f.createdAt BETWEEN :start AND :end GROUP BY f.writer.id")
     List<Object[]> countActiveDaysByWriterIds(@Param("writerIds") List<Long> writerIds, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // [동시성] 좋아요 카운트 원자적 증가
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Feed f SET f.likeCount = f.likeCount + 1 WHERE f.id = :feedId")
+    void incrementLikeCount(@Param("feedId") Long feedId);
+
+    // [동시성] 좋아요 카운트 원자적 감소
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Feed f SET f.likeCount = CASE WHEN f.likeCount > 0 THEN f.likeCount - 1 ELSE 0 END WHERE f.id = :feedId")
+    void decrementLikeCount(@Param("feedId") Long feedId);
+
+    // [동시성] 댓글 카운트 원자적 증가
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Feed f SET f.commentCount = f.commentCount + 1 WHERE f.id = :feedId")
+    void incrementCommentCount(@Param("feedId") Long feedId);
+
+    // [동시성] 댓글 카운트 원자적 감소
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Feed f SET f.commentCount = CASE WHEN f.commentCount > 0 THEN f.commentCount - 1 ELSE 0 END WHERE f.id = :feedId")
+    void decrementCommentCount(@Param("feedId") Long feedId);
 }

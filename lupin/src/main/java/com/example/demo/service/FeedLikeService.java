@@ -41,8 +41,8 @@ public class FeedLikeService {
 
         FeedLike savedFeedLike = feedLikeRepository.save(feedLike);
 
-        // 좋아요 카운트 증가 (반정규화)
-        feed.incrementLikeCount();
+        // 좋아요 카운트 증가 (원자적 업데이트로 동시성 문제 해결)
+        feedRepository.incrementLikeCount(feedId);
 
         // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
         eventPublisher.publishEvent(NotificationEvent.feedLike(
@@ -65,8 +65,8 @@ public class FeedLikeService {
         FeedLike feedLike = feedLikeRepository.findByUserAndFeed(user, feed)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
-        // 좋아요 카운트 감소 (반정규화)
-        feed.decrementLikeCount();
+        // 좋아요 카운트 감소 (원자적 업데이트로 동시성 문제 해결)
+        feedRepository.decrementLikeCount(feedId);
 
         // refId = feedId (피드 참조)
         notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), "FEED_LIKE");

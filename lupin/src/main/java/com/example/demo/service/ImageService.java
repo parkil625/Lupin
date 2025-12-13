@@ -6,6 +6,7 @@ import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -49,12 +50,14 @@ public class ImageService {
     public String uploadImage(MultipartFile file, String prefix) throws IOException {
         // WebP 변환 시도
         byte[] imageBytes;
-        byte[] thumbBytes = null;
+        byte[] originalBytes = file.getBytes(); // 비동기 썸네일 생성용 원본 저장
         String extension;
         String contentType;
 
         try {
-            ImmutableImage image = ImmutableImage.loader().fromStream(file.getInputStream());
+            ImmutableImage image = ImmutableImage.loader().fromStream(
+                new ByteArrayInputStream(originalBytes)
+            );
 
             // 원본 리사이징 + WebP 변환
             if (image.width > MAX_WIDTH || image.height > MAX_HEIGHT) {
@@ -62,30 +65,13 @@ public class ImageService {
             }
             imageBytes = image.bytes(WebpWriter.DEFAULT.withQ(WEBP_QUALITY));
 
-            // 썸네일 생성 (feed, profiles 폴더)
-            if ("feed".equals(prefix)) {
-                ImmutableImage thumbImage = ImmutableImage.loader().fromStream(
-                    new ByteArrayInputStream(file.getBytes())
-                );
-                thumbImage = thumbImage.cover(THUMB_WIDTH, THUMB_HEIGHT);
-                thumbBytes = thumbImage.bytes(WebpWriter.DEFAULT.withQ(THUMB_QUALITY));
-                log.info("Feed thumbnail created: {}x{}, {} bytes", THUMB_WIDTH, THUMB_HEIGHT, thumbBytes.length);
-            } else if ("profiles".equals(prefix)) {
-                ImmutableImage thumbImage = ImmutableImage.loader().fromStream(
-                    new ByteArrayInputStream(file.getBytes())
-                );
-                thumbImage = thumbImage.cover(PROFILE_THUMB_SIZE, PROFILE_THUMB_SIZE);
-                thumbBytes = thumbImage.bytes(WebpWriter.DEFAULT.withQ(PROFILE_THUMB_QUALITY));
-                log.info("Profile thumbnail created: {}x{}, {} bytes", PROFILE_THUMB_SIZE, PROFILE_THUMB_SIZE, thumbBytes.length);
-            }
-
             extension = ".webp";
             contentType = "image/webp";
             log.info("Image converted to WebP: {} -> {} bytes", file.getOriginalFilename(), imageBytes.length);
         } catch (Exception e) {
             // WebP 변환 실패 시 원본 사용 (fallback)
             log.warn("WebP conversion failed, using original: {}", e.getMessage());
-            imageBytes = file.getBytes();
+            imageBytes = originalBytes;
             extension = getExtension(file.getOriginalFilename());
             contentType = file.getContentType();
         }
@@ -109,8 +95,37 @@ public class ImageService {
 
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(imageBytes));
 
-        // 썸네일 업로드 (feed, profiles 폴더)
-        if (thumbBytes != null && ("feed".equals(prefix) || "profiles".equals(prefix))) {
+        // 썸네일 비동기 생성 (feed, profiles 폴더)
+        if ("feed".equals(prefix) || "profiles".equals(prefix)) {
+            generateThumbnailAsync(originalBytes, prefix, uuid, extension, contentType);
+        }
+
+        // URL 생성 (Cloudflare CDN 사용)
+        return String.format("https://cdn.lupin-care.com/%s", fileName);
+    }
+
+    /**
+     * 썸네일 비동기 생성 및 S3 업로드
+     */
+    @Async
+    public void generateThumbnailAsync(byte[] originalBytes, String prefix, String uuid, String extension, String contentType) {
+        try {
+            byte[] thumbBytes;
+            ImmutableImage thumbImage = ImmutableImage.loader().fromStream(
+                new ByteArrayInputStream(originalBytes)
+            );
+
+            if ("feed".equals(prefix)) {
+                thumbImage = thumbImage.cover(THUMB_WIDTH, THUMB_HEIGHT);
+                thumbBytes = thumbImage.bytes(WebpWriter.DEFAULT.withQ(THUMB_QUALITY));
+                log.info("Feed thumbnail created async: {}x{}, {} bytes", THUMB_WIDTH, THUMB_HEIGHT, thumbBytes.length);
+            } else {
+                // profiles
+                thumbImage = thumbImage.cover(PROFILE_THUMB_SIZE, PROFILE_THUMB_SIZE);
+                thumbBytes = thumbImage.bytes(WebpWriter.DEFAULT.withQ(PROFILE_THUMB_QUALITY));
+                log.info("Profile thumbnail created async: {}x{}, {} bytes", PROFILE_THUMB_SIZE, PROFILE_THUMB_SIZE, thumbBytes.length);
+            }
+
             String thumbFileName = prefix + "/thumb/" + uuid + extension;
             PutObjectRequest thumbRequest = PutObjectRequest.builder()
                     .bucket(bucket)
@@ -119,11 +134,10 @@ public class ImageService {
                     .cacheControl("max-age=31536000, immutable")
                     .build();
             s3Client.putObject(thumbRequest, RequestBody.fromBytes(thumbBytes));
-            log.info("Thumbnail uploaded: {}", thumbFileName);
+            log.info("Thumbnail uploaded async: {}", thumbFileName);
+        } catch (Exception e) {
+            log.error("Async thumbnail generation failed: prefix={}, uuid={}", prefix, uuid, e);
         }
-
-        // URL 생성 (Cloudflare CDN 사용)
-        return String.format("https://cdn.lupin-care.com/%s", fileName);
     }
 
     private String getExtension(String filename) {

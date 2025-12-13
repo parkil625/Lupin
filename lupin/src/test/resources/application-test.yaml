@@ -39,6 +39,10 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.BasicBinder: trace
 
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+
 jwt:
   secret: dGVzdHNlY3JldGtleWZvcnRlc3RpbmdwdXJwb3Nlc29ubHkxMjM0NTY3ODkwMTIzNDU2Nzg5MA==
 

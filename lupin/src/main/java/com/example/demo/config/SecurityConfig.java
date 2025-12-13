@@ -4,6 +4,7 @@ import com.example.demo.security.JwtAccessDeniedHandler;
 import com.example.demo.security.JwtAuthenticationEntryPoint;
 import com.example.demo.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -21,6 +22,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Spring Security 설정 (Modern Spring Security 6.x 방식)
@@ -35,6 +37,9 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOriginsConfig;
+
     /**
      * BCrypt 패스워드 인코더 빈 등록
      */
@@ -44,20 +49,13 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS 설정
+     * CORS 설정 (설정 파일에서 origin 목록 주입)
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://43.202.79.166",
-                "https://43.202.79.166",
-                "https://lupin-eosin.vercel.app",
-                "https://lupin-care.com",
-                "https://www.lupin-care.com",
-                "https://api.lupin-care.com"
-        ));
+        List<String> allowedOrigins = Arrays.asList(allowedOriginsConfig.split(","));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true);

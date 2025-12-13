@@ -48,6 +48,11 @@ export const useNotificationSse = ({
       console.log('[SSE] 연결 성공:', event.data);
     });
 
+    // Heartbeat 이벤트 (연결 유지용, 로그 생략)
+    eventSource.addEventListener('heartbeat', () => {
+      // 연결 유지용 heartbeat - 별도 처리 불필요
+    });
+
     eventSource.addEventListener('notification', (event) => {
       try {
         const notification: Notification = JSON.parse(event.data);

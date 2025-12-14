@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import com.example.demo.config.CacheConfig;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.response.UserRankingResponse;
@@ -13,9 +12,6 @@ import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +42,6 @@ public class UserService {
         user.updateProfile(name, height, weight);
     }
 
-    @Cacheable(value = CacheConfig.RANKING_CACHE, key = "#limit")
     public List<UserRankingResponse> getTopUsersByPoints(int limit) {
         List<Object[]> results = pointLogRepository.findAllUsersWithPointsRanked(PageRequest.of(0, limit));
         List<UserRankingResponse> rankings = new ArrayList<>();
@@ -59,7 +54,6 @@ public class UserService {
         return rankings;
     }
 
-    @Cacheable(value = CacheConfig.USER_RANKING_CONTEXT_CACHE, key = "#userId")
     public List<UserRankingResponse> getUserRankingContext(Long userId) {
         List<Object[]> results = pointLogRepository.findUserRankingContext(userId);
         return results.stream()
@@ -107,16 +101,11 @@ public class UserService {
     /**
      * 모든 유저의 totalPoints를 point_logs에서 일괄 동기화
      * 반정규화 필드 초기 동기화 또는 복구용
-     * 동시에 랭킹 캐시도 무효화
      */
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = CacheConfig.RANKING_CACHE, allEntries = true),
-            @CacheEvict(value = CacheConfig.USER_RANKING_CONTEXT_CACHE, allEntries = true)
-    })
     public int syncAllUserTotalPoints() {
         int updatedCount = userRepository.syncAllUserTotalPoints();
-        log.info("Synced totalPoints for {} users, ranking caches evicted", updatedCount);
+        log.info("Synced totalPoints for {} users", updatedCount);
         return updatedCount;
     }
 }

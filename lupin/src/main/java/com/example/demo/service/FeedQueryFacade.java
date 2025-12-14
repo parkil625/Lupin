@@ -54,6 +54,7 @@ public class FeedQueryFacade {
     /**
      * 피드 생성 (Command 패턴)
      */
+    @Transactional
     public FeedResponse createFeed(FeedCreateCommand command) {
         Feed feed = feedService.createFeed(command);
         return feedMapper.toResponse(feed);
@@ -62,6 +63,7 @@ public class FeedQueryFacade {
     /**
      * 피드 수정 (Command 패턴)
      */
+    @Transactional
     public FeedResponse updateFeed(FeedUpdateCommand command) {
         Feed feed = feedService.updateFeed(command);
         return feedMapper.toResponse(feed);
@@ -70,6 +72,7 @@ public class FeedQueryFacade {
     /**
      * 피드 삭제
      */
+    @Transactional
     public void deleteFeed(User user, Long feedId) {
         feedService.deleteFeed(user, feedId);
     }

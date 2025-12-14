@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -135,5 +136,32 @@ class AppointmentServiceTest {
         // Then
         assertThat(inProgressAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
         verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
+
+    @Test
+    @DisplayName("환자 ID로 예약 목록 조회")
+    void getPatientAppointments_ShouldReturnAppointmentList() {
+        // Given
+        Long patientId = 1L;
+        Appointment appointment2 = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 5, 10, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        List<Appointment> expectedAppointments = List.of(appointment2, appointment);
+        given(appointmentRepository.findByPatientIdOrderByDateDesc(patientId))
+                .willReturn(expectedAppointments);
+
+        // When
+        List<Appointment> result = appointmentService.getPatientAppointments(patientId);
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getId()).isEqualTo(2L);
+        assertThat(result.get(1).getId()).isEqualTo(1L);
+        verify(appointmentRepository, times(1)).findByPatientIdOrderByDateDesc(patientId);
     }
 }

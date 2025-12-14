@@ -30,10 +30,22 @@ public class AppointmentController {
     }
 
     @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<AppointmentResponse>> getPatientAppointments(
+    public ResponseEntity<List<AppointmentResponse>> getDoctorAppointments(
             @PathVariable("doctorId") Long doctorId){
 
         List<AppointmentResponse> list = appointmentService.getDoctorAppointments(doctorId)
+                .stream()
+                .map(AppointmentResponse::from)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<AppointmentResponse>> getPatientAppointments(
+            @PathVariable("patientId") Long patientId){
+
+        List<AppointmentResponse> list = appointmentService.getPatientAppointments(patientId)
                 .stream()
                 .map(AppointmentResponse::from)
                 .collect(Collectors.toList());

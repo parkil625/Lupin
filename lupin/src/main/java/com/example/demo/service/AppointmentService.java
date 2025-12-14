@@ -67,6 +67,10 @@ public class AppointmentService {
         return appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
     }
 
+    public List<Appointment> getPatientAppointments(Long patientId) {
+        return appointmentRepository.findByPatientIdOrderByDateDesc(patientId);
+    }
+
     @Transactional
     public void cancelAppointment(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)

@@ -127,7 +127,7 @@ public class User {
     }
 
     // 의사 진료과 변경용
-    public void assignDepartemt(String departement) {
-        this.departmemt = departement;
+    public void assignDepartment(String department) {
+        this.department = department;
     }
 }

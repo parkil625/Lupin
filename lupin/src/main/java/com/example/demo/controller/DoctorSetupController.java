@@ -45,7 +45,7 @@ public class DoctorSetupController {
 
             User doctor = userRepository.findById(doctorId).orElse(null);
             if (doctor != null && doctor.getRole() == Role.DOCTOR) {
-                doctor.assignDepartemt(department);
+                doctor.assignDepartment(department);
                 userRepository.save(doctor);
                 updatedCount++;
                 log.info("의사 ID {}: {} 진료과 설정 완료", doctorId, department);

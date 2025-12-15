@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 
@@ -19,49 +20,80 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final ChatService chatService;
 
-    @Transactional
+    private final RedissonClient redissonClient;
+    private final PlatformTransactionManager transactionManager;
+
     public Long createAppointment(AppointmentRequest request) {
-        // 1. 환자 & 의사 존재 여부 확인
-        User patient = userRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 환자입니다."));
 
-        User doctor = userRepository.findById(request.getDoctorId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 의사입니다."));
+        String lockKey = "appointment:lock:doctor:" + request.getDoctorId();
+        RLock lock = redissonClient.getLock(lockKey);
 
-        if (doctor.getRole() != Role.DOCTOR) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "해당 사용자는 의사가 아닙니다.");
+        try {
+
+            boolean avaiable = lock.tryLock(5, 10, TimeUnit.SECONDS);
+
+            if (!avaiable) {
+                log.warn("락 획득 실패 - 동시 요청 발생: {}", lockKey);
+                throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "현재 예약 처리가 지연되고 있거나 이미 예약 중입니다.");    
+            }
+
+            TransactionTemplate TransactionTemplate = new TransactionTemplate(transactionManager);
+
+            return TransactionTemplate.execute(status -> {
+
+                // 1. 환자 & 의사 존재 여부 확인
+                User patient = userRepository.findById(request.getPatientId())
+                        .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 환자입니다."));
+
+                User doctor = userRepository.findById(request.getDoctorId())
+                        .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 의사입니다."));
+
+                if (doctor.getRole() != Role.DOCTOR) {
+                    throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "해당 사용자는 의사가 아닙니다.");
+                }
+
+                if (appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), request.getDate())) {
+                    throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "해당 시간에 예약이 이미 꽉 찼습니다.");
+                }
+
+                if (appointmentRepository.existsByPatientIdAndDate(patient.getId(), request.getDate())) {
+                    throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "같은 시간에 다른 예약이 잡혀 있습니다.");
+                }
+
+                Appointment appointment = Appointment.builder()
+                        .patient(patient)
+                        .doctor(doctor)
+                        .date(request.getDate())
+                        .status(AppointmentStatus.SCHEDULED)
+                        .build();
+
+                Appointment savedAppointment = appointmentRepository.save(appointment);
+
+                // 예약 생성 시 자동으로 채팅방 생성 (메시지 없이)
+                String roomId = chatService.createChatRoomForAppointment(savedAppointment.getId());
+                log.info("예약 ID {}에 대한 채팅방 생성 완료: {}", savedAppointment.getId(), roomId);
+
+                return savedAppointment.getId();
+            });
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "예약 처리 중 서버 오류가 발생했습니다.");
+    
+        } finally {
+            if (lock.isLocked() && lock.isHeldByCurrentThread()){
+            lock.unlock();
+            }
         }
-
-        if (appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), request.getDate())) {
-            throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "해당 시간에 예약이 이미 꽉 찼습니다.");
-        }
-
-        if (appointmentRepository.existsByPatientIdAndDate(patient.getId(), request.getDate())) {
-            throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "같은 시간에 다른 예약이 잡혀 있습니다.");
-        }
-
-        Appointment appointment = Appointment.builder()
-                .patient(patient)
-                .doctor(doctor)
-                .date(request.getDate())
-                .status(AppointmentStatus.SCHEDULED)
-                .build();
-
-        Appointment savedAppointment = appointmentRepository.save(appointment);
-
-        // 예약 생성 시 자동으로 채팅방 생성 (메시지 없이)
-        String roomId = chatService.createChatRoomForAppointment(savedAppointment.getId());
-        log.info("예약 ID {}에 대한 채팅방 생성 완료: {}", savedAppointment.getId(), roomId);
-
-        return savedAppointment.getId();
     }
+
+    
 
     public List<Appointment> getDoctorAppointments(Long doctorId) {
         return appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);

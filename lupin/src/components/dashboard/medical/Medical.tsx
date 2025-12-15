@@ -145,7 +145,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     "16:00",
     "17:00",
   ];
-  const bookedTimes = ["10:00", "15:00"];
+  const bookedTimes: string[] = [];
 
   const hasActiveChat = activeAppointment !== null && !isChatEnded;
 

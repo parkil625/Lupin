@@ -26,6 +26,7 @@ import { Prescription } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { appointmentApi, AppointmentResponse } from "@/api/appointmentApi";
+import { userApi } from "@/api/userApi";
 import { toast } from "sonner";
 
 interface MedicalProps {
@@ -205,17 +206,32 @@ MedicalProps) {
   const handleConfirmAppointment = async () => {
     if (!selectedDepartment || !selectedDate || !selectedTime) return;
 
-    // 진료과별 의사 ID 및 이름 매핑 (하드코딩)
-    const departmentMapping: Record<string, { id: number; name: string; displayName: string }> = {
-      internal: { id: 22, name: "김준호", displayName: "내과" },
-      surgery: { id: 23, name: "이준호", displayName: "외과" },
-      psychiatry: { id: 24, name: "박서연", displayName: "신경정신과" },
-      dermatology: { id: 25, name: "최지은", displayName: "피부과" },
+    // 진료과 한글 이름 매핑
+    const departmentNames: Record<string, string> = {
+      internal: "내과",
+      surgery: "외과",
+      psychiatry: "신경정신과",
+      dermatology: "피부과",
     };
 
-    const selectedDoctor = departmentMapping[selectedDepartment];
-    if (!selectedDoctor) {
-      toast.error("올바른 진료과를 선택해주세요.");
+    const departmentKoreanName = departmentNames[selectedDepartment];
+
+    // 의사 조회
+    let selectedDoctor: { id: number; name: string; department: string };
+    try {
+      // API를 통해 진료과별 의사 조회 (한글 진료과명 사용)
+      const doctors = await userApi.getDoctorsByDepartment(departmentKoreanName);
+
+      if (doctors.length === 0) {
+        toast.error("해당 진료과에 배정된 의사가 없습니다.");
+        return;
+      }
+
+      // 첫 번째 의사 선택
+      selectedDoctor = doctors[0];
+    } catch (error) {
+      console.error("의사 조회 실패:", error);
+      toast.error("의사 정보를 불러오는데 실패했습니다.");
       return;
     }
 
@@ -238,7 +254,7 @@ MedicalProps) {
         id: appointmentId,
         doctorId: selectedDoctor.id,
         doctorName: selectedDoctor.name,
-        type: `${selectedDoctor.displayName} 상담`,
+        type: `${departmentKoreanName} 상담`,
       });
       setIsChatEnded(false);
       setShowAppointmentView(false);
@@ -246,7 +262,7 @@ MedicalProps) {
       toast.success(
         `${selectedDate.toLocaleDateString(
           "ko-KR"
-        )} ${selectedTime} ${selectedDoctor.displayName} 예약이 완료되었습니다`
+        )} ${selectedTime} ${departmentKoreanName} 예약이 완료되었습니다`
       );
 
       // 예약 목록 다시 로드

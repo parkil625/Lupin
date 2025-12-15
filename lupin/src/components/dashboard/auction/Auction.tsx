@@ -230,8 +230,6 @@ try {
       fetchBidHistory(); // 입찰 내역 갱신
       fetchUserPoints(); // 내 잔액 갱신
 
-      setBidAmount(""); // 입력창 초기화
-
     } catch (error: unknown) {
       console.error("입찰 실패:", error);
       // 백엔드 에러 메시지가 있다면 보여주기

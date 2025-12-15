@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import org.redisson.api.RedissonClient;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.List;
 

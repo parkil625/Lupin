@@ -243,16 +243,25 @@ MedicalProps) {
     }
 
     try {
-      // 날짜 + 시간 조합 (ISO 8601 형식)
+      // 날짜 + 시간 조합 (로컬 시간 문자열 생성)
       const [hours, minutes] = selectedTime.split(":").map(Number);
       const appointmentDateTime = new Date(selectedDate);
-      appointmentDateTime.setHours(hours, minutes, 0, 0);
+
+      // ISO String 변환 시 UTC로 변경되는 것을 방지하기 위해 수동으로 포맷팅합니다.
+      const year = appointmentDateTime.getFullYear();
+      const month = String(appointmentDateTime.getMonth() + 1).padStart(2, "0");
+      const day = String(appointmentDateTime.getDate()).padStart(2, "0");
+      const hoursString = String(hours).padStart(2, "0");
+      const minutesString = String(minutes).padStart(2, "0");
+
+      // "YYYY-MM-DDTHH:mm:ss" 형식 (UTC 변환 없음)
+      const localISOTime = `${year}-${month}-${day}T${hoursString}:${minutesString}:00`;
 
       // 백엔드 API 호출
       const appointmentId = await appointmentApi.createAppointment({
         patientId: currentPatientId,
         doctorId: selectedDoctor.id,
-        date: appointmentDateTime.toISOString(),
+        date: localISOTime,
       });
 
       console.log("✅ 예약 생성 성공:", appointmentId);
@@ -481,7 +490,8 @@ MedicalProps) {
                               {apt.doctorName} 의사
                             </div>
                             <div className="text-xs text-gray-600">
-                              진료 예약
+                              {/* departmentName 필드가 있다면 표시하고, 없다면 '진료 예약' 표시 */}
+                              {apt.departmentName || "진료 예약"}
                             </div>
                           </div>
                           <Badge

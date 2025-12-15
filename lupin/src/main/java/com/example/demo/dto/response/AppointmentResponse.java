@@ -16,6 +16,7 @@ public class AppointmentResponse {
     private String patientName;
     private Long doctorId;
     private String doctorName;
+    private String departmentName;
     private LocalDateTime date;
     private AppointmentStatus status;
 
@@ -26,6 +27,7 @@ public class AppointmentResponse {
                 .patientName(appointment.getPatient().getName())
                 .doctorId(appointment.getDoctor().getId())
                 .doctorName(appointment.getDoctor().getName())
+                .departmentName(appointment.getDoctor().getDepartment())
                 .date(appointment.getDate())
                 .status(appointment.getStatus())
                 .build();

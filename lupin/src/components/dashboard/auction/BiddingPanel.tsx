@@ -5,6 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Clock, Trophy, AlertCircle } from "lucide-react";
 import { AuctionData, BidHistory } from "@/types/auction.types";
+import {useEffect} from "react";
+
 
 interface BiddingPanelProps {
   selectedAuction: AuctionData | null;
@@ -23,6 +25,12 @@ export const BiddingPanel = ({
   bidHistory,
   userPoints,
 }: BiddingPanelProps) => {
+    useEffect(() => {
+        if (selectedAuction) {
+            setBidAmount((selectedAuction.currentPrice + 1).toString());
+        }
+    }, [selectedAuction?.currentPrice, setBidAmount]);
+
   if (!selectedAuction || selectedAuction.status !== "ACTIVE") {
     return (
       <Card className="backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg">

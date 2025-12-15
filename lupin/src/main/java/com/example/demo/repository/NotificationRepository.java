@@ -29,17 +29,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("SELECT COUNT(n) > 0 FROM Notification n WHERE n.user.id = :userId AND n.isRead = false")
     boolean existsByUserIdAndIsReadFalse(@Param("userId") Long userId);
 
-    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.isRead = false")
-    List<Notification> findByUserIdAndIsReadFalse(@Param("userId") Long userId);
-
     // [최적화] 전체 읽음 처리 - 벌크 업데이트 (userId만 사용하여 detached entity 문제 방지)
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.user.id = :userId AND n.isRead = false")
     int markAllAsReadByUserId(@Param("userId") Long userId);
-
-    @Modifying
-    @Query("DELETE FROM Notification n WHERE n.refId = :refId AND n.type IN :types")
-    void deleteByRefIdAndTypeIn(@Param("refId") String refId, @Param("types") List<NotificationType> types);
 
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.refId = :refId AND n.type = :type")

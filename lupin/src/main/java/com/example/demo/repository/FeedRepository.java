@@ -48,10 +48,6 @@ public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositor
 
     // 기본 findById는 JpaRepository에서 제공
 
-    // [activeDays] 사용자의 이번 달 피드 작성 고유 날짜 수 (writerId만 사용하여 detached entity 문제 방지)
-    @Query("SELECT COUNT(DISTINCT CAST(f.createdAt AS LocalDate)) FROM Feed f WHERE f.writer.id = :writerId AND f.createdAt BETWEEN :start AND :end")
-    int countDistinctDaysByWriterIdAndCreatedAtBetween(@Param("writerId") Long writerId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
-
     // [동시성] 댓글 카운트 원자적 증가
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Feed f SET f.commentCount = f.commentCount + 1 WHERE f.id = :feedId")

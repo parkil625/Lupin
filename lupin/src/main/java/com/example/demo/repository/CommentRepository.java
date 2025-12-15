@@ -24,10 +24,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByFeed(Feed feed);
 
     @Modifying
-    @Query("DELETE FROM Comment c WHERE c.feed = :feed AND c.parent IS NOT NULL")
-    void deleteRepliesByFeed(@Param("feed") Feed feed);
-
-    @Modifying
     @Query("DELETE FROM Comment c WHERE c.feed = :feed AND c.parent IS NULL")
     void deleteParentCommentsByFeed(@Param("feed") Feed feed);
 

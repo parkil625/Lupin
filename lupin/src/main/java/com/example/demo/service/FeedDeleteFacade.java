@@ -76,7 +76,7 @@ public class FeedDeleteFacade {
 
         LocalDateTime recoveryDeadline = LocalDateTime.now().minusDays(feedProperties.getPointRecoveryDays());
         if (feed.getCreatedAt().isAfter(recoveryDeadline)) {
-            pointService.deductPoints(feed.getWriter(), feed.getPoints());
+            pointService.cancelPoints(feed.getWriter(), feed.getPoints());
             log.debug("Points recovered for deleted feed: feedId={}, points={}", feed.getId(), feed.getPoints());
         }
     }

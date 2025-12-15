@@ -78,14 +78,6 @@ public class FeedLikeService {
     }
 
     /**
-     * 피드 삭제 시 좋아요 일괄 삭제
-     */
-    @Transactional
-    public void deleteAllByFeed(Feed feed) {
-        feedLikeRepository.deleteByFeed(feed);
-    }
-
-    /**
      * 사용자의 피드 좋아요 여부 확인
      */
     public boolean isLiked(Long userId, Long feedId) {

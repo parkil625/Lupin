@@ -36,6 +36,7 @@ public class FeedReportService {
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final UserPenaltyService userPenaltyService;
+    private final PointService pointService;
 
     @Transactional
     public void toggleReport(User reporter, Long feedId) {
@@ -104,17 +105,13 @@ public class FeedReportService {
             notificationRepository.deleteByRefIdInAndType(allCommentIds, NotificationType.COMMENT_LIKE);
         }
 
+        User writer = feed.getWriter();
+
+        pointService.recoverFeedPoints(writer, feed.getPoints(), feed.getCreatedAt());
+
         feedLikeRepository.deleteByFeed(feed);
         feedImageRepository.deleteByFeed(feed);
         feedReportRepository.deleteByFeed(feed);
         feedRepository.delete(feed);
-    }
-
-    /**
-     * 피드 삭제 시 신고 일괄 삭제
-     */
-    @Transactional
-    public void deleteAllByFeed(Feed feed) {
-        feedReportRepository.deleteByFeed(feed);
     }
 }

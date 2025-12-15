@@ -2,7 +2,6 @@ package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedLike;
-import com.example.demo.domain.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -39,6 +38,4 @@ public interface FeedLikeRepository extends JpaRepository<FeedLike, Long> {
     void deleteByFeedId(@Param("feedId") Long feedId);
 
     long countByFeed(Feed feed);
-
-    List<FeedLike> findByFeed(Feed feed);
 }

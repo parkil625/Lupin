@@ -13,6 +13,8 @@ import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,10 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,6 +37,7 @@ public class UserService {
     private final PointLogRepository pointLogRepository;
     private final FeedRepository feedRepository;
     private final CommentRepository commentRepository;
+    private final RedisTemplate<String, String> redisTemplate;
 
     public User getUserInfo(Long userId) {
         return userRepository.findById(userId)
@@ -43,15 +50,41 @@ public class UserService {
     }
 
     public List<UserRankingResponse> getTopUsersByPoints(int limit) {
-        List<Object[]> results = pointLogRepository.findAllUsersWithPointsRanked(PageRequest.of(0, limit));
-        List<UserRankingResponse> rankings = new ArrayList<>();
-        int rank = 1;
-        for (Object[] row : results) {
-            User user = (User) row[0];
-            Long points = (Long) row[1];
-            rankings.add(UserRankingResponse.of(user, points != null ? points : 0L, rank++));
+        String key = "ranking:monthly:" + YearMonth.now().toString();
+
+        // 1. Redis에서 점수가 높은 순서대로 (Reverse) 가져와요.
+        // TypedTuple은 "유저ID"와 "점수"를 같이 담고 있는 바구니예요.
+        Set<ZSetOperations.TypedTuple<String>> topRankings =
+                redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, limit - 1);
+
+        if (topRankings == null || topRankings.isEmpty()) {
+            return new ArrayList<>();
         }
-        return rankings;
+
+        // [N+1 문제 해결] ID 목록 추출 후 Bulk 조회
+        List<Long> userIds = topRankings.stream()
+                .map(tuple -> Long.valueOf(tuple.getValue()))
+                .toList();
+
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        List<UserRankingResponse> responses = new ArrayList<>();
+        int rank = 1;
+
+        // 2. 랭킹 순서대로 조립
+        for (ZSetOperations.TypedTuple<String> tuple : topRankings) {
+            Long userId = Long.valueOf(tuple.getValue());
+            long points = tuple.getScore().longValue();
+
+            User user = userMap.get(userId);
+
+            if (user != null) {
+                responses.add(UserRankingResponse.of(user, points, rank++));
+            }
+        }
+
+        return responses;
     }
 
     public List<UserRankingResponse> getUserRankingContext(Long userId) {

@@ -176,7 +176,10 @@ MedicalProps) {
   };
 
   // 예약 취소 핸들러
-  const handleCancelAppointment = async (appointmentId: number, e: React.MouseEvent) => {
+  const handleCancelAppointment = async (
+    appointmentId: number,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation(); // 이벤트 버블링 방지
 
     if (!confirm("예약을 취소하시겠습니까?")) {
@@ -188,7 +191,9 @@ MedicalProps) {
       toast.success("예약이 취소되었습니다.");
 
       // 예약 목록 다시 로드
-      const data = await appointmentApi.getPatientAppointments(currentPatientId);
+      const data = await appointmentApi.getPatientAppointments(
+        currentPatientId
+      );
       setAppointments(data);
 
       // 현재 채팅 중인 예약이 취소된 경우 채팅방 닫기
@@ -220,7 +225,9 @@ MedicalProps) {
     let selectedDoctor: { id: number; name: string; department: string };
     try {
       // API를 통해 진료과별 의사 조회 (한글 진료과명 사용)
-      const doctors = await userApi.getDoctorsByDepartment(departmentKoreanName);
+      const doctors = await userApi.getDoctorsByDepartment(
+        departmentKoreanName
+      );
 
       if (doctors.length === 0) {
         toast.error("해당 진료과에 배정된 의사가 없습니다.");
@@ -266,7 +273,9 @@ MedicalProps) {
       );
 
       // 예약 목록 다시 로드
-      const data = await appointmentApi.getPatientAppointments(currentPatientId);
+      const data = await appointmentApi.getPatientAppointments(
+        currentPatientId
+      );
       setAppointments(data);
 
       // 상태 초기화
@@ -287,9 +296,7 @@ MedicalProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // WebSocket 연결 (예약이 있을 때만)
-  const roomId = activeAppointment
-    ? `appointment_${activeAppointment.id}`
-    : "";
+  const roomId = activeAppointment ? `appointment_${activeAppointment.id}` : "";
 
   // 메시지 수신 콜백 (HEAD의 로직 유지: 본인이 보낸 메시지는 알림 표시 안함)
   const handleMessageReceived = useCallback(
@@ -303,10 +310,7 @@ MedicalProps) {
     [currentUserId]
   );
 
-  const {
-    isConnected,
-    sendMessage: sendWebSocketMessage,
-  } = useWebSocket({
+  const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
     roomId,
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
@@ -334,7 +338,6 @@ MedicalProps) {
     };
 
     loadMessages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, isConnected, currentUserId]);
 
   const handleSendMessage = () => {
@@ -394,7 +397,9 @@ MedicalProps) {
   useEffect(() => {
     const loadAppointments = async () => {
       try {
-        const data = await appointmentApi.getPatientAppointments(currentPatientId);
+        const data = await appointmentApi.getPatientAppointments(
+          currentPatientId
+        );
         setAppointments(data);
       } catch (error) {
         console.error("예약 목록 로드 실패:", error);
@@ -436,20 +441,26 @@ MedicalProps) {
                 <div className="space-y-2">
                   {appointments.map((apt) => {
                     const appointmentDate = new Date(apt.date);
-                    const formattedDate = appointmentDate.toLocaleDateString("ko-KR", {
-                      month: "long",
-                      day: "numeric",
-                    });
-                    const formattedTime = appointmentDate.toLocaleTimeString("ko-KR", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    });
+                    const formattedDate = appointmentDate.toLocaleDateString(
+                      "ko-KR",
+                      {
+                        month: "long",
+                        day: "numeric",
+                      }
+                    );
+                    const formattedTime = appointmentDate.toLocaleTimeString(
+                      "ko-KR",
+                      {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      }
+                    );
 
                     const statusMap = {
                       SCHEDULED: "예정",
                       IN_PROGRESS: "진행중",
                       COMPLETED: "완료",
-                      CANCELLED: "취소됨"
+                      CANCELLED: "취소됨",
                     };
                     const displayStatus = statusMap[apt.status] || apt.status;
                     const isScheduled = apt.status === "SCHEDULED";
@@ -459,7 +470,9 @@ MedicalProps) {
                         key={apt.id}
                         onClick={() => handleAppointmentClick(apt)}
                         className={`p-3 rounded-xl ${
-                          isScheduled ? "bg-white/80 hover:bg-white cursor-pointer" : "bg-gray-100/50"
+                          isScheduled
+                            ? "bg-white/80 hover:bg-white cursor-pointer"
+                            : "bg-gray-100/50"
                         }`}
                       >
                         <div className="flex items-start justify-between mb-1">
@@ -473,9 +486,7 @@ MedicalProps) {
                           </div>
                           <Badge
                             className={`${
-                              isScheduled
-                                ? "bg-green-500"
-                                : "bg-gray-500"
+                              isScheduled ? "bg-green-500" : "bg-gray-500"
                             } text-white font-bold border-0 text-xs`}
                           >
                             {displayStatus}
@@ -683,9 +694,7 @@ MedicalProps) {
                         mode="single"
                         selected={selectedDate}
                         onSelect={setSelectedDate}
-                        disabled={(date) =>
-                          isPastDate(date) || isHoliday(date)
-                        }
+                        disabled={(date) => isPastDate(date) || isHoliday(date)}
                         modifiers={{
                           holiday: holidays,
                         }}

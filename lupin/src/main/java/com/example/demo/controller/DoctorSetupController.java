@@ -32,10 +32,10 @@ public class DoctorSetupController {
         log.info("의사 진료과 설정 시작");
 
         Map<Long, String> departmentMapping = new HashMap<>();
-        departmentMapping.put(22L, "internal");
-        departmentMapping.put(23L, "surgery");
-        departmentMapping.put(24L, "psychiatry");
-        departmentMapping.put(25L, "dermatology");
+        departmentMapping.put(22L, "내과");
+        departmentMapping.put(23L, "외과");
+        departmentMapping.put(24L, "신경정신과");
+        departmentMapping.put(25L, "피부과");
 
         int updatedCount = 0;
 
@@ -45,7 +45,7 @@ public class DoctorSetupController {
 
             User doctor = userRepository.findById(doctorId).orElse(null);
             if (doctor != null && doctor.getRole() == Role.DOCTOR) {
-                doctor.setDepartment(department);
+                doctor.assignDepartemt(department);
                 userRepository.save(doctor);
                 updatedCount++;
                 log.info("의사 ID {}: {} 진료과 설정 완료", doctorId, department);

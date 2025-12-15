@@ -125,4 +125,9 @@ public class User {
     public void deductPoints(long amount) {
         this.totalPoints = Math.max(0, this.totalPoints - amount);
     }
+
+    // 의사 진료과 변경용
+    public void assignDepartment(String department) {
+        this.department = department;
+    }
 }

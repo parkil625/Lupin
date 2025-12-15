@@ -14,7 +14,13 @@ import java.util.Optional;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    List<Appointment> findByPatientIdOrderByDateDesc(Long patientId);
+    // @Query를 이용하여 환자와 의사 정보를 같이 가져옴
+    @Query("SELECT a FROM Appointment a " +
+       "JOIN FETCH a.patient " +
+       "JOIN FETCH a.doctor " +
+       "WHERE a.patient.id = :patientId " +
+       "ORDER BY a.date DESC")
+List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patientId);
 
     List<Appointment> findByDoctorIdOrderByDateDesc(Long doctorId);
 

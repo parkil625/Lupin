@@ -16,6 +16,9 @@ import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import org.redisson.api.RedissonClient;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.redisson.api.RLock;
+import java.util.concurrent.TimeUnit;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 
@@ -45,7 +48,7 @@ public class AppointmentService {
                 throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "현재 예약 처리가 지연되고 있거나 이미 예약 중입니다.");    
             }
 
-            TransactionTemplate TransactionTemplate = new TransactionTemplate(transactionManager);
+            TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
 
             return TransactionTemplate.execute(status -> {
 

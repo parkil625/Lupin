@@ -157,6 +157,12 @@ resilience4j:
         waitDuration: 500ms
         retryExceptions:
           - java.lang.Exception
+      s3-thumbnail:
+        maxAttempts: 3
+        waitDuration: 1s
+        retryExceptions:
+          - java.io.IOException
+          - io.awspring.cloud.s3.S3Exception
 
 # Redisson 설정
 redisson:

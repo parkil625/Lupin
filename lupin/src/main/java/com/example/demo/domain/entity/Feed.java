@@ -1,5 +1,6 @@
 package com.example.demo.domain.entity;
 
+import com.example.demo.domain.Reportable;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import jakarta.persistence.*;
@@ -26,7 +27,7 @@ import java.util.Set;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = {"writer", "images"})
-public class Feed {
+public class Feed implements Reportable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

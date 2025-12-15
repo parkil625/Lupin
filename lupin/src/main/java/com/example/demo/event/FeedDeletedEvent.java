@@ -1,5 +1,6 @@
 package com.example.demo.event;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -10,10 +11,13 @@ public record FeedDeletedEvent(
         Long feedId,
         Long writerId,
         List<Long> parentCommentIds,
-        List<Long> allCommentIds
+        List<Long> allCommentIds,
+        LocalDateTime feedCreatedAt,
+        long feedPoints
 ) {
     public static FeedDeletedEvent of(Long feedId, Long writerId,
-                                       List<Long> parentCommentIds, List<Long> allCommentIds) {
-        return new FeedDeletedEvent(feedId, writerId, parentCommentIds, allCommentIds);
+                                      List<Long> parentCommentIds, List<Long> allCommentIds,
+                                      LocalDateTime feedCreatedAt, long feedPoints) {
+        return new FeedDeletedEvent(feedId, writerId, parentCommentIds, allCommentIds, feedCreatedAt, feedPoints);
     }
 }

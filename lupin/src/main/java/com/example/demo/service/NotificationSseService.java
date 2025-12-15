@@ -34,20 +34,15 @@ public class NotificationSseService {
     private final NotificationRepository notificationRepository;
 
     private static final String NOTIFICATION_CHANNEL = "notification-update";
+    private static final long SSE_TIMEOUT_MS = Duration.ofMinutes(30).toMillis();
+    private static final long HEARTBEAT_INTERVAL_SECONDS = 25;
 
-    // userId -> SseEmitter 매핑
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
-
-    private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
-    private static final long HEARTBEAT_INTERVAL = 25; // 25초마다 heartbeat
-
-    // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
     private ThreadPoolTaskScheduler heartbeatScheduler;
     private ScheduledFuture<?> heartbeatTask;
 
     @PostConstruct
     public void init() {
-        // 전용 스케줄러 초기화 (Spring Bean이 아닌 내부 관리)
         heartbeatScheduler = new ThreadPoolTaskScheduler();
         heartbeatScheduler.setPoolSize(1);
         heartbeatScheduler.setThreadNamePrefix("sse-heartbeat-");
@@ -55,144 +50,37 @@ public class NotificationSseService {
         heartbeatScheduler.setAwaitTerminationSeconds(10);
         heartbeatScheduler.initialize();
 
-        // Heartbeat 작업 등록
         heartbeatTask = heartbeatScheduler.scheduleAtFixedRate(
                 this::sendHeartbeatToAll,
-                Duration.ofSeconds(HEARTBEAT_INTERVAL)
+                Duration.ofSeconds(HEARTBEAT_INTERVAL_SECONDS)
         );
-        log.info("SSE Heartbeat 스케줄러 시작 ({}초 간격)", HEARTBEAT_INTERVAL);
+        log.info("SSE Heartbeat 스케줄러 시작 ({}초 간격)", HEARTBEAT_INTERVAL_SECONDS);
     }
 
     @PreDestroy
     public void destroy() {
-        if (heartbeatTask != null) {
-            heartbeatTask.cancel(false);
-        }
-        if (heartbeatScheduler != null) {
-            heartbeatScheduler.shutdown();
-            log.info("SSE Heartbeat 스케줄러 종료");
-        }
+        if (heartbeatTask != null) heartbeatTask.cancel(false);
+        if (heartbeatScheduler != null) heartbeatScheduler.shutdown();
+        log.info("SSE Heartbeat 스케줄러 종료");
     }
 
-    /**
-     * 모든 연결에 heartbeat 전송 (연결 유지용)
-     * - 병렬 처리로 대량 연결 시 병목 방지
-     * - ConcurrentLinkedQueue로 스레드 안전한 dead connection 수집
-     * - SseEmitter는 Thread-Safe 하지 않으므로 synchronized 처리
-     */
-    private void sendHeartbeatToAll() {
-        if (emitters.isEmpty()) {
-            return;
-        }
-
-        Queue<Long> deadConnections = new ConcurrentLinkedQueue<>();
-
-        // 병렬 스트림으로 heartbeat 전송 (연결 수가 많을 때 성능 개선)
-        emitters.entrySet().parallelStream().forEach(entry -> {
-            Long userId = entry.getKey();
-            SseEmitter emitter = entry.getValue();
-            // SseEmitter Thread-Safety: 동시 send 방지
-            synchronized (emitter) {
-                try {
-                    emitter.send(SseEmitter.event()
-                            .name("heartbeat")
-                            .data("ping"));
-                } catch (IOException e) {
-                    log.debug("Heartbeat 전송 실패, 연결 제거: userId={}", userId);
-                    deadConnections.add(userId);
-                }
-            }
-        });
-
-        // 죽은 연결 제거
-        deadConnections.forEach(emitters::remove);
-    }
-
-    /**
-     * 새 SSE 연결 생성
-     */
-    public SseEmitter subscribe(Long userId) {
-        return subscribe(userId, null);
-    }
-
-    /**
-     * SSE 연결 생성 (Last-Event-ID 지원)
-     * - 재연결 시 lastEventId 이후의 알림들을 자동으로 전송
-     */
     public SseEmitter subscribe(Long userId, Long lastEventId) {
-        // 기존 연결이 있으면 제거
-        if (emitters.containsKey(userId)) {
-            emitters.get(userId).complete();
-            emitters.remove(userId);
-        }
-
-        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
-
-        emitter.onCompletion(() -> {
-            log.info("SSE 연결 완료: userId={}", userId);
-            emitters.remove(userId);
-        });
-
-        emitter.onTimeout(() -> {
-            log.info("SSE 연결 타임아웃: userId={}", userId);
-            emitter.complete();
-            emitters.remove(userId);
-        });
-
-        emitter.onError((e) -> {
-            log.error("SSE 연결 에러: userId={}", userId, e);
-            emitters.remove(userId);
-        });
-
-        emitters.put(userId, emitter);
-
-        // 연결 확인용 초기 이벤트 전송
-        try {
-            emitter.send(SseEmitter.event()
-                    .name("connect")
-                    .data("SSE 연결 성공"));
-        } catch (IOException e) {
-            log.error("SSE 초기 이벤트 전송 실패: userId={}", userId, e);
-            emitters.remove(userId);
-        }
-
-        // Last-Event-ID가 있으면 그 이후의 알림들을 전송
+        SseEmitter emitter = createEmitter(userId);
+        sendInitialEvent(emitter, userId);
         if (lastEventId != null) {
             sendMissedNotifications(emitter, userId, lastEventId);
         }
-
         log.info("SSE 연결 생성: userId={}, lastEventId={}", userId, lastEventId);
         return emitter;
     }
 
-    /**
-     * 놓친 알림들을 재전송 (Last-Event-ID 폴백)
-     */
-    private void sendMissedNotifications(SseEmitter emitter, Long userId, Long lastEventId) {
-        try {
-            List<Notification> missedNotifications =
-                    notificationRepository.findByUserIdAndIdGreaterThan(userId, lastEventId);
-
-            for (Notification notification : missedNotifications) {
-                NotificationResponse response = NotificationResponse.from(notification);
-                emitter.send(SseEmitter.event()
-                        .id(String.valueOf(notification.getId()))
-                        .name("notification")
-                        .data(response));
-            }
-
-            if (!missedNotifications.isEmpty()) {
-                log.info("놓친 알림 {} 개 재전송: userId={}, lastEventId={}",
-                        missedNotifications.size(), userId, lastEventId);
-            }
-        } catch (IOException e) {
-            log.error("놓친 알림 재전송 실패: userId={}", userId, e);
+    public void disconnect(Long userId) {
+        SseEmitter emitter = emitters.get(userId);
+        if (emitter != null) {
+            emitter.complete();
         }
     }
 
-    /**
-     * 특정 사용자에게 알림 전송 (Redis Pub/Sub 통해 모든 서버로 브로드캐스트)
-     */
     public void sendNotification(Long userId, NotificationResponse notification) {
         try {
             NotificationMessage message = NotificationMessage.builder()
@@ -207,10 +95,6 @@ public class NotificationSseService {
         }
     }
 
-    /**
-     * Redis Pub/Sub 메시지 수신 핸들러
-     * - RedisConfig에서 MessageListenerAdapter가 이 메서드를 호출
-     */
     public void handleMessage(String message) {
         try {
             NotificationMessage notificationMessage = objectMapper.readValue(message, NotificationMessage.class);
@@ -220,43 +104,80 @@ public class NotificationSseService {
         }
     }
 
-    /**
-     * 로컬 SSE Emitter로 알림 전달 (내부 메서드)
-     * - id 필드에 알림 ID를 포함하여 Last-Event-ID 지원
-     * - SseEmitter는 Thread-Safe 하지 않으므로 synchronized 처리
-     */
-    private void deliverToLocalEmitter(Long userId, NotificationResponse notification) {
-        SseEmitter emitter = emitters.get(userId);
-        if (emitter == null) {
-            log.debug("SSE 연결 없음 (이 서버): userId={}", userId);
-            return;
-        }
+    private SseEmitter createEmitter(Long userId) {
+        emitters.computeIfPresent(userId, (key, oldEmitter) -> {
+            oldEmitter.complete();
+            return null;
+        });
 
-        // SseEmitter Thread-Safety: heartbeat와 동시 send 방지
-        synchronized (emitter) {
-            try {
-                emitter.send(SseEmitter.event()
-                        .id(String.valueOf(notification.getId()))
-                        .name("notification")
-                        .data(notification));
-                log.info("SSE 알림 전송 성공: userId={}, type={}, eventId={}",
-                        userId, notification.getType(), notification.getId());
-            } catch (IOException e) {
-                log.error("SSE 알림 전송 실패: userId={}", userId, e);
-                emitters.remove(userId);
-            }
+        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MS);
+        registerEventHandlers(emitter, userId);
+        emitters.put(userId, emitter);
+        return emitter;
+    }
+
+    private void registerEventHandlers(SseEmitter emitter, Long userId) {
+        emitter.onCompletion(() -> {
+            log.info("SSE 연결 완료: userId={}", userId);
+            emitters.remove(userId);
+        });
+        emitter.onTimeout(() -> {
+            log.info("SSE 연결 타임아웃: userId={}", userId);
+            emitters.remove(userId);
+            emitter.complete();
+        });
+        emitter.onError((e) -> {
+            log.error("SSE 연결 에러: userId={}", userId, e);
+            emitters.remove(userId);
+        });
+    }
+
+    private void sendInitialEvent(SseEmitter emitter, Long userId) {
+        try {
+            emitter.send(SseEmitter.event().name("connect").data("SSE 연결 성공"));
+        } catch (IOException e) {
+            log.error("SSE 초기 이벤트 전송 실패: userId={}", userId, e);
+            emitters.remove(userId);
         }
     }
 
-    /**
-     * 연결 해제
-     */
-    public void disconnect(Long userId) {
+    private void sendMissedNotifications(SseEmitter emitter, Long userId, Long lastEventId) {
+        List<Notification> missedNotifications = notificationRepository.findByUserIdAndIdGreaterThan(userId, lastEventId);
+        for (Notification notification : missedNotifications) {
+            NotificationResponse response = NotificationResponse.from(notification);
+            sendSseEvent(emitter, String.valueOf(notification.getId()), "notification", response);
+        }
+        if (!missedNotifications.isEmpty()) {
+            log.info("놓친 알림 {} 개 재전송: userId={}, lastEventId={}", missedNotifications.size(), userId, lastEventId);
+        }
+    }
+
+    private void deliverToLocalEmitter(Long userId, NotificationResponse notification) {
         SseEmitter emitter = emitters.get(userId);
         if (emitter != null) {
-            emitter.complete();
-            emitters.remove(userId);
-            log.info("SSE 연결 해제: userId={}", userId);
+            sendSseEvent(emitter, String.valueOf(notification.getId()), "notification", notification);
+        }
+    }
+
+    private void sendHeartbeatToAll() {
+        emitters.forEach((userId, emitter) -> {
+            try {
+                emitter.send(SseEmitter.event().name("heartbeat").data("ping"));
+            } catch (IOException e) {
+                log.debug("Heartbeat 전송 실패, 연결 제거: userId={}", userId);
+                emitters.remove(userId);
+            }
+        });
+    }
+
+    private void sendSseEvent(SseEmitter emitter, String id, String name, Object data) {
+        try {
+            synchronized (emitter) {
+                emitter.send(SseEmitter.event().id(id).name(name).data(data));
+            }
+        } catch (IOException e) {
+            log.error("SSE 이벤트 전송 실패: id={}, name={}", id, name, e);
+            // 에러 발생 시 emitter 제거는 onError 콜백에서 처리
         }
     }
 }

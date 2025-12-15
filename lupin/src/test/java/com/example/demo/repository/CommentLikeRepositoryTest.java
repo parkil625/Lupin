@@ -1,99 +1,130 @@
 package com.example.demo.repository;
 
+import com.example.demo.config.QueryDslConfig;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CommentLikeRepositoryTest extends BaseRepositoryTest {
+@DataJpaTest
+@ActiveProfiles("test")
+@Import(QueryDslConfig.class)
+class CommentLikeRepositoryTest {
 
     @Autowired
     private CommentLikeRepository commentLikeRepository;
 
-    @Test
-    @DisplayName("사용자가 댓글에 좋아요를 눌렀는지 확인한다")
-    void existsByUserAndCommentTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User liker = createAndSaveUser("liker");
-        User otherUser = createAndSaveUser("otherUser");
-        Feed feed = createAndSaveFeed(writer, "running");
-        Comment comment = createAndSaveComment(writer, feed, "댓글 내용");
+    @Autowired
+    private UserRepository userRepository;
 
-        createAndSaveCommentLike(liker, comment);
+    @Autowired
+    private FeedRepository feedRepository;
 
-        // when
-        boolean exists = commentLikeRepository.existsByUserAndComment(liker, comment);
-        boolean notExists = commentLikeRepository.existsByUserAndComment(otherUser, comment);
+    @Autowired
+    private CommentRepository commentRepository;
 
-        // then
-        assertThat(exists).isTrue();
-        assertThat(notExists).isFalse();
+    private User user;
+    private Feed feed;
+    private Comment comment;
+    private CommentLike commentLike;
+
+    @BeforeEach
+    void setUp() {
+        user = User.builder()
+                .userId("test@test.com")
+                .password("password")
+                .name("testUser")
+                .role(Role.MEMBER)
+                .build();
+        userRepository.save(user);
+
+        feed = Feed.builder()
+                .writer(user)
+                .content("test feed")
+                .activity("running")
+                .points(10)
+                .calories(100)
+                .build();
+        feedRepository.save(feed);
+
+        comment = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .content("test comment")
+                .build();
+        commentRepository.save(comment);
+
+        commentLike = CommentLike.builder()
+                .user(user)
+                .comment(comment)
+                .build();
+        commentLikeRepository.save(commentLike);
     }
 
     @Test
-    @DisplayName("사용자의 댓글 좋아요를 삭제한다")
-    void deleteByUserAndCommentTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User liker = createAndSaveUser("liker");
-        Feed feed = createAndSaveFeed(writer, "running");
-        Comment comment = createAndSaveComment(writer, feed, "댓글 내용");
-
-        createAndSaveCommentLike(liker, comment);
-
+    @DisplayName("사용자 ID와 댓글 ID로 좋아요 존재 확인")
+    void existsByUserIdAndCommentIdTest() {
         // when
-        commentLikeRepository.deleteByUserAndComment(liker, comment);
+        boolean exists = commentLikeRepository.existsByUserIdAndCommentId(user.getId(), comment.getId());
 
         // then
-        boolean exists = commentLikeRepository.existsByUserAndComment(liker, comment);
+        assertThat(exists).isTrue();
+    }
+
+    @Test
+    @DisplayName("사용자 ID와 댓글 ID로 좋아요 조회")
+    void findByUserIdAndCommentIdTest() {
+        // when
+        Optional<CommentLike> foundLike = commentLikeRepository.findByUserIdAndCommentId(user.getId(), comment.getId());
+
+        // then
+        assertThat(foundLike).isPresent();
+        assertThat(foundLike.get().getId()).isEqualTo(commentLike.getId());
+    }
+
+    @Test
+    @DisplayName("댓글 ID로 좋아요 삭제")
+    void deleteByCommentIdTest() {
+        // when
+        commentLikeRepository.deleteByCommentId(comment.getId());
+
+        // then
+        boolean exists = commentLikeRepository.existsByUserIdAndCommentId(user.getId(), comment.getId());
         assertThat(exists).isFalse();
     }
 
     @Test
-    @DisplayName("댓글의 좋아요 수를 조회한다")
-    void countByCommentTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User liker1 = createAndSaveUser("liker1");
-        User liker2 = createAndSaveUser("liker2");
-        User liker3 = createAndSaveUser("liker3");
-        Feed feed = createAndSaveFeed(writer, "running");
-        Comment comment = createAndSaveComment(writer, feed, "댓글 내용");
-
-        createAndSaveCommentLike(liker1, comment);
-        createAndSaveCommentLike(liker2, comment);
-        createAndSaveCommentLike(liker3, comment);
-
+    @DisplayName("댓글 ID 목록으로 좋아요 일괄 삭제")
+    void deleteByCommentIdsTest() {
         // when
-        long count = commentLikeRepository.countByComment(comment);
+        commentLikeRepository.deleteByCommentIds(List.of(comment.getId()));
 
         // then
-        assertThat(count).isEqualTo(3);
+        boolean exists = commentLikeRepository.existsByUserIdAndCommentId(user.getId(), comment.getId());
+        assertThat(exists).isFalse();
     }
 
     @Test
-    @DisplayName("댓글의 좋아요를 전체 삭제한다")
-    void deleteByCommentTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User liker1 = createAndSaveUser("liker1");
-        User liker2 = createAndSaveUser("liker2");
-        Feed feed = createAndSaveFeed(writer, "running");
-        Comment comment = createAndSaveComment(writer, feed, "댓글 내용");
-
-        createAndSaveCommentLike(liker1, comment);
-        createAndSaveCommentLike(liker2, comment);
-
+    @DisplayName("피드 ID로 좋아요 삭제")
+    void deleteByFeedIdTest() {
         // when
-        commentLikeRepository.deleteByComment(comment);
+        commentLikeRepository.deleteByFeedId(feed.getId());
 
         // then
-        assertThat(commentLikeRepository.countByComment(comment)).isZero();
+        boolean exists = commentLikeRepository.existsByUserIdAndCommentId(user.getId(), comment.getId());
+        assertThat(exists).isFalse();
     }
 }

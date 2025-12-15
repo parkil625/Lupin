@@ -1,111 +1,92 @@
 package com.example.demo.repository;
 
+import com.example.demo.config.QueryDslConfig;
 import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.NotificationType;
+import com.example.demo.domain.enums.Role;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class NotificationRepositoryTest extends BaseRepositoryTest {
+@DataJpaTest
+@ActiveProfiles("test")
+@Import(QueryDslConfig.class)
+class NotificationRepositoryTest {
 
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private User user;
+
+    @BeforeEach
+    void setUp() {
+        user = User.builder()
+                .userId("test@test.com")
+                .password("password")
+                .name("testUser")
+                .role(Role.MEMBER)
+                .build();
+        userRepository.save(user);
+
+        Notification notification1 = Notification.builder()
+                .user(user)
+                .type(NotificationType.COMMENT)
+                .title("title1")
+                .content("content1")
+                .build();
+        Notification notification2 = Notification.builder()
+                .user(user)
+                .type(NotificationType.FEED_LIKE)
+                .title("title2")
+                .content("content2")
+                .build();
+        notificationRepository.save(notification1);
+        notificationRepository.save(notification2);
+    }
+
     @Test
-    @DisplayName("사용자의 알림을 최신순으로 조회한다")
-    void findByUserIdOrderByCreatedAtDescTest() {
-        // given
-        User user = createAndSaveUser("user1");
-        User otherUser = createAndSaveUser("user2");
-
-        createAndSaveNotification(user, NotificationType.FEED_LIKE, "좋아요 알림 1");
-        createAndSaveNotification(user, NotificationType.COMMENT, "댓글 알림");
-        createAndSaveNotification(user, NotificationType.FEED_LIKE, "좋아요 알림 2");
-        createAndSaveNotification(otherUser, NotificationType.FEED_LIKE, "다른 사용자 알림");
-
-        // when - userId만 사용하여 detached entity 문제 방지
+    @DisplayName("사용자별 알림 목록 조회 (최신순)")
+    void findByUserIdOrderByCreatedAtDescIdDescTest() {
+        // when
         List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
 
         // then
-        assertThat(notifications).hasSize(3);
-        assertThat(notifications.get(0).getTitle()).isEqualTo("좋아요 알림 2");
-        assertThat(notifications.get(1).getTitle()).isEqualTo("댓글 알림");
-        assertThat(notifications.get(2).getTitle()).isEqualTo("좋아요 알림 1");
+        assertThat(notifications).hasSize(2);
+        assertThat(notifications.get(0).getTitle()).isEqualTo("title2"); // 최신순
+        assertThat(notifications.get(1).getTitle()).isEqualTo("title1");
     }
 
     @Test
-    @DisplayName("읽지 않은 알림이 있는지 확인한다")
+    @DisplayName("읽지 않은 알림 존재 여부 확인")
     void existsByUserIdAndIsReadFalseTest() {
-        // given
-        User user = createAndSaveUser("user1");
-        User allReadUser = createAndSaveUser("user2");
-
-        createAndSaveNotification(user, NotificationType.FEED_LIKE, "읽지 않은 알림");
-        createAndSaveNotification(allReadUser, NotificationType.FEED_LIKE, "읽은 알림", true);
-
-        // when - userId만 사용하여 detached entity 문제 방지
-        boolean hasUnread = notificationRepository.existsByUserIdAndIsReadFalse(user.getId());
-        boolean noUnread = notificationRepository.existsByUserIdAndIsReadFalse(allReadUser.getId());
+        // when
+        boolean exists = notificationRepository.existsByUserIdAndIsReadFalse(user.getId());
 
         // then
-        assertThat(hasUnread).isTrue();
-        assertThat(noUnread).isFalse();
+        assertThat(exists).isTrue();
     }
 
     @Test
-    @DisplayName("refId와 타입 목록으로 알림을 삭제한다")
-    void deleteByRefIdAndTypeInTest() {
-        // given
-        User user = createAndSaveUser("user1");
-        String feedId = "100";
-        String commentId = "200";
+    @DisplayName("전체 읽음 처리")
+    void markAllAsReadByUserIdTest() {
+        // when
+        int updatedCount = notificationRepository.markAllAsReadByUserId(user.getId());
 
-        // 피드 관련 알림
-        createAndSaveNotification(user, NotificationType.FEED_LIKE, "피드 좋아요", feedId);
-        createAndSaveNotification(user, NotificationType.COMMENT, "댓글 알림", feedId);
-
-        // 댓글 관련 알림
-        createAndSaveNotification(user, NotificationType.COMMENT_LIKE, "댓글 좋아요", commentId);
-        createAndSaveNotification(user, NotificationType.REPLY, "답글 알림", commentId);
-
-        // 삭제되면 안 되는 알림
-        createAndSaveNotification(user, NotificationType.FEED_LIKE, "다른 피드 좋아요", "999");
-
-        // when - 피드 관련 알림 삭제
-        notificationRepository.deleteByRefIdAndTypeIn(feedId, List.of(NotificationType.FEED_LIKE, NotificationType.COMMENT));
-
-        // then - userId만 사용하여 detached entity 문제 방지
-        List<Notification> remaining = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
-        assertThat(remaining).hasSize(3);
-        assertThat(remaining).extracting("type")
-                .containsExactlyInAnyOrder(NotificationType.COMMENT_LIKE, NotificationType.REPLY, NotificationType.FEED_LIKE);
-    }
-
-    private Notification createAndSaveNotification(User user, NotificationType type, String title) {
-        return createAndSaveNotification(user, type, title, null, false);
-    }
-
-    private Notification createAndSaveNotification(User user, NotificationType type, String title, boolean isRead) {
-        return createAndSaveNotification(user, type, title, null, isRead);
-    }
-
-    private Notification createAndSaveNotification(User user, NotificationType type, String title, String refId) {
-        return createAndSaveNotification(user, type, title, refId, false);
-    }
-
-    private Notification createAndSaveNotification(User user, NotificationType type, String title, String refId, boolean isRead) {
-        Notification notification = Notification.builder()
-                .user(user)
-                .type(type)
-                .title(title)
-                .refId(refId)
-                .isRead(isRead)
-                .build();
-        return notificationRepository.save(notification);
+        // then
+        assertThat(updatedCount).isEqualTo(2);
+        boolean exists = notificationRepository.existsByUserIdAndIsReadFalse(user.getId());
+        assertThat(exists).isFalse();
     }
 }

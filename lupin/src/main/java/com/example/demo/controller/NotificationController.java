@@ -4,7 +4,8 @@ import com.example.demo.domain.entity.Notification;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.response.NotificationResponse;
 import com.example.demo.security.CurrentUser;
-import com.example.demo.service.NotificationService;
+import com.example.demo.service.NotificationCommandService;
+import com.example.demo.service.NotificationReadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,13 +18,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationService notificationService;
+    private final NotificationReadService notificationReadService;
+    private final NotificationCommandService notificationCommandService;
 
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getNotifications(
             @CurrentUser User user
     ) {
-        List<Notification> notifications = notificationService.getNotifications(user);
+        List<Notification> notifications = notificationReadService.getNotifications(user);
         List<NotificationResponse> responses = notifications.stream()
                 .map(NotificationResponse::from)
                 .toList();
@@ -32,7 +34,7 @@ public class NotificationController {
 
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long notificationId) {
-        notificationService.markAsRead(notificationId);
+        notificationCommandService.markAsRead(notificationId);
         return ResponseEntity.ok().build();
     }
 
@@ -40,7 +42,7 @@ public class NotificationController {
     public ResponseEntity<Map<String, Boolean>> hasUnreadNotifications(
             @CurrentUser User user
     ) {
-        boolean hasUnread = notificationService.hasUnreadNotifications(user);
+        boolean hasUnread = notificationReadService.hasUnreadNotifications(user);
         return ResponseEntity.ok(Map.of("hasUnread", hasUnread));
     }
 
@@ -48,13 +50,13 @@ public class NotificationController {
     public ResponseEntity<Map<String, Boolean>> markAllAsRead(
             @CurrentUser User user
     ) {
-        notificationService.markAllAsRead(user);
+        notificationCommandService.markAllAsRead(user);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId) {
-        notificationService.deleteNotification(notificationId);
+        notificationCommandService.deleteNotification(notificationId);
         return ResponseEntity.ok().build();
     }
 

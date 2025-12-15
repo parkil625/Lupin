@@ -15,6 +15,8 @@ import java.util.concurrent.Executor;
 @EnableAsync
 public class AsyncConfig {
 
+    private static final int AWAIT_TERMINATION_SECONDS = 30;
+
     /**
      * 일반 비동기 작업용 executor
      * - @Async 어노테이션이 붙은 메서드에서 사용
@@ -27,7 +29,7 @@ public class AsyncConfig {
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("async-task-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(30);
+        executor.setAwaitTerminationSeconds(AWAIT_TERMINATION_SECONDS);
         executor.initialize();
         return executor;
     }

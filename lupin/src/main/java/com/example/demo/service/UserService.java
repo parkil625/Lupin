@@ -12,7 +12,6 @@ import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
@@ -45,23 +44,19 @@ public class UserService {
     }
 
     @Transactional
-    public void updateProfile(User user, String name, Double height, Double weight) {
+    public User updateProfile(User user, String name, Double height, Double weight) {
         user.updateProfile(name, height, weight);
+        return user;
     }
 
     public List<UserRankingResponse> getTopUsersByPoints(int limit) {
         String key = "ranking:monthly:" + YearMonth.now().toString();
-
-        // 1. Redis에서 점수가 높은 순서대로 (Reverse) 가져와요.
-        // TypedTuple은 "유저ID"와 "점수"를 같이 담고 있는 바구니예요.
-        Set<ZSetOperations.TypedTuple<String>> topRankings =
-                redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, limit - 1);
+        Set<ZSetOperations.TypedTuple<String>> topRankings = redisTemplate.opsForZSet().reverseRangeWithScores(key, 0, limit - 1);
 
         if (topRankings == null || topRankings.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // [N+1 문제 해결] ID 목록 추출 후 Bulk 조회
         List<Long> userIds = topRankings.stream()
                 .map(tuple -> Long.valueOf(tuple.getValue()))
                 .toList();
@@ -69,21 +64,20 @@ public class UserService {
         Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
+        return assembleRankingResponse(topRankings, userMap);
+    }
+
+    private List<UserRankingResponse> assembleRankingResponse(Set<ZSetOperations.TypedTuple<String>> topRankings, Map<Long, User> userMap) {
         List<UserRankingResponse> responses = new ArrayList<>();
         int rank = 1;
-
-        // 2. 랭킹 순서대로 조립
         for (ZSetOperations.TypedTuple<String> tuple : topRankings) {
             Long userId = Long.valueOf(tuple.getValue());
             long points = tuple.getScore().longValue();
-
             User user = userMap.get(userId);
-
             if (user != null) {
                 responses.add(UserRankingResponse.of(user, points, rank++));
             }
         }
-
         return responses;
     }
 
@@ -119,22 +113,15 @@ public class UserService {
     }
 
     @Transactional
-    public void updateAvatar(User user, String avatarUrl) {
+    public User updateAvatar(User user, String avatarUrl) {
         user.updateAvatar(avatarUrl);
-        userRepository.save(user);
+        return user;
     }
 
-    /**
-     * 진료과별 의사 목록 조회
-     */
     public List<User> getDoctorsByDepartment(String department) {
         return userRepository.findByRoleAndDepartment(Role.DOCTOR, department);
     }
 
-    /**
-     * 모든 유저의 totalPoints를 point_logs에서 일괄 동기화
-     * 반정규화 필드 초기 동기화 또는 복구용
-     */
     @Transactional
     public int syncAllUserTotalPoints() {
         int updatedCount = userRepository.syncAllUserTotalPoints();

@@ -1,86 +1,120 @@
 package com.example.demo.repository;
 
+import com.example.demo.config.QueryDslConfig;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.CommentReport;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CommentReportRepositoryTest extends BaseRepositoryTest {
+@DataJpaTest
+@ActiveProfiles("test")
+@Import(QueryDslConfig.class)
+class CommentReportRepositoryTest {
 
     @Autowired
     private CommentReportRepository commentReportRepository;
 
-    @Test
-    @DisplayName("댓글의 신고 수를 조회한다")
-    void countByCommentTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User reporter1 = createAndSaveUser("reporter1");
-        User reporter2 = createAndSaveUser("reporter2");
-        Feed feed = createAndSaveFeed(writer, "running");
-        Comment comment = createAndSaveComment(writer, feed, "댓글 내용");
+    @Autowired
+    private UserRepository userRepository;
 
-        createAndSaveCommentReport(reporter1, comment);
-        createAndSaveCommentReport(reporter2, comment);
+    @Autowired
+    private FeedRepository feedRepository;
 
-        // when
-        long count = commentReportRepository.countByComment(comment);
+    @Autowired
+    private CommentRepository commentRepository;
 
-        // then
-        assertThat(count).isEqualTo(2);
-    }
+    private User user;
+    private Feed feed;
+    private Comment comment;
+    private CommentReport commentReport;
 
-    @Test
-    @DisplayName("사용자가 댓글을 이미 신고했는지 확인한다")
-    void existsByReporterAndCommentTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User reporter = createAndSaveUser("reporter");
-        User otherUser = createAndSaveUser("otherUser");
-        Feed feed = createAndSaveFeed(writer, "running");
-        Comment comment = createAndSaveComment(writer, feed, "댓글 내용");
+    @BeforeEach
+    void setUp() {
+        user = User.builder()
+                .userId("test@test.com")
+                .password("password")
+                .name("testUser")
+                .role(Role.MEMBER)
+                .build();
+        userRepository.save(user);
 
-        createAndSaveCommentReport(reporter, comment);
+        feed = Feed.builder()
+                .writer(user)
+                .content("test feed")
+                .activity("running")
+                .points(10)
+                .calories(100)
+                .build();
+        feedRepository.save(feed);
 
-        // when
-        boolean exists = commentReportRepository.existsByReporterAndComment(reporter, comment);
-        boolean notExists = commentReportRepository.existsByReporterAndComment(otherUser, comment);
+        comment = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .content("test comment")
+                .build();
+        commentRepository.save(comment);
 
-        // then
-        assertThat(exists).isTrue();
-        assertThat(notExists).isFalse();
-    }
-
-    @Test
-    @DisplayName("댓글의 신고를 전체 삭제한다")
-    void deleteByCommentTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User reporter1 = createAndSaveUser("reporter1");
-        User reporter2 = createAndSaveUser("reporter2");
-        Feed feed = createAndSaveFeed(writer, "running");
-        Comment comment = createAndSaveComment(writer, feed, "댓글 내용");
-
-        createAndSaveCommentReport(reporter1, comment);
-        createAndSaveCommentReport(reporter2, comment);
-
-        // when
-        commentReportRepository.deleteByComment(comment);
-
-        // then
-        assertThat(commentReportRepository.countByComment(comment)).isZero();
-    }
-
-    private CommentReport createAndSaveCommentReport(User reporter, Comment comment) {
-        CommentReport commentReport = CommentReport.builder()
-                .reporter(reporter)
+        commentReport = CommentReport.builder()
+                .reporter(user)
                 .comment(comment)
                 .build();
-        return commentReportRepository.save(commentReport);
+        commentReportRepository.save(commentReport);
+    }
+
+    @Test
+    @DisplayName("신고자와 댓글로 신고 조회")
+    void findByReporterAndCommentTest() {
+        // when
+        Optional<CommentReport> foundReport = commentReportRepository.findByReporterAndComment(user, comment);
+
+        // then
+        assertThat(foundReport).isPresent();
+        assertThat(foundReport.get().getId()).isEqualTo(commentReport.getId());
+    }
+
+    @Test
+    @DisplayName("댓글 ID로 신고 삭제")
+    void deleteByCommentIdTest() {
+        // when
+        commentReportRepository.deleteByCommentId(comment.getId());
+
+        // then
+        Optional<CommentReport> foundReport = commentReportRepository.findByReporterAndComment(user, comment);
+        assertThat(foundReport).isEmpty();
+    }
+
+    @Test
+    @DisplayName("댓글 ID 목록으로 신고 일괄 삭제")
+    void deleteByCommentIdsTest() {
+        // when
+        commentReportRepository.deleteByCommentIds(List.of(comment.getId()));
+
+        // then
+        Optional<CommentReport> foundReport = commentReportRepository.findByReporterAndComment(user, comment);
+        assertThat(foundReport).isEmpty();
+    }
+
+    @Test
+    @DisplayName("피드 ID로 신고 삭제")
+    void deleteByFeedIdTest() {
+        // when
+        commentReportRepository.deleteByFeedId(feed.getId());
+
+        // then
+        Optional<CommentReport> foundReport = commentReportRepository.findByReporterAndComment(user, comment);
+        assertThat(foundReport).isEmpty();
     }
 }

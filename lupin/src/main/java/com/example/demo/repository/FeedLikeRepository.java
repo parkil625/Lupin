@@ -22,11 +22,6 @@ public interface FeedLikeRepository extends JpaRepository<FeedLike, Long> {
     @Query("SELECT fl FROM FeedLike fl WHERE fl.user.id = :userId AND fl.feed.id = :feedId")
     Optional<FeedLike> findByUserIdAndFeedId(@Param("userId") Long userId, @Param("feedId") Long feedId);
 
-    // [최적화] 벌크 삭제 - ID로 바로 삭제 (userId만 사용하여 detached entity 문제 방지)
-    @Modifying
-    @Query("DELETE FROM FeedLike fl WHERE fl.user.id = :userId AND fl.feed.id = :feedId")
-    void deleteByUserIdAndFeedId(@Param("userId") Long userId, @Param("feedId") Long feedId);
-
     // [최적화] 피드 삭제 시 벌크 삭제
     @Modifying
     @Query("DELETE FROM FeedLike fl WHERE fl.feed = :feed")

@@ -7,24 +7,22 @@ import com.example.demo.dto.request.FeedRequest;
 import com.example.demo.dto.response.FeedResponse;
 import com.example.demo.dto.response.SliceResponse;
 import com.example.demo.security.CurrentUser;
+import com.example.demo.service.FeedFacade;
 import com.example.demo.service.FeedLikeService;
-import com.example.demo.service.FeedQueryFacade;
-import com.example.demo.service.FeedReportService;
+import com.example.demo.service.ReportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/feeds")
 @RequiredArgsConstructor
 public class FeedController {
 
-    private final FeedQueryFacade feedQueryFacade;
+    private final FeedFacade feedFacade;
     private final FeedLikeService feedLikeService;
-    private final FeedReportService feedReportService;
+    private final ReportService reportService;
 
     @PostMapping
     public ResponseEntity<FeedResponse> createFeed(
@@ -32,7 +30,7 @@ public class FeedController {
             @Valid @RequestBody FeedRequest request
     ) {
         FeedCreateCommand command = FeedCreateCommand.of(user, request);
-        return ResponseEntity.ok(feedQueryFacade.createFeed(command));
+        return ResponseEntity.ok(feedFacade.createFeed(command));
     }
 
     @PutMapping("/{feedId}")
@@ -42,7 +40,7 @@ public class FeedController {
             @Valid @RequestBody FeedRequest request
     ) {
         FeedUpdateCommand command = FeedUpdateCommand.of(user, feedId, request);
-        return ResponseEntity.ok(feedQueryFacade.updateFeed(command));
+        return ResponseEntity.ok(feedFacade.updateFeed(command));
     }
 
     @DeleteMapping("/{feedId}")
@@ -50,13 +48,13 @@ public class FeedController {
             @CurrentUser User user,
             @PathVariable Long feedId
     ) {
-        feedQueryFacade.deleteFeed(user, feedId);
+        feedFacade.deleteFeed(user, feedId);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{feedId}")
     public ResponseEntity<FeedResponse> getFeedDetail(@PathVariable Long feedId) {
-        return ResponseEntity.ok(feedQueryFacade.getFeedDetail(feedId));
+        return ResponseEntity.ok(feedFacade.getFeedDetail(feedId));
     }
 
     @GetMapping
@@ -65,7 +63,7 @@ public class FeedController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(feedQueryFacade.getHomeFeeds(user, page, size));
+        return ResponseEntity.ok(feedFacade.getHomeFeeds(user, page, size));
     }
 
     @GetMapping("/my")
@@ -74,14 +72,14 @@ public class FeedController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(feedQueryFacade.getMyFeeds(user, page, size));
+        return ResponseEntity.ok(feedFacade.getMyFeeds(user, page, size));
     }
 
     @GetMapping("/can-post-today")
     public ResponseEntity<Boolean> canPostToday(
             @CurrentUser User user
     ) {
-        return ResponseEntity.ok(feedQueryFacade.canPostToday(user));
+        return ResponseEntity.ok(feedFacade.canPostToday(user));
     }
 
     @PostMapping("/{feedId}/like")
@@ -107,16 +105,7 @@ public class FeedController {
             @CurrentUser User user,
             @PathVariable Long feedId
     ) {
-        feedReportService.toggleReport(user, feedId);
+        reportService.toggleFeedReport(user, feedId);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/likes/{feedLikeId}")
-    public ResponseEntity<Map<String, Long>> getFeedLike(@PathVariable Long feedLikeId) {
-        Long feedId = feedLikeService.getFeedIdByFeedLikeId(feedLikeId);
-        if (feedId == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(Map.of("feedId", feedId));
     }
 }

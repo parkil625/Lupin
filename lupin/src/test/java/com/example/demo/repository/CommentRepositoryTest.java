@@ -1,148 +1,163 @@
 package com.example.demo.repository;
 
+import com.example.demo.config.QueryDslConfig;
 import com.example.demo.domain.entity.Comment;
-import com.example.demo.domain.entity.CommentLike;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CommentRepositoryTest extends BaseRepositoryTest {
+@DataJpaTest
+@ActiveProfiles("test")
+@Import(QueryDslConfig.class)
+class CommentRepositoryTest {
 
     @Autowired
-    private CommentLikeRepository commentLikeRepository;
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private FeedRepository feedRepository;
+
+    private User user;
+    private Feed feed;
+
+    @BeforeEach
+    void setUp() {
+        user = User.builder()
+                .userId("test@test.com")
+                .password("password")
+                .name("testUser")
+                .role(Role.MEMBER)
+                .build();
+        userRepository.save(user);
+
+        feed = Feed.builder()
+                .writer(user)
+                .content("test feed")
+                .activity("running")
+                .points(10)
+                .calories(100)
+                .build();
+        feedRepository.save(feed);
+    }
 
     @Test
-    @DisplayName("피드의 루트 댓글만 최신순으로 조회한다 (대댓글 제외)")
-    void findByFeedAndParentIsNullOrderByIdDescTest() {
+    @DisplayName("피드의 부모 댓글 목록 조회 (최신순)")
+    void findParentCommentsByFeedTest() {
         // given
-        User user = createAndSaveUser("user1");
-        Feed feed = createAndSaveFeed(user, "running");
-
-        Comment parent = createAndSaveComment(user, feed, "첫 번째 댓글");
-        createAndSaveComment(user, feed, "두 번째 댓글");
-        createAndSaveComment(user, feed, "세 번째 댓글");
-        createAndSaveReply(user, feed, parent, "대댓글");
+        Comment comment1 = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .content("comment1")
+                .build();
+        Comment comment2 = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .content("comment2")
+                .build();
+        commentRepository.save(comment1);
+        commentRepository.save(comment2);
 
         // when
-        List<Comment> comments = commentRepository.findByFeedAndParentIsNullOrderByIdDesc(feed);
-
-        // then - 대댓글은 제외되어 3개만 반환
-        assertThat(comments).hasSize(3);
-        assertThat(comments.get(0).getContent()).isEqualTo("세 번째 댓글");
-        assertThat(comments.get(1).getContent()).isEqualTo("두 번째 댓글");
-        assertThat(comments.get(2).getContent()).isEqualTo("첫 번째 댓글");
-    }
-
-    @Test
-    @DisplayName("피드의 댓글을 전체 삭제한다")
-    void deleteByFeedTest() {
-        // given
-        User user1 = createAndSaveUser("user1");
-        User user2 = createAndSaveUser("user2");
-        Feed feed = createAndSaveFeed(user1, "running");
-
-        Comment parent = createAndSaveComment(user1, feed, "부모 댓글");
-        createAndSaveReply(user1, feed, parent, "대댓글");
-        createAndSaveComment(user2, feed, "두 번째 댓글");
-
-        // when - 대댓글 먼저 삭제 후 부모 댓글 삭제
-        commentRepository.deleteRepliesByFeed(feed);
-        commentRepository.deleteParentCommentsByFeed(feed);
+        List<Comment> comments = commentRepository.findParentCommentsByFeed(feed);
 
         // then
-        List<Comment> comments = commentRepository.findByFeed(feed);
-        assertThat(comments).isEmpty();
+        assertThat(comments).hasSize(2);
+        assertThat(comments.get(0).getContent()).isEqualTo("comment2"); // 최신순
+        assertThat(comments.get(1).getContent()).isEqualTo("comment1");
     }
 
     @Test
-    @DisplayName("대댓글을 오래된 순으로 조회한다")
+    @DisplayName("대댓글 조회")
     void findByParentOrderByIdAscTest() {
         // given
-        User user = createAndSaveUser("user1");
-        Feed feed = createAndSaveFeed(user, "running");
-        Comment parent = createAndSaveComment(user, feed, "부모 댓글");
+        Comment parent = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .content("parent")
+                .build();
+        commentRepository.save(parent);
 
-        createAndSaveReply(user, feed, parent, "첫 번째 대댓글");
-        createAndSaveReply(user, feed, parent, "두 번째 대댓글");
-        createAndSaveReply(user, feed, parent, "세 번째 대댓글");
+        Comment reply1 = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .parent(parent)
+                .content("reply1")
+                .build();
+        Comment reply2 = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .parent(parent)
+                .content("reply2")
+                .build();
+        commentRepository.save(reply1);
+        commentRepository.save(reply2);
 
         // when
         List<Comment> replies = commentRepository.findByParentOrderByIdAsc(parent);
 
         // then
-        assertThat(replies).hasSize(3);
-        assertThat(replies.get(0).getContent()).isEqualTo("첫 번째 대댓글");
-        assertThat(replies.get(1).getContent()).isEqualTo("두 번째 대댓글");
-        assertThat(replies.get(2).getContent()).isEqualTo("세 번째 대댓글");
+        assertThat(replies).hasSize(2);
+        assertThat(replies.get(0).getContent()).isEqualTo("reply1"); // 등록순
+        assertThat(replies.get(1).getContent()).isEqualTo("reply2");
     }
 
     @Test
-    @DisplayName("대댓글 개수를 조회한다")
-    void countByParentTest() {
+    @DisplayName("피드 삭제 시 대댓글 삭제")
+    void deleteRepliesByFeedIdTest() {
         // given
-        User user = createAndSaveUser("user1");
-        Feed feed = createAndSaveFeed(user, "running");
-        Comment parent = createAndSaveComment(user, feed, "부모 댓글");
+        Comment parent = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .content("parent")
+                .build();
+        commentRepository.save(parent);
 
-        createAndSaveReply(user, feed, parent, "첫 번째 대댓글");
-        createAndSaveReply(user, feed, parent, "두 번째 대댓글");
-
-        // when
-        long count = commentRepository.countByParent(parent);
-
-        // then
-        assertThat(count).isEqualTo(2);
-    }
-
-    @Test
-    @DisplayName("피드의 댓글을 인기순(좋아요 수)으로 조회한다")
-    void findByFeedOrderByLikeCountDescTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User liker1 = createAndSaveUser("liker1");
-        User liker2 = createAndSaveUser("liker2");
-        User liker3 = createAndSaveUser("liker3");
-        Feed feed = createAndSaveFeed(writer, "running");
-
-        Comment comment1 = createAndSaveComment(writer, feed, "좋아요 1개");
-        Comment comment2 = createAndSaveComment(writer, feed, "좋아요 3개");
-        Comment comment3 = createAndSaveComment(writer, feed, "좋아요 2개");
-
-        // comment1: 1개
-        createAndSaveCommentLike(liker1, comment1);
-
-        // comment2: 3개
-        createAndSaveCommentLike(liker1, comment2);
-        createAndSaveCommentLike(liker2, comment2);
-        createAndSaveCommentLike(liker3, comment2);
-
-        // comment3: 2개
-        createAndSaveCommentLike(liker1, comment3);
-        createAndSaveCommentLike(liker2, comment3);
-
-        // when
-        List<Comment> comments = commentRepository.findByFeedOrderByLikeCountDesc(feed);
-
-        // then
-        assertThat(comments).hasSize(3);
-        assertThat(comments.get(0).getContent()).isEqualTo("좋아요 3개");
-        assertThat(comments.get(1).getContent()).isEqualTo("좋아요 2개");
-        assertThat(comments.get(2).getContent()).isEqualTo("좋아요 1개");
-    }
-
-    private Comment createAndSaveReply(User writer, Feed feed, Comment parent, String content) {
         Comment reply = Comment.builder()
-                .writer(writer)
+                .writer(user)
                 .feed(feed)
                 .parent(parent)
-                .content(content)
+                .content("reply")
                 .build();
-        return commentRepository.save(reply);
+        commentRepository.save(reply);
+
+        // when
+        commentRepository.deleteRepliesByFeedId(feed.getId());
+
+        // then
+        List<Comment> replies = commentRepository.findByParentOrderByIdAsc(parent);
+        assertThat(replies).isEmpty();
+    }
+
+    @Test
+    @DisplayName("피드 삭제 시 부모 댓글 삭제")
+    void deleteParentCommentsByFeedIdTest() {
+        // given
+        Comment parent = Comment.builder()
+                .writer(user)
+                .feed(feed)
+                .content("parent")
+                .build();
+        commentRepository.save(parent);
+
+        // when
+        commentRepository.deleteParentCommentsByFeedId(feed.getId());
+
+        // then
+        List<Comment> comments = commentRepository.findParentCommentsByFeed(feed);
+        assertThat(comments).isEmpty();
     }
 }

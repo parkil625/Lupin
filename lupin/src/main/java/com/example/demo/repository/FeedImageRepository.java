@@ -13,8 +13,6 @@ import java.util.List;
 @Repository
 public interface FeedImageRepository extends JpaRepository<FeedImage, Long> {
 
-    List<FeedImage> findByFeedOrderBySortOrderAsc(Feed feed);
-
     @Modifying
     @Query("DELETE FROM FeedImage fi WHERE fi.feed = :feed")
     void deleteByFeed(@Param("feed") Feed feed);

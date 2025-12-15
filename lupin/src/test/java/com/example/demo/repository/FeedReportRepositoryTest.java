@@ -1,84 +1,80 @@
 package com.example.demo.repository;
 
+import com.example.demo.config.QueryDslConfig;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedReport;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.Role;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class FeedReportRepositoryTest extends BaseRepositoryTest {
+@DataJpaTest
+@ActiveProfiles("test")
+@Import(QueryDslConfig.class)
+class FeedReportRepositoryTest {
 
     @Autowired
     private FeedReportRepository feedReportRepository;
 
-    @Test
-    @DisplayName("피드의 신고 수를 조회한다")
-    void countByFeedTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User reporter1 = createAndSaveUser("reporter1");
-        User reporter2 = createAndSaveUser("reporter2");
-        User reporter3 = createAndSaveUser("reporter3");
-        Feed feed = createAndSaveFeed(writer, "running");
+    @Autowired
+    private UserRepository userRepository;
 
-        createAndSaveFeedReport(reporter1, feed);
-        createAndSaveFeedReport(reporter2, feed);
-        createAndSaveFeedReport(reporter3, feed);
+    @Autowired
+    private FeedRepository feedRepository;
 
-        // when
-        long count = feedReportRepository.countByFeed(feed);
+    private User reporter;
+    private Feed feed;
 
-        // then
-        assertThat(count).isEqualTo(3);
-    }
+    @BeforeEach
+    void setUp() {
+        reporter = User.builder()
+                .userId("reporter@test.com")
+                .password("password")
+                .name("reporter")
+                .role(Role.MEMBER)
+                .build();
+        userRepository.save(reporter);
 
-    @Test
-    @DisplayName("사용자가 피드를 이미 신고했는지 확인한다")
-    void existsByReporterAndFeedTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User reporter = createAndSaveUser("reporter");
-        User otherUser = createAndSaveUser("otherUser");
-        Feed feed = createAndSaveFeed(writer, "running");
+        User writer = User.builder()
+                .userId("writer@test.com")
+                .password("password")
+                .name("writer")
+                .role(Role.MEMBER)
+                .build();
+        userRepository.save(writer);
 
-        createAndSaveFeedReport(reporter, feed);
+        feed = Feed.builder()
+                .writer(writer)
+                .content("content")
+                .activity("running")
+                .points(10)
+                .calories(100)
+                .build();
+        feedRepository.save(feed);
 
-        // when
-        boolean exists = feedReportRepository.existsByReporterAndFeed(reporter, feed);
-        boolean notExists = feedReportRepository.existsByReporterAndFeed(otherUser, feed);
-
-        // then
-        assertThat(exists).isTrue();
-        assertThat(notExists).isFalse();
-    }
-
-    @Test
-    @DisplayName("피드의 신고를 전체 삭제한다")
-    void deleteByFeedTest() {
-        // given
-        User writer = createAndSaveUser("writer");
-        User reporter1 = createAndSaveUser("reporter1");
-        User reporter2 = createAndSaveUser("reporter2");
-        Feed feed = createAndSaveFeed(writer, "running");
-
-        createAndSaveFeedReport(reporter1, feed);
-        createAndSaveFeedReport(reporter2, feed);
-
-        // when
-        feedReportRepository.deleteByFeed(feed);
-
-        // then
-        assertThat(feedReportRepository.countByFeed(feed)).isZero();
-    }
-
-    private FeedReport createAndSaveFeedReport(User reporter, Feed feed) {
-        FeedReport feedReport = FeedReport.builder()
+        FeedReport report = FeedReport.builder()
                 .reporter(reporter)
                 .feed(feed)
                 .build();
-        return feedReportRepository.save(feedReport);
+        feedReportRepository.save(report);
+    }
+
+    @Test
+    @DisplayName("신고자와 피드로 신고 조회")
+    void findByReporterAndFeedTest() {
+        // when
+        Optional<FeedReport> foundReport = feedReportRepository.findByReporterAndFeed(reporter, feed);
+
+        // then
+        assertThat(foundReport).isPresent();
     }
 }

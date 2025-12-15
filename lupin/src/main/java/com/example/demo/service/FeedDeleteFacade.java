@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import com.example.demo.config.properties.FeedProperties;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.event.FeedDeletedEvent;
@@ -14,7 +13,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -23,7 +21,7 @@ import java.util.Objects;
  *
  * [리팩토링] 이벤트 기반 느슨한 결합 (Event-Driven Loose Coupling)
  * - 기존: NotificationService, CommentService, FeedLikeService 등 직접 의존 (7개 의존성)
- * - 변경: FeedRepository, CommentRepository, PointService만 의존 (4개 의존성)
+ * - 변경: FeedRepository, CommentRepository만 의존 (2개 의존성)
  * - 관련 데이터 정리는 FeedDeletedEvent 리스너들이 각자 도메인을 담당
  */
 @Slf4j
@@ -31,15 +29,13 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class FeedDeleteFacade {
 
-    private final FeedProperties feedProperties;
     private final FeedRepository feedRepository;
     private final CommentRepository commentRepository;
-    private final PointService pointService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 피드 삭제 - Soft Delete 후 이벤트 발행
-     * 관련 데이터 정리(댓글, 좋아요, 신고, 알림, 캐시)는 이벤트 리스너에서 비동기 처리
+     * 관련 데이터 정리(댓글, 좋아요, 신고, 알림, 캐시, 포인트)는 이벤트 리스너에서 비동기 처리
      */
     @Transactional
     public void deleteFeed(User user, Long feedId) {
@@ -47,37 +43,32 @@ public class FeedDeleteFacade {
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
         validateOwnership(feed, user);
-        recoverPointsIfWithinPeriod(feed);
 
-        // 삭제 전에 관련 데이터 ID 수집 (Soft Delete 후에는 조회 불가)
+        // 삭제 전에 관련 데이터 ID 및 정보 수집 (Soft Delete 후에는 조회 불가)
         List<Long> parentCommentIds = commentRepository.findParentCommentIdsByFeed(feed);
         List<Long> allCommentIds = commentRepository.findCommentIdsByFeed(feed);
         Long writerId = feed.getWriter().getId();
+        long feedPoints = feed.getPoints();
 
-        // Soft Delete (실제 삭제는 이벤트 리스너에서 처리)
+        // Soft Delete
         feedRepository.delete(feed);
 
         // 트랜잭션 커밋 후 각 도메인별 리스너가 자신의 데이터 정리
-        eventPublisher.publishEvent(FeedDeletedEvent.of(feedId, writerId, parentCommentIds, allCommentIds));
+        eventPublisher.publishEvent(FeedDeletedEvent.of(
+                feedId,
+                writerId,
+                parentCommentIds,
+                allCommentIds,
+                feed.getCreatedAt(),
+                feedPoints
+        ));
 
-        log.info("Feed deleted: feedId={}, userId={}", feedId, user.getId());
+        log.info("Feed soft deleted, event published: feedId={}, userId={}", feedId, user.getId());
     }
 
     private void validateOwnership(Feed feed, User user) {
         if (!Objects.equals(feed.getWriter().getId(), user.getId())) {
             throw new BusinessException(ErrorCode.FEED_NOT_OWNER);
-        }
-    }
-
-    private void recoverPointsIfWithinPeriod(Feed feed) {
-        if (feed.getPoints() <= 0) {
-            return;
-        }
-
-        LocalDateTime recoveryDeadline = LocalDateTime.now().minusDays(feedProperties.getPointRecoveryDays());
-        if (feed.getCreatedAt().isAfter(recoveryDeadline)) {
-            pointService.cancelPoints(feed.getWriter(), feed.getPoints());
-            log.debug("Points recovered for deleted feed: feedId={}, points={}", feed.getId(), feed.getPoints());
         }
     }
 }

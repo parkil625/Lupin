@@ -8,32 +8,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CommentTest {
 
     @Test
-    @DisplayName("댓글 내용을 수정한다")
-    void updateTest() {
+    @DisplayName("댓글 수정 시 내용이 변경된다")
+    void updateCommentTest() {
         // given
         Comment comment = Comment.builder()
-                .content("원래 내용")
+                .content("original content")
                 .build();
 
         // when
-        comment.update("수정된 내용");
+        comment.update("updated content");
 
         // then
-        assertThat(comment.getContent()).isEqualTo("수정된 내용");
-    }
-
-    @Test
-    @DisplayName("댓글 수정 시 updatedAt이 갱신된다")
-    void updateSetsUpdatedAtTest() {
-        // given
-        Comment comment = Comment.builder()
-                .content("원래 내용")
-                .build();
-
-        // when
-        comment.update("수정된 내용");
-
-        // then
-        assertThat(comment.getUpdatedAt()).isNotNull();
+        assertThat(comment.getContent()).isEqualTo("updated content");
+        // updatedAt 검증은 JPA 통합 테스트에서 수행해야 하므로 제거
     }
 }

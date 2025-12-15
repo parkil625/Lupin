@@ -5,21 +5,18 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.CommentRequest;
 import com.example.demo.dto.response.CommentResponse;
 import com.example.demo.security.CurrentUser;
-import com.example.demo.service.CommentLikeService;
-import com.example.demo.service.CommentReadService;
-import com.example.demo.service.CommentReportService;
-import com.example.demo.service.CommentService;
+import com.example.demo.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 /**
  * 댓글 컨트롤러 - CQRS 패턴 적용
- * Write: CommentService
+ * Write: CommentService, CommentDeleteFacade
  * Read: CommentReadService
  */
 @RestController
@@ -30,7 +27,8 @@ public class CommentController {
     private final CommentService commentService;
     private final CommentReadService commentReadService;
     private final CommentLikeService commentLikeService;
-    private final CommentReportService commentReportService;
+    private final ReportService reportService;
+    private final CommentDeleteFacade commentDeleteFacade;
 
     @PostMapping("/feeds/{feedId}/comments")
     public ResponseEntity<CommentResponse> createComment(
@@ -38,14 +36,7 @@ public class CommentController {
             @PathVariable Long feedId,
             @Valid @RequestBody CommentRequest request
     ) {
-        Comment comment;
-        if (request.getParentId() != null) {
-            // 답글인 경우 createReply 호출 (답글 알림만 발생)
-            comment = commentService.createReply(user, feedId, request.getParentId(), request.getContent());
-        } else {
-            // 일반 댓글인 경우
-            comment = commentService.createComment(user, feedId, request.getContent());
-        }
+        Comment comment = commentService.create(user, feedId, Optional.ofNullable(request.getParentId()), request.getContent());
         return ResponseEntity.ok(CommentResponse.from(comment));
     }
 
@@ -64,7 +55,7 @@ public class CommentController {
             @CurrentUser User user,
             @PathVariable Long commentId
     ) {
-        commentService.deleteComment(user, commentId);
+        commentDeleteFacade.deleteComment(user, commentId);
         return ResponseEntity.ok().build();
     }
 
@@ -81,17 +72,6 @@ public class CommentController {
     public ResponseEntity<CommentResponse> getComment(@PathVariable Long commentId) {
         Comment comment = commentReadService.getComment(commentId);
         return ResponseEntity.ok(CommentResponse.from(comment));
-    }
-
-    @PostMapping("/comments/{commentId}/replies")
-    public ResponseEntity<CommentResponse> createReply(
-            @CurrentUser User user,
-            @PathVariable Long commentId,
-            @RequestParam Long feedId,
-            @Valid @RequestBody CommentRequest request
-    ) {
-        Comment reply = commentService.createReply(user, feedId, commentId, request.getContent());
-        return ResponseEntity.ok(CommentResponse.from(reply));
     }
 
     @GetMapping("/comments/{commentId}/replies")
@@ -126,14 +106,7 @@ public class CommentController {
             @CurrentUser User user,
             @PathVariable Long commentId
     ) {
-        commentReportService.toggleReport(user, commentId);
+        reportService.toggleCommentReport(user, commentId);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/comment-likes/{commentLikeId}")
-    public ResponseEntity<Map<String, Long>> getCommentLike(@PathVariable Long commentLikeId) {
-        return commentLikeService.getCommentIdByLikeId(commentLikeId)
-                .map(commentId -> ResponseEntity.ok(Map.of("commentId", commentId)))
-                .orElse(ResponseEntity.notFound().build());
     }
 }

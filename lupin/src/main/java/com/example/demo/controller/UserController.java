@@ -4,7 +4,6 @@ import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.PenaltyType;
 import com.example.demo.dto.request.UserAvatarRequest;
 import com.example.demo.dto.request.UserProfileRequest;
-import com.example.demo.dto.request.UserUpdateRequest;
 import com.example.demo.dto.response.DoctorResponse;
 import com.example.demo.dto.response.UserRankingResponse;
 import com.example.demo.dto.response.UserResponse;
@@ -72,57 +71,29 @@ public class UserController {
         return ResponseEntity.ok(UserResponse.from(user, points));
     }
 
-    @PutMapping("/{userId}")
-    public ResponseEntity<UserResponse> updateUser(
-            @PathVariable Long userId,
-            @CurrentUser User currentUser,
-            @RequestBody UserUpdateRequest request
-    ) {
-        // 본인만 수정 가능
-        if (!currentUser.getId().equals(userId)) {
-            return ResponseEntity.status(403).build();
-        }
-
-        userService.updateProfile(currentUser,
-                request.getName(),
-                request.getHeight(),
-                request.getWeight());
-
-        User updatedUser = userService.getUserInfo(userId);
-        long points = pointService.getTotalPoints(updatedUser);
-        return ResponseEntity.ok(UserResponse.from(updatedUser, points));
-    }
-
     @GetMapping("/{userId}/stats")
     public ResponseEntity<UserStatsResponse> getUserStats(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getUserStats(userId));
     }
 
-    @PutMapping("/{userId}/avatar")
+    @PutMapping("/me/avatar")
     public ResponseEntity<UserResponse> updateAvatar(
-            @PathVariable Long userId,
             @CurrentUser User currentUser,
             @RequestBody UserAvatarRequest request
     ) {
-        // 본인만 수정 가능
-        if (!currentUser.getId().equals(userId)) {
-            return ResponseEntity.status(403).build();
-        }
-
-        userService.updateAvatar(currentUser, request.getAvatar());
-
-        User updatedUser = userService.getUserInfo(userId);
+        User updatedUser = userService.updateAvatar(currentUser, request.getAvatar());
         long points = pointService.getTotalPoints(updatedUser);
         return ResponseEntity.ok(UserResponse.from(updatedUser, points));
     }
 
-    @PutMapping("/profile")
-    public ResponseEntity<Void> updateProfile(
+    @PutMapping("/me/profile")
+    public ResponseEntity<UserResponse> updateProfile(
             @CurrentUser User user,
             @Valid @RequestBody UserProfileRequest request
     ) {
-        userService.updateProfile(user, request.getName(), request.getHeight(), request.getWeight());
-        return ResponseEntity.ok().build();
+        User updatedUser = userService.updateProfile(user, request.getName(), request.getHeight(), request.getWeight());
+        long points = pointService.getTotalPoints(updatedUser);
+        return ResponseEntity.ok(UserResponse.from(updatedUser, points));
     }
 
     @GetMapping("/points")

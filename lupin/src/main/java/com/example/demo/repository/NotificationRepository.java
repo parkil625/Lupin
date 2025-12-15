@@ -17,10 +17,6 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    // [최적화] Slice로 변경 - count 쿼리 제거 (userId만 사용하여 detached entity 문제 방지)
-    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId ORDER BY n.createdAt DESC")
-    Slice<Notification> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
-
     // 기존 List 반환 메서드 (userId만 사용하여 detached entity 문제 방지)
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId ORDER BY n.createdAt DESC, n.id DESC")
     List<Notification> findByUserIdOrderByCreatedAtDescIdDesc(@Param("userId") Long userId);

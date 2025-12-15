@@ -15,24 +15,8 @@ import org.springframework.data.domain.Pageable;
 public interface PointLogRepository extends JpaRepository<PointLog, Long> {
 
     // userId만 사용하여 detached entity 문제 방지
-    @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user.id = :userId")
-    Long sumPointsByUserId(@Param("userId") Long userId);
-
-    // userId만 사용하여 detached entity 문제 방지
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user.id = :userId AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
     Long sumPointsByUserIdAndMonth(@Param("userId") Long userId, @Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
-
-    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
-    List<Object[]> findUsersRankedByPoints(Pageable pageable);
-
-    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
-    List<Object[]> findAllUsersRankedByPoints();
-
-    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
-    List<Object[]> findAllUsersWithPointsRanked(Pageable pageable);
-
-    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
-    List<Object[]> findAllUsersWithPointsRankedAll();
 
     // 이번 달 활동한 유저 수 (PointLog 기록이 있는 유저)
     @Query("SELECT COUNT(DISTINCT p.user) FROM PointLog p WHERE p.createdAt BETWEEN :startDateTime AND :endDateTime")

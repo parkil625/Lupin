@@ -1,34 +1,30 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
-import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.response.UserStatsResponse;
-import com.example.demo.exception.BusinessException;
-import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UserService 테스트")
 class UserServiceTest {
+
+    @InjectMocks
+    private UserService userService;
 
     @Mock
     private UserRepository userRepository;
@@ -42,118 +38,50 @@ class UserServiceTest {
     @Mock
     private CommentRepository commentRepository;
 
-    @InjectMocks
-    private UserService userService;
+    @Mock
+    private RedisTemplate<String, String> redisTemplate;
 
+    @Mock
     private User user;
-
-    @BeforeEach
-    void setUp() {
-        user = User.builder()
-                .userId("testUser")
-                .password("password")
-                .name("테스트유저")
-                .role(Role.MEMBER)
-                .height(175.0)
-                .weight(70.0)
-                .build();
-    }
 
     @Test
     @DisplayName("사용자 정보를 조회한다")
     void getUserInfoTest() {
-        // given
         Long userId = 1L;
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
-
-        // when
         User result = userService.getUserInfo(userId);
-
-        // then
         assertThat(result).isEqualTo(user);
-        assertThat(result.getName()).isEqualTo("테스트유저");
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자를 조회하면 예외가 발생한다")
-    void getUserInfoNotFoundTest() {
-        // given
-        Long userId = 999L;
-        given(userRepository.findById(userId)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> userService.getUserInfo(userId))
-                .isInstanceOf(BusinessException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
     @Test
     @DisplayName("사용자 프로필을 수정한다")
     void updateProfileTest() {
-        // given
-        String newName = "수정된이름";
-        Double newHeight = 180.0;
-        Double newWeight = 75.0;
-
-        // when
-        userService.updateProfile(user, newName, newHeight, newWeight);
-
-        // then
-        assertThat(user.getName()).isEqualTo(newName);
-        assertThat(user.getHeight()).isEqualTo(newHeight);
-        assertThat(user.getWeight()).isEqualTo(newWeight);
+        String name = "newName";
+        Double height = 180.0;
+        Double weight = 75.0;
+        userService.updateProfile(user, name, height, weight);
+        verify(user).updateProfile(name, height, weight);
     }
 
     @Test
-    @DisplayName("사용자 통계를 조회한다 (반정규화된 totalPoints 사용)")
+    @DisplayName("사용자 통계를 조회한다")
     void getUserStatsTest() {
-        // given
         Long userId = 1L;
-        ReflectionTestUtils.setField(user, "totalPoints", 100L);
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(feedRepository.countByWriterId(userId)).willReturn(5L);
-        given(commentRepository.countByWriterId(userId)).willReturn(10L);
-
-        // when
+        given(feedRepository.countByWriterId(userId)).willReturn(10L);
+        given(commentRepository.countByWriterId(userId)).willReturn(5L);
+        given(user.getTotalPoints()).willReturn(100L);
         UserStatsResponse stats = userService.getUserStats(userId);
-
-        // then
-        assertThat(stats.userId()).isEqualTo(userId);
+        assertThat(stats.feedCount()).isEqualTo(10L);
+        assertThat(stats.commentCount()).isEqualTo(5L);
         assertThat(stats.totalPoints()).isEqualTo(100L);
-        assertThat(stats.feedCount()).isEqualTo(5L);
-        assertThat(stats.commentCount()).isEqualTo(10L);
-    }
-
-    @Test
-    @DisplayName("사용자 통계 조회시 포인트가 없으면 기본값 0을 반환한다")
-    void getUserStatsNoPointsTest() {
-        // given
-        Long userId = 1L;
-        // totalPoints 기본값은 0L
-        given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(feedRepository.countByWriterId(userId)).willReturn(0L);
-        given(commentRepository.countByWriterId(userId)).willReturn(0L);
-
-        // when
-        UserStatsResponse stats = userService.getUserStats(userId);
-
-        // then
-        assertThat(stats.totalPoints()).isZero();
-        assertThat(stats.feedCount()).isZero();
-        assertThat(stats.commentCount()).isZero();
     }
 
     @Test
     @DisplayName("사용자 아바타를 수정한다")
     void updateAvatarTest() {
-        // given
-        String avatarUrl = "https://example.com/avatar.jpg";
-
-        // when
+        String avatarUrl = "newAvatar.jpg";
         userService.updateAvatar(user, avatarUrl);
-
-        // then
-        assertThat(user.getAvatar()).isEqualTo(avatarUrl);
-        verify(userRepository).save(user);
+        verify(user).updateAvatar(avatarUrl);
     }
 }

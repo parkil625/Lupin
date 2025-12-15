@@ -69,8 +69,7 @@ public class AuthService {
     /**
      * 로그인용 유저 조회 (읽기 전용)
      */
-    @Transactional(readOnly = true)
-    public User findUserForLogin(String userId) {
+    private User findUserForLogin(String userId) {
         return userRepository.findByUserId(userId).orElse(null);
     }
 

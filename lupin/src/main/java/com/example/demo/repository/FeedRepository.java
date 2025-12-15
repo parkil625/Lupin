@@ -20,18 +20,15 @@ public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositor
 
     // [최적화] writer만 JOIN FETCH, images는 BatchSize(100)로 처리 (writerId만 사용하여 detached entity 문제 방지)
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer.id = :writerId ORDER BY f.id DESC")
-    Slice<Feed> findByWriterIdOrderByIdDesc(@Param("writerId") Long writerId, Pageable pageable);
+    Slice<Feed> findAllByWriter(@Param("writerId") Long writerId, Pageable pageable);
 
     // [최적화] 홈 피드 - 본인 제외 (writerId만 사용하여 detached entity 문제 방지)
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer.id <> :writerId ORDER BY f.id DESC")
-    Slice<Feed> findByWriterIdNotOrderByIdDesc(@Param("writerId") Long writerId, Pageable pageable);
-
-    // [최적화] 이름 검색
-    @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.writer.name LIKE %:name% ORDER BY f.id DESC")
-    Slice<Feed> findByWriterNameContainingOrderByIdDesc(@Param("name") String name, Pageable pageable);
+    Slice<Feed> findAllExceptWriter(@Param("writerId") Long writerId, Pageable pageable);
 
     // [최적화] 오늘 글 존재 여부 - exists 사용 (writerId만 사용하여 detached entity 문제 방지)
-    boolean existsByWriter_IdAndCreatedAtBetween(Long writerId, LocalDateTime start, LocalDateTime end);
+    @Query("SELECT COUNT(f) > 0 FROM Feed f WHERE f.writer.id = :writerId AND f.createdAt BETWEEN :start AND :end")
+    boolean existsByWriterAndDate(@Param("writerId") Long writerId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     // [최적화] 상세 조회 - writer만 페치
     @Query("SELECT f FROM Feed f JOIN FETCH f.writer WHERE f.id = :id")

@@ -3,7 +3,6 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.Comment;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
-import com.example.demo.dto.WriterActiveDays;
 import com.example.demo.dto.response.CommentResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -14,10 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +31,7 @@ public class CommentReadService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final FeedRepository feedRepository;
+    private final UserReadService userReadService;
 
     /**
      * 댓글 단건 조회
@@ -51,17 +48,7 @@ public class CommentReadService {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
-        return commentRepository.findByFeedAndParentIsNullOrderByIdDesc(feed);
-    }
-
-    /**
-     * 피드의 댓글 목록 조회 (인기순)
-     */
-    public List<Comment> getCommentsByFeedOrderByPopular(Long feedId) {
-        Feed feed = feedRepository.findById(feedId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
-
-        return commentRepository.findByFeedOrderByLikeCountDesc(feed);
+        return commentRepository.findParentCommentsByFeed(feed);
     }
 
     /**
@@ -103,7 +90,12 @@ public class CommentReadService {
         Set<Long> likedIds = currentUser != null
                 ? getLikedCommentIds(currentUser.getId(), commentIds)
                 : Collections.emptySet();
-        Map<Long, Integer> activeDaysMap = getActiveDaysMap(comments);
+
+        List<Long> writerIds = comments.stream()
+                .map(comment -> comment.getWriter().getId())
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, Integer> activeDaysMap = userReadService.getActiveDaysMap(writerIds);
 
         return comments.stream()
                 .map(comment -> CommentResponse.from(
@@ -137,31 +129,5 @@ public class CommentReadService {
             return Collections.emptySet();
         }
         return Set.copyOf(commentLikeRepository.findLikedCommentIdsByUserId(userId, commentIds));
-    }
-
-    /**
-     * 작성자별 이번 달 활동일 배치 조회
-     */
-    private Map<Long, Integer> getActiveDaysMap(List<Comment> comments) {
-        if (comments.isEmpty()) {
-            return Map.of();
-        }
-
-        List<Long> writerIds = comments.stream()
-                .map(comment -> comment.getWriter().getId())
-                .distinct()
-                .toList();
-
-        YearMonth currentMonth = YearMonth.now();
-        LocalDateTime startOfMonth = currentMonth.atDay(1).atStartOfDay();
-        LocalDateTime endOfMonth = currentMonth.atEndOfMonth().atTime(23, 59, 59);
-
-        List<WriterActiveDays> results = feedRepository.findActiveDaysByWriterIds(writerIds, startOfMonth, endOfMonth);
-
-        Map<Long, Integer> activeDaysMap = new HashMap<>();
-        for (WriterActiveDays row : results) {
-            activeDaysMap.put(row.writerId(), row.activeDays().intValue());
-        }
-        return activeDaysMap;
     }
 }

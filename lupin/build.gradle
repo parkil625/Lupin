@@ -91,6 +91,9 @@ dependencies {
 	testImplementation 'org.testcontainers:toxiproxy:1.19.3'
 	testImplementation 'com.redis:testcontainers-redis:2.2.2'
 
+	// Embedded Redis (테스트용)
+	testImplementation 'it.ozimov:embedded-redis:0.7.2'
+
 	// PITest for mutation testing
 	testImplementation 'org.pitest:pitest-junit5-plugin:1.2.1'
 

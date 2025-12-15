@@ -9,20 +9,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
 
+    Optional<FeedReport> findByReporterAndFeed(User reporter, Feed feed);
+
     long countByFeed(Feed feed);
-
-    boolean existsByReporterAndFeed(User reporter, Feed feed);
-
-    void deleteByReporterAndFeed(User reporter, Feed feed);
 
     @Modifying
     @Query("DELETE FROM FeedReport fr WHERE fr.feed = :feed")
     void deleteByFeed(@Param("feed") Feed feed);
 
-    // [이벤트 기반 삭제] feedId로 삭제 (Soft Delete 후에도 사용 가능)
     @Modifying
     @Query("DELETE FROM FeedReport fr WHERE fr.feed.id = :feedId")
     void deleteByFeedId(@Param("feedId") Long feedId);

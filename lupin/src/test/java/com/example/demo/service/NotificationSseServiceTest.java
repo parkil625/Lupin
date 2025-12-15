@@ -1,118 +1,92 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.response.NotificationResponse;
+import com.example.demo.domain.entity.Notification;
+import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.repository.NotificationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationSseServiceTest {
+
+    @InjectMocks
+    private NotificationSseService notificationSseService;
 
     @Mock
     private RedisTemplate<String, String> redisTemplate;
 
     @Mock
-    private NotificationRepository notificationRepository;
-
     private ObjectMapper objectMapper;
 
-    private NotificationSseService notificationSseService;
-
-    @BeforeEach
-    void setUp() {
-        objectMapper = new ObjectMapper();
-        notificationSseService = new NotificationSseService(redisTemplate, objectMapper, notificationRepository);
-        notificationSseService.init(); // @PostConstruct 수동 호출
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (notificationSseService != null) {
-            notificationSseService.destroy(); // @PreDestroy 수동 호출
-        }
-    }
+    @Mock
+    private NotificationRepository notificationRepository;
 
     @Test
-    @DisplayName("SSE 구독 시 SseEmitter를 반환한다")
-    void subscribeReturnsSseEmitter() {
+    @DisplayName("SSE 구독 성공")
+    void subscribeTest() {
         // given
         Long userId = 1L;
 
         // when
-        SseEmitter emitter = notificationSseService.subscribe(userId);
+        SseEmitter emitter = notificationSseService.subscribe(userId, null);
 
         // then
         assertThat(emitter).isNotNull();
     }
 
     @Test
-    @DisplayName("같은 유저가 다시 구독하면 기존 연결을 대체한다")
-    void subscribeReplacesExistingConnection() {
+    @DisplayName("기존 연결 종료 후 재구독")
+    void resubscribeTest() {
         // given
         Long userId = 1L;
-        SseEmitter firstEmitter = notificationSseService.subscribe(userId);
+        SseEmitter firstEmitter = notificationSseService.subscribe(userId, null);
 
         // when
-        SseEmitter secondEmitter = notificationSseService.subscribe(userId);
+        SseEmitter secondEmitter = notificationSseService.subscribe(userId, null);
 
         // then
         assertThat(secondEmitter).isNotNull();
-        assertThat(secondEmitter).isNotSameAs(firstEmitter);
+        assertThat(secondEmitter).isNotEqualTo(firstEmitter);
     }
 
     @Test
-    @DisplayName("연결 해제 후 알림 전송 시 에러가 발생하지 않는다")
-    void sendNotificationAfterDisconnectDoesNotThrow() {
+    @DisplayName("놓친 알림 재전송")
+    void sendMissedNotificationsTest() {
         // given
         Long userId = 1L;
-        notificationSseService.subscribe(userId);
-        notificationSseService.disconnect(userId);
+        Long lastEventId = 10L;
+        User user = User.builder().id(userId).build();
 
-        NotificationResponse notification = NotificationResponse.builder()
-                .id(1L)
-                .type("FEED_LIKE")
-                .title("테스트 알림")
+        // NPE 방지를 위해 모든 필드 세팅
+        Notification notification = Notification.builder()
+                .id(11L)
+                .user(user)
+                .type(NotificationType.COMMENT)
+                .title("title")
+                .content("content")
+                .isRead(false)
                 .build();
 
-        // when & then (예외 발생하지 않음)
-        notificationSseService.sendNotification(userId, notification);
-    }
+        given(notificationRepository.findByUserIdAndIdGreaterThan(userId, lastEventId))
+                .willReturn(List.of(notification));
 
-    @Test
-    @DisplayName("구독하지 않은 유저에게 알림 전송 시 에러가 발생하지 않는다")
-    void sendNotificationToUnsubscribedUserDoesNotThrow() {
-        // given
-        Long userId = 999L;
-        NotificationResponse notification = NotificationResponse.builder()
-                .id(1L)
-                .type("COMMENT")
-                .title("테스트 알림")
-                .build();
+        // when
+        SseEmitter emitter = notificationSseService.subscribe(userId, lastEventId);
 
-        // when & then (예외 발생하지 않음)
-        notificationSseService.sendNotification(userId, notification);
-    }
-
-    @Test
-    @DisplayName("연결 해제는 여러 번 호출해도 에러가 발생하지 않는다")
-    void disconnectMultipleTimesDoesNotThrow() {
-        // given
-        Long userId = 1L;
-        notificationSseService.subscribe(userId);
-
-        // when & then (예외 발생하지 않음)
-        notificationSseService.disconnect(userId);
-        notificationSseService.disconnect(userId);
-        notificationSseService.disconnect(userId);
+        // then
+        assertThat(emitter).isNotNull();
     }
 }

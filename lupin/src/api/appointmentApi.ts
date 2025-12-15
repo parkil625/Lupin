@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient from "./client";
 
 /**
  * 예약 요청 DTO
@@ -18,8 +18,9 @@ export interface AppointmentResponse {
   patientName: string;
   doctorId: number;
   doctorName: string;
+  department: string;
   date: string;
-  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 }
 
 export const appointmentApi = {
@@ -28,7 +29,7 @@ export const appointmentApi = {
    * POST /api/appointment
    */
   createAppointment: async (request: AppointmentRequest): Promise<number> => {
-    const response = await apiClient.post('/appointment', request);
+    const response = await apiClient.post("/appointment", request);
     return response.data; // 예약 ID 반환
   },
 
@@ -36,7 +37,9 @@ export const appointmentApi = {
    * 의사의 예약 목록 조회
    * GET /api/appointment/doctor/{doctorId}
    */
-  getDoctorAppointments: async (doctorId: number): Promise<AppointmentResponse[]> => {
+  getDoctorAppointments: async (
+    doctorId: number
+  ): Promise<AppointmentResponse[]> => {
     const response = await apiClient.get(`/appointment/doctor/${doctorId}`);
     return response.data;
   },
@@ -45,7 +48,9 @@ export const appointmentApi = {
    * 환자의 예약 목록 조회
    * GET /api/appointment/patient/{patientId}
    */
-  getPatientAppointments: async (patientId: number): Promise<AppointmentResponse[]> => {
+  getPatientAppointments: async (
+    patientId: number
+  ): Promise<AppointmentResponse[]> => {
     const response = await apiClient.get(`/appointment/patient/${patientId}`);
     return response.data;
   },

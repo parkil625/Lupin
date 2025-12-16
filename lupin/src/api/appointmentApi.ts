@@ -18,6 +18,7 @@ export interface AppointmentResponse {
   patientName: string;
   doctorId: number;
   doctorName: string;
+  departmentName?: string;
   date: string;
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 }
@@ -56,5 +57,16 @@ export const appointmentApi = {
    */
   cancelAppointment: async (appointmentId: number): Promise<void> => {
     await apiClient.put(`/appointment/${appointmentId}/cancel`);
+  },
+
+  /**
+   * 특정 의사와 날짜의 예약된 시간 조회
+   * GET /api/appointment/booked-times?doctorId={doctorId}&date={date}
+   */
+  getBookedTimes: async (doctorId: number, date: string): Promise<string[]> => {
+    const response = await apiClient.get('/appointment/booked-times', {
+      params: { doctorId, date }
+    });
+    return response.data;
   },
 };

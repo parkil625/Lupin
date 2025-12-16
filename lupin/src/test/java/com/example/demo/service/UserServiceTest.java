@@ -91,7 +91,7 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 프로필을 수정한다")
+    @DisplayName("사용자 프로필을 수정하고 DB에 저장한다")
     void updateProfileTest() {
         // given
         String newName = "수정된이름";
@@ -105,6 +105,9 @@ class UserServiceTest {
         assertThat(user.getName()).isEqualTo(newName);
         assertThat(user.getHeight()).isEqualTo(newHeight);
         assertThat(user.getWeight()).isEqualTo(newWeight);
+
+        // [TDD] 저장 메서드가 호출되었는지 검증 (기존 코드에서는 실패함)
+        verify(userRepository).save(user);
     }
 
     @Test

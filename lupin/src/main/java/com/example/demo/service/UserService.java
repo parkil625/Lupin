@@ -40,6 +40,8 @@ public class UserService {
     @Transactional
     public void updateProfile(User user, String name, Double height, Double weight) {
         user.updateProfile(name, height, weight);
+        // [Fix] Detached 상태의 엔티티일 수 있으므로 명시적 저장
+        userRepository.save(user);
     }
 
     public List<UserRankingResponse> getTopUsersByPoints(int limit) {

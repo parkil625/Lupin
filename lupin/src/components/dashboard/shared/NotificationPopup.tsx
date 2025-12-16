@@ -68,14 +68,14 @@ export default function NotificationPopup({
                 e.stopPropagation();
                 onMarkAllAsRead();
               }}
-              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
             >
               <CheckCheck className="w-4 h-4" />
               모두 읽음
             </button>
             <button
               onClick={() => onClose(true)}
-              className="p-2 hover:bg-gray-100 rounded-full"
+              className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
             >
               <span className="text-xl">×</span>
             </button>
@@ -84,51 +84,63 @@ export default function NotificationPopup({
         <div className="flex-1 overflow-hidden px-4">
           <ScrollArea className="h-full">
             <div className="space-y-2 pb-20 pt-4 pr-4">
-            {notifications.map((notif) => (
-              <div
-                key={notif.id}
-                onClick={() => {
-                  onNotificationClick(notif);
-                  onClose(true);
-                }}
-                className={`p-3 rounded-xl cursor-pointer transition-all hover:shadow-md ${
-                  notif.isRead
-                    ? "bg-gray-50"
-                    : "bg-gradient-to-r from-red-50/80 to-pink-50/80"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {notif.actorProfileImage && notif.actorProfileImage.trim() !== "" ? (
-                    <img
-                      src={notif.actorProfileImage}
-                      alt="프로필"
-                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        target.parentElement?.querySelector(".fallback-avatar")?.classList.remove("hidden");
-                      }}
-                    />
-                  ) : null}
-                  <div className={`w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 fallback-avatar ${notif.actorProfileImage && notif.actorProfileImage.trim() !== "" ? "hidden" : ""}`}>
-                    <User className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-sm text-gray-900 mb-1">
-                      {notif.title}
+              {notifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  onClick={() => {
+                    onNotificationClick(notif);
+                    onClose(true);
+                  }}
+                  className={`p-3 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                    notif.isRead
+                      ? "bg-gray-50"
+                      : "bg-gradient-to-r from-red-50/80 to-pink-50/80"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {notif.actorProfileImage &&
+                    notif.actorProfileImage.trim() !== "" ? (
+                      <img
+                        src={notif.actorProfileImage}
+                        alt="프로필"
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          target.parentElement
+                            ?.querySelector(".fallback-avatar")
+                            ?.classList.remove("hidden");
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 fallback-avatar ${
+                        notif.actorProfileImage &&
+                        notif.actorProfileImage.trim() !== ""
+                          ? "hidden"
+                          : ""
+                      }`}
+                    >
+                      <User className="w-5 h-5 text-gray-400" />
                     </div>
-                    {notif.content && (
-                      <div className="text-xs text-gray-700 mb-1 line-clamp-2">
-                        &ldquo;{notif.content}&rdquo;
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-sm text-gray-900 mb-1">
+                        {notif.title}
                       </div>
+                      {notif.content && (
+                        <div className="text-xs text-gray-700 mb-1 line-clamp-2">
+                          &ldquo;{notif.content}&rdquo;
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-500">
+                        {getRelativeTime(notif.createdAt)}
+                      </div>
+                    </div>
+                    {!notif.isRead && (
+                      <div className="w-2 h-2 bg-[#C93831] rounded-full flex-shrink-0 mt-1"></div>
                     )}
-                    <div className="text-xs text-gray-500">{getRelativeTime(notif.createdAt)}</div>
                   </div>
-                  {!notif.isRead && (
-                    <div className="w-2 h-2 bg-[#C93831] rounded-full flex-shrink-0 mt-1"></div>
-                  )}
                 </div>
-              </div>
               ))}
             </div>
           </ScrollArea>
@@ -146,7 +158,7 @@ export default function NotificationPopup({
           bottom: "calc(100% - 32px)",
         }}
       >
-        <div className="flex flex-col" style={{ height: '544px' }}>
+        <div className="flex flex-col" style={{ height: "544px" }}>
           <div className="p-4 pb-2 flex-shrink-0 flex items-center justify-between">
             <h3 className="text-lg font-black text-gray-900">알림</h3>
             <button
@@ -155,64 +167,76 @@ export default function NotificationPopup({
                 e.stopPropagation();
                 onMarkAllAsRead();
               }}
-              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
             >
               <CheckCheck className="w-4 h-4" />
               모두 읽음
             </button>
           </div>
-        <div className="flex-1 overflow-hidden px-4">
-          <ScrollArea className="h-full">
-            <div className="space-y-2 pb-4 pr-4">
-            {notifications.map((notif) => (
-              <div
-                key={notif.id}
-                onClick={() => {
-                  onNotificationClick(notif);
-                  onClose(true);
-                }}
-                className={`p-3 rounded-xl cursor-pointer transition-all hover:shadow-md ${
-                  notif.isRead
-                    ? "bg-white/60"
-                    : "bg-gradient-to-r from-red-50/80 to-pink-50/80"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {notif.actorProfileImage && notif.actorProfileImage.trim() !== "" ? (
-                    <img
-                      src={notif.actorProfileImage}
-                      alt="프로필"
-                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        target.parentElement?.querySelector(".fallback-avatar")?.classList.remove("hidden");
-                      }}
-                    />
-                  ) : null}
-                  <div className={`w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 fallback-avatar ${notif.actorProfileImage && notif.actorProfileImage.trim() !== "" ? "hidden" : ""}`}>
-                    <User className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-sm text-gray-900 mb-1">
-                      {notif.title}
-                    </div>
-                    {notif.content && (
-                      <div className="text-xs text-gray-700 mb-1 line-clamp-2">
-                        &ldquo;{notif.content}&rdquo;
+          <div className="flex-1 overflow-hidden px-4">
+            <ScrollArea className="h-full">
+              <div className="space-y-2 pb-4 pr-4">
+                {notifications.map((notif) => (
+                  <div
+                    key={notif.id}
+                    onClick={() => {
+                      onNotificationClick(notif);
+                      onClose(true);
+                    }}
+                    className={`p-3 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                      notif.isRead
+                        ? "bg-white/60"
+                        : "bg-gradient-to-r from-red-50/80 to-pink-50/80"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {notif.actorProfileImage &&
+                      notif.actorProfileImage.trim() !== "" ? (
+                        <img
+                          src={notif.actorProfileImage}
+                          alt="프로필"
+                          className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            target.parentElement
+                              ?.querySelector(".fallback-avatar")
+                              ?.classList.remove("hidden");
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 fallback-avatar ${
+                          notif.actorProfileImage &&
+                          notif.actorProfileImage.trim() !== ""
+                            ? "hidden"
+                            : ""
+                        }`}
+                      >
+                        <User className="w-5 h-5 text-gray-400" />
                       </div>
-                    )}
-                    <div className="text-xs text-gray-500">{getRelativeTime(notif.createdAt)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-sm text-gray-900 mb-1">
+                          {notif.title}
+                        </div>
+                        {notif.content && (
+                          <div className="text-xs text-gray-700 mb-1 line-clamp-2">
+                            &ldquo;{notif.content}&rdquo;
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500">
+                          {getRelativeTime(notif.createdAt)}
+                        </div>
+                      </div>
+                      {!notif.isRead && (
+                        <div className="w-2 h-2 bg-[#C93831] rounded-full flex-shrink-0 mt-1"></div>
+                      )}
+                    </div>
                   </div>
-                  {!notif.isRead && (
-                    <div className="w-2 h-2 bg-[#C93831] rounded-full flex-shrink-0 mt-1"></div>
-                  )}
-                </div>
+                ))}
               </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
+            </ScrollArea>
+          </div>
         </div>
       </div>
     </>

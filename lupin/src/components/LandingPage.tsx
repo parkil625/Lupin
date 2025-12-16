@@ -192,7 +192,7 @@ export default function LandingPage() {
           </div>
           <Button
             onClick={handleLogin}
-            className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold border-0 shadow-xl rounded-2xl px-6 transition-transform active:scale-95"
+            className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold border-0 shadow-xl rounded-2xl px-6 transition-transform active:scale-95 cursor-pointer"
           >
             로그인
           </Button>
@@ -224,7 +224,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   onClick={handleLogin}
-                  className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold text-sm md:text-lg px-6 md:px-8 py-4 md:py-6 rounded-2xl border-0 shadow-2xl hover:scale-105 transition-transform"
+                  className="bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold text-sm md:text-lg px-6 md:px-8 py-4 md:py-6 rounded-2xl border-0 shadow-2xl hover:scale-105 transition-transform cursor-pointer"
                 >
                   시작하기
                   <ArrowRight className="w-4 h-4 md:w-5 md:h-5 ml-2" />
@@ -445,7 +445,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 onClick={handleLogin}
-                className="bg-white text-[#C93831] hover:bg-gray-50 font-bold text-base md:text-xl px-6 md:px-10 py-4 md:py-7 rounded-2xl shadow-xl hover:scale-105 transition-transform"
+                className="bg-white text-[#C93831] hover:bg-gray-50 font-bold text-base md:text-xl px-6 md:px-10 py-4 md:py-7 rounded-2xl shadow-xl hover:scale-105 transition-transform cursor-pointer"
               >
                 <Sparkles className="w-5 h-5 md:w-6 md:h-6 mr-2" />
                 로그인하고 시작하기

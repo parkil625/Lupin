@@ -330,7 +330,7 @@ const BasicInfoForm = memo(
                   type="date"
                   {...register("birthDate")}
                   disabled={!isEditing}
-                  className={`bg-gray-50/50 rounded-xl ${
+                  className={`bg-gray-50/50 rounded-xl cursor-pointer ${
                     errors.birthDate ? "border-red-400" : "border-gray-200"
                   }`}
                 />
@@ -356,7 +356,7 @@ const BasicInfoForm = memo(
                 <SelectTrigger
                   id="gender"
                   aria-label="성별 선택"
-                  className={`mt-1.5 bg-gray-50/50 rounded-xl ${
+                  className={`mt-1.5 bg-gray-50/50 rounded-xl cursor-pointer ${
                     errors.gender ? "border-red-400" : "border-gray-200"
                   }`}
                 >
@@ -543,7 +543,7 @@ const OAuthSection = memo(() => {
               variant="ghost"
               size="sm"
               onClick={() => handleUnlink(linked.provider)}
-              className="text-red-500 hover:bg-red-50 hover:text-red-600"
+              className="text-red-500 hover:bg-red-50 hover:text-red-600 cursor-pointer"
             >
               <Unlink className="w-4 h-4 mr-1.5" /> 해제
             </Button>
@@ -567,7 +567,7 @@ const OAuthSection = memo(() => {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="border-[#C93831] text-[#C93831] hover:bg-red-50 font-bold"
+                  className="border-[#C93831] text-[#C93831] hover:bg-red-50 font-bold cursor-pointer"
                 >
                   <Link2 className="w-4 h-4 mr-1.5" /> 연결{" "}
                   <ChevronDown className="w-4 h-4 ml-1" />
@@ -680,7 +680,7 @@ export default function ProfilePage({
                     )
                 }
                 variant="outline"
-                className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold"
+                className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold cursor-pointer"
               >
                 <Edit className="w-4 h-4 mr-2" /> 저장
               </Button>
@@ -689,7 +689,7 @@ export default function ProfilePage({
                 type="button"
                 onClick={() => setIsEditing(true)}
                 variant="outline"
-                className="border-gray-200 font-bold"
+                className="border-gray-200 font-bold cursor-pointer"
               >
                 <Edit className="w-4 h-4 mr-2 text-gray-600" /> 수정
               </Button>
@@ -697,7 +697,7 @@ export default function ProfilePage({
             <Button
               onClick={onLogout}
               variant="outline"
-              className="border-l-0 border-red-200 text-red-600 hover:bg-red-50 font-bold"
+              className="border-l-0 border-red-200 text-red-600 hover:bg-red-50 font-bold cursor-pointer"
             >
               <LogOut className="w-4 h-4 mr-2" /> 로그아웃
             </Button>

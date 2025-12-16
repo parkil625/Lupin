@@ -67,10 +67,10 @@ export default function Sidebar({
             <button
               key={item.id}
               onClick={() => onNavSelect(item.id)}
-              className={`w-full flex items-center py-3 rounded-2xl transition-colors duration-200 ${
+              className={`w-full flex items-center py-3 rounded-2xl transition-colors duration-200 cursor-pointer ${
                 selectedNav === item.id ? "" : "hover:bg-white/30"
               }`}
-              style={{ paddingLeft: '10px' }}
+              style={{ paddingLeft: "10px" }}
             >
               <item.icon
                 className={`w-7 h-7 flex-shrink-0 ${
@@ -91,8 +91,8 @@ export default function Sidebar({
         {children}
         <button
           onClick={() => onNavSelect("profile")}
-          className="flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors"
-          style={{ paddingLeft: '6px' }}
+          className="flex items-center py-3 rounded-2xl hover:bg-white/30 transition-colors cursor-pointer"
+          style={{ paddingLeft: "6px" }}
         >
           <Avatar className="w-9 h-9 border-2 border-[#C93831] flex-shrink-0">
             {profileImage ? (
@@ -112,7 +112,8 @@ export default function Sidebar({
               expanded ? "opacity-100" : "opacity-0 w-0"
             }`}
           >
-            {localStorage.getItem('userName') || (userType === "doctor" ? "의료진" : "사용자")}
+            {localStorage.getItem("userName") ||
+              (userType === "doctor" ? "의료진" : "사용자")}
           </span>
         </button>
       </div>

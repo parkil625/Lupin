@@ -63,7 +63,9 @@ export function UserHoverCard({
     <HoverCard openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>
         <div className={className}>
-          <Avatar className={`${sizeClasses[size]} border-2 border-white shadow-lg cursor-pointer`}>
+          <Avatar
+            className={`${sizeClasses[size]} border-2 border-white shadow-lg`}
+          >
             {!showFallback ? (
               <img
                 src={getProfileThumbnailUrl(avatarUrl)}
@@ -99,12 +101,18 @@ export function UserHoverCard({
           </Avatar>
           <div className="space-y-2 flex-1">
             <h4 className="text-base font-black text-gray-900">{name}</h4>
-            <p className="text-sm text-gray-700 font-medium">{department || "부서 미정"}</p>
+            <p className="text-sm text-gray-700 font-medium">
+              {department || "부서 미정"}
+            </p>
             {activeDays !== undefined && (
               <div className="pt-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-600 font-medium">이번 달 활동</span>
-                  <span className="font-black text-gray-900">{activeDays}일</span>
+                  <span className="text-gray-600 font-medium">
+                    이번 달 활동
+                  </span>
+                  <span className="font-black text-gray-900">
+                    {activeDays}일
+                  </span>
                 </div>
               </div>
             )}

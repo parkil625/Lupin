@@ -17,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -54,6 +56,12 @@ class AuctionServiceTest {
     @Mock
     AuctionTaskScheduler auctionTaskScheduler;
 
+    @Mock
+    private RedissonClient redissonClient;
+
+    @Mock
+    private RBucket<Object> rBucket;
+
     @InjectMocks
     AuctionService auctionService;
 
@@ -63,7 +71,7 @@ class AuctionServiceTest {
         Auction auction = createActiveAuction(100L);
         User user = createUser(10L,"홍길동");
 
-        given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
+        given(auctionRepository.findById(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(10L)).willReturn(Optional.of(user));
         
         // [수정] 포인트 조회 로직(Stubbing) 삭제 (입찰 시 잔액 체크 안함)
@@ -94,7 +102,7 @@ class AuctionServiceTest {
 
         User user = createUser(10L, "홍길동");
 
-        given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
+        given(auctionRepository.findById(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(10L)).willReturn(Optional.of(user));
 
         // when & then
@@ -112,7 +120,7 @@ class AuctionServiceTest {
         Long bidAmount = 200L;
         LocalDateTime bidTime = createLocalDateNow();
 
-        given(auctionRepository.findByIdForUpdate(auctionId)).willReturn(Optional.empty());
+        given(auctionRepository.findById(auctionId)).willReturn(Optional.empty());
 
         // when & then
         assertThrows(IllegalArgumentException.class,
@@ -125,7 +133,7 @@ class AuctionServiceTest {
     void 없는_유저로_입찰하면_예외가_발생한다() {
         // given
         Auction auction = createActiveAuction(100L);
-        given(auctionRepository.findByIdForUpdate(100L)).willReturn(Optional.of(auction));
+        given(auctionRepository.findById(100L)).willReturn(Optional.of(auction));
         given(userRepository.findById(10L)).willReturn(Optional.empty());
 
         // when & then
@@ -142,7 +150,7 @@ class AuctionServiceTest {
         User user = createUser(10L,"홍길동");
         Long bidAmount = 50L; 
 
-        given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
+        given(auctionRepository.findById(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
 
         // when & then
@@ -160,8 +168,8 @@ class AuctionServiceTest {
         User user = createUser(100L,"홍길동");
         Long bidAmount = 100L;
 
-        given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
-        given(auctionRepository.findByIdForUpdate(2L)).willReturn(Optional.of(auction2));
+        given(auctionRepository.findById(1L)).willReturn(Optional.of(auction));
+        given(auctionRepository.findById(2L)).willReturn(Optional.of(auction2));
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
 
         // when & then
@@ -188,7 +196,7 @@ class AuctionServiceTest {
                 .status(BidStatus.ACTIVE)
                 .build();
 
-        given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
+        given(auctionRepository.findById(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(2L)).willReturn(Optional.of(newUser));
         
         // [수정] 포인트 조회 Stubbing 삭제
@@ -207,27 +215,28 @@ class AuctionServiceTest {
 
     @Test
     void 경매시작시간이_다된_경매_활성화() {
-        //given
-        LocalDateTime now = createLocalDateNow();
-        Auction auction = Auction.builder()
-                .id(1L)
+// given
+        Auction scheduledAuction = Auction.builder()
+                .id(2L)
                 .status(AuctionStatus.SCHEDULED)
-                .currentPrice(100L)
-                .startTime(now)
-                .regularEndTime(now.plusMinutes(20))
-                .overtimeStarted(false)
+                .startTime(LocalDateTime.now().minusMinutes(1)) // 이미 시작 시간 지남
+                .regularEndTime(LocalDateTime.now().plusHours(2)) // [수정] 필수값 추가! (종료 시간 설정)
+                .currentPrice(1000L)
                 .build();
 
-        given(auctionRepository.findByStatusAndStartTimeBefore(AuctionStatus.SCHEDULED, now))
-                .willReturn(List.of(auction));
+        given(auctionRepository.findByStatusAndStartTimeBefore(eq(AuctionStatus.SCHEDULED), any()))
+                .willReturn(List.of(scheduledAuction));
 
-        //when
-        auctionService.activateScheduledAuctions(now);
+        // Redis Mocking
+        given(redissonClient.getBucket(anyString())).willReturn(rBucket);
 
-        //then
-        assertEquals(AuctionStatus.ACTIVE, auction.getStatus());
+        // when
+        auctionService.activateScheduledAuctions(LocalDateTime.now());
+
+        // then
+        assertThat(scheduledAuction.getStatus()).isEqualTo(AuctionStatus.ACTIVE);
+        verify(rBucket, times(1)).set(any());
     }
-
     @Test
     void 경매시간이_종료된_경매_비활성화_및_낙찰자_포인트_차감() {
         // given
@@ -347,7 +356,7 @@ class AuctionServiceTest {
         Auction auction = createActiveAuction(500L);
         User user = createUser(userId, "입찰자");
 
-        given(auctionRepository.findByIdForUpdate(auctionId)).willReturn(Optional.of(auction));
+        given(auctionRepository.findById(auctionId)).willReturn(Optional.of(auction));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
         // [수정] 포인트 조회 Stub 삭제

@@ -13,7 +13,7 @@ const failCount = new Counter('failed_bids');
 
 const BASE_URL = 'http://localhost:8081'; // 포트 8081 확인
 const AUCTION_ID = 7;
-const BID_AMOUNT = 58;
+const BID_AMOUNT = 65;
 
 // 2. 아까 DB에 만든 tester1 ~ tester100 유저 정보 생성
 const testUsers = [];
@@ -60,12 +60,10 @@ export default function () {
         }
     );
 
-    if (bidRes.status === 200) {
+    if (bidRes.status === 200 && bidRes.body.includes("입찰 성공")) {
         console.log(`[입찰 성공] ID: ${currentUser.email} 가 성공했습니다!`);
         successCount.add(1);
     } else {
-        // 실패 로그는 너무 많으니 주석 처리하거나 필요하면 켬
-        console.log(`[입찰 실패] Status: ${bidRes.status}`);
         failCount.add(1);
     }
 }

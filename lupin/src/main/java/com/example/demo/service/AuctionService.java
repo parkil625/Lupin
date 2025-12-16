@@ -16,6 +16,8 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.scheduler.AuctionTaskScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,10 +37,11 @@ public class AuctionService {
     private final AuctionTaskScheduler auctionTaskScheduler;
 
     private final AuctionSseService auctionSseService;
+    private final RedissonClient redissonClient;
 
     // 경매 입찰 시켜주는 메소드
     public void placeBid(Long auctionId, Long userId, Long bidAmount, LocalDateTime bidTime) {
-        Auction auction = auctionRepository.findByIdForUpdate(auctionId)
+        Auction auction = auctionRepository.findById(auctionId)
                 .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다. id=" + auctionId));
 
         User user = userRepository.findById(userId)
@@ -82,6 +85,9 @@ public class AuctionService {
         List<Auction> auctions = auctionRepository.findByStatusAndStartTimeBefore(AuctionStatus.SCHEDULED, now);
         for (Auction auction : auctions) {
             auction.activate(now);
+
+            RBucket<Long> bucket = redissonClient.getBucket("auction_price:" + auction.getId());
+            bucket.set(auction.getCurrentPrice());
         }
     }
 

@@ -2,47 +2,59 @@ package com.example.demo.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RLock;
+import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec; // import 확인
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class AuctionBidFacade {
 
-    private final RedissonClient redissonClient; // 번호표 기계 (이미 build.gradle에 있어서 바로 주입 가능!)
-    private final AuctionService auctionService; // 실제 입찰 업무 담당
+    private final RedissonClient redissonClient;
+    private final AuctionService auctionService;
 
-    public void bid(Long auctionId, Long userId, Long bidAmount, LocalDateTime bidTime) {
-        // 1. 락 이름(번호표) 만들기 - 경매장마다 별도의 번호표가 있어야겠죠?
-        String lockKey = "auction_lock:" + auctionId;
-        RLock lock = redissonClient.getLock(lockKey);
+    public boolean bid(Long auctionId, Long userId, Long bidAmount, LocalDateTime bidTime) {
 
-        try {
-            // 2. 락 획득 시도 (번호표 뽑기)
-            // waitTime 초 동안 기다려봄, leaseTime: 초 안에 처리 못하면 락 자동 반납 (데드락 방지)
-            boolean available = lock.tryLock(7, 10, TimeUnit.SECONDS);
+        String redisKey = "auction_price:" + auctionId;
 
-            if (!available) {
-                // 락을 못 얻었으면(사람이 너무 많으면) 튕겨내거나 재시도 안내
-                log.info("현재 입찰이 몰려 잠시 후 다시 시도해주세요.");
-                return;
-            }
+        String luaScript =
+                "local curr = tonumber(redis.call('get', KEYS[1])); "+
+                        "local bid = tonumber(ARGV[1]); " +
+                        "if curr == nil or bid > curr then " +
+                        "   redis.call('set', KEYS[1], ARGV[1]); " +
+                        "   return 1; " +
+                        "else " +
+                        "   return 0; " +
+                        "end";
 
-            // 3. 락을 얻었으니 실제 서비스의 입찰 로직 호출! (트랜잭션은 여기서 시작됨)
-            auctionService.placeBid(auctionId, userId, bidAmount, bidTime);
+        // [중요 수정] StringCodec.INSTANCE를 넣어줘야 숫자를 제대로 인식합니다!
+        RScript script = redissonClient.getScript(StringCodec.INSTANCE);
 
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            // 4. 업무 다 봤으니 락 반납 (번호표 버리기)
-            if (lock.isHeldByCurrentThread()) { // 내가 쥔 락인지 확인하고 해제
-                lock.unlock();
-            }
+        List<Object> keys = Collections.singletonList(redisKey);
+
+        // [권장] 값도 명확하게 문자열로 변환해서 전달
+        Object[] values = new Object[]{String.valueOf(bidAmount)};
+
+        Long result = script.eval(
+                RScript.Mode.READ_WRITE,
+                luaScript,
+                RScript.ReturnType.INTEGER,
+                keys,
+                values
+        );
+
+        if (result == 0) {
+            return false;
         }
+
+        log.info("Redis 입찰 성공! DB 업데이트를 진행합니다.");
+        auctionService.placeBid(auctionId, userId, bidAmount, bidTime);
+        return true;
     }
 }

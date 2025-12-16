@@ -47,16 +47,20 @@ public class AuctionController {
 
     @Operation(summary = "경매 입찰", description = "경매에 포인트를 사용하여 입찰합니다. (Redis 분산 락 적용)")
     @PostMapping("/{auctionId}/bid")
-    public ResponseEntity<Void> placeBid(
+    public ResponseEntity<?> placeBid(
             @PathVariable Long auctionId,
             @RequestBody AuctionRequest request,
             @CurrentUser User user
     ) {
 
-        // 서비스 호출 (입찰 시간은 서버 시간 기준)
-        auctionBidFacade.bid(auctionId, user.getId(), request.getBidAmount(), LocalDateTime.now());
+        boolean isSuccess = auctionBidFacade.bid(auctionId, user.getId(), request.getBidAmount(), LocalDateTime.now());
 
-        return ResponseEntity.ok().build();
+        if (!isSuccess) {
+
+            return ResponseEntity.ok().body("아쉽지만 다른 분이 먼저 입찰했습니다.");
+        }
+
+        return ResponseEntity.ok().body("입찰 성공!");
     }
 
     @Operation(summary = "진행 중인 경매 입찰 기록", description = "현재 ACTIVE 상태인 경매의 입찰 내역을 가격순으로 조회합니다.")

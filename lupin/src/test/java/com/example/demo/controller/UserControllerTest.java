@@ -72,6 +72,8 @@ class UserControllerTest {
                 .role(Role.MEMBER)
                 .height(175.0)
                 .weight(70.0)
+                .birthDate(LocalDate.of(1990, 1, 1))
+                .gender("남성")
                 .build();
 
         given(userRepository.findByUserId("testuser")).willReturn(Optional.of(testUser));
@@ -88,7 +90,9 @@ class UserControllerTest {
         mockMvc.perform(get("/api/users/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("테스트유저"));
+                .andExpect(jsonPath("$.name").value("테스트유저"))
+                .andExpect(jsonPath("$.birthDate").value("1990-01-01"))
+                .andExpect(jsonPath("$.gender").value("남성"));
     }
 
     @Test

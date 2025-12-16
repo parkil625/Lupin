@@ -62,9 +62,9 @@ public class FeedTransactionService {
         // 이미지 저장
         addImages(savedFeed, startImageKey, endImageKey, otherImageKeys);
 
-        // 포인트 부여
+        // 포인트 부여 [수정됨: addPoints -> earnPoints]
         if (workoutResult.score() > 0) {
-            pointService.addPoints(writer, workoutResult.score());
+            pointService.earnPoints(writer, workoutResult.score());
         }
 
         return savedFeed;

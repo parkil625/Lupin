@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import com.example.demo.domain.enums.PointType;
 
 @Entity
 @Table(name = "point_logs")
@@ -23,6 +24,10 @@ public class PointLog {
 
     @Column(nullable = false)
     private Long points;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PointType type;
 
     @Column(name = "created_at", nullable = false)
     @Builder.Default

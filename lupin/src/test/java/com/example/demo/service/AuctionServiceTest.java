@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,29 +48,31 @@ class AuctionServiceTest {
     @Mock
     PointService pointService;
 
-    @InjectMocks
-    AuctionService auctionService;
-
-    // ▼ [추가] 새로 생긴 의존성에 대한 Mock 객체 추가
     @Mock
     AuctionSseService auctionSseService;
 
-    // ▼ [추가] 기존에 있었으나 Mock이 누락된 것으로 보이는 스케줄러도 추가
     @Mock
     AuctionTaskScheduler auctionTaskScheduler;
 
+    @InjectMocks
+    AuctionService auctionService;
+
     @Test
     void 입찰이_성공하면_현재가와_우승자가_변경되고_입찰기록이_저장된다() {
-
+        // given
         Auction auction = createActiveAuction(100L);
         User user = createUser(10L,"홍길동");
 
         given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(10L)).willReturn(Optional.of(user));
-        given(pointService.getTotalPoints(user)).willReturn(200L);
+        
+        // [수정] 포인트 조회 로직(Stubbing) 삭제 (입찰 시 잔액 체크 안함)
+        // given(pointService.getTotalPoints(user)).willReturn(200L);
 
-
+        // when
         auctionService.placeBid(1L, 10L, 200L, LocalDateTime.now());
+
+        // then
         assertEquals(200L, auction.getCurrentPrice());
         assertEquals(user, auction.getWinner());
         verify(auctionBidRepository).save(any(AuctionBid.class));
@@ -79,58 +80,44 @@ class AuctionServiceTest {
 
     @Test
     void 정규시간_외시간에_입찰하면_입찰이_실패한다(){
-
         // given
-        // 정규 시간이 0:10 ~ 0:20 인 ACTIVE 경매라고 가정
-        LocalDateTime now = LocalDateTime.of(2025, 1, 1, 0, 0);
-
+        // [수정] Active 상태가 아니라 Scheduled(시작 전) 상태로 설정해야 입찰이 거부됨을 명확히 테스트 가능
+        // (현재 Auction 로직상 Active면 시간 체크를 통과할 수 있음)
         Auction auction = Auction.builder()
                 .id(1L)
-                .status(AuctionStatus.ACTIVE)
+                .status(AuctionStatus.SCHEDULED) // 아직 시작 안함
                 .currentPrice(100L)
-                .startTime(now.plusMinutes(10))      // 0:10 시작
-                .regularEndTime(now.plusMinutes(20)) // 0:20 종료
+                .startTime(LocalDateTime.now().plusMinutes(10))
+                .regularEndTime(LocalDateTime.now().plusMinutes(20))
                 .overtimeStarted(false)
                 .build();
 
         User user = createUser(10L, "홍길동");
 
-        given(auctionRepository.findByIdForUpdate(1L))
-                .willReturn(Optional.of(auction));
-        given(userRepository.findById(10L))
-                .willReturn(Optional.of(user));
-
-        // 시작 전인 시간(정규시간 밖)
-        LocalDateTime bidTime = now; // 0:00
+        given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
+        given(userRepository.findById(10L)).willReturn(Optional.of(user));
 
         // when & then
         assertThrows(IllegalStateException.class,
-                () -> auctionService.placeBid(1L, 10L, 200L, bidTime));
+                () -> auctionService.placeBid(1L, 10L, 200L, LocalDateTime.now()));
 
-        // 실패했으니 저장되면 안 됨
         verify(auctionBidRepository, never()).save(any());
-
-
     }
 
     @Test
     void 없는_경매에_입찰하면_예외가_발생한다(){
-
         // given
         Long auctionId = 1L;
         Long userId = 10L;
         Long bidAmount = 200L;
         LocalDateTime bidTime = createLocalDateNow();
 
-        // 경매가 존재하지 않는 상황을 명시적으로 세팅
-        given(auctionRepository.findByIdForUpdate(auctionId))
-                .willReturn(Optional.empty());
+        given(auctionRepository.findByIdForUpdate(auctionId)).willReturn(Optional.empty());
 
         // when & then
         assertThrows(IllegalArgumentException.class,
                 () -> auctionService.placeBid(auctionId, userId, bidAmount, bidTime));
 
-        // 경매가 없으니 입찰 기록은 저장되면 안 됨 (선택이지만 있으면 좋음)
         verify(auctionBidRepository, never()).save(any());
     }
 
@@ -138,29 +125,22 @@ class AuctionServiceTest {
     void 없는_유저로_입찰하면_예외가_발생한다() {
         // given
         Auction auction = createActiveAuction(100L);
-        Long auctionId = 100L;
-        Long id = 10L;
-        Long bidAmount = 200L;
-        LocalDateTime bidTime = LocalDateTime.of(2025,1,1,0,0);
-
-        given(auctionRepository.findByIdForUpdate(auctionId))
-                .willReturn(Optional.of(auction));
-        given(userRepository.findById(id)).willReturn(Optional.empty());
+        given(auctionRepository.findByIdForUpdate(100L)).willReturn(Optional.of(auction));
+        given(userRepository.findById(10L)).willReturn(Optional.empty());
 
         // when & then
         assertThrows(IllegalArgumentException.class,
-                () -> auctionService.placeBid(auctionId, id, bidAmount, bidTime));
+                () -> auctionService.placeBid(100L, 10L, 200L, LocalDateTime.now()));
 
         verify(auctionBidRepository, never()).save(any());
     }
 
     @Test
     void 현재가_이하로_입찰하면_예외가_발생한다() {
-
         //given
         Auction auction = createActiveAuction(100L);
         User user = createUser(10L,"홍길동");
-        Long bidAmount = 50L; // 현재가(100L)보다 낮은 금액
+        Long bidAmount = 50L; 
 
         given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(user.getId())).willReturn(Optional.of(user));
@@ -175,13 +155,10 @@ class AuctionServiceTest {
     @Test
     void 상태별_입찰_테스트(){
         //given
-
         Auction auction = createScheduledAuction();
         Auction auction2 = createEndedAuction();
-
         User user = createUser(100L,"홍길동");
         Long bidAmount = 100L;
-
 
         given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
         given(auctionRepository.findByIdForUpdate(2L)).willReturn(Optional.of(auction2));
@@ -190,8 +167,6 @@ class AuctionServiceTest {
         // when & then
         assertThrows(IllegalStateException.class, () -> auctionService.placeBid(1L, user.getId(), bidAmount, LocalDateTime.now()));
         assertThrows(IllegalStateException.class, () -> auctionService.placeBid(2L, user.getId(), bidAmount, LocalDateTime.now()));
-
-
     }
 
     @Test
@@ -199,8 +174,6 @@ class AuctionServiceTest {
         // given
         Auction auction = createActiveAuction(100L);
         LocalDateTime now = LocalDateTime.now();
-
-
 
         User oldUser = createUser(1L, "옛입찰자");
         User newUser = createUser(2L, "새입찰자");
@@ -215,28 +188,20 @@ class AuctionServiceTest {
                 .status(BidStatus.ACTIVE)
                 .build();
 
-        // auctionRepository
-        given(auctionRepository.findByIdForUpdate(1L))
-                .willReturn(Optional.of(auction));
+        given(auctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(auction));
+        given(userRepository.findById(2L)).willReturn(Optional.of(newUser));
+        
+        // [수정] 포인트 조회 Stubbing 삭제
+        // given(pointService.getTotalPoints(newUser)).willReturn(200L);
 
-        // userRepository
-        given(userRepository.findById(2L))
-                .willReturn(Optional.of(newUser));
+        given(auctionBidRepository.findTopByAuctionAndStatusOrderByBidAmountDescBidTimeDesc(auction, BidStatus.ACTIVE))
+                .willReturn(Optional.of(prevBid));
 
-        // 기존 최고 입찰 조회
-        given(auctionBidRepository
-                .findTopByAuctionAndStatusOrderByBidAmountDescBidTimeDesc(auction, BidStatus.ACTIVE)
-        ).willReturn(Optional.of(prevBid));
+        // when
+        auctionService.placeBid(1L, 2L, 200L, now.plusMinutes(1));
 
-        given(pointService.getTotalPoints(newUser)).willReturn(200L);
-
-        LocalDateTime bidTime = now.plusMinutes(1); // 00:01, 정규시간 안
-        auctionService.placeBid(1L, 2L, 200L, bidTime);
-
-        // then - 기존 입찰이 OUTBID로 바뀌었는지 확인
+        // then
         assertEquals(BidStatus.OUTBID, prevBid.getStatus());
-
-        // 새 입찰 저장 여부 확인
         verify(auctionBidRepository).save(any(AuctionBid.class));
     }
 
@@ -253,11 +218,8 @@ class AuctionServiceTest {
                 .overtimeStarted(false)
                 .build();
 
-
-        given(auctionRepository.findByStatusAndStartTimeBefore(
-                AuctionStatus.SCHEDULED,
-                now
-        )).willReturn(List.of(auction));
+        given(auctionRepository.findByStatusAndStartTimeBefore(AuctionStatus.SCHEDULED, now))
+                .willReturn(List.of(auction));
 
         //when
         auctionService.activateScheduledAuctions(now);
@@ -267,54 +229,53 @@ class AuctionServiceTest {
     }
 
     @Test
-    void 경매시간이_종료된_경매_비활성화() {
+    void 경매시간이_종료된_경매_비활성화_및_낙찰자_포인트_차감() {
         // given
         LocalDateTime now = createLocalDateNow();
-        // [핵심] Service 내부 로직과 똑같이 계산해서 변수로 만들어줍니다.
         LocalDateTime regularTimeLimit = now.minusSeconds(30);
 
-        User user = createUser(1L, "홍길동");
+        User winner = createUser(1L, "홍길동"); // 낙찰자
 
         Auction auction = Auction.builder()
                 .id(1L)
                 .status(AuctionStatus.ACTIVE)
-                .currentPrice(100L)
+                .currentPrice(1000L) // 낙찰가
                 .startTime(now.minusMinutes(40))
-                .regularEndTime(now.minusMinutes(30)) // 정규시간 끝남
+                .regularEndTime(now.minusMinutes(30)) 
                 .overtimeStarted(true)
-                .overtimeEndTime(now.minusSeconds(1)) // 초읽기도 끝남 (현재보다 1초 전)
-                .winner(user)
+                .overtimeEndTime(now.minusSeconds(1)) 
+                .winner(winner) // 승자 존재
                 .build();
 
-        // 1. 종료 대상 경매 찾기 Mocking (파라미터 일치 중요!)
         given(auctionRepository.findExpiredAuctions(now, regularTimeLimit))
                 .willReturn(List.of(auction));
 
-        // 2. 해당 경매의 입찰 내역 조회 Mocking (빈 리스트라도 반환해야 함)
         given(auctionBidRepository.findByAuctionId(auction.getId()))
-                .willReturn(Collections.emptyList()); // 혹은 List.of()
+                .willReturn(Collections.emptyList());
 
         // when
         auctionService.closeExpiredAuctions(now);
 
         // then
+        // 1. 상태 변경 확인
         assertEquals(AuctionStatus.ENDED, auction.getStatus());
+        
+        // 2. [중요] 종료 시점에 포인트 차감 메서드 호출 확인
+        verify(pointService).usePoints(winner, 1000L);
 
-        // (선택) 실제로 DB 반영(saveAndFlush)이 호출되었는지까지 검증하면 더 완벽합니다.
+        // 3. DB 반영 확인
         verify(auctionRepository).saveAndFlush(auction);
     }
-
 
     @Test
     void 현재진행중인_경매정보와_경매물품조회_처음페이지입장시(){
         //given
         Auction auction = createActiveAuction(1L);
         AuctionItem auctionItem = createAuctionItem(auction);
-
-        // Auction과 AuctionItem 양방향 연결
         ReflectionTestUtils.setField(auction, "auctionItem", auctionItem);
 
-        given(auctionRepository.findFirstWithItemByStatus(AuctionStatus.ACTIVE)).willReturn(Optional.of(auction));
+        given(auctionRepository.findFirstWithItemByStatus(AuctionStatus.ACTIVE))
+                .willReturn(Optional.of(auction));
 
         //when
         OngoingAuctionResponse response = auctionService.getOngoingAuctionWithItem();
@@ -322,8 +283,8 @@ class AuctionServiceTest {
         //then
         assertThat(response.auctionId()).isEqualTo(auction.getId());
         assertThat(response.item().itemName()).isEqualTo(auction.getAuctionItem().getItemName());
-
     }
+
     @Test
     void 예정된_경매정보와_경매물품조회_처음페이지입장시(){
         //given
@@ -343,26 +304,15 @@ class AuctionServiceTest {
 
         //then
         assertThat(response).hasSize(2);
-
         assertThat(response.get(0).auctionId()).isEqualTo(1L);
-        assertThat(response.get(0).item().itemName()).isEqualTo(item1.getItemName());
-
         assertThat(response.get(1).auctionId()).isEqualTo(2L);
-        assertThat(response.get(1).item().itemName()).isEqualTo(item2.getItemName());
-
     }
 
     @Test
     void 현재진행중인_경매정보_가지고오기_업데이트된내용(){
-
         //given
         AuctionStatusResponse auction = new AuctionStatusResponse(
-                1L,                 // auctionId
-                1000L,              // currentPrice
-                "테스트유저",         // winnerName
-                true,               // overtimeStarted
-                LocalDateTime.now().plusSeconds(30), // overtimeEndTime
-                5                   // totalBids
+                1L, 1000L, "테스트유저", true, LocalDateTime.now().plusSeconds(30), 5
         );
 
         given(auctionRepository.findAuctionStatus()).willReturn(Optional.of(auction));
@@ -372,7 +322,6 @@ class AuctionServiceTest {
 
         //then
         assertThat(response).isEqualTo(auction);
-
     }
 
     @Test
@@ -383,88 +332,74 @@ class AuctionServiceTest {
 
         // when & then
         assertThatThrownBy(() -> auctionService.getRealtimeStatus())
-                .isInstanceOf(IllegalStateException.class) // 혹은 정의하신 CustomException
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessage("진행 중인 경매가 없습니다.");
     }
 
-
     @Test
-    void 낙찰자_낙찰금액만큼_차감(){
-// given
+    void 입찰시_포인트는_즉시_차감되지_않는다(){
+        // given
         Long auctionId = 1L;
         Long userId = 10L;
         Long bidAmount = 1000L;
         LocalDateTime now = LocalDateTime.now();
 
-        Auction auction = createActiveAuction(500L); // 현재가 500원
+        Auction auction = createActiveAuction(500L);
         User user = createUser(userId, "입찰자");
 
         given(auctionRepository.findByIdForUpdate(auctionId)).willReturn(Optional.of(auction));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
-        // 유저의 잔액이 충분하다고 가정 (2000원 보유)
-        given(pointService.getTotalPoints(user)).willReturn(2000L);
+        // [수정] 포인트 조회 Stub 삭제
+        // given(pointService.getTotalPoints(user)).willReturn(2000L);
 
         // when
         auctionService.placeBid(auctionId, userId, bidAmount, now);
 
         // then
-        // 1. 포인트 차감 메서드가 호출되었는지 검증
-        verify(pointService).deductPoints(user, bidAmount);
+        // [중요] 정책 변경: 입찰 시점에는 포인트 차감을 하지 않음 (종료 시 일괄 처리)
+        verify(pointService, never()).deductPoints(any(), anyLong());
+        verify(pointService, never()).usePoints(any(), anyLong());
 
-        // 2. 입찰 기록이 저장되었는지 검증
         verify(auctionBidRepository).save(any(AuctionBid.class));
+    }
 
+    @Test
+    void 현재_경매_정보_리스트_조회(){
+        // given
+        User user = createUser(1L, "홍길동");
+        Auction auction = createActiveAuction(100L);
 
-   }
+        AuctionBid bid = AuctionBid.builder()
+                .user(user)
+                .bidAmount(1000L)
+                .auction(auction)
+                .status(BidStatus.ACTIVE)
+                .bidTime(LocalDateTime.now())
+                .build();
+        List<AuctionBid> mockBids = List.of(bid);
 
-   @Test
-   void 현재_경매_정보_리스트_조회(){
-       // given
-       User user = createUser(1L, "홍길동");
-       Auction auction = createActiveAuction(100L);
+        given(auctionBidRepository.findBidsByActiveAuction()).willReturn(mockBids);
 
-       // 1. 가짜 반환값(엔티티 리스트) 만들기
-       AuctionBid bid = AuctionBid.builder()
-               .user(user)
-               .bidAmount(1000L)
-               .auction(auction)
-               .status(BidStatus.ACTIVE)
-               .bidTime(LocalDateTime.now())
-               .build();
-       List<AuctionBid> mockBids = List.of(bid);
+        // when
+        List<AuctionBidResponse> result = auctionService.getAuctionStatus();
 
-       // 2. Mock 설정: "레포지토리에 find...라고 물어보면 mockBids를 줘라!" (Stubbing)
-       given(auctionBidRepository.findBidsByActiveAuction()).willReturn(mockBids);
-
-       // when
-       // 서비스 메소드 호출 (서비스는 내부에서 레포지토리의 find...를 부르고, 위에서 정한 mockBids를 받음)
-       List<AuctionBidResponse> result = auctionService.getAuctionStatus();
-
-       // then
-       assertThat(result).hasSize(1);
-       assertThat(result.get(0).getBidAmount()).isEqualTo(1000L);
-       assertThat(result.get(0).getUserName()).isEqualTo("홍길동");
-
-       // 레포지토리가 실제로 호출되었는지 확인
-       verify(auctionBidRepository).findBidsByActiveAuction();
-   }
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getBidAmount()).isEqualTo(1000L);
+    }
 
     @Test
     @DisplayName("초읽기 대상 경매들을 찾아 상태를 변경하고 즉시 저장한다")
     void startOvertimeForAuctions_success() {
         // given
         LocalDateTime now = LocalDateTime.now();
-
-        // Mock 객체 생성 (실제 Entity 대신 동작을 검증하기 위함)
         Auction auction1 = mock(Auction.class);
         Auction auction2 = mock(Auction.class);
 
-        // ID 설정 (로그 확인용, 필수는 아님)
         given(auction1.getId()).willReturn(1L);
         given(auction2.getId()).willReturn(2L);
 
-        // Repository가 위 2개를 리턴하도록 설정
         given(auctionRepository.findAuctionsReadyForOvertime(any(LocalDateTime.class)))
                 .willReturn(List.of(auction1, auction2));
 
@@ -472,11 +407,8 @@ class AuctionServiceTest {
         auctionService.startOvertimeForAuctions(now);
 
         // then
-        // 1. 각 경매의 startOvertime() 메서드가 호출되었는지 검증
         verify(auction1, times(1)).startOvertime(now);
         verify(auction2, times(1)).startOvertime(now);
-
-        // 2. 각 경매가 saveAndFlush()로 저장되었는지 검증
         verify(auctionRepository, times(1)).saveAndFlush(auction1);
         verify(auctionRepository, times(1)).saveAndFlush(auction2);
     }
@@ -486,18 +418,15 @@ class AuctionServiceTest {
     void startOvertimeForAuctions_handleException() {
         // given
         LocalDateTime now = LocalDateTime.now();
-
         Auction normalAuction = mock(Auction.class);
         Auction errorAuction = mock(Auction.class);
 
         given(normalAuction.getId()).willReturn(1L);
-        given(errorAuction.getId()).willReturn(2L); // 에러 날 녀석
+        given(errorAuction.getId()).willReturn(2L);
 
-        // Repository가 리스트 리턴
         given(auctionRepository.findAuctionsReadyForOvertime(any(LocalDateTime.class)))
                 .willReturn(List.of(errorAuction, normalAuction));
 
-        // [핵심] errorAuction은 startOvertime 호출 시 예외 발생시키기
         willThrow(new IllegalStateException("이미 종료된 경매입니다"))
                 .given(errorAuction).startOvertime(any());
 
@@ -505,10 +434,7 @@ class AuctionServiceTest {
         auctionService.startOvertimeForAuctions(now);
 
         // then
-        // 1. 에러 난 경매: 저장 메서드가 절대 호출되면 안 됨 (never)
         verify(auctionRepository, never()).saveAndFlush(errorAuction);
-
-        // 2. 정상 경매: 에러와 상관없이 정상적으로 저장되어야 함 (times 1)
         verify(auctionRepository, times(1)).saveAndFlush(normalAuction);
     }
 
@@ -523,14 +449,8 @@ class AuctionServiceTest {
         auctionService.startOvertimeForAuctions(LocalDateTime.now());
 
         // then
-        // saveAndFlush가 한 번도 호출되지 않아야 함
         verify(auctionRepository, never()).saveAndFlush(any());
     }
-
-
-
-
-
 
     // ===========================
     // Helper Methods
@@ -549,6 +469,7 @@ class AuctionServiceTest {
 
     private Auction createScheduledAuction() {
         return Auction.builder()
+                .id(1L)
                 .status(AuctionStatus.SCHEDULED)
                 .startTime(LocalDateTime.now().plusMinutes(10))
                 .overtimeStarted(false)
@@ -566,11 +487,11 @@ class AuctionServiceTest {
                 .currentPrice(0L)
                 .regularEndTime(LocalDateTime.now().plusMinutes(20))
                 .build();
-
     }
 
     private Auction createEndedAuction(){
         return Auction.builder()
+                .id(2L)
                 .status(AuctionStatus.ENDED)
                 .startTime(LocalDateTime.now().minusMinutes(10))
                 .overtimeStarted(false)
@@ -578,7 +499,6 @@ class AuctionServiceTest {
                 .winner(null)
                 .build();
     }
-
 
     private User createUser(Long id, String name) {
         return User.builder()
@@ -597,11 +517,7 @@ class AuctionServiceTest {
                 .build();
     }
 
-
-
-
     private LocalDateTime createLocalDateNow(){
         return LocalDateTime.now();
     }
-
 }

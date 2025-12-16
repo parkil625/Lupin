@@ -18,9 +18,16 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user.id = :userId")
     Long sumPointsByUserId(@Param("userId") Long userId);
 
-    // userId만 사용하여 detached entity 문제 방지
-    @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user.id = :userId AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
-    Long sumPointsByUserIdAndMonth(@Param("userId") Long userId, @Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
+    // type이 USE가 아닌 것들(EARN, DEDUCT)만 합산하여 랭킹 점수 산출
+    @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p " +
+           "WHERE p.user.id = :userId " +
+           "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
+           "AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
+    Long sumPointsByUserIdAndMonth(
+            @Param("userId") Long userId, 
+            @Param("startDateTime") LocalDateTime startDateTime, 
+            @Param("endDateTime") LocalDateTime endDateTime
+    );
 
     @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
     List<Object[]> findUsersRankedByPoints(Pageable pageable);

@@ -123,7 +123,7 @@ public class User {
 
     // 포인트 차감
     public void deductPoints(long amount) {
-        this.totalPoints = Math.max(0, this.totalPoints - amount);
+        this.totalPoints -= amount;
     }
 
     // 의사 진료과 변경용

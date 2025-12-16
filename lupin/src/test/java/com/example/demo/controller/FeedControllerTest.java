@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -49,16 +49,16 @@ class FeedControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private FeedQueryFacade feedQueryFacade;
 
-    @MockBean
+    @MockitoBean
     private FeedLikeService feedLikeService;
 
-    @MockBean
+    @MockitoBean
     private FeedReportService feedReportService;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
     private User testUser;

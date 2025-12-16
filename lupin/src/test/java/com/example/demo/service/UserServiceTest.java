@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -97,16 +98,19 @@ class UserServiceTest {
         String newName = "수정된이름";
         Double newHeight = 180.0;
         Double newWeight = 75.0;
+        LocalDate newBirthDate = LocalDate.of(2000, 1, 1);
+        String newGender = "여성";
 
-        // when
-        userService.updateProfile(user, newName, newHeight, newWeight);
+        // when (파라미터 6개 전달: User, name, height, weight, birthDate, gender)
+        userService.updateProfile(user, newName, newHeight, newWeight, newBirthDate, newGender);
 
         // then
         assertThat(user.getName()).isEqualTo(newName);
         assertThat(user.getHeight()).isEqualTo(newHeight);
         assertThat(user.getWeight()).isEqualTo(newWeight);
+        assertThat(user.getBirthDate()).isEqualTo(newBirthDate);
+        assertThat(user.getGender()).isEqualTo(newGender);
 
-        // [TDD] 저장 메서드가 호출되었는지 검증 (기존 코드에서는 실패함)
         verify(userRepository).save(user);
     }
 

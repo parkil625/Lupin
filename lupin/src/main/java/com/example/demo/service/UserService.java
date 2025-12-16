@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate; // [필수] 이 import가 빠져서 에러가 났습니다.
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -38,9 +39,8 @@ public class UserService {
     }
 
     @Transactional
-    public void updateProfile(User user, String name, Double height, Double weight) {
-        user.updateProfile(name, height, weight);
-        // [Fix] Detached 상태의 엔티티일 수 있으므로 명시적 저장
+    public void updateProfile(User user, String name, Double height, Double weight, LocalDate birthDate, String gender) {
+        user.updateProfile(name, height, weight, birthDate, gender);
         userRepository.save(user);
     }
 

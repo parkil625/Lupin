@@ -236,7 +236,7 @@ const AvatarSection = memo(
                 <button
                   onClick={() => !isUploading && fileRef.current?.click()}
                   aria-label="프로필 사진 업로드"
-                  className="absolute bottom-0 right-0 w-9 h-9 bg-[#C93831] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#B02F28] transition-transform active:scale-95 disabled:bg-gray-300"
+                  className="absolute bottom-0 right-0 w-9 h-9 bg-[#C93831] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#B02F28] transition-transform active:scale-95 disabled:bg-gray-300 cursor-pointer"
                 >
                   {isUploading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -248,7 +248,7 @@ const AvatarSection = memo(
                   <button
                     onClick={handleRemove}
                     aria-label="프로필 사진 삭제"
-                    className="absolute -top-2 -right-2 w-7 h-7 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center shadow hover:bg-red-100 hover:text-red-600 transition-colors"
+                    className="absolute top-0 right-0 w-7 h-7 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center shadow hover:bg-red-100 hover:text-red-600 transition-colors cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>

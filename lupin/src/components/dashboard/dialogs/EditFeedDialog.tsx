@@ -336,10 +336,10 @@ export default function EditFeedDialog({
             <div className="flex gap-1.5">
               <button
                 onClick={() => setActiveTab("photo")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeTab === "photo"
-                    ? "bg-[#C93831] text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-[#C93831] text-white cursor-default"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer"
                 }`}
               >
                 <Image className="w-3.5 h-3.5" />
@@ -350,10 +350,10 @@ export default function EditFeedDialog({
               </button>
               <button
                 onClick={() => setActiveTab("content")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeTab === "content"
-                    ? "bg-[#C93831] text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-[#C93831] text-white cursor-default"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer"
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />글 작성
@@ -539,10 +539,10 @@ export default function EditFeedDialog({
                 <button
                   ref={firstButtonRef}
                   onClick={() => setActiveTab("photo")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                     activeTab === "photo"
-                      ? "bg-[#C93831] text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-[#C93831] text-white cursor-default"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer"
                   }`}
                 >
                   <Image className="w-3.5 h-3.5" />
@@ -553,10 +553,10 @@ export default function EditFeedDialog({
                 </button>
                 <button
                   onClick={() => setActiveTab("content")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                     activeTab === "content"
-                      ? "bg-[#C93831] text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-[#C93831] text-white cursor-default"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer"
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" />글 작성

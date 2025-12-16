@@ -37,7 +37,7 @@ const WORKOUT_TYPES = [
   "필라테스",
   "크로스핏",
   "등산",
-  "기타"
+  "기타",
 ];
 
 export default function CreatePage({ onCreatePost }: CreatePageProps) {
@@ -52,11 +52,9 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
   const [content, setContent] = useState("");
 
   const handleCreatePost = async () => {
-    const images = [
-      startImage,
-      endImage,
-      ...otherImages
-    ].filter(Boolean) as string[];
+    const images = [startImage, endImage, ...otherImages].filter(
+      Boolean
+    ) as string[];
 
     if (images.length === 0) {
       toast.error("최소 1개의 이미지를 업로드해주세요!");
@@ -108,41 +106,44 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
 
   const handleFileSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: 'start' | 'end' | 'upload'
+    type: "start" | "end" | "upload"
   ) => {
-    const files = type === 'upload' ? Array.from(e.target.files || []) : [e.target.files?.[0]].filter(Boolean) as File[];
+    const files =
+      type === "upload"
+        ? Array.from(e.target.files || [])
+        : ([e.target.files?.[0]].filter(Boolean) as File[]);
 
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
+    files.forEach((file) => {
+      if (!file.type.startsWith("image/")) return;
 
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
           const imageData = event.target.result as string;
-          if (type === 'start') setStartImage(imageData);
-          else if (type === 'end') setEndImage(imageData);
-          else setOtherImages(prev => [...prev, imageData]);
+          if (type === "start") setStartImage(imageData);
+          else if (type === "end") setEndImage(imageData);
+          else setOtherImages((prev) => [...prev, imageData]);
         }
       };
       reader.readAsDataURL(file);
     });
   };
 
-  const handleDrop = (e: React.DragEvent, type: 'start' | 'end' | 'upload') => {
+  const handleDrop = (e: React.DragEvent, type: "start" | "end" | "upload") => {
     e.preventDefault();
     e.stopPropagation();
 
     const files = Array.from(e.dataTransfer.files);
-    files.forEach(file => {
-      if (!file.type.startsWith('image/')) return;
+    files.forEach((file) => {
+      if (!file.type.startsWith("image/")) return;
 
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
           const imageData = event.target.result as string;
-          if (type === 'start') setStartImage(imageData);
-          else if (type === 'end') setEndImage(imageData);
-          else setOtherImages(prev => [...prev, imageData]);
+          if (type === "start") setStartImage(imageData);
+          else if (type === "end") setEndImage(imageData);
+          else setOtherImages((prev) => [...prev, imageData]);
         }
       };
       reader.readAsDataURL(file);
@@ -159,14 +160,18 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
 
         {/* Workout Type */}
         <div className="mb-4">
-          <Label className="text-xs font-bold text-gray-900 mb-2 block">운동 종류</Label>
+          <Label className="text-xs font-bold text-gray-900 mb-2 block">
+            운동 종류
+          </Label>
           <Select value={workoutType} onValueChange={setWorkoutType}>
-            <SelectTrigger className="w-full bg-white border-gray-300 text-sm">
+            <SelectTrigger className="w-full bg-white border-gray-300 text-sm cursor-pointer">
               <SelectValue placeholder="운동 선택" />
             </SelectTrigger>
             <SelectContent>
-              {WORKOUT_TYPES.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
+              {WORKOUT_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -184,28 +189,38 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
         <div className="grid grid-cols-2 gap-3 mb-4">
           {/* Start Image */}
           <div>
-            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">시작 사진</Label>
+            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">
+              시작 사진
+            </Label>
             <div
               onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => handleFileSelect(e as unknown as React.ChangeEvent<HTMLInputElement>, 'start');
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.onchange = (e) =>
+                  handleFileSelect(
+                    e as unknown as React.ChangeEvent<HTMLInputElement>,
+                    "start"
+                  );
                 input.click();
               }}
-              onDrop={(e) => handleDrop(e, 'start')}
+              onDrop={(e) => handleDrop(e, "start")}
               onDragOver={(e) => e.preventDefault()}
               className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-[#C93831] bg-gray-50 cursor-pointer overflow-visible"
             >
               {startImage ? (
                 <>
-                  <img src={startImage} alt="Start" className="w-full h-full object-cover rounded-lg" />
+                  <img
+                    src={startImage}
+                    alt="Start"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setStartImage(null);
                     }}
-                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50 cursor-pointer"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -220,28 +235,38 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
 
           {/* End Image */}
           <div>
-            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">끝 사진</Label>
+            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">
+              끝 사진
+            </Label>
             <div
               onClick={() => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = (e) => handleFileSelect(e as unknown as React.ChangeEvent<HTMLInputElement>, 'end');
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.onchange = (e) =>
+                  handleFileSelect(
+                    e as unknown as React.ChangeEvent<HTMLInputElement>,
+                    "end"
+                  );
                 input.click();
               }}
-              onDrop={(e) => handleDrop(e, 'end')}
+              onDrop={(e) => handleDrop(e, "end")}
               onDragOver={(e) => e.preventDefault()}
               className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-[#C93831] bg-gray-50 cursor-pointer overflow-visible"
             >
               {endImage ? (
                 <>
-                  <img src={endImage} alt="End" className="w-full h-full object-cover rounded-lg" />
+                  <img
+                    src={endImage}
+                    alt="End"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setEndImage(null);
                     }}
-                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50 cursor-pointer"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -256,7 +281,9 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
 
           {/* Other Images */}
           <div>
-            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">기타 사진</Label>
+            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">
+              기타 사진
+            </Label>
             <div className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 overflow-visible">
               {otherImages.length > 0 ? (
                 <div className="absolute inset-0 flex items-center justify-center p-2">
@@ -268,16 +295,22 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
                         style={{
                           left: `${idx * 12}px`,
                           top: `${idx * 8}px`,
-                          zIndex: 3 - idx
+                          zIndex: 3 - idx,
                         }}
                       >
-                        <img src={img} alt={`Other ${idx}`} className="w-full h-full object-cover rounded-md" />
+                        <img
+                          src={img}
+                          alt={`Other ${idx}`}
+                          className="w-full h-full object-cover rounded-md"
+                        />
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setOtherImages(otherImages.filter((_, i) => i !== idx));
+                            setOtherImages(
+                              otherImages.filter((_, i) => i !== idx)
+                            );
                           }}
-                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
+                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50 cursor-pointer"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>
@@ -300,10 +333,12 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
 
           {/* Upload Cell */}
           <div>
-            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">업로드</Label>
+            <Label className="text-xs font-bold text-gray-700 mb-1.5 block">
+              업로드
+            </Label>
             <div
               onClick={() => uploadInputRef.current?.click()}
-              onDrop={(e) => handleDrop(e, 'upload')}
+              onDrop={(e) => handleDrop(e, "upload")}
               onDragOver={(e) => e.preventDefault()}
               className="relative aspect-square rounded-lg border-2 border-dashed border-[#C93831] bg-red-50 hover:bg-red-100 cursor-pointer flex items-center justify-center"
             >
@@ -313,7 +348,7 @@ export default function CreatePage({ onCreatePost }: CreatePageProps) {
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={(e) => handleFileSelect(e, 'upload')}
+                onChange={(e) => handleFileSelect(e, "upload")}
                 className="hidden"
               />
             </div>

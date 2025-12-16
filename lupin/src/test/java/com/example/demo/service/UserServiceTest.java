@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
+import com.example.demo.dto.response.UserRankingResponse;
 import com.example.demo.dto.response.UserStatsResponse;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
@@ -16,13 +17,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -155,5 +158,36 @@ class UserServiceTest {
         // then
         assertThat(user.getAvatar()).isEqualTo(avatarUrl);
         verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("랭킹 조회 시 실제 포인트가 음수라도 화면에는 0으로 표시된다")
+    void getTopUsersByPoints_NegativePointsDisplayZero() {
+        // given
+        User positiveUser = User.builder().id(1L).name("양수유저").build();
+        User negativeUser = User.builder().id(2L).name("음수유저").build();
+
+        // DB에서는 실제 값(-50)을 가져온다고 가정
+        List<Object[]> mockResults = List.of(
+                new Object[]{positiveUser, 100L},
+                new Object[]{negativeUser, -50L}
+        );
+
+        given(pointLogRepository.findAllUsersWithPointsRanked(any(Pageable.class)))
+                .willReturn(mockResults);
+
+        // when
+        List<UserRankingResponse> results = userService.getTopUsersByPoints(10);
+
+        // then
+        assertThat(results).hasSize(2);
+
+        // 1등: 100점 -> 100점 그대로
+        assertThat(results.get(0).points()).isEqualTo(100L);
+        assertThat(results.get(0).rank()).isEqualTo(1);
+
+        // 2등: -50점 -> 0점으로 변환 확인 (핵심 검증)
+        assertThat(results.get(1).points()).isEqualTo(0L);
+        assertThat(results.get(1).rank()).isEqualTo(2); // 순위는 2등 유지
     }
 }

@@ -49,7 +49,11 @@ public class UserService {
         for (Object[] row : results) {
             User user = (User) row[0];
             Long points = (Long) row[1];
-            rankings.add(UserRankingResponse.of(user, points != null ? points : 0L, rank++));
+            
+            // 랭킹 페이지: 포인트가 음수(빚)인 경우 0으로 표기
+            long displayPoints = (points != null) ? Math.max(0, points) : 0L;
+            
+            rankings.add(UserRankingResponse.of(user, displayPoints, rank++));
         }
         return rankings;
     }

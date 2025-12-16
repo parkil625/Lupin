@@ -18,7 +18,7 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user.id = :userId")
     Long sumPointsByUserId(@Param("userId") Long userId);
 
-    // type이 USE가 아닌 것들(EARN, DEDUCT)만 합산하여 랭킹 점수 산출
+    // 랭킹 집계 시 EARN과 DEDUCT만 합산 (USE 제외)
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p " +
            "WHERE p.user.id = :userId " +
            "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
@@ -53,6 +53,7 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
      * 특정 사용자의 랭킹과 앞뒤 사용자를 조회 (Window Function 사용)
      * User.currentPoints 반정규화 필드를 사용하여 JOIN 없이 조회
      * CROSS JOIN + 집계 서브쿼리로 CTE 다중 참조 문제 해결
+     * 화면 표시용 점수(total_points)는 음수일 경우 0으로 반환 (GREATEST 사용)
      */
     @Query(value = """
         WITH ranked_users AS (
@@ -61,7 +62,7 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
                 u.name,
                 u.avatar,
                 u.department,
-                COALESCE(u.current_points, 0) as total_points,
+                GREATEST(COALESCE(u.current_points, 0), 0) as total_points,
                 ROW_NUMBER() OVER (ORDER BY COALESCE(u.current_points, 0) DESC, u.id ASC) as user_rank
             FROM users u
         )

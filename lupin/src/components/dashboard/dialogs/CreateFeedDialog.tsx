@@ -333,11 +333,11 @@ export default function CreateFeedDialog({
                 <WorkoutTypeSelect
                   value={workoutType}
                   onChange={setWorkoutType}
-                  className="min-w-[120px]"
+                  className="min-w-[120px] cursor-pointer"
                 />
                 <button
                   onClick={() => handleOpenChange(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full"
+                  className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
                 >
                   <X className="w-5 h-5 text-gray-600" />
                 </button>
@@ -348,7 +348,7 @@ export default function CreateFeedDialog({
             <div className="flex gap-1.5">
               <button
                 onClick={() => setActiveTab("photo")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
                   activeTab === "photo"
                     ? "bg-[#C93831] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -362,7 +362,7 @@ export default function CreateFeedDialog({
               </button>
               <button
                 onClick={() => setActiveTab("content")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
                   activeTab === "content"
                     ? "bg-[#C93831] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -508,7 +508,7 @@ export default function CreateFeedDialog({
             <Button
               onClick={handleSubmit}
               disabled={!canSubmit || isUploading}
-              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isUploading
                 ? "사진 올리는 중..."
@@ -544,7 +544,7 @@ export default function CreateFeedDialog({
                 <WorkoutTypeSelect
                   value={workoutType}
                   onChange={setWorkoutType}
-                  className="min-w-[130px]"
+                  className="min-w-[130px] cursor-pointer"
                 />
               </div>
 
@@ -553,7 +553,7 @@ export default function CreateFeedDialog({
                 <button
                   ref={firstButtonRef}
                   onClick={() => setActiveTab("photo")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
                     activeTab === "photo"
                       ? "bg-[#C93831] text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -567,7 +567,7 @@ export default function CreateFeedDialog({
                 </button>
                 <button
                   onClick={() => setActiveTab("content")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
                     activeTab === "content"
                       ? "bg-[#C93831] text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -731,7 +731,7 @@ export default function CreateFeedDialog({
               <Button
                 onClick={handleSubmit}
                 disabled={!canSubmit || isUploading}
-                className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isUploading
                   ? "사진 올리는 중..."
@@ -754,7 +754,10 @@ export default function CreateFeedDialog({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCloseWithoutSaving}>
+            <AlertDialogCancel
+              onClick={handleCloseWithoutSaving}
+              className="cursor-pointer"
+            >
               비우고 닫기
             </AlertDialogCancel>
             <AlertDialogAction
@@ -771,6 +774,7 @@ export default function CreateFeedDialog({
                 setShowCloseConfirm(false);
                 onOpenChange(false); // 메인 다이얼로그도 닫기
               }}
+              className="cursor-pointer"
             >
               저장 후 닫기
             </AlertDialogAction>

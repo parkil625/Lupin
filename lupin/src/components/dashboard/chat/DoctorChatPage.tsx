@@ -101,13 +101,21 @@ export default function DoctorChatPage() {
   // 채팅방 목록 로드 함수 (재사용 가능하도록 별도 함수로 분리)
   const loadChatRooms = useCallback(async () => {
     try {
+      if (!currentUserId) return;
+
       const rooms = await chatApi.getChatRooms(currentUserId);
       // 최신 메시지 순서대로 정렬 (카톡처럼)
-      const sortedRooms = rooms.sort((a: ChatRoomResponse, b: ChatRoomResponse) => {
-        const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-        const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-        return timeB - timeA; // 최신순
-      });
+      const sortedRooms = rooms.sort(
+        (a: ChatRoomResponse, b: ChatRoomResponse) => {
+          const timeA = a.lastMessageTime
+            ? new Date(a.lastMessageTime).getTime()
+            : 0;
+          const timeB = b.lastMessageTime
+            ? new Date(b.lastMessageTime).getTime()
+            : 0;
+          return timeB - timeA; // 최신순
+        }
+      );
       setChatRooms(sortedRooms);
     } catch (error) {
       console.error("채팅방 목록 로드 실패:", error);
@@ -133,10 +141,7 @@ export default function DoctorChatPage() {
     [currentUserId, loadChatRooms, activeRoomId]
   );
 
-  const {
-    isConnected,
-    sendMessage: sendWebSocketMessage,
-  } = useWebSocket({
+  const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
     roomId: activeRoomId || "placeholder",
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
@@ -158,7 +163,9 @@ export default function DoctorChatPage() {
     const loadMessages = async () => {
       try {
         console.log("메시지 로드 시작 RoomID:", activeRoomId);
-        const loadedMessages = await chatApi.getAllMessagesByRoomId(activeRoomId);
+        const loadedMessages = await chatApi.getAllMessagesByRoomId(
+          activeRoomId
+        );
         setMessages(loadedMessages);
       } catch (error) {
         console.error("메시지 로드 실패:", error);
@@ -174,10 +181,10 @@ export default function DoctorChatPage() {
       const markMessagesAsRead = async () => {
         try {
           await chatApi.markAsRead(activeRoomId, currentUserId);
-          console.log('✅ 읽음 처리 완료:', activeRoomId);
+          console.log("✅ 읽음 처리 완료:", activeRoomId);
           await loadChatRooms();
         } catch (error) {
-          console.error('❌ 읽음 처리 실패:', error);
+          console.error("❌ 읽음 처리 실패:", error);
         }
       };
       markMessagesAsRead();
@@ -207,7 +214,7 @@ export default function DoctorChatPage() {
         await chatApi.markAsRead(activeRoomId, currentUserId);
         await loadChatRooms();
       } catch (error) {
-        console.error('❌ 읽음 처리 실패:', error);
+        console.error("❌ 읽음 처리 실패:", error);
       }
     }
   };
@@ -296,7 +303,7 @@ export default function DoctorChatPage() {
                             setActiveRoomId(room.roomId);
 
                             // 선택된 멤버 정보 업데이트
-                            setSelectedChatMember({
+                            const newMember: Member = {
                               id: room.patientId,
                               name: displayName,
                               avatar: displayName.charAt(0),
@@ -305,9 +312,10 @@ export default function DoctorChatPage() {
                               lastVisit: "정보 없음",
                               condition: "양호",
                               status: "in-progress",
-                            });
+                            };
 
                             // 메시지 초기화
+                            setSelectedChatMember(newMember);
                             setMessages([]);
                           }}
                           className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
@@ -393,7 +401,10 @@ export default function DoctorChatPage() {
                         if (isMine) {
                           senderDisplayName = "나";
                         } else {
-                          senderDisplayName = msg.senderName || selectedChatMember?.name || "알 수 없음";
+                          senderDisplayName =
+                            msg.senderName ||
+                            selectedChatMember?.name ||
+                            "알 수 없음";
                         }
 
                         const senderInitial = isMine
@@ -511,7 +522,7 @@ export default function DoctorChatPage() {
                           담당 의사
                         </Label>
                         <Input
-                          value={localStorage.getItem('userName') || '의료진'}
+                          value={localStorage.getItem("userName") || "의료진"}
                           disabled
                           className="mt-1 rounded-xl bg-gray-100 text-gray-400"
                         />

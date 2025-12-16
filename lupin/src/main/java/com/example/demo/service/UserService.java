@@ -103,15 +103,4 @@ public class UserService {
     public List<User> getDoctorsByDepartment(String department) {
         return userRepository.findByRoleAndDepartment(Role.DOCTOR, department);
     }
-
-    /**
-     * 모든 유저의 totalPoints를 point_logs에서 일괄 동기화
-     * 반정규화 필드 초기 동기화 또는 복구용
-     */
-    @Transactional
-    public int syncAllUserTotalPoints() {
-        int updatedCount = userRepository.syncAllUserTotalPoints();
-        log.info("Synced totalPoints for {} users", updatedCount);
-        return updatedCount;
-    }
 }

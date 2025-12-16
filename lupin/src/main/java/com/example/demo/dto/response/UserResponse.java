@@ -4,6 +4,8 @@ import com.example.demo.domain.entity.User;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
+
 @Getter
 @Builder
 public class UserResponse {
@@ -14,6 +16,7 @@ public class UserResponse {
     private Double height;
     private Double weight;
     private String gender;
+    private LocalDate birthDate;
     private String avatar;
     private String department;
     private Long currentPoints;
@@ -30,6 +33,7 @@ public class UserResponse {
                 .height(user.getHeight())
                 .weight(user.getWeight())
                 .gender(user.getGender())
+                .birthDate(user.getBirthDate())
                 .avatar(user.getAvatar())
                 .department(user.getDepartment())
                 .currentPoints(currentPoints)

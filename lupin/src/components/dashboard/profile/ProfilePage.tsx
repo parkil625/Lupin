@@ -618,23 +618,27 @@ export default function ProfilePage({
   // 저장 핸들러 (API 연동 추가)
   const handleSaveProfile = useCallback(
     async (data: ProfileFormData) => {
+      // 편집 모드가 아니면 무시
       if (!isEditing) return;
 
       try {
         const userId = Number(localStorage.getItem("userId"));
-        if (!userId) throw new Error("사용자 정보를 찾을 수 없습니다.");
+        if (!userId) {
+          toast.error("사용자 정보를 찾을 수 없습니다.");
+          return;
+        }
 
-        // 1. API 호출: 서버에 데이터 전송
-        // 이름은 폼에 없으므로 기존 로컬스토리지 값이나 null을 보냅니다 (백엔드에서 null 체크하므로 안전)
+        // [핵심] 서버 API 호출하여 DB에 영구 저장
+        // (기존 코드에는 이 부분이 없어서 로컬 스토리지 초기화 시 데이터가 날아갔습니다)
         await userApi.updateUser(userId, {
           height: Number(data.height),
           weight: Number(data.weight),
-          birthDate: data.birthDate,
+          birthDate: data.birthDate, // yyyy-MM-dd 문자열 그대로 전송
           gender: data.gender,
-          // name: localStorage.getItem("userName") // 필요하다면 추가
+          name: localStorage.getItem("userName") || "", // 필요하다면 이름도 포함
         });
 
-        // 2. 로컬 스토리지 업데이트 (UI 즉시 반영용)
+        // 서버 저장 성공 시 로컬 스토리지도 업데이트 (화면 즉시 반영용)
         localStorage.setItem("userHeight", data.height);
         localStorage.setItem("userWeight", data.weight);
         localStorage.setItem("userBirthDate", data.birthDate);

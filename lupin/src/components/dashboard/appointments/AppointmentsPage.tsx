@@ -168,13 +168,7 @@ export default function AppointmentsPage({
                           <FileText className="w-4 h-4 text-purple-500" />
                         </div>
                         <span className="font-medium">
-                          {currentUser.role === "DOCTOR"
-                            ? `환자: ${
-                                apt.patientName || `환자 #${apt.patientId}`
-                              }`
-                            : `담당의: ${
-                                apt.doctorName || `의사 #${apt.doctorId}`
-                              }`}
+                          {apt.departmentName || "진료 예약"}
                         </span>
                       </div>
                     </div>

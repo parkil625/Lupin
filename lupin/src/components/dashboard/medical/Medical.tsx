@@ -285,19 +285,28 @@ MedicalProps) {
     }
 
     try {
-      // 날짜 + 시간 조합 (ISO 8601 형식)
+      // 날짜 + 시간 조합 (로컬 시간 유지)
       const [hours, minutes] = selectedTime.split(":").map(Number);
-      const appointmentDateTime = new Date(selectedDate);
-      appointmentDateTime.setHours(hours, minutes, 0, 0);
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const hoursStr = String(hours).padStart(2, '0');
+      const minutesStr = String(minutes).padStart(2, '0');
+
+      // ISO 8601 형식이지만 타임존 정보 없이 로컬 시간으로 전송
+      const dateTimeStr = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
 
       // 백엔드 API 호출
       const appointmentId = await appointmentApi.createAppointment({
         patientId: currentPatientId,
         doctorId: selectedDoctor.id,
-        date: appointmentDateTime.toISOString(),
+        date: dateTimeStr,
       });
 
       console.log("✅ 예약 생성 성공:", appointmentId);
+
+      // 예약된 시간 목록에 즉시 추가 (UI 업데이트)
+      setBookedTimes(prev => [...prev, selectedTime]);
 
       setActiveAppointment({
         id: appointmentId,

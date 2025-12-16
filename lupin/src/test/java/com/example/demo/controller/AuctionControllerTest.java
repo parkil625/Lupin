@@ -12,6 +12,7 @@ import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtAuthenticationFilter;
+import com.example.demo.service.AuctionBidFacade;
 import com.example.demo.service.AuctionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -66,6 +67,10 @@ class AuctionControllerTest {
 
     @MockBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockBean
+    private AuctionBidFacade auctionBidFacade;
+
 
     private User testUser;
 
@@ -149,7 +154,7 @@ class AuctionControllerTest {
                 .andExpect(status().isOk());
 
         // Service 호출 검증
-        verify(auctionService).placeBid(
+        verify(auctionBidFacade).bid(
                 eq(auctionId),
                 eq(testUser.getId()), // 1L
                 eq(bidAmount),

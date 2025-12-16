@@ -6,6 +6,7 @@ import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.security.CurrentUser;
+import com.example.demo.service.AuctionBidFacade;
 import com.example.demo.service.AuctionService;
 import com.example.demo.service.AuctionSseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +31,8 @@ public class AuctionController {
 
     private final AuctionSseService auctionSseService;
 
+    private final AuctionBidFacade auctionBidFacade;
+
     @Operation(summary = "진행 중인 경매 조회", description = "현재 진행 중인 경매 정보를 조회합니다.")
     @GetMapping("/active")
     public ResponseEntity<OngoingAuctionResponse> getOngoingAuction() {
@@ -51,7 +54,7 @@ public class AuctionController {
     ) {
 
         // 서비스 호출 (입찰 시간은 서버 시간 기준)
-        auctionService.placeBid(auctionId, user.getId(), request.getBidAmount(), LocalDateTime.now());
+        auctionBidFacade.bid(auctionId, user.getId(), request.getBidAmount(), LocalDateTime.now());
 
         return ResponseEntity.ok().build();
     }

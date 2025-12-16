@@ -6,9 +6,10 @@ import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.dto.request.AppointmentRequest;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.exception.BusinessException;
@@ -19,7 +20,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;

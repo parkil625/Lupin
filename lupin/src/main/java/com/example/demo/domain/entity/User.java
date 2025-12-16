@@ -74,10 +74,12 @@ public class User {
     @Version
     private Long version;
 
-    public void updateProfile(String name, Double height, Double weight) {
-        this.name = name;
-        this.height = height;
-        this.weight = weight;
+    public void updateProfile(String name, Double height, Double weight, LocalDate birthDate, String gender) {
+        if (name != null) this.name = name;
+        if (height != null) this.height = height;
+        if (weight != null) this.weight = weight;
+        if (birthDate != null) this.birthDate = birthDate;
+        if (gender != null) this.gender = gender;
     }
 
     // 상태 변경 메서드

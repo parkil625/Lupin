@@ -64,6 +64,7 @@ MedicalProps) {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState("");
+  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
 
   // 한국 공휴일 (2024년 기준)
   const holidays = [
@@ -155,10 +156,51 @@ MedicalProps) {
     "16:00",
     "17:00",
   ];
-  const bookedTimes = ["10:00", "15:00"]; // 이미 예약된 시간 (예시)
 
   // 채팅방이 활성화되어야 하는지 확인
   const hasActiveChat = activeAppointment !== null && !isChatEnded;
+
+  // 선택된 진료과와 날짜가 변경될 때 예약된 시간 조회
+  useEffect(() => {
+    const fetchBookedTimes = async () => {
+      if (!selectedDepartment || !selectedDate) {
+        setBookedTimes([]);
+        return;
+      }
+
+      try {
+        // 진료과 한글 이름 매핑
+        const departmentNames: Record<string, string> = {
+          internal: "내과",
+          surgery: "외과",
+          psychiatry: "신경정신과",
+          dermatology: "피부과",
+        };
+
+        const departmentKoreanName = departmentNames[selectedDepartment];
+
+        // 의사 조회
+        const doctors = await userApi.getDoctorsByDepartment(departmentKoreanName);
+
+        if (doctors.length === 0) {
+          setBookedTimes([]);
+          return;
+        }
+
+        // 첫 번째 의사의 예약된 시간 조회
+        const doctorId = doctors[0].id;
+        const dateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+        const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
+        setBookedTimes(booked);
+      } catch (error) {
+        console.error("예약된 시간 조회 실패:", error);
+        setBookedTimes([]);
+      }
+    };
+
+    fetchBookedTimes();
+  }, [selectedDepartment, selectedDate]);
 
   // 예약 클릭 핸들러 - 채팅방 열기
   const handleAppointmentClick = (appointment: AppointmentResponse) => {

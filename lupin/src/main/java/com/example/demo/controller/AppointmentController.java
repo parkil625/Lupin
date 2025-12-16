@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,5 +58,15 @@ public class AppointmentController {
     public ResponseEntity<String> cancelAppointment(@PathVariable Long appointmentId) {
         appointmentService.cancelAppointment(appointmentId);
         return ResponseEntity.ok("예약이 취소되었습니다.");
+    }
+
+    @GetMapping("/booked-times")
+    public ResponseEntity<List<String>> getBookedTimes(
+            @RequestParam("doctorId") Long doctorId,
+            @RequestParam("date") String dateStr) {
+
+        LocalDate date = LocalDate.parse(dateStr);
+        List<String> bookedTimes = appointmentService.getBookedTimesByDoctorAndDate(doctorId, date);
+        return ResponseEntity.ok(bookedTimes);
     }
 }

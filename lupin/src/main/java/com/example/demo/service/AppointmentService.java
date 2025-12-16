@@ -15,7 +15,11 @@ import org.springframework.stereotype.Service;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -95,5 +99,21 @@ public class AppointmentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
 
         appointment.complete();
+    }
+
+    public List<String> getBookedTimesByDoctorAndDate(Long doctorId, LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        List<Appointment> appointments = appointmentRepository.findByDoctorIdAndDateBetween(
+                doctorId, startOfDay, endOfDay
+        );
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        return appointments.stream()
+                .filter(apt -> apt.getStatus() != AppointmentStatus.CANCELLED)
+                .map(apt -> apt.getDate().format(timeFormatter))
+                .collect(Collectors.toList());
     }
 }

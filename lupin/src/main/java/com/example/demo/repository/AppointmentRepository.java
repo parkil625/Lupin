@@ -34,4 +34,14 @@ List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patien
            "JOIN FETCH a.doctor " +
            "WHERE a.id = :id")
     Optional<Appointment> findByIdWithPatientAndDoctor(@Param("id") Long id);
+
+    // 특정 의사의 특정 날짜 범위 내 예약 목록 조회
+    @Query("SELECT a FROM Appointment a " +
+           "WHERE a.doctor.id = :doctorId " +
+           "AND a.date BETWEEN :startDate AND :endDate")
+    List<Appointment> findByDoctorIdAndDateBetween(
+            @Param("doctorId") Long doctorId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }

@@ -305,8 +305,10 @@ MedicalProps) {
 
       console.log("✅ 예약 생성 성공:", appointmentId);
 
-      // 예약된 시간 목록에 즉시 추가 (UI 업데이트)
-      setBookedTimes(prev => [...prev, selectedTime]);
+      // 예약된 시간 목록 다시 조회 (DB에서 최신 정보 가져오기)
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const updatedBookedTimes = await appointmentApi.getBookedTimes(selectedDoctor.id, dateStr);
+      setBookedTimes(updatedBookedTimes);
 
       setActiveAppointment({
         id: appointmentId,
@@ -329,9 +331,7 @@ MedicalProps) {
       );
       setAppointments(data);
 
-      // 상태 초기화
-      setSelectedDepartment("");
-      setSelectedDate(undefined);
+      // 선택된 시간만 초기화 (진료과와 날짜는 유지하여 예약된 시간 표시)
       setSelectedTime("");
     } catch (error) {
       console.error("❌ 예약 생성 실패:", error);

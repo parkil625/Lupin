@@ -62,7 +62,7 @@ class AppointmentDepartmentServiceTest {
                 .userId("doctor01")
                 .name("의사1")
                 .role(Role.DOCTOR)
-                .departement("내과")
+                .department("내과")
                 .build();
 
         AppointmentRequest request = AppointmentRequest.builder()
@@ -107,7 +107,7 @@ class AppointmentDepartmentServiceTest {
                 .userId("doctor02")
                 .name("외과의사")
                 .role(Role.DOCTOR)
-                .departement("외과")
+                .department("외과")
                 .build();
 
         AppointmentRequest request = AppointmentRequest.builder()
@@ -152,7 +152,7 @@ class AppointmentDepartmentServiceTest {
                 .userId("doctor03")
                 .name("정신과의사")
                 .role(Role.DOCTOR)
-                .departement("신경정신과")
+                .department("신경정신과")
                 .build();
 
         AppointmentRequest request = AppointmentRequest.builder()
@@ -197,7 +197,7 @@ class AppointmentDepartmentServiceTest {
                 .userId("doctor04")
                 .name("피부과의사")
                 .role(Role.DOCTOR)
-                .departement("피부과")
+                .department("피부과")
                 .build();
 
         AppointmentRequest request = AppointmentRequest.builder()

@@ -523,7 +523,7 @@ MedicalProps) {
                         className={`p-3 rounded-xl ${
                           isScheduled
                             ? "bg-white/80 hover:bg-white cursor-pointer"
-                            : "bg-gray-100/50"
+                            : "bg-gray-100/50 cursor-default"
                         }`}
                       >
                         <div className="flex items-start justify-between mb-1">
@@ -532,7 +532,7 @@ MedicalProps) {
                               {apt.doctorName} 의사
                             </div>
                             <div className="text-xs text-gray-600">
-                              진료 예약
+                              {apt.departmentName || "진료 예약"}
                             </div>
                           </div>
                           <Badge
@@ -744,7 +744,10 @@ MedicalProps) {
                       <Calendar
                         mode="single"
                         selected={selectedDate}
-                        onSelect={setSelectedDate}
+                        onSelect={(date) => {
+                          setSelectedDate(date);
+                          setSelectedTime(""); // 날짜 변경 시 시간 초기화
+                        }}
                         disabled={(date) => isPastDate(date) || isHoliday(date)}
                         modifiers={{
                           holiday: holidays,
@@ -778,16 +781,16 @@ MedicalProps) {
                                 key={time}
                                 variant={isSelected ? "default" : "outline"}
                                 disabled={isDisabled}
-                                onClick={() => setSelectedTime(time)}
+                                onClick={() => !isDisabled && setSelectedTime(time)}
                                 className={`rounded-xl ${
                                   isSelected
                                     ? "bg-[#C93831] hover:bg-[#B02F28]"
                                     : ""
-                                } ${isDisabled ? "opacity-50" : ""}`}
+                                } ${isDisabled ? "opacity-50 cursor-not-allowed bg-gray-100" : ""}`}
                               >
                                 {time}
-                                {isBooked && " (예약됨)"}
-                                {isPast && !isBooked && " (마감)"}
+                                {isBooked && <span className="block text-[10px]">(예약됨)</span>}
+                                {isPast && !isBooked && <span className="block text-[10px]">(마감)</span>}
                               </Button>
                             );
                           })}

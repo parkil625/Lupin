@@ -487,6 +487,87 @@ class AuctionServiceTest {
         verify(auctionRepository, never()).saveAndFlush(any());
     }
 
+    @Test
+    @DisplayName("진행 중인 경매가 있지만 종료 시간이 지났다면, 강제 종료 로직이 실행되고 null을 반환한다 (Lazy Close)")
+    void getOngoingAuctionWithItem_LazyClose() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        // 종료 시간이 1분 지난 ACTIVE 경매 생성
+        Auction expiredAuction = Auction.builder()
+                .id(1L)
+                .status(AuctionStatus.ACTIVE)
+                .startTime(now.minusHours(1))
+                .regularEndTime(now.minusMinutes(1)) // 이미 시간 지남
+                .currentPrice(1000L)
+                .overtimeStarted(false)
+                .build();
+
+        // (Optional) Item 세팅 - 로직상 item 조회 전에 시간 체크를 하지만 안전하게 세팅
+        AuctionItem item = createAuctionItem(expiredAuction);
+        ReflectionTestUtils.setField(expiredAuction, "auctionItem", item);
+
+        // Mock: Active 경매를 조회했을 때, 위에서 만든 '시간 지난 경매'가 반환됨
+        given(auctionRepository.findFirstWithItemByStatus(AuctionStatus.ACTIVE))
+                .willReturn(Optional.of(expiredAuction));
+
+        // when
+        OngoingAuctionResponse response = auctionService.getOngoingAuctionWithItem();
+
+        // then
+        // 1. 결과는 null이어야 함 (프론트엔드에게 '없음'으로 응답)
+        assertThat(response).isNull();
+
+        // 2. 내부적으로 closeExpiredAuctions가 호출되어야 함.
+        // closeExpiredAuctions 내에서 호출되는 findExpiredAuctions가 실행되었는지 검증하여 간접 확인
+        verify(auctionRepository, times(1)).findExpiredAuctions(any(), any());
+    }
+
+    @Test
+    @DisplayName("진행 중인 경매가 있고 종료 시간이 지나지 않았다면, 정상적으로 정보를 반환한다")
+    void getOngoingAuctionWithItem_Success() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        // 종료 시간이 10분 남은 ACTIVE 경매
+        Auction activeAuction = Auction.builder()
+                .id(1L)
+                .status(AuctionStatus.ACTIVE)
+                .startTime(now.minusMinutes(10))
+                .regularEndTime(now.plusMinutes(10)) // 시간 아직 남음
+                .currentPrice(1000L)
+                .overtimeStarted(false)
+                .build();
+
+        AuctionItem item = createAuctionItem(activeAuction);
+        ReflectionTestUtils.setField(activeAuction, "auctionItem", item);
+
+        given(auctionRepository.findFirstWithItemByStatus(AuctionStatus.ACTIVE))
+                .willReturn(Optional.of(activeAuction));
+
+        // when
+        OngoingAuctionResponse response = auctionService.getOngoingAuctionWithItem();
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.auctionId()).isEqualTo(activeAuction.getId());
+
+        // 강제 종료 로직이 실행되지 않았어야 함
+        verify(auctionRepository, never()).findExpiredAuctions(any(), any());
+    }
+
+    @Test
+    @DisplayName("진행 중인 경매가 아예 없으면 null을 반환한다")
+    void getOngoingAuctionWithItem_NoAuction() {
+        // given
+        given(auctionRepository.findFirstWithItemByStatus(AuctionStatus.ACTIVE))
+                .willReturn(Optional.empty());
+
+        // when
+        OngoingAuctionResponse response = auctionService.getOngoingAuctionWithItem();
+
+        // then
+        assertThat(response).isNull();
+    }
+
     // ===========================
     // Helper Methods
     // ===========================

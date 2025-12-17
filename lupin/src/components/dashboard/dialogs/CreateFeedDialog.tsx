@@ -71,6 +71,9 @@ export default function CreateFeedDialog({
   const firstButtonRef = useRef<HTMLButtonElement>(null);
   const prevOpenRef = useRef(open);
 
+  // [수정 1] 저장 중인지 확인하는 Ref 추가
+  const isSavingRef = useRef(false);
+
   // 데스크톱 여부 감지
   useEffect(() => {
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
@@ -108,12 +111,18 @@ export default function CreateFeedDialog({
   useEffect(() => {
     // open이 true에서 false로 바뀔 때
     if (prevOpenRef.current && !open) {
-      if (checkHasMeaningfulChanges()) {
+      // [수정 2] 저장 중(isSavingRef.current)이 아닐 때만 확인 창 표시
+      if (!isSavingRef.current && checkHasMeaningfulChanges()) {
         // 실제 저장할 내용이 있으면 확인 다이얼로그 표시
         setShowCloseConfirm(true);
       }
     }
     prevOpenRef.current = open;
+
+    // [수정 3] 다이얼로그가 열릴 때 저장 플래그 초기화
+    if (open) {
+      isSavingRef.current = false;
+    }
   }, [open, startImage, endImage, otherImages]);
 
   // 다이얼로그 열릴 때 localStorage에서 불러오기
@@ -762,6 +771,9 @@ export default function CreateFeedDialog({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
+                // [수정 4] 저장 중 플래그 설정하여 useEffect가 다시 트리거되지 않도록 함
+                isSavingRef.current = true;
+
                 // 명시적으로 localStorage에 저장
                 const draft = {
                   startImage,

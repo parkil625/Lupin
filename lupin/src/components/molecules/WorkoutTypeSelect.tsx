@@ -63,24 +63,30 @@ export default function WorkoutTypeSelect({
 }: WorkoutTypeSelectProps) {
   const [open, setOpen] = useState(false);
 
-  const selectedLabel = WORKOUT_TYPES.find((type) => type.value === value)?.label || "운동 선택";
+  const selectedLabel =
+    WORKOUT_TYPES.find((type) => type.value === value)?.label || "운동 선택";
 
   return (
     <div className={cn("min-w-[120px]", className)}>
-      <Label className="text-xs font-bold text-gray-900 mb-2 block">{label}</Label>
+      <Label className="text-xs font-bold text-gray-900 mb-2 block">
+        {label}
+      </Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between bg-white border-gray-300 text-sm whitespace-nowrap"
+            className="w-full justify-between bg-white border-gray-300 text-sm whitespace-nowrap cursor-pointer"
           >
             {selectedLabel}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full min-w-[160px] p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
+        <PopoverContent
+          className="w-full min-w-[160px] p-0"
+          style={{ width: "var(--radix-popover-trigger-width)" }}
+        >
           <Command>
             <CommandInput placeholder="운동 검색..." />
             <CommandList>
@@ -94,6 +100,7 @@ export default function WorkoutTypeSelect({
                       onChange(currentValue === value ? "" : currentValue);
                       setOpen(false);
                     }}
+                    className="cursor-pointer"
                   >
                     <Check
                       className={cn(

@@ -1,9 +1,11 @@
 package com.example.demo.integration;
 
 import com.example.demo.config.TestRedisConfiguration;
+import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.AppointmentRequest;
+import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Import;
 
-
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;

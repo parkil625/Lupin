@@ -1,7 +1,7 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.entity.PointLog;
-import com.example.demo.domain.entity.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,62 +9,99 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface PointLogRepository extends JpaRepository<PointLog, Long> {
 
-    // userId만 사용하여 detached entity 문제 방지
+    // ... (기존 sumPointsByUserId 등은 유지) ...
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p WHERE p.user.id = :userId")
     Long sumPointsByUserId(@Param("userId") Long userId);
 
-    // 랭킹 집계 시 EARN과 DEDUCT만 합산 (USE 제외)
     @Query("SELECT COALESCE(SUM(p.points), 0) FROM PointLog p " +
-           "WHERE p.user.id = :userId " +
-           "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
-           "AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
+            "WHERE p.user.id = :userId " +
+            "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
+            "AND p.createdAt BETWEEN :startDateTime AND :endDateTime")
     Long sumPointsByUserIdAndMonth(
-            @Param("userId") Long userId, 
-            @Param("startDateTime") LocalDateTime startDateTime, 
+            @Param("userId") Long userId,
+            @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime
     );
 
-    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
+    // [수정 1] 랭킹 조회 (페이징 포함)
+    // User.totalPoints 대신 PointLog에서 EARN, DEDUCT만 합산하여 정렬
+    @Query("SELECT u, COALESCE(SUM(p.points), 0) as rankingScore " +
+            "FROM User u " +
+            "LEFT JOIN PointLog p ON u.id = p.user.id " +
+            "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
+            "GROUP BY u.id " +
+            "ORDER BY rankingScore DESC, u.id ASC")
     List<Object[]> findUsersRankedByPoints(Pageable pageable);
 
-    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
+    // [수정 2] 전체 랭킹 조회
+    @Query("SELECT u, COALESCE(SUM(p.points), 0) as rankingScore " +
+            "FROM User u " +
+            "LEFT JOIN PointLog p ON u.id = p.user.id " +
+            "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
+            "GROUP BY u.id " +
+            "ORDER BY rankingScore DESC, u.id ASC")
     List<Object[]> findAllUsersRankedByPoints();
 
-    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
+    // [수정 3] 중복된 메서드도 동일하게 수정
+    @Query("SELECT u, COALESCE(SUM(p.points), 0) as rankingScore " +
+            "FROM User u " +
+            "LEFT JOIN PointLog p ON u.id = p.user.id " +
+            "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
+            "GROUP BY u.id " +
+            "ORDER BY rankingScore DESC, u.id ASC")
     List<Object[]> findAllUsersWithPointsRanked(Pageable pageable);
 
-    @Query("SELECT u, u.totalPoints as totalPoints FROM User u ORDER BY u.totalPoints DESC, u.id ASC")
+    // [수정 4] 중복된 메서드도 동일하게 수정
+    @Query("SELECT u, COALESCE(SUM(p.points), 0) as rankingScore " +
+            "FROM User u " +
+            "LEFT JOIN PointLog p ON u.id = p.user.id " +
+            "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
+            "GROUP BY u.id " +
+            "ORDER BY rankingScore DESC, u.id ASC")
     List<Object[]> findAllUsersWithPointsRankedAll();
 
-    // 이번 달 활동한 유저 수 (PointLog 기록이 있는 유저)
+    // 이번 달 활동한 유저 수
     @Query("SELECT COUNT(DISTINCT p.user) FROM PointLog p WHERE p.createdAt BETWEEN :startDateTime AND :endDateTime")
     Long countActiveUsersThisMonth(@Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
 
-    // 전체 유저 평균 포인트 (User.currentPoints 사용)
-    @Query(value = "SELECT COALESCE(AVG(u.current_points), 0) FROM users u", nativeQuery = true)
+    // [수정 5] 전체 유저 평균 포인트 (랭킹 점수 기준)
+    // 기존 User.current_points 대신 로그 합산 평균 사용
+    @Query(value = """
+        SELECT COALESCE(AVG(sub.score), 0) 
+        FROM (
+            SELECT COALESCE(SUM(CASE WHEN pl.type IN ('EARN', 'DEDUCT') THEN pl.points ELSE 0 END), 0) as score
+            FROM users u 
+            LEFT JOIN point_logs pl ON u.id = pl.user_id 
+            GROUP BY u.id
+        ) sub
+        """, nativeQuery = true)
     Double getAveragePointsPerUser();
 
-    /**
-     * 특정 사용자의 랭킹과 앞뒤 사용자를 조회 (Window Function 사용)
-     * User.currentPoints 반정규화 필드를 사용하여 JOIN 없이 조회
-     * CROSS JOIN + 집계 서브쿼리로 CTE 다중 참조 문제 해결
-     * 화면 표시용 점수(total_points)는 음수일 경우 0으로 반환 (GREATEST 사용)
-     */
+    // [수정 6] 내 랭킹 및 앞뒤 유저 조회 (Native Query 수정)
+    // USE 타입을 제외하고 점수를 계산하도록 CTE(ranking_calc) 추가
     @Query(value = """
-        WITH ranked_users AS (
+        WITH ranking_calc AS (
+            SELECT
+                u.id,
+                COALESCE(SUM(CASE WHEN pl.type IN ('EARN', 'DEDUCT') THEN pl.points ELSE 0 END), 0) as score
+            FROM users u
+            LEFT JOIN point_logs pl ON u.id = pl.user_id
+            GROUP BY u.id
+        ),
+        ranked_users AS (
             SELECT
                 u.id,
                 u.name,
                 u.avatar,
                 u.department,
-                GREATEST(COALESCE(u.current_points, 0), 0) as total_points,
-                ROW_NUMBER() OVER (ORDER BY COALESCE(u.current_points, 0) DESC, u.id ASC) as user_rank
+                GREATEST(rc.score, 0) as total_points,
+                ROW_NUMBER() OVER (ORDER BY rc.score DESC, u.id ASC) as user_rank
             FROM users u
+            JOIN ranking_calc rc ON u.id = rc.id
         )
         SELECT r.id, r.name, r.avatar, r.department, r.total_points, r.user_rank
         FROM ranked_users r

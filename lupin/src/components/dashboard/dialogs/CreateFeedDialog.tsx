@@ -362,10 +362,10 @@ export default function CreateFeedDialog({
               </button>
               <button
                 onClick={() => setActiveTab("content")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeTab === "content"
-                    ? "bg-[#C93831] text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-[#C93831] text-white cursor-default"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer"
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />글 작성
@@ -567,10 +567,10 @@ export default function CreateFeedDialog({
                 </button>
                 <button
                   onClick={() => setActiveTab("content")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-sm font-medium transition-all ${
                     activeTab === "content"
-                      ? "bg-[#C93831] text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-[#C93831] text-white cursor-default" // 활성 시 기본 커서
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer" // 비활성 시 포인터 커서
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" />글 작성

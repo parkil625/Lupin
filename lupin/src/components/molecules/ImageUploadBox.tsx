@@ -70,7 +70,9 @@ export default function ImageUploadBox({
   if (variant === "upload") {
     return (
       <div className={className}>
-        <Label className="text-xs font-bold text-gray-700 mb-1.5 block">{label}</Label>
+        <Label className="text-xs font-bold text-gray-700 mb-1.5 block">
+          {label}
+        </Label>
         <div
           onClick={handleClick}
           onDrop={handleDrop}
@@ -87,14 +89,20 @@ export default function ImageUploadBox({
   if (variant === "display") {
     return (
       <div className={className}>
-        <Label className="text-xs font-bold text-gray-700 mb-1.5 block">{label}</Label>
+        <Label className="text-xs font-bold text-gray-700 mb-1.5 block">
+          {label}
+        </Label>
         <div className="relative aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 overflow-visible">
           {image ? (
             <>
-              <img src={image} alt={label} className="w-full h-full object-cover rounded-lg" />
+              <img
+                src={image}
+                alt={label}
+                className="w-full h-full object-cover rounded-lg"
+              />
               <button
                 onClick={handleRemove}
-                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-10"
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-10 cursor-pointer"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -117,7 +125,9 @@ export default function ImageUploadBox({
   // 기본 업로드 박스
   return (
     <div className={className}>
-      <Label className="text-xs font-bold text-gray-700 mb-1.5 block">{label}</Label>
+      <Label className="text-xs font-bold text-gray-700 mb-1.5 block">
+        {label}
+      </Label>
       <div
         onClick={handleClick}
         onDrop={handleDrop}
@@ -126,10 +136,14 @@ export default function ImageUploadBox({
       >
         {image ? (
           <>
-            <img src={image} alt={label} className="w-full h-full object-cover rounded-lg" />
+            <img
+              src={image}
+              alt={label}
+              className="w-full h-full object-cover rounded-lg"
+            />
             <button
               onClick={handleRemove}
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-lg z-50 cursor-pointer"
             >
               <X className="w-3 h-3" />
             </button>

@@ -35,6 +35,10 @@ public class Appointment {
     @Column(name = "date", nullable = false)
     private LocalDateTime date;
 
+    @Column(name = "department_name", length = 50)
+    private String departmentName;
+
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default

@@ -1,9 +1,11 @@
 package com.example.demo.integration;
 
 import com.example.demo.config.TestRedisConfiguration;
+import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.AppointmentRequest;
+import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Import;
 
-
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,6 +40,9 @@ class AppointmentIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
     private Long patientId;
     private Long doctorId;
@@ -59,6 +64,7 @@ class AppointmentIntegrationTest {
                 .password("password")
                 .name("테스트의사")
                 .role(Role.DOCTOR)
+                .department("외과")
                 .build();
         doctor = userRepository.save(doctor);
         doctorId = doctor.getId();
@@ -91,5 +97,39 @@ class AppointmentIntegrationTest {
                         .content(requestBody))
                 .andDo(print()) // 🌟 여기가 핵심! 요청/응답 로그를 콘솔에 다 찍어줍니다.
                 .andExpect(status().isOk()); // 성공해야 한다고 가정 (실패하면 에러 뜸)
+    }
+
+    @Test@DisplayName("예약 시 재대로 진료과목이 반영이 되는지 테스트")
+    void createAppointment_shouldPersistDepartmentName() throws Exception {
+        // Given
+        AppointmentRequest request = new AppointmentRequest();
+        User doctor = userRepository.save(User.builder()
+                .userId("doctor01")
+                .name("미스터최")
+                .role(Role.DOCTOR)
+                .department("내과")
+                .build());
+        
+        User patient = userRepository.save(User.builder()
+                .userId("patient01")
+                .password("pass")
+                .name("미스터박")
+                .role(Role.MEMBER)
+                .build());
+
+        String requestBody = String.format(
+            "{\"patientId\": %d, \"doctorId\": %d, \"date\": \"2025-12-11T10:00:00\"}",
+            patient.getId(), doctor.getId()
+        );
+
+        mockMvc.perform(post("/api/appointment")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk());
+
+        Appointment savedApt = appointmentRepository.findAll().stream()
+                .filter(a -> a.getDoctor().getId().equals(doctor.getId()))
+                .findFirst().get();
+        assertThat(savedApt.getDepartmentName()).isEqualTo("내과");
     }
 }

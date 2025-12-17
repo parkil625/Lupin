@@ -57,6 +57,7 @@ public class AppointmentService {
                 .doctor(doctor)
                 .date(request.getDate())
                 .status(AppointmentStatus.SCHEDULED)
+                .departmentName(doctor.getDepartment())
                 .build();
 
         Appointment savedAppointment = appointmentRepository.save(appointment);

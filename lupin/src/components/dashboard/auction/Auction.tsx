@@ -86,13 +86,23 @@ export default function Auction() {
                 // ... (입찰 내역 추가 및 포인트 갱신 코드는 기존과 동일)
                 const newBidLog: BidHistory = {
                     id: Date.now(),
-                    userId: 0,
+                    userId: 0, // 필요 시 실제 ID나 0 유지
                     userName: data.bidderName,
                     bidAmount: data.currentPrice,
                     bidTime: data.bidTime,
-                    status: "ACTIVE"
+                    status: "ACTIVE" // 새 입찰은 무조건 '최고가' 상태
                 };
-                setBidHistory((prev) => [newBidLog, ...prev]);
+
+                setBidHistory((prev) => {
+                    // 기존 내역 중 'ACTIVE'(최고가) 상태였던 것들을 모두 'OUTBID'로 변경
+                    const updatedPrev = prev.map((bid) =>
+                        bid.status === "ACTIVE"
+                            ? { ...bid, status: "OUTBID" as const }
+                            : bid
+                    );
+                    // 새 입찰을 맨 앞에 추가
+                    return [newBidLog, ...updatedPrev];
+                });
                 fetchUserPoints();
 
             } catch (err) {
@@ -119,13 +129,18 @@ export default function Auction() {
   }, []);
 
   // 경매 선택 시 입찰 기록 조회 및 금액 초기화
-  useEffect(() => {
-    if (selectedAuction?.auctionId) {
-      fetchBidHistory();
-      // 가격이 바뀔 때만 입찰 금액 업데이트 (현재가 + 1원)
-      setBidAmount((selectedAuction.currentPrice + 1).toString());
-    }
-  }, [selectedAuction?.auctionId, selectedAuction?.currentPrice]);
+    useEffect(() => {
+        if (selectedAuction?.auctionId) {
+            fetchBidHistory();
+        }
+    }, [selectedAuction?.auctionId]);
+
+    // 2. 현재 가격이 변경될 때 입찰 할 금액(Input)만 업데이트합니다. (서버 재요청 방지)
+    useEffect(() => {
+        if (selectedAuction?.currentPrice) {
+            setBidAmount((selectedAuction.currentPrice + 1).toString());
+        }
+    }, [selectedAuction?.currentPrice]);
 
 
     /**

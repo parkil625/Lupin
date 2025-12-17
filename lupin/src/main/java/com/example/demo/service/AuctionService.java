@@ -2,9 +2,11 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.Auction;
 import com.example.demo.domain.entity.AuctionBid;
+import com.example.demo.domain.entity.PointLog;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
+import com.example.demo.domain.enums.PointType;
 import com.example.demo.dto.AuctionSseMessage;
 import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
@@ -12,6 +14,7 @@ import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
+import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.scheduler.AuctionTaskScheduler;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +36,7 @@ public class AuctionService {
     private final UserRepository userRepository;
     private final AuctionBidRepository auctionBidRepository;
     private final PointService pointService;
-
+    private final PointLogRepository pointLogRepository;
     private final AuctionTaskScheduler auctionTaskScheduler;
 
     private final AuctionSseService auctionSseService;
@@ -93,7 +96,6 @@ public class AuctionService {
 
     // 종료된 경매 ended 시켜주는 메소드
     public void closeExpiredAuctions(LocalDateTime now) {
-        // 종료 시간이 지났고, 상태가 아직 안 바뀐 경매들을 조회 (버퍼 시간 30초)
         LocalDateTime endedTimeThreshold = now.minusSeconds(30);
         List<Auction> auctions = auctionRepository.findExpiredAuctions(now, endedTimeThreshold);
 
@@ -103,16 +105,31 @@ public class AuctionService {
             // 상태 변경 (ACTIVE -> ENDED) 및 우승자 확정
             auction.deactivate(auctionBids);
 
-            // [변경 사항] 낙찰자가 존재하면 포인트 차감 (여기서 잔액 부족 시 음수가 됨)
+            // [수정된 부분] 낙찰자가 존재하면 포인트 차감 (이벤트 발행 없이 직접 처리)
             if (auction.getWinner() != null) {
                 try {
-                    // usePoints 메서드가 잔액 부족 시에도 차감하도록 PointService가 수정되어 있어야 함
-                    pointService.usePoints(auction.getWinner(), auction.getCurrentPrice());
-                    log.info("경매 ID {} 낙찰 -> 사용자 {} 포인트 차감 완료 (금액: {})", 
-                            auction.getId(), auction.getWinner().getId(), auction.getCurrentPrice());
+                    User winner = auction.getWinner();
+                    Long price = auction.getCurrentPrice();
+
+                    // 1. 유저 포인트 직접 차감
+                    winner.deductPoints(price);
+
+                    // 2. 변경된 유저 정보 저장
+                    userRepository.save(winner);
+
+                    // 3. 포인트 로그 직접 생성 및 저장 (PointService를 안 거치므로 이벤트 발생 X)
+                    PointLog pointLog = PointLog.builder()
+                            .user(winner)
+                            .points(-price) // 사용이므로 음수
+                            .type(PointType.USE)
+                            .build();
+                    pointLogRepository.save(pointLog);
+
+                    log.info("경매 ID {} 낙찰 -> 사용자 {} 포인트 차감 완료 (금액: {})",
+                            auction.getId(), winner.getId(), price);
+
                 } catch (Exception e) {
                     log.error("경매 ID {} 포인트 차감 중 오류 발생: {}", auction.getId(), e.getMessage());
-                    // 오류가 나더라도 경매 종료 상태는 유지 (추후 수동 처리 필요할 수 있음)
                 }
             }
 

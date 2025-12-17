@@ -3,17 +3,20 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.*;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
+import com.example.demo.domain.enums.PointType;
 import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
+import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.scheduler.AuctionTaskScheduler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -55,6 +58,9 @@ class AuctionServiceTest {
 
     @Mock
     AuctionTaskScheduler auctionTaskScheduler;
+
+    @Mock
+    PointLogRepository pointLogRepository;
 
     @Mock
     private RedissonClient redissonClient;
@@ -239,40 +245,60 @@ class AuctionServiceTest {
     }
     @Test
     void 경매시간이_종료된_경매_비활성화_및_낙찰자_포인트_차감() {
-        // given
-        LocalDateTime now = createLocalDateNow();
-        LocalDateTime regularTimeLimit = now.minusSeconds(30);
+// Given
+        LocalDateTime now = LocalDateTime.now();
 
-        User winner = createUser(1L, "홍길동"); // 낙찰자
-
-        Auction auction = Auction.builder()
+        // 1. 낙찰자(Winner) 생성 (초기 포인트 1000)
+        User winner = User.builder()
                 .id(1L)
-                .status(AuctionStatus.ACTIVE)
-                .currentPrice(1000L) // 낙찰가
-                .startTime(now.minusMinutes(40))
-                .regularEndTime(now.minusMinutes(30)) 
-                .overtimeStarted(true)
-                .overtimeEndTime(now.minusSeconds(1)) 
-                .winner(winner) // 승자 존재
+                .name("낙찰자")
+                .totalPoints(1000L)
                 .build();
 
-        given(auctionRepository.findExpiredAuctions(now, regularTimeLimit))
+        // 2. 종료 대상 경매 생성 (현재가 500원)
+        Auction auction = Auction.builder()
+                .id(100L)
+                .status(AuctionStatus.ACTIVE)
+                .winner(winner)
+                .currentPrice(500L)
+                .regularEndTime(now.minusMinutes(1)) // 이미 종료 시간 지남
+                .build();
+
+        // 3. Mock 동작 정의
+        // 종료된 경매 목록 조회 시 위 경매 반환
+        given(auctionRepository.findExpiredAuctions(any(), any()))
                 .willReturn(List.of(auction));
 
+        // 해당 경매의 입찰 내역 조회 (빈 리스트여도 상관없음)
         given(auctionBidRepository.findByAuctionId(auction.getId()))
-                .willReturn(Collections.emptyList());
+                .willReturn(List.of());
 
-        // when
+        // When
         auctionService.closeExpiredAuctions(now);
 
-        // then
-        // 1. 상태 변경 확인
-        assertEquals(AuctionStatus.ENDED, auction.getStatus());
-        
-        // 2. [중요] 종료 시점에 포인트 차감 메서드 호출 확인
-        verify(pointService).usePoints(winner, 1000L);
+        // Then
+        // 1. 경매 상태가 ENDED로 변경되었는지 확인
+        assertThat(auction.getStatus()).isEqualTo(AuctionStatus.ENDED);
 
-        // 3. DB 반영 확인
+        // 2. 유저의 포인트가 직접 차감되었는지 확인 (1000 - 500 = 500)
+        assertThat(winner.getTotalPoints()).isEqualTo(500L);
+
+        // 3. UserRepository.save가 호출되었는지 확인
+        verify(userRepository).save(winner);
+
+        // 4. [핵심] PointLogRepository.save가 호출되었는지 확인 (직접 로그 저장)
+        ArgumentCaptor<PointLog> pointLogCaptor = ArgumentCaptor.forClass(PointLog.class);
+        verify(pointLogRepository).save(pointLogCaptor.capture());
+
+        PointLog savedLog = pointLogCaptor.getValue();
+        assertThat(savedLog.getUser()).isEqualTo(winner);
+        assertThat(savedLog.getPoints()).isEqualTo(-500L); // 차감액 확인
+        assertThat(savedLog.getType()).isEqualTo(PointType.USE); // 타입 확인
+
+        // 5. [핵심] PointService.usePoints는 호출되지 않아야 함 (중복 차감 방지 확인)
+        verify(pointService, never()).usePoints(any(), anyLong());
+
+        // 6. 경매 상태 저장 확인
         verify(auctionRepository).saveAndFlush(auction);
     }
 

@@ -41,6 +41,9 @@ class AppointmentIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private AppointmentRepository appointmentRepository;
+
     private Long patientId;
     private Long doctorId;
 

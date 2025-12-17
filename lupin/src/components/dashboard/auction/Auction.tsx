@@ -27,8 +27,6 @@ export default function Auction() {
   const [userPoints, setUserPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 타이머 로직 훅 사용
-  const { countdown, isOvertime } = useAuctionTimer(selectedAuction);
 
     // ▼ [SSE 연결 로직]
     useEffect(() => {
@@ -129,58 +127,83 @@ export default function Auction() {
     }
   }, [selectedAuction?.auctionId, selectedAuction?.currentPrice]);
 
-  /**
-   * 경매 목록 조회 (진행 중 & 예정)
-   */
-  const fetchAuctions = async () => {
-    try {
-      setIsLoading(true);
 
-      // 2. 진행 중인 경매와 예정된 경매를 병렬로 동시에 조회 (Promise.all 사용 권장)
-      const [activeAuctionData, scheduledAuctionList] = await Promise.all([
-        getActiveAuction().catch(() => null),       // 에러 발생 시 null 처리
-        getScheduledAuctions().catch(() => [])      // 에러 발생 시 빈 배열 처리
-      ]);
+    /**
+     * 유저 포인트 조회
+     */
+    const fetchUserPoints = async () => {
+        // 1. 에러 처리를 위해 try-catch 사용 권장
+        try {
+            const data = await getUserPoints();
 
-      // 3. 진행 중인 경매 상태 업데이트
-      if (activeAuctionData) {
-        setAuctions([activeAuctionData]);
-        // 선택된 경매가 없으면 기본값으로 설정
-        if (!selectedAuction || selectedAuction.auctionId === activeAuctionData.auctionId) {
-          setSelectedAuction(activeAuctionData);
+            if (data) {
+                setUserPoints(data.totalPoints);
+            }
+        } catch (error) {
+            console.error("포인트 조회 실패", error);
+            setUserPoints(0);
         }
-      } else {
-        setAuctions([]);
-      }
+    };
 
-      // 4. 예정된 경매 상태 업데이트
-      if (scheduledAuctionList) {
-        setScheduledAuctions(scheduledAuctionList);
-      }
 
-    } catch (error) {
-      console.error("경매 목록 조회 실패:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    /**
+     * 경매 목록 조회 (진행 중 & 예정 & 내 포인트)
+     */
+    const fetchAuctions = async () => {
+        try {
+            setIsLoading(true);
 
-  /**
-   * 유저 포인트 조회
-   */
-const fetchUserPoints = async () => {
-    // 1. 에러 처리를 위해 try-catch 사용 권장
-    try {
-        const data = await getUserPoints(); 
-        
-        if (data) {
-            setUserPoints(data.totalPoints); 
+            // 1. [순서 변경] 경매 정보부터 먼저 가져옵니다.
+            // (이 요청이 처리되는 동안 서버에서 낙찰/정산 로직이 돌 시간을 벋니다.)
+            const [activeAuctionData, scheduledAuctionList] = await Promise.all([
+                getActiveAuction().catch(() => null),
+                getScheduledAuctions().catch(() => [])
+            ]);
+
+            // 2. [핵심] 경매 조회가 끝난 '후에' 포인트를 조회합니다.
+            // 이제 서버가 정산을 마쳤을 확률이 훨씬 높습니다.
+            await fetchUserPoints();
+
+            // 3. 진행 중인 경매 상태 업데이트 (좀비 경매 방지 로직)
+            if (activeAuctionData) {
+                const now = new Date();
+                const regularEnd = new Date(activeAuctionData.regularEndTime);
+                const overtimeBuffer = (activeAuctionData.overtimeSeconds ?? 30) * 1000;
+
+                const effectiveEndTime = (activeAuctionData.overtimeStarted && activeAuctionData.overtimeEndTime)
+                    ? new Date(activeAuctionData.overtimeEndTime)
+                    : new Date(regularEnd.getTime() + overtimeBuffer);
+
+                if (now > effectiveEndTime) {
+                    setAuctions([]);
+                    setSelectedAuction(null);
+                } else {
+                    setAuctions([activeAuctionData]);
+                    if (!selectedAuction || selectedAuction.auctionId === activeAuctionData.auctionId) {
+                        setSelectedAuction(activeAuctionData);
+                    }
+                }
+            } else {
+                setAuctions([]);
+                setSelectedAuction(null);
+            }
+
+            // 4. 예정된 경매 상태 업데이트
+            if (scheduledAuctionList) {
+                setScheduledAuctions(scheduledAuctionList);
+            }
+
+        } catch (error) {
+            console.error("경매 목록 조회 실패:", error);
+        } finally {
+            setIsLoading(false);
         }
-    } catch (error) {
-        console.error("포인트 조회 실패", error);
-        setUserPoints(0);
-    }
-};
+    };
+
+    // 타이머 로직 훅 사용
+    const { countdown, isOvertime } = useAuctionTimer(selectedAuction, fetchAuctions);
+
+
 
   /**
    * 입찰 내역 조회

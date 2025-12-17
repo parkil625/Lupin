@@ -139,10 +139,29 @@ public class AuctionService {
         }
     }
 
+
     // 현재 진행중인 경매정보와 경매물품조회
     public OngoingAuctionResponse getOngoingAuctionWithItem() {
+        // 1. 일단 진행 중인 경매를 가져옵니다.
         Auction auction = auctionRepository.findFirstWithItemByStatus(AuctionStatus.ACTIVE)
-                .orElseThrow(() -> new IllegalStateException("진행 중인 경매가 없습니다."));
+                .orElse(null);
+
+        // 경매가 없으면 null 반환
+        if (auction == null) {
+            return null;
+        }
+
+        // 2. [핵심 로직 추가] 가져온 경매가 이미 시간이 지났는지 확인합니다.
+        if (auction.getEndTime().isBefore(LocalDateTime.now())) {
+            log.info("조회 시점 경매 만료 감지! 강제 종료 처리 진행 (ID: {})", auction.getId());
+
+            // 시간이 지났다면 스케줄러를 기다리지 않고 '지금 당장' 종료 처리를 수행합니다.
+            // (이 메서드 안에서 상태 변경 + 포인트 차감이 모두 일어납니다)
+            closeExpiredAuctions(LocalDateTime.now());
+
+            // 종료되었으므로 '없음'을 반환합니다.
+            return null;
+        }
 
         return OngoingAuctionResponse.from(auction);
     }

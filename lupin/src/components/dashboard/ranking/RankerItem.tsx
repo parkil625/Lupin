@@ -23,7 +23,9 @@ interface RankerItemProps {
   ranker: RankerData;
 }
 
-export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) {
+export const RankerItem = memo(function RankerItem({
+  ranker,
+}: RankerItemProps) {
   const rankStyle = RANK_STYLES[ranker.rank as keyof typeof RANK_STYLES];
 
   return (
@@ -60,7 +62,7 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
           >
             <HoverCardTrigger asChild>
               <div>
-                <Avatar className="w-10 h-10 border-2 border-white shadow-lg bg-white cursor-pointer">
+                <Avatar className="w-10 h-10 border-2 border-white shadow-lg bg-white">
                   {ranker.profileImage ? (
                     <img
                       src={getProfileThumbnailUrl(ranker.profileImage)}
@@ -132,10 +134,7 @@ export const RankerItem = memo(function RankerItem({ ranker }: RankerItemProps) 
 
           {/* Stats */}
           <div className="flex items-center gap-2">
-            <Dumbbell
-              className="w-5 h-5"
-              style={{ color: "#C93831" }}
-            />
+            <Dumbbell className="w-5 h-5" style={{ color: "#C93831" }} />
             <span className="text-xl font-black text-gray-900">
               {ranker.points.toLocaleString()}
             </span>

@@ -1,94 +1,220 @@
-/**
- * AppointmentDialog.tsx
- *
- * 예약 신청 다이얼로그 컴포넌트
- * - 진료과 선택 및 날짜/시간 선택
- * - 예약 가능 시간 표시
- * - 예약 확정 기능
- */
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Calendar as CalendarIcon,
+  User,
+  Stethoscope,
+  CheckCircle2,
+} from "lucide-react";
+
+// 타입 정의 (필요에 따라 수정하세요)
+export interface Department {
+  id: string;
+  name: string;
+}
+
+export interface Doctor {
+  id: string;
+  name: string;
+  departmentId: string;
+}
 
 interface AppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedDepartment: string;
-  setSelectedDepartment: (department: string) => void;
-  selectedDate: Date | undefined;
-  setSelectedDate: (date: Date | undefined) => void;
-  selectedTime: string;
-  setSelectedTime: (time: string) => void;
+  departments: Department[]; // DB에서 가져온 진료과 목록
+  doctors: Doctor[]; // DB에서 가져온 의사 목록
+  // 예약 가능 날짜/시간 데이터 (부모에서 계산해서 넘겨줌)
   availableDates: Date[];
   availableTimes: string[];
   bookedTimes: string[];
-  onConfirm: () => void;
 }
 
 export default function AppointmentDialog({
   open,
   onOpenChange,
-  selectedDepartment,
-  setSelectedDepartment,
-  selectedDate,
-  setSelectedDate,
-  selectedTime,
-  setSelectedTime,
+  departments,
+  doctors,
   availableDates,
   availableTimes,
   bookedTimes,
-  onConfirm
 }: AppointmentDialogProps) {
+  // --- 상태 관리 ---
+  // open이 false에서 true로 변경되면 초기화
+  const [step, setStep] = useState<1 | "success">(1);
+  const [selectedDeptId, setSelectedDeptId] = useState<string>("");
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 다이얼로그가 닫힐 때 초기화 (다음 열림을 위해)
+  useEffect(() => {
+    if (!open) {
+      // 닫힐 때 상태 초기화 (다음 열림을 대비)
+      const timer = setTimeout(() => {
+        setStep(1 as const);
+        setSelectedDeptId("");
+        setSelectedDoctorId("");
+        setSelectedDate(undefined);
+        setSelectedTime("");
+      }, 200); // 애니메이션 이후 초기화
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
+  // 선택된 정보 객체 찾기 (화면 표시용)
+  const selectedDept = departments.find((d) => d.id === selectedDeptId);
+  const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId);
+
+  // 해당 과의 의사 목록 필터링
+  const filteredDoctors = doctors.filter(
+    (doc) => doc.departmentId === selectedDeptId
+  );
+
+  // 예약 확정 핸들러
+  const handleConfirm = async () => {
+    if (!selectedDeptId || !selectedDoctorId || !selectedDate || !selectedTime)
+      return;
+
+    setIsSubmitting(true);
+    // TODO: 여기에 실제 예약 API 호출 로직 추가 (await bookAppointment(...) 등)
+
+    // API 성공 후 딜레이(UX용) 후 화면 전환
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setStep("success"); // 예약 대기 화면으로 전환
+    }, 500);
+  };
+
+  // 예약 변경 (처음으로 돌아가기)
+  const handleChange = () => {
+    setStep(1);
+  };
+
+  // 예약 취소 (다이얼로그 닫기)
+  const handleCancel = () => {
+    // TODO: 필요한 경우 취소 API 호출
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-black">진료 예약</DialogTitle>
-          <DialogDescription>진료과와 날짜, 시간을 선택하여 예약할 수 있습니다.</DialogDescription>
+      <DialogContent className="max-w-md bg-white rounded-xl p-0 overflow-hidden">
+        {/* 헤더 */}
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <DialogTitle className="text-2xl font-black text-gray-900">
+            {step === "success" ? "예약 대기" : "진료 예약"}
+          </DialogTitle>
+          <DialogDescription>
+            {step === "success"
+              ? "예약 내용을 확인해주세요."
+              : "진료과와 의료진, 날짜를 선택해주세요."}
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6">
-          <div>
-            <Label className="text-base font-black mb-2 block">진료과 선택</Label>
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="rounded-xl">
-                <SelectValue placeholder="진료과를 선택하세요" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="internal">내과</SelectItem>
-                <SelectItem value="surgery">외과</SelectItem>
-                <SelectItem value="psychiatry">신경정신과</SelectItem>
-                <SelectItem value="dermatology">피부과</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
-          {selectedDepartment && (
-            <>
+        <div className="px-6 pb-6">
+          {/* STEP 1: 예약 정보 입력 */}
+          {step === 1 && (
+            <div className="space-y-6">
+              {/* 진료과 선택 */}
               <div>
-                <Label className="text-base font-black mb-2 block">날짜 선택</Label>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  modifiers={{
-                    available: availableDates
+                <Label className="text-base font-bold mb-2 block text-gray-700">
+                  진료과 선택
+                </Label>
+                <Select
+                  value={selectedDeptId}
+                  onValueChange={(val) => {
+                    setSelectedDeptId(val);
+                    setSelectedDoctorId(""); // 과 변경 시 의사 초기화
                   }}
-                  modifiersStyles={{
-                    available: {
-                      fontWeight: 'bold',
-                      color: '#C93831'
-                    }
-                  }}
-                  className="rounded-xl border"
-                />
-                <p className="text-xs text-gray-600 mt-2">* 빨간색 날짜만 선택 가능합니다</p>
+                >
+                  <SelectTrigger className="rounded-xl h-11">
+                    <SelectValue placeholder="진료과를 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
+              {/* 의료진 선택 (진료과 선택 시 표시) */}
+              {selectedDeptId && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Label className="text-base font-bold mb-2 block text-gray-700">
+                    의료진 선택
+                  </Label>
+                  <Select
+                    value={selectedDoctorId}
+                    onValueChange={setSelectedDoctorId}
+                  >
+                    <SelectTrigger className="rounded-xl h-11">
+                      <SelectValue placeholder="의료진을 선택하세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredDoctors.map((doc) => (
+                        <SelectItem key={doc.id} value={doc.id}>
+                          {doc.name} 선생님
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* 날짜 선택 (의료진 선택 시 표시) */}
+              {selectedDoctorId && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Label className="text-base font-bold mb-2 block text-gray-700">
+                    날짜 선택
+                  </Label>
+                  <div className="border rounded-xl p-3 flex justify-center bg-gray-50/50">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      locale={ko}
+                      modifiers={{ available: availableDates }}
+                      modifiersStyles={{
+                        available: { fontWeight: "bold", color: "#C93831" },
+                      }}
+                      className="rounded-md bg-white shadow-sm"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2 ml-1">
+                    * 붉은색 날짜만 예약 가능합니다.
+                  </p>
+                </div>
+              )}
+
+              {/* 시간 선택 (날짜 선택 시 표시) */}
               {selectedDate && (
-                <div>
-                  <Label className="text-base font-black mb-2 block">시간 선택</Label>
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Label className="text-base font-bold mb-2 block text-gray-700">
+                    시간 선택
+                  </Label>
                   <div className="grid grid-cols-3 gap-2">
                     {availableTimes.map((time) => {
                       const isBooked = bookedTimes.includes(time);
@@ -99,26 +225,112 @@ export default function AppointmentDialog({
                           variant={isSelected ? "default" : "outline"}
                           disabled={isBooked}
                           onClick={() => setSelectedTime(time)}
-                          className={`rounded-xl ${isSelected ? 'bg-[#C93831]' : ''} ${isBooked ? 'opacity-50' : ''}`}
+                          className={`rounded-xl h-10 text-sm ${
+                            isSelected ? "bg-[#C93831] hover:bg-[#B02F28]" : ""
+                          } ${isBooked ? "opacity-40 bg-gray-100" : ""}`}
                         >
                           {time}
-                          {isBooked && " (예약됨)"}
                         </Button>
                       );
                     })}
                   </div>
                 </div>
               )}
-            </>
+
+              {/* 예약 하기 버튼 */}
+              <Button
+                disabled={
+                  !selectedDeptId ||
+                  !selectedDoctorId ||
+                  !selectedDate ||
+                  !selectedTime ||
+                  isSubmitting
+                }
+                className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-bold rounded-xl h-12 text-lg shadow-md mt-4"
+                onClick={handleConfirm}
+              >
+                {isSubmitting ? "처리 중..." : "예약하기"}
+              </Button>
+            </div>
           )}
 
-          <Button
-            disabled={!selectedDepartment || !selectedDate || !selectedTime}
-            className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12"
-            onClick={onConfirm}
-          >
-            예약 확인
-          </Button>
+          {/* STEP 2 (Success): 예약 대기/완료 화면 */}
+          {step === "success" && selectedDept && selectedDoctor && (
+            <div className="flex flex-col items-center animate-in zoom-in-95 duration-300 py-2">
+              {/* 완료 아이콘 */}
+              <div className="mb-6 bg-green-50 p-4 rounded-full">
+                <CheckCircle2 className="w-10 h-10 text-green-600" />
+              </div>
+
+              {/* 예약 정보 카드 */}
+              <div className="w-full bg-gray-50 rounded-2xl p-5 space-y-4 mb-6 border border-gray-100 shadow-sm">
+                {/* 진료과 */}
+                <div className="flex items-center gap-4 p-2">
+                  <div className="bg-white p-2 rounded-lg shadow-sm text-blue-600">
+                    <Stethoscope className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">진료과</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {selectedDept.name}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 담당 의사 */}
+                <div className="flex items-center gap-4 p-2 border-t border-gray-100 pt-4">
+                  <div className="bg-white p-2 rounded-lg shadow-sm text-blue-600">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">
+                      담당 의사
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {selectedDoctor.name} 선생님
+                    </p>
+                  </div>
+                </div>
+
+                {/* 예약 시간 */}
+                <div className="flex items-center gap-4 p-2 border-t border-gray-100 pt-4">
+                  <div className="bg-white p-2 rounded-lg shadow-sm text-blue-600">
+                    <CalendarIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">
+                      예약 일시
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {selectedDate &&
+                        format(selectedDate, "M월 d일 (eee)", {
+                          locale: ko,
+                        })}{" "}
+                      {selectedTime}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 하단 버튼 (변경 / 취소) */}
+              <div className="flex w-full gap-3 mt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-12 rounded-xl border-gray-300 text-gray-700 font-bold hover:bg-gray-50"
+                  onClick={handleChange}
+                >
+                  예약 변경
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-12 rounded-xl border-red-100 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 font-bold hover:border-red-200"
+                  onClick={handleCancel}
+                >
+                  예약 취소
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

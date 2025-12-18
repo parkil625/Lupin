@@ -55,13 +55,13 @@ export interface Prescription {
 
 export interface Notification {
   id: number;
-  type: string;  // "FEED_LIKE", "COMMENT", "COMMENT_LIKE", "REPLY"
+  type: string; // "FEED_LIKE", "COMMENT", "COMMENT_LIKE", "REPLY"
   title: string;
   content?: string;
   isRead: boolean;
   refId?: string;
-  targetId?: number;  // 하이라이트할 댓글/답글 ID
-  actorProfileImage?: string;  // 알림 발생시킨 사용자 프로필 이미지
+  targetId?: number; // 하이라이트할 댓글/답글 ID
+  actorProfileImage?: string; // 알림 발생시킨 사용자 프로필 이미지
   createdAt: string;
 }
 
@@ -94,4 +94,17 @@ export interface ChatMessage {
   content: string;
   time: string;
   isMine: boolean;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+}
+
+export interface Doctor {
+  id: string;
+  name: string;
+  departmentId: string;
+  avatar?: string;
+  isAvailable?: boolean;
 }

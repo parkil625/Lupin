@@ -103,13 +103,15 @@ export default function AppointmentDialog({
 
     setIsSubmitting(true);
 
-    // 부모 컴포넌트의 onConfirm 호출
+    // 즉시 success 화면으로 전환 (사용자에게 빠른 피드백)
+    setStep("success");
+
+    // 부모 컴포넌트의 onConfirm 호출 (실제 API 호출)
     onConfirm();
 
-    // API 성공 후 딜레이(UX용) 후 화면 전환
+    // API 완료 후 버튼 활성화
     setTimeout(() => {
       setIsSubmitting(false);
-      setStep("success"); // 예약 대기 화면으로 전환
     }, 500);
   };
 
@@ -120,8 +122,8 @@ export default function AppointmentDialog({
 
   // 예약 취소 (다이얼로그 닫기)
   const handleCancel = () => {
-    // TODO: 필요한 경우 취소 API 호출
     onOpenChange(false);
+    // 상태 초기화는 useEffect의 open === false에서 자동으로 처리됨
   };
 
   return (
@@ -326,15 +328,17 @@ export default function AppointmentDialog({
                   variant="outline"
                   className="flex-1 h-12 rounded-xl border-gray-300 text-gray-700 font-bold hover:bg-gray-50"
                   onClick={handleChange}
+                  disabled={isSubmitting}
                 >
-                  예약 변경
+                  {isSubmitting ? "처리 중..." : "예약 변경"}
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1 h-12 rounded-xl border-red-100 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 font-bold hover:border-red-200"
                   onClick={handleCancel}
+                  disabled={isSubmitting}
                 >
-                  예약 취소
+                  {isSubmitting ? "처리 중..." : "닫기"}
                 </Button>
               </div>
             </div>

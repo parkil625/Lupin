@@ -883,13 +883,8 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
               setMedicalState((p) => ({ ...p, selectedTime: v }))
             }
             onConfirm={() => {
-              setMedicalState((p) => ({
-                ...p,
-                showAppointment: false,
-                selectedDepartment: "",
-                selectedTime: "",
-              }));
-              setSelectedDate(undefined);
+              // 예약 확정 시에는 다이얼로그를 닫지 않음 (success 화면 표시를 위해)
+              // AppointmentDialog 내부에서 "예약 취소" 버튼 클릭 시 onOpenChange로 닫힘
             }}
           />
         )}

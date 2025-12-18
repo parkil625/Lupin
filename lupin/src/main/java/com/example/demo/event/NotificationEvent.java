@@ -71,4 +71,18 @@ public class NotificationEvent {
         }
         return content.substring(0, 50) + "...";
     }
+
+    public static NotificationEvent auctionWin(Long targetUserId, Long auctionId, String itemName, Long finalPrice) {
+        String content = itemName + " 낙찰가: " + finalPrice + "P";
+        return new NotificationEvent(
+                NotificationType.AUCTION_WIN,
+                targetUserId,
+                null,           // 시스템 알림이므로 actorUserId는 null
+                "Lupin Auction", // 알림 보낸 사람 이름 (시스템)
+                null,           // 프로필 이미지 없음
+                auctionId,      // 클릭 시 이동할 경매 ID
+                null,           // targetId 없음
+                truncateContent(content)
+        );
+    }
 }

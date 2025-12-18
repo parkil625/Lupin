@@ -12,6 +12,7 @@ import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
+import com.example.demo.event.NotificationEvent;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
 import com.example.demo.repository.PointLogRepository;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class AuctionService {
     private final PointService pointService;
     private final PointLogRepository pointLogRepository;
     private final AuctionTaskScheduler auctionTaskScheduler;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final AuctionSseService auctionSseService;
     private final RedissonClient redissonClient;
@@ -127,6 +130,13 @@ public class AuctionService {
 
                     log.info("경매 ID {} 낙찰 -> 사용자 {} 포인트 차감 완료 (금액: {})",
                             auction.getId(), winner.getId(), price);
+
+                    eventPublisher.publishEvent(NotificationEvent.auctionWin(
+                            winner.getId(),
+                            auction.getId(),
+                            auction.getAuctionItem().getItemName(), // 물품 이름
+                            price
+                    ));
 
                 } catch (Exception e) {
                     log.error("경매 ID {} 포인트 차감 중 오류 발생: {}", auction.getId(), e.getMessage());

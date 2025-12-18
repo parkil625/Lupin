@@ -3,11 +3,13 @@ package com.example.demo.service;
 import com.example.demo.domain.entity.*;
 import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
+import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.domain.enums.PointType;
 import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
+import com.example.demo.event.NotificationEvent;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
 import com.example.demo.repository.PointLogRepository;
@@ -22,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -67,6 +70,9 @@ class AuctionServiceTest {
 
     @Mock
     private RBucket<Object> rBucket;
+
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     AuctionService auctionService;
@@ -567,6 +573,61 @@ class AuctionServiceTest {
         // then
         assertThat(response).isNull();
     }
+    @Test
+    @DisplayName("경매 종료 시 낙찰자에게 알림 이벤트가 발행된다")
+    void closeExpiredAuctions_PublishEvent() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. 낙찰자 생성
+        User winner = User.builder()
+                .id(1L)
+                .name("낙찰자")
+                .totalPoints(1000L)
+                .build();
+
+        // 2. 경매 생성 (종료 시간 지남)
+        Auction auction = Auction.builder()
+                .id(100L)
+                .status(AuctionStatus.ACTIVE)
+                .winner(winner)
+                .currentPrice(500L)
+                .regularEndTime(now.minusMinutes(1))
+                .build();
+
+        // 3. 경매 물품 생성 및 연결 (이벤트에 물품 이름이 들어가므로 필수)
+        AuctionItem item = AuctionItem.builder()
+                .itemName("황금 열쇠")
+                .auction(auction)
+                .build();
+        ReflectionTestUtils.setField(auction, "auctionItem", item);
+
+        // 4. Mock 동작 정의
+        given(auctionRepository.findExpiredAuctions(any(), any()))
+                .willReturn(List.of(auction));
+        given(auctionBidRepository.findByAuctionId(auction.getId()))
+                .willReturn(List.of()); // 입찰 내역 없어도 낙찰자만 있으면 됨
+
+        // when
+        auctionService.closeExpiredAuctions(now);
+
+        // then
+        // 1. 이벤트 발행 메서드가 호출되었는지 캡처
+        ArgumentCaptor<NotificationEvent> eventCaptor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
+
+        // 2. 발행된 이벤트의 내용 검증
+        NotificationEvent publishedEvent = eventCaptor.getValue();
+
+        assertAll(
+                () -> assertThat(publishedEvent.getType()).isEqualTo(NotificationType.AUCTION_WIN), // 타입 확인
+                () -> assertThat(publishedEvent.getTargetUserId()).isEqualTo(winner.getId()),       // 수신자 확인 (낙찰자)
+                () -> assertThat(publishedEvent.getRefId()).isEqualTo(auction.getId()),             // 참조 ID 확인 (경매 ID)
+                () -> assertThat(publishedEvent.getContentPreview()).contains("황금 열쇠"),          // 내용에 물품 이름 포함 여부
+                () -> assertThat(publishedEvent.getContentPreview()).contains("500")                // 내용에 낙찰가 포함 여부
+        );
+    }
+
 
     // ===========================
     // Helper Methods

@@ -1,15 +1,15 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { useAuthStore } from '../store/useAuthStore';
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { useAuthStore } from "../store/useAuthStore";
 
 /**
  * Axios 인스턴스 생성
  * 백엔드 API와 통신하기 위한 기본 설정
  */
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081/api',
+  baseURL: import.meta.env.VITE_API_URL || "/api",
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   withCredentials: true,
 });
@@ -21,7 +21,10 @@ let failedQueue: Array<{
   reject: (error: AxiosError) => void;
 }> = [];
 
-const processQueue = (error: AxiosError | null, token: string | null = null) => {
+const processQueue = (
+  error: AxiosError | null,
+  token: string | null = null
+) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -39,7 +42,7 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
 apiClient.interceptors.request.use(
   (config) => {
     // JWT 토큰 추가
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -59,13 +62,17 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     // 401 에러이고 재시도하지 않은 요청인 경우
     if (error.response?.status === 401 && !originalRequest._retry) {
       // 로그인/재발급 요청 자체가 실패한 경우는 재시도하지 않음
-      if (originalRequest.url?.includes('/auth/login') ||
-          originalRequest.url?.includes('/auth/reissue')) {
+      if (
+        originalRequest.url?.includes("/auth/login") ||
+        originalRequest.url?.includes("/auth/reissue")
+      ) {
         return Promise.reject(error);
       }
 
@@ -84,10 +91,10 @@ apiClient.interceptors.response.use(
 
       try {
         // Refresh Token으로 재발급 요청 (쿠키로 전송됨)
-        const response = await apiClient.post('/auth/reissue');
+        const response = await apiClient.post("/auth/reissue");
         const newAccessToken = response.data.accessToken;
 
-        localStorage.setItem('accessToken', newAccessToken);
+        localStorage.setItem("accessToken", newAccessToken);
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
         processQueue(null, newAccessToken);
@@ -97,11 +104,16 @@ apiClient.interceptors.response.use(
         processQueue(refreshError as AxiosError, null);
 
         // 에러 코드 확인하여 적절한 메시지 표시
-        const axiosError = refreshError as AxiosError<{ code?: string; message?: string }>;
+        const axiosError = refreshError as AxiosError<{
+          code?: string;
+          message?: string;
+        }>;
         const errorCode = axiosError.response?.data?.code;
 
-        if (errorCode === 'SESSION_EXPIRED_BY_OTHER_LOGIN') {
-          alert('다른 기기에서 로그인하여 현재 세션이 만료되었습니다.\n다시 로그인해주세요.');
+        if (errorCode === "SESSION_EXPIRED_BY_OTHER_LOGIN") {
+          alert(
+            "다른 기기에서 로그인하여 현재 세션이 만료되었습니다.\n다시 로그인해주세요."
+          );
         }
 
         // 재발급 실패 시 zustand store를 통한 로그아웃 처리

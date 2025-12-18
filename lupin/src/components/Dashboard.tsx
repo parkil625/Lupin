@@ -236,9 +236,30 @@ function useDashboardLogic(
         // targetId 없으면 refId로 하이라이트 (기존 알림 호환)
         const comment = await commentApi.getCommentById(refId);
         if (comment?.feedId) navigateToFeed(comment.feedId, targetId ?? refId);
+      } else if (notification.type === "APPOINTMENT_REMINDER") {
+        // refId = appointmentId - 예약 페이지로 이동하고 채팅 자동 오픈
+        navigateFn("/dashboard/appointment");
+
+        // 예약 페이지 로드 후 채팅 자동 오픈을 위한 상태 전달
+        // 잠시 후 채팅 가능 여부 확인 후 자동으로 채팅창 열기
+        setTimeout(async () => {
+          try {
+            const available = await appointmentApi.isChatAvailable(refId);
+            if (available) {
+              // AppointmentsPage에서 자동으로 채팅을 열 수 있도록 이벤트 발생
+              window.dispatchEvent(
+                new CustomEvent("openAppointmentChat", {
+                  detail: { appointmentId: refId },
+                })
+              );
+            }
+          } catch (error) {
+            console.error("채팅 가능 여부 확인 실패:", error);
+          }
+        }, 500);
       }
     },
-    [navigateToFeed]
+    [navigateToFeed, navigateFn]
   );
 
   return {

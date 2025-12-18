@@ -69,4 +69,24 @@ public class AppointmentController {
         List<String> bookedTimes = appointmentService.getBookedTimesByDoctorAndDate(doctorId, date);
         return ResponseEntity.ok(bookedTimes);
     }
+
+    /**
+     * 채팅 가능 여부 확인 API
+     * GET /api/appointment/{appointmentId}/chat-available
+     */
+    @GetMapping("/{appointmentId}/chat-available")
+    public ResponseEntity<Boolean> isChatAvailable(@PathVariable Long appointmentId) {
+        boolean available = appointmentService.isChatAvailable(appointmentId);
+        return ResponseEntity.ok(available);
+    }
+
+    /**
+     * 채팅 잠금 메시지 조회 API
+     * GET /api/appointment/{appointmentId}/chat-lock-message
+     */
+    @GetMapping("/{appointmentId}/chat-lock-message")
+    public ResponseEntity<String> getChatLockMessage(@PathVariable Long appointmentId) {
+        String message = appointmentService.getChatLockMessage(appointmentId);
+        return ResponseEntity.ok(message);
+    }
 }

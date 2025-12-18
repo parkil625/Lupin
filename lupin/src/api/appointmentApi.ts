@@ -69,4 +69,22 @@ export const appointmentApi = {
     });
     return response.data;
   },
+
+  /**
+   * 채팅 가능 여부 확인
+   * GET /api/appointment/{appointmentId}/chat-available
+   */
+  isChatAvailable: async (appointmentId: number): Promise<boolean> => {
+    const response = await apiClient.get(`/appointment/${appointmentId}/chat-available`);
+    return response.data;
+  },
+
+  /**
+   * 채팅 잠금 메시지 조회
+   * GET /api/appointment/{appointmentId}/chat-lock-message
+   */
+  getChatLockMessage: async (appointmentId: number): Promise<string> => {
+    const response = await apiClient.get(`/appointment/${appointmentId}/chat-lock-message`);
+    return response.data;
+  },
 };

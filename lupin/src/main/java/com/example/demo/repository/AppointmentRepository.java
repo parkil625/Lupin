@@ -50,4 +50,16 @@ List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patien
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    // 특정 상태와 날짜 범위 내 예약 목록 조회 (리마인더용)
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient " +
+           "JOIN FETCH a.doctor " +
+           "WHERE a.status = :status " +
+           "AND a.date BETWEEN :startDate AND :endDate")
+    List<Appointment> findByStatusAndDateBetween(
+            @Param("status") com.example.demo.domain.enums.AppointmentStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }

@@ -56,4 +56,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // [Last-Event-ID] 특정 ID 이후의 알림 조회 (재연결 시 사용)
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.id > :lastEventId ORDER BY n.id ASC")
     List<Notification> findByUserIdAndIdGreaterThan(@Param("userId") Long userId, @Param("lastEventId") Long lastEventId);
+
+    // 특정 유저, 타입, refId로 알림 존재 여부 확인 (중복 알림 방지)
+    @Query("SELECT COUNT(n) > 0 FROM Notification n WHERE n.user.id = :userId AND n.type = :type AND n.refId = :refId")
+    boolean existsByUserIdAndTypeAndRefId(@Param("userId") Long userId, @Param("type") NotificationType type, @Param("refId") String refId);
 }

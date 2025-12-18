@@ -71,7 +71,13 @@ import {
   Member,
   ChatMessage,
 } from "@/types/dashboard.types";
-import { feedApi, notificationApi, commentApi, userApi } from "@/api";
+import {
+  feedApi,
+  notificationApi,
+  commentApi,
+  userApi,
+  appointmentApi,
+} from "@/api";
 import { useFeedStore, mapBackendFeed } from "@/store/useFeedStore";
 import { useNotificationSse } from "@/hooks/useNotificationSse";
 

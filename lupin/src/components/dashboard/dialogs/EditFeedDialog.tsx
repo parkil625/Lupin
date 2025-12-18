@@ -35,20 +35,13 @@ import {
 import { Image, FileText, CheckCircle, AlertCircle, X } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { toast } from "sonner";
-import { ImageUploadBox } from "@/components/molecules";
+import { ImageUploadBox, WorkoutTypeSelect } from "@/components/molecules";
 import {
   FeedContentInput,
   convertBlockNoteToPlainText,
 } from "@/components/shared/FeedContent";
 import exifr from "exifr";
 import { imageApi } from "@/api/imageApi";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface EditFeedDialogProps {
   feed: Feed | null;
@@ -63,19 +56,6 @@ interface EditFeedDialogProps {
     endImage: string | null
   ) => void;
 }
-
-const WORKOUT_TYPES = [
-  "런닝",
-  "걷기",
-  "사이클",
-  "수영",
-  "웨이트",
-  "요가",
-  "필라테스",
-  "크로스핏",
-  "등산",
-  "기타",
-];
 
 export default function EditFeedDialog({
   feed,
@@ -338,22 +318,11 @@ export default function EditFeedDialog({
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-black text-gray-900">피드 수정</h2>
               <div className="flex items-center gap-2">
-                <Select value={workoutType} onValueChange={setWorkoutType}>
-                  <SelectTrigger className="min-w-[120px] cursor-pointer">
-                    <SelectValue placeholder="운동 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORKOUT_TYPES.map((type) => (
-                      <SelectItem
-                        key={type}
-                        value={type}
-                        className="cursor-pointer"
-                      >
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <WorkoutTypeSelect
+                  value={workoutType}
+                  onChange={setWorkoutType}
+                  className="min-w-[120px] cursor-pointer"
+                />
                 <button
                   onClick={() => handleOpenChange(false)}
                   className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
@@ -558,22 +527,11 @@ export default function EditFeedDialog({
             <div className="p-3 border-b border-gray-200 flex-shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-lg font-black text-gray-900">피드 수정</h2>
-                <Select value={workoutType} onValueChange={setWorkoutType}>
-                  <SelectTrigger className="min-w-[130px] cursor-pointer">
-                    <SelectValue placeholder="운동 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WORKOUT_TYPES.map((type) => (
-                      <SelectItem
-                        key={type}
-                        value={type}
-                        className="cursor-pointer"
-                      >
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <WorkoutTypeSelect
+                  value={workoutType}
+                  onChange={setWorkoutType}
+                  className="min-w-[130px] cursor-pointer"
+                />
               </div>
 
               {/* 탭 버튼 */}

@@ -180,7 +180,9 @@ MedicalProps) {
         const departmentKoreanName = departmentNames[selectedDepartment];
 
         // 의사 조회
-        const doctors = await userApi.getDoctorsByDepartment(departmentKoreanName);
+        const doctors = await userApi.getDoctorsByDepartment(
+          departmentKoreanName
+        );
 
         if (doctors.length === 0) {
           setBookedTimes([]);
@@ -189,7 +191,7 @@ MedicalProps) {
 
         // 첫 번째 의사의 예약된 시간 조회
         const doctorId = doctors[0].id;
-        const dateStr = selectedDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+        const dateStr = selectedDate.toISOString().split("T")[0]; // YYYY-MM-DD 형식
 
         const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
         setBookedTimes(booked);
@@ -288,10 +290,10 @@ MedicalProps) {
       // 날짜 + 시간 조합 (로컬 시간 유지)
       const [hours, minutes] = selectedTime.split(":").map(Number);
       const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      const hoursStr = String(hours).padStart(2, '0');
-      const minutesStr = String(minutes).padStart(2, '0');
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const day = String(selectedDate.getDate()).padStart(2, "0");
+      const hoursStr = String(hours).padStart(2, "0");
+      const minutesStr = String(minutes).padStart(2, "0");
 
       // ISO 8601 형식이지만 타임존 정보 없이 로컬 시간으로 전송
       const dateTimeStr = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
@@ -306,8 +308,11 @@ MedicalProps) {
       console.log("✅ 예약 생성 성공:", appointmentId);
 
       // 예약된 시간 목록 다시 조회 (DB에서 최신 정보 가져오기)
-      const dateStr = selectedDate.toISOString().split('T')[0];
-      const updatedBookedTimes = await appointmentApi.getBookedTimes(selectedDoctor.id, dateStr);
+      const dateStr = selectedDate.toISOString().split("T")[0];
+      const updatedBookedTimes = await appointmentApi.getBookedTimes(
+        selectedDoctor.id,
+        dateStr
+      );
       setBookedTimes(updatedBookedTimes);
 
       setActiveAppointment({
@@ -781,16 +786,30 @@ MedicalProps) {
                                 key={time}
                                 variant={isSelected ? "default" : "outline"}
                                 disabled={isDisabled}
-                                onClick={() => !isDisabled && setSelectedTime(time)}
+                                onClick={() =>
+                                  !isDisabled && setSelectedTime(time)
+                                }
                                 className={`rounded-xl ${
                                   isSelected
                                     ? "bg-[#C93831] hover:bg-[#B02F28]"
                                     : ""
-                                } ${isDisabled ? "opacity-50 cursor-not-allowed bg-gray-100" : ""}`}
+                                } ${
+                                  isDisabled
+                                    ? "opacity-50 cursor-not-allowed bg-gray-100"
+                                    : ""
+                                }`}
                               >
                                 {time}
-                                {isBooked && <span className="block text-[10px]">(예약됨)</span>}
-                                {isPast && !isBooked && <span className="block text-[10px]">(마감)</span>}
+                                {isBooked && (
+                                  <span className="block text-[10px]">
+                                    (예약됨)
+                                  </span>
+                                )}
+                                {isPast && !isBooked && (
+                                  <span className="block text-[10px]">
+                                    (마감)
+                                  </span>
+                                )}
                               </Button>
                             );
                           })}
@@ -801,7 +820,10 @@ MedicalProps) {
                     {/* 예약하기 버튼 */}
                     <Button
                       disabled={
-                        !selectedDepartment || !selectedDate || !selectedTime
+                        !selectedDepartment ||
+                        !selectedDate ||
+                        !selectedTime ||
+                        bookedTimes.includes(selectedTime)
                       }
                       className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12"
                       onClick={handleConfirmAppointment}

@@ -47,10 +47,48 @@ export default function AppointmentsPage({
     fetchAppointments();
   }, [currentUser.id, currentUser.role]);
 
+  // 알림 클릭으로 채팅창 자동 오픈 이벤트 수신
+  useEffect(() => {
+    const handleOpenChat = (event: CustomEvent) => {
+      const { appointmentId } = event.detail;
+      const appointment = appointments.find((apt) => apt.id === appointmentId);
+
+      if (appointment) {
+        handleChatClick(appointment);
+      }
+    };
+
+    window.addEventListener(
+      "openAppointmentChat",
+      handleOpenChat as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "openAppointmentChat",
+        handleOpenChat as EventListener
+      );
+    };
+  }, [appointments]);
+
   // 채팅 시작 핸들러
-  const handleChatClick = (appointment: AppointmentResponse) => {
-    setSelectedAppointment(appointment);
-    setIsChatOpen(true);
+  const handleChatClick = async (appointment: AppointmentResponse) => {
+    // 채팅 가능 여부 확인
+    try {
+      const available = await appointmentApi.isChatAvailable(appointment.id);
+
+      if (!available) {
+        const lockMessage = await appointmentApi.getChatLockMessage(appointment.id);
+        alert(lockMessage);
+        return;
+      }
+
+      setSelectedAppointment(appointment);
+      setIsChatOpen(true);
+    } catch (error) {
+      console.error("채팅 가능 여부 확인 실패:", error);
+      alert("채팅 시작 중 오류가 발생했습니다.");
+    }
   };
 
   // 예약 취소 핸들러

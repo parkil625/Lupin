@@ -23,7 +23,8 @@ public enum NotificationType {
     COMMENT_LIKE(true, true, true),     // refId=Comment.id, targetId=Comment.id, 취소 가능
     REPLY(true, true, false),           // refId=부모Comment.id, targetId=Reply.id, 취소 불가
     FEED_DELETED(false, false, false),  // 시스템 알림
-    COMMENT_DELETED(false, false, false); // 시스템 알림
+    COMMENT_DELETED(false, false, false), // 시스템 알림
+    APPOINTMENT_REMINDER(true, false, false); // refId=Appointment.id, 예약 리마인더
 
     private final boolean hasRefId;      // 네비게이션용 참조 ID 존재 여부
     private final boolean hasTargetId;   // 하이라이트용 대상 ID 존재 여부

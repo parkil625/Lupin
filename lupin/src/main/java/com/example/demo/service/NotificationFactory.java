@@ -40,6 +40,7 @@ public class NotificationFactory {
             case REPLY -> event.getActorName() + "님이 답글을 남겼습니다";
             case FEED_DELETED -> "신고 누적으로 피드가 삭제되었습니다";
             case COMMENT_DELETED -> "신고 누적으로 댓글이 삭제되었습니다";
+            case APPOINTMENT_REMINDER -> "진료 예약 알림";
         };
     }
 }

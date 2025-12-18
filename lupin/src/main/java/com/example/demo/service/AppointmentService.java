@@ -16,6 +16,7 @@ import org.redisson.api.RedissonClient;
 
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.util.AppointmentTimeUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -219,5 +220,30 @@ public class AppointmentService {
         } catch (Exception e) {
             log.warn("Redis 캐시 무효화 실패: {}", e.getMessage());
         }
+    }
+
+    /**
+     * 채팅 가능 여부 확인 (예약 시간 5분 전부터 가능)
+     */
+    public boolean isChatAvailable(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
+
+        // 취소된 예약은 채팅 불가
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            return false;
+        }
+
+        return AppointmentTimeUtils.isChatAvailable(appointment.getDate());
+    }
+
+    /**
+     * 채팅 잠금 메시지 조회
+     */
+    public String getChatLockMessage(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
+
+        return AppointmentTimeUtils.getChatLockMessage(appointment.getDate());
     }
 }

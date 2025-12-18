@@ -120,8 +120,8 @@ export default function AppointmentDialog({
 
   // 예약 취소 (다이얼로그 닫기)
   const handleCancel = () => {
-    // TODO: 필요한 경우 취소 API 호출
     onOpenChange(false);
+    // 상태 초기화는 useEffect의 open === false에서 자동으로 처리됨
   };
 
   return (

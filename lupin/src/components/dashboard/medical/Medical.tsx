@@ -205,17 +205,31 @@ MedicalProps) {
   }, [selectedDepartment, selectedDate]);
 
   // 예약 클릭 핸들러 - 채팅방 열기
-  const handleAppointmentClick = (appointment: AppointmentResponse) => {
-    // SCHEDULED 상태인 경우에만 채팅방 열기
+  const handleAppointmentClick = async (appointment: AppointmentResponse) => {
+    // SCHEDULED 상태인 경우에만 채팅방 열기 시도
     if (appointment.status === "SCHEDULED") {
-      setActiveAppointment({
-        id: appointment.id,
-        doctorId: appointment.doctorId,
-        doctorName: appointment.doctorName,
-        type: "진료 상담",
-      });
-      setIsChatEnded(false);
-      setShowAppointmentView(false);
+      try {
+        // 채팅 가능 여부 확인
+        const available = await appointmentApi.isChatAvailable(appointment.id);
+
+        if (!available) {
+          const lockMessage = await appointmentApi.getChatLockMessage(appointment.id);
+          toast.error(lockMessage);
+          return;
+        }
+
+        setActiveAppointment({
+          id: appointment.id,
+          doctorId: appointment.doctorId,
+          doctorName: appointment.doctorName,
+          type: "진료 상담",
+        });
+        setIsChatEnded(false);
+        setShowAppointmentView(false);
+      } catch (error) {
+        console.error("채팅 가능 여부 확인 실패:", error);
+        toast.error("채팅 시작 중 오류가 발생했습니다.");
+      }
     }
   };
 
@@ -315,15 +329,7 @@ MedicalProps) {
       );
       setBookedTimes(updatedBookedTimes);
 
-      setActiveAppointment({
-        id: appointmentId,
-        doctorId: selectedDoctor.id,
-        doctorName: selectedDoctor.name,
-        type: `${departmentKoreanName} 상담`,
-      });
-      setIsChatEnded(false);
-      setShowAppointmentView(false);
-
+      // 채팅창을 열지 않고 예약 목록만 업데이트
       toast.success(
         `${selectedDate.toLocaleDateString(
           "ko-KR"

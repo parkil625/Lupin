@@ -229,7 +229,7 @@ jobs:
               --network host \
               --add-host redis:127.0.0.1 \
               --restart unless-stopped \
-              -e SERVER_PORT=8080 \
+              -e SERVER_PORT=8081 \
               -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
               -e GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
               -e GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \

@@ -1,6 +1,11 @@
 spring:
   main:
     allow-bean-definition-overriding: true
+  data:
+    redis:
+      host: redis
+      port: 6379
+
 
   flyway:
     enabled: true
@@ -32,3 +37,7 @@ logging:
 app:
   seed-data:
     enabled: false
+
+redisson:
+  singleServerConfig:
+    address: "redis://redis:6379"

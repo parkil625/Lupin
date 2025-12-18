@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Nginx (리버스 프록시 + 보안 헤더)
+  # Nginx
   nginx:
     image: nginx:alpine
     container_name: lupin-nginx
@@ -22,4 +22,22 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - TZ=Asia/Seoul
+      # 환경 변수로 Redis 호스트 주입 (중요!)
+      - SPRING_DATA_REDIS_HOST=redis
+      - REDIS_HOST=redis
+    depends_on:
+      - redis # Redis가 먼저 켜지도록 설정
     restart: unless-stopped
+
+  # Redis (추가됨)
+  redis:
+    image: redis:7-alpine
+    container_name: lupin-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  redis-data:

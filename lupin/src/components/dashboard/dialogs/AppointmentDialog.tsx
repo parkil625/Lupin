@@ -25,46 +25,52 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-// 타입 정의 (필요에 따라 수정하세요)
-export interface Department {
-  id: string;
-  name: string;
-}
-
-export interface Doctor {
-  id: string;
-  name: string;
-  departmentId: string;
-}
-
 interface AppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  departments: Department[]; // DB에서 가져온 진료과 목록
-  doctors: Doctor[]; // DB에서 가져온 의사 목록
-  // 예약 가능 날짜/시간 데이터 (부모에서 계산해서 넘겨줌)
   availableDates: Date[];
   availableTimes: string[];
   bookedTimes: string[];
+  selectedDepartment: string;
+  setSelectedDepartment: (dept: string) => void;
+  selectedDate: Date | undefined;
+  setSelectedDate: (date: Date | undefined) => void;
+  selectedTime: string;
+  setSelectedTime: (time: string) => void;
+  onConfirm: () => void;
 }
 
 export default function AppointmentDialog({
   open,
   onOpenChange,
-  departments,
-  doctors,
   availableDates,
   availableTimes,
   bookedTimes,
+  selectedDepartment,
+  setSelectedDepartment,
+  selectedDate,
+  setSelectedDate,
+  selectedTime,
+  setSelectedTime,
+  onConfirm,
 }: AppointmentDialogProps) {
   // --- 상태 관리 ---
-  // open이 false에서 true로 변경되면 초기화
   const [step, setStep] = useState<1 | "success">(1);
-  const [selectedDeptId, setSelectedDeptId] = useState<string>("");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 임시 데이터 - 실제로는 API에서 가져와야 함
+  const departments = [
+    { id: "1", name: "내과" },
+    { id: "2", name: "외과" },
+    { id: "3", name: "정형외과" },
+  ];
+
+  const doctors = [
+    { id: "1", name: "김의사", departmentId: "1" },
+    { id: "2", name: "이의사", departmentId: "2" },
+    { id: "3", name: "박의사", departmentId: "3" },
+  ];
 
   // 다이얼로그가 닫힐 때 초기화 (다음 열림을 위해)
   useEffect(() => {
@@ -72,31 +78,33 @@ export default function AppointmentDialog({
       // 닫힐 때 상태 초기화 (다음 열림을 대비)
       const timer = setTimeout(() => {
         setStep(1 as const);
-        setSelectedDeptId("");
+        setSelectedDepartment("");
         setSelectedDoctorId("");
         setSelectedDate(undefined);
         setSelectedTime("");
       }, 200); // 애니메이션 이후 초기화
       return () => clearTimeout(timer);
     }
-  }, [open]);
+  }, [open, setSelectedDepartment, setSelectedDate, setSelectedTime]);
 
   // 선택된 정보 객체 찾기 (화면 표시용)
-  const selectedDept = departments.find((d) => d.id === selectedDeptId);
+  const selectedDept = departments.find((d) => d.id === selectedDepartment);
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId);
 
   // 해당 과의 의사 목록 필터링
   const filteredDoctors = doctors.filter(
-    (doc) => doc.departmentId === selectedDeptId
+    (doc) => doc.departmentId === selectedDepartment
   );
 
   // 예약 확정 핸들러
   const handleConfirm = async () => {
-    if (!selectedDeptId || !selectedDoctorId || !selectedDate || !selectedTime)
+    if (!selectedDepartment || !selectedDoctorId || !selectedDate || !selectedTime)
       return;
 
     setIsSubmitting(true);
-    // TODO: 여기에 실제 예약 API 호출 로직 추가 (await bookAppointment(...) 등)
+
+    // 부모 컴포넌트의 onConfirm 호출
+    onConfirm();
 
     // API 성공 후 딜레이(UX용) 후 화면 전환
     setTimeout(() => {
@@ -141,9 +149,9 @@ export default function AppointmentDialog({
                   진료과 선택
                 </Label>
                 <Select
-                  value={selectedDeptId}
+                  value={selectedDepartment}
                   onValueChange={(val) => {
-                    setSelectedDeptId(val);
+                    setSelectedDepartment(val);
                     setSelectedDoctorId(""); // 과 변경 시 의사 초기화
                   }}
                 >
@@ -161,7 +169,7 @@ export default function AppointmentDialog({
               </div>
 
               {/* 의료진 선택 (진료과 선택 시 표시) */}
-              {selectedDeptId && (
+              {selectedDepartment && (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                   <Label className="text-base font-bold mb-2 block text-gray-700">
                     의료진 선택
@@ -240,7 +248,7 @@ export default function AppointmentDialog({
               {/* 예약 하기 버튼 */}
               <Button
                 disabled={
-                  !selectedDeptId ||
+                  !selectedDepartment ||
                   !selectedDoctorId ||
                   !selectedDate ||
                   !selectedTime ||

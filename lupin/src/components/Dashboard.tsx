@@ -866,24 +866,23 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         {medicalState.showAppointment && (
           <AppointmentDialog
             open={medicalState.showAppointment}
-            onOpenChange={(v) =>
+            onOpenChange={(v: boolean) =>
               setMedicalState((p) => ({ ...p, showAppointment: v }))
             }
             availableDates={AVAILABLE_DATES}
             availableTimes={AVAILABLE_TIMES}
             bookedTimes={BOOKED_TIMES}
             selectedDepartment={medicalState.selectedDepartment}
-            setSelectedDepartment={(v) =>
+            setSelectedDepartment={(v: string) =>
               setMedicalState((p) => ({ ...p, selectedDepartment: v }))
             }
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             selectedTime={medicalState.selectedTime}
-            setSelectedTime={(v) =>
+            setSelectedTime={(v: string) =>
               setMedicalState((p) => ({ ...p, selectedTime: v }))
             }
             onConfirm={() => {
-              toast.success("예약이 완료되었습니다!");
               setMedicalState((p) => ({
                 ...p,
                 showAppointment: false,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -47,32 +47,8 @@ export default function AppointmentsPage({
     fetchAppointments();
   }, [currentUser.id, currentUser.role]);
 
-  // 알림 클릭으로 채팅창 자동 오픈 이벤트 수신
-  useEffect(() => {
-    const handleOpenChat = (event: CustomEvent) => {
-      const { appointmentId } = event.detail;
-      const appointment = appointments.find((apt) => apt.id === appointmentId);
-
-      if (appointment) {
-        handleChatClick(appointment);
-      }
-    };
-
-    window.addEventListener(
-      "openAppointmentChat",
-      handleOpenChat as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        "openAppointmentChat",
-        handleOpenChat as EventListener
-      );
-    };
-  }, [appointments]);
-
   // 채팅 시작 핸들러
-  const handleChatClick = async (appointment: AppointmentResponse) => {
+  const handleChatClick = useCallback(async (appointment: AppointmentResponse) => {
     // 채팅 가능 여부 확인
     try {
       const available = await appointmentApi.isChatAvailable(appointment.id);
@@ -89,7 +65,26 @@ export default function AppointmentsPage({
       console.error("채팅 가능 여부 확인 실패:", error);
       alert("채팅 시작 중 오류가 발생했습니다.");
     }
-  };
+  }, []);
+
+  // 알림 클릭으로 채팅창 자동 오픈 이벤트 수신
+  useEffect(() => {
+    const handleOpenChat = (event: Event) => {
+      const customEvent = event as CustomEvent<{ appointmentId: number }>;
+      const { appointmentId } = customEvent.detail;
+      const appointment = appointments.find((apt) => apt.id === appointmentId);
+
+      if (appointment) {
+        handleChatClick(appointment);
+      }
+    };
+
+    window.addEventListener("openAppointmentChat", handleOpenChat);
+
+    return () => {
+      window.removeEventListener("openAppointmentChat", handleOpenChat);
+    };
+  }, [appointments, handleChatClick]);
 
   // 예약 취소 핸들러
   const handleCancelAppointment = async (appointmentId: number) => {

@@ -68,13 +68,13 @@ INSERT INTO auctions (
     total_bids,
     winner_id
 ) VALUES (
-    100,
+    0,
     NOW() - INTERVAL 1 DAY,
-    NOW() + INTERVAL 7 DAY,
+    NOW() + INTERVAL 1 Day + INTERVAL 3 HOUR,
     false,
     30,
     'ACTIVE',
-    15,
+    0,
     (SELECT id FROM users WHERE user_id = 'user01' LIMIT 1)
 );
 

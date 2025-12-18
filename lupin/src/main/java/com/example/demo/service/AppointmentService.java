@@ -94,13 +94,21 @@ public class AppointmentService {
             // 트랜잭션 커밋 후 Redis 캐시 무효화 (트랜잭션이 성공적으로 완료된 후에만 캐시 무효화)
             Long doctorIdFinal = doctor.getId();
             LocalDate dateFinal = request.getDate().toLocalDate();
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    invalidateBookedTimesCache(doctorIdFinal, dateFinal);
-                    log.info("트랜잭션 커밋 후 캐시 무효화 완료: doctorId={}, date={}", doctorIdFinal, dateFinal);
-                }
-            });
+
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                // 트랜잭션이 활성화된 경우 (실제 운영 환경)
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        invalidateBookedTimesCache(doctorIdFinal, dateFinal);
+                        log.info("트랜잭션 커밋 후 캐시 무효화 완료: doctorId={}, date={}", doctorIdFinal, dateFinal);
+                    }
+                });
+            } else {
+                // 트랜잭션이 없는 경우 (단위 테스트 환경) 즉시 실행
+                invalidateBookedTimesCache(doctorIdFinal, dateFinal);
+                log.debug("트랜잭션 없음 - 캐시 즉시 무효화: doctorId={}, date={}", doctorIdFinal, dateFinal);
+            }
 
             return savedAppointment.getId();
 
@@ -135,6 +143,8 @@ public class AppointmentService {
         // 트랜잭션 커밋 후 Redis 캐시 무효화 (예약 취소 시 예약 가능 시간이 변경됨)
         Long doctorId = appointment.getDoctor().getId();
         LocalDate date = appointment.getDate().toLocalDate();
+        
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -142,6 +152,12 @@ public class AppointmentService {
                 log.info("예약 취소 후 캐시 무효화 완료: doctorId={}, date={}", doctorId, date);
             }
         });
+        
+        } else {
+        // 트랜잭션이 없는 테스트 환경 등에서는 즉시 캐시 무효화
+        invalidateBookedTimesCache(doctorId, date);
+        log.debug("트랜잭션 없음 - 예약 취소 후 캐시 즉시 무효화: doctorId={}, date={}", doctorId, date);
+        }
     }
 
     @Transactional

@@ -32,7 +32,13 @@ export default function Auction() {
     useEffect(() => {
         if (!selectedAuction?.auctionId) return;
 
-        const sseUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8081'}/api/auction/stream/${selectedAuction.auctionId}`;
+        // [수정 1] 주소 찾는 방식을 useNotificationSse.ts와 통일
+        const isLocal = window.location.hostname === 'localhost';
+        const baseUrl = isLocal ? 'http://localhost:8081' : window.location.origin;
+
+
+        const sseUrl = `${baseUrl}/api/auction/stream/${selectedAuction.auctionId}`;
+
         const eventSource = new EventSource(sseUrl);
 
         eventSource.onopen = () => {

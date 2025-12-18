@@ -12,6 +12,7 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import com.example.demo.service.ChatWebSocketService;
 
 @Configuration
 public class RedisConfig {
@@ -35,14 +36,18 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory,
             MessageListenerAdapter auctionListenerAdapter,
             MessageListenerAdapter notificationListenerAdapter,
+            MessageListenerAdapter chatListenerAdapter, 
             ChannelTopic auctionTopic,
-            ChannelTopic notificationTopic) {
+            ChannelTopic notificationTopic,
+            ChannelTopic chatTopic) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         // "auction-update" 채널 리스너
         container.addMessageListener(auctionListenerAdapter, auctionTopic);
         // "notification-update" 채널 리스너
         container.addMessageListener(notificationListenerAdapter, notificationTopic);
+
+        container.addMessageListener(chatListenerAdapter, chatTopic);
         return container;
     }
 
@@ -60,6 +65,13 @@ public class RedisConfig {
         return new MessageListenerAdapter(notificationSseService, "handleMessage");
     }
 
+    @Bean
+    @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
+    public MessageListenerAdapter chatListenerAdapter(@Lazy ChatWebSocketService chatWebSocketService) {
+        // chatWebSocketService "handleMessage"라는 메서드를 가지고 있어야 함
+        return new MessageListenerAdapter(chatWebSocketService, "handleMessage");
+    }
+
     // ▼ 경매 Pub/Sub 채널
     @Bean
     @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
@@ -72,5 +84,12 @@ public class RedisConfig {
     @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
     public ChannelTopic notificationTopic() {
         return new ChannelTopic("notification-update");
+    }
+
+    // ▼ chat Pub/Sub 채널
+    @Bean
+    @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
+    public ChannelTopic chatTopic() {
+        return new ChannelTopic("chat-update"); 
     }
 }

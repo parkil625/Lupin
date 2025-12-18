@@ -14,10 +14,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
@@ -38,6 +42,15 @@ class AppointmentServiceTest {
 
     @Mock
     private ChatService chatService;
+
+    @Mock
+    private RedissonClient redissonClient;
+
+    @Mock
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Mock
+    private RLock rLock;
 
     @InjectMocks
     private AppointmentService appointmentService;
@@ -73,7 +86,7 @@ class AppointmentServiceTest {
 
     @Test
     @DisplayName("예약 생성 시 채팅방이 자동으로 생성됨")
-    void createAppointment_ShouldCreateChatRoomAutomatically() {
+    void createAppointment_ShouldCreateChatRoomAutomatically() throws InterruptedException {
         // Given
         AppointmentRequest request = AppointmentRequest.builder()
                 .patientId(1L)
@@ -83,8 +96,10 @@ class AppointmentServiceTest {
 
         given(userRepository.findById(1L)).willReturn(Optional.of(patient));
         given(userRepository.findById(21L)).willReturn(Optional.of(doctor));
+        given(redissonClient.getLock(anyString())).willReturn(rLock);
+        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
         given(appointmentRepository.existsByDoctorIdAndDate(anyLong(), any())).willReturn(false);
-        given(appointmentRepository.existsByPatientIdAndDate(anyLong(), any())).willReturn(false);
         given(appointmentRepository.save(any(Appointment.class))).willReturn(appointment);
         given(chatService.createChatRoomForAppointment(anyLong())).willReturn("appointment_1");
 
@@ -95,6 +110,7 @@ class AppointmentServiceTest {
         assertThat(appointmentId).isNotNull();
         verify(appointmentRepository, times(1)).save(any(Appointment.class));
         verify(chatService, times(1)).createChatRoomForAppointment(anyLong());
+        verify(rLock, times(1)).unlock();
         // 환영 메시지 전송 기능 제거로 인해 saveMessage 검증 제거
     }
 

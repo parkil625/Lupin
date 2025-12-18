@@ -24,7 +24,13 @@ List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patien
 
     List<Appointment> findByDoctorIdOrderByDateDesc(Long doctorId);
 
-    boolean existsByDoctorIdAndDate(Long doctorId, LocalDateTime date);
+    // 취소되지 않은 예약만 체크 (CANCELLED 제외)
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END " +
+           "FROM Appointment a " +
+           "WHERE a.doctor.id = :doctorId " +
+           "AND a.date = :date " +
+           "AND a.status != 'CANCELLED'")
+    boolean existsByDoctorIdAndDate(@Param("doctorId") Long doctorId, @Param("date") LocalDateTime date);
 
     boolean existsByPatientIdAndDate(Long patientId, LocalDateTime date);
 

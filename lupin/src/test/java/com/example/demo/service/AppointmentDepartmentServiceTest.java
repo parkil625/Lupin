@@ -14,9 +14,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
@@ -38,19 +42,33 @@ class AppointmentDepartmentServiceTest {
     @Mock
     private ChatService chatService;
 
+    @Mock
+    private RedissonClient redissonClient;
+
+    @Mock
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Mock
+    private RLock rLock;
+
     @InjectMocks
     private AppointmentService appointmentService;
 
     private User patient;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws InterruptedException {
         patient = User.builder()
                 .id(1L)
                 .userId("patient01")
                 .name("환자1")
                 .role(Role.MEMBER)
                 .build();
+
+        // Redis mock 공통 설정
+        given(redissonClient.getLock(anyString())).willReturn(rLock);
+        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
     }
 
     @Test
@@ -83,7 +101,6 @@ class AppointmentDepartmentServiceTest {
         given(userRepository.findById(1L)).willReturn(Optional.of(patient));
         given(userRepository.findById(21L)).willReturn(Optional.of(doctorWithDepartment));
         given(appointmentRepository.existsByDoctorIdAndDate(anyLong(), any())).willReturn(false);
-        given(appointmentRepository.existsByPatientIdAndDate(anyLong(), any())).willReturn(false);
         given(appointmentRepository.save(any(Appointment.class))).willReturn(expectedAppointment);
         given(chatService.createChatRoomForAppointment(anyLong())).willReturn("appointment_1");
 
@@ -128,7 +145,6 @@ class AppointmentDepartmentServiceTest {
         given(userRepository.findById(1L)).willReturn(Optional.of(patient));
         given(userRepository.findById(22L)).willReturn(Optional.of(surgeonDoctor));
         given(appointmentRepository.existsByDoctorIdAndDate(anyLong(), any())).willReturn(false);
-        given(appointmentRepository.existsByPatientIdAndDate(anyLong(), any())).willReturn(false);
         given(appointmentRepository.save(any(Appointment.class))).willReturn(expectedAppointment);
         given(chatService.createChatRoomForAppointment(anyLong())).willReturn("appointment_2");
 
@@ -173,7 +189,6 @@ class AppointmentDepartmentServiceTest {
         given(userRepository.findById(1L)).willReturn(Optional.of(patient));
         given(userRepository.findById(23L)).willReturn(Optional.of(psychiatryDoctor));
         given(appointmentRepository.existsByDoctorIdAndDate(anyLong(), any())).willReturn(false);
-        given(appointmentRepository.existsByPatientIdAndDate(anyLong(), any())).willReturn(false);
         given(appointmentRepository.save(any(Appointment.class))).willReturn(expectedAppointment);
         given(chatService.createChatRoomForAppointment(anyLong())).willReturn("appointment_3");
 
@@ -218,7 +233,6 @@ class AppointmentDepartmentServiceTest {
         given(userRepository.findById(1L)).willReturn(Optional.of(patient));
         given(userRepository.findById(24L)).willReturn(Optional.of(dermatologyDoctor));
         given(appointmentRepository.existsByDoctorIdAndDate(anyLong(), any())).willReturn(false);
-        given(appointmentRepository.existsByPatientIdAndDate(anyLong(), any())).willReturn(false);
         given(appointmentRepository.save(any(Appointment.class))).willReturn(expectedAppointment);
         given(chatService.createChatRoomForAppointment(anyLong())).willReturn("appointment_4");
 
@@ -231,5 +245,84 @@ class AppointmentDepartmentServiceTest {
             apt.getDepartmentName() != null &&
             apt.getDepartmentName().equals("피부과")
         ));
+    }
+
+    @Test
+    @DisplayName("같은 시간에 다른 진료과 예약이 가능해야 한다")
+    void createAppointment_ShouldAllowMultipleDepartmentsAtSameTime() {
+        // Given
+        User internalDoctor = User.builder()
+                .id(21L)
+                .userId("doctor01")
+                .name("내과의사")
+                .role(Role.DOCTOR)
+                .department("내과")
+                .build();
+
+        User surgeonDoctor = User.builder()
+                .id(22L)
+                .userId("doctor02")
+                .name("외과의사")
+                .role(Role.DOCTOR)
+                .department("외과")
+                .build();
+
+        LocalDateTime sameTime = LocalDateTime.of(2025, 12, 15, 10, 0);
+
+        // 내과 예약 요청
+        AppointmentRequest internalRequest = AppointmentRequest.builder()
+                .patientId(1L)
+                .doctorId(21L)
+                .date(sameTime)
+                .build();
+
+        // 외과 예약 요청 (같은 시간)
+        AppointmentRequest surgeryRequest = AppointmentRequest.builder()
+                .patientId(1L)
+                .doctorId(22L)
+                .date(sameTime)
+                .build();
+
+        Appointment internalAppointment = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(internalDoctor)
+                .date(sameTime)
+                .status(AppointmentStatus.SCHEDULED)
+                .departmentName("내과")
+                .build();
+
+        Appointment surgeryAppointment = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(surgeonDoctor)
+                .date(sameTime)
+                .status(AppointmentStatus.SCHEDULED)
+                .departmentName("외과")
+                .build();
+
+        // 내과 예약 mock
+        given(userRepository.findById(1L)).willReturn(Optional.of(patient));
+        given(userRepository.findById(21L)).willReturn(Optional.of(internalDoctor));
+        given(appointmentRepository.existsByDoctorIdAndDate(21L, sameTime)).willReturn(false);
+        given(appointmentRepository.save(any(Appointment.class))).willReturn(internalAppointment);
+        given(chatService.createChatRoomForAppointment(anyLong())).willReturn("appointment_1");
+
+        // When - 내과 예약
+        Long internalAppointmentId = appointmentService.createAppointment(internalRequest);
+
+        // 외과 예약 mock
+        given(userRepository.findById(22L)).willReturn(Optional.of(surgeonDoctor));
+        given(appointmentRepository.existsByDoctorIdAndDate(22L, sameTime)).willReturn(false);
+        given(appointmentRepository.save(any(Appointment.class))).willReturn(surgeryAppointment);
+        given(chatService.createChatRoomForAppointment(anyLong())).willReturn("appointment_2");
+
+        // When - 외과 예약 (같은 시간, 다른 진료과)
+        Long surgeryAppointmentId = appointmentService.createAppointment(surgeryRequest);
+
+        // Then - 둘 다 성공해야 함
+        assertThat(internalAppointmentId).isNotNull();
+        assertThat(surgeryAppointmentId).isNotNull();
+        verify(appointmentRepository, times(2)).save(any(Appointment.class));
     }
 }

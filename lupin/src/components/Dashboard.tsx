@@ -61,6 +61,8 @@ const PrescriptionFormDialog = lazy(
   () => import("./dashboard/dialogs/PrescriptionFormDialog")
 );
 
+const NotFoundPage = lazy(() => import("./errors/NotFoundPage"));
+
 // Stores & APIs
 import {
   Feed,
@@ -116,7 +118,12 @@ function useDashboardLogic(
     [userType]
   );
 
-  const selectedNav = validPages.includes(page || "") ? page! : defaultPage;
+  const selectedNav = useMemo(() => {
+    if (!page) return defaultPage; // 그냥 /dashboard 면 홈으로
+    if (validPages.includes(page)) return page; // 아는 주소면 거기로
+    return "404"; // 모르면 404 딱지!
+  }, [page, validPages, defaultPage]);
+
   const store = useFeedStore();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -603,6 +610,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         }`}
       >
         <Suspense fallback={<PageLoader />}>
+          {selectedNav === "404" && <NotFoundPage />}
           {selectedNav === "home" && (
             <HomeView
               profileImage={profileImage}

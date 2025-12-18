@@ -294,9 +294,11 @@ try {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-5xl font-black text-gray-900 mb-2">경매</h1>
-                <p className="text-gray-600 font-bold">
-                  매일 밤 10시, 포인트로 입찰하고 상품을 획득하세요
-                </p>
+                  <p className="text-gray-600 font-bold">
+                      매일 밤 10시, 포인트로 입찰하고 상품을 획득하세요!<br />
+                      영국식 경매 방식으로 진행되며, 입찰할수록 가격이 올라가고 정해진 시간 동안 추가 입찰이 없으면 최고가 입찰자가 낙찰됩니다.<br />
+                      ※ 입찰은 즉시 효력이 발생하며 취소할 수 없습니다.
+                  </p>
               </div>
               <Card className="backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg px-6 py-4">
                 <div className="text-center">

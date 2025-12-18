@@ -141,7 +141,7 @@ export const AuctionCard = ({
                 <>
                   <div className="flex items-center gap-1 text-sm font-bold text-gray-600">
                     <Users className="w-4 h-4" />
-                    {auction.totalBids || 0}명 입찰
+                    {auction.totalBids || 0}번 입찰
                   </div>
                   <div className="flex items-center gap-1 text-sm font-bold text-orange-600">
                     <Eye className="w-4 h-4" />

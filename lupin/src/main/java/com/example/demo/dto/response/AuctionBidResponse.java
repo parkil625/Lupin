@@ -14,6 +14,7 @@ public class AuctionBidResponse {
     private Long bidAmount;
     private LocalDateTime bidTime;
     private String status;
+    private Long bidderId;
 
     public static AuctionBidResponse from(AuctionBid bid) {
         return AuctionBidResponse.builder()
@@ -23,6 +24,7 @@ public class AuctionBidResponse {
                 .bidAmount(bid.getBidAmount())
                 .bidTime(bid.getBidTime())
                 .status(bid.getStatus().name())
+                .bidderId(bid.getUser().getId())
                 .build();
     }
 }

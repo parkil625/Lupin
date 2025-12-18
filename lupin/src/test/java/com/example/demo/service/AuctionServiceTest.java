@@ -5,6 +5,7 @@ import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
 import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.domain.enums.PointType;
+import com.example.demo.dto.AuctionSseMessage;
 import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
@@ -626,6 +627,53 @@ class AuctionServiceTest {
                 () -> assertThat(publishedEvent.getContentPreview()).contains("황금 열쇠"),          // 내용에 물품 이름 포함 여부
                 () -> assertThat(publishedEvent.getContentPreview()).contains("500")                // 내용에 낙찰가 포함 여부
         );
+    }
+
+    @Test
+    @DisplayName("입찰 시 SSE 메시지에 입찰자 ID(bidderId)가 포함되어야 한다")
+    void placeBid_ShouldIncludeBidderIdInSseMessage() {
+        // given (준비)
+        Long auctionId = 100L;
+        Long userId = 1L; // 내 ID
+        Long bidAmount = 10000L;
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. 포인트가 0원인 유저 생성 (포인트 검사 로직 삭제 확인용)
+        User user = User.builder()
+                .id(userId)
+                .name("가난한입찰자")
+                .totalPoints(0L)
+                .build();
+
+        // 2. 진행 중인 경매 생성
+        Auction auction = Auction.builder()
+                .id(auctionId)
+                .status(AuctionStatus.ACTIVE)
+                .currentPrice(5000L)
+                .regularEndTime(now.plusHours(1))
+                .build();
+
+        // 3. Mock 설정 (DB에서 조회하면 위 객체들을 리턴한다고 가정)
+        given(auctionRepository.findById(auctionId)).willReturn(Optional.of(auction));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // when (실행)
+        auctionService.placeBid(auctionId, userId, bidAmount, now);
+
+        // then (검증)
+        // 1. SSE 서비스의 broadcast 메소드가 호출되었는지 확인하면서, 매개변수(message)를 낚아챔(Capture)
+        ArgumentCaptor<AuctionSseMessage> messageCaptor = ArgumentCaptor.forClass(AuctionSseMessage.class);
+        verify(auctionSseService, times(1)).broadcast(messageCaptor.capture());
+
+        // 2. 낚아챈 메시지 까보기
+        AuctionSseMessage sentMessage = messageCaptor.getValue();
+
+        // [핵심 검증] 메시지 안에 bidderId가 내 ID(1L)와 똑같은지 확인!
+        assertThat(sentMessage.getBidderId()).isEqualTo(userId);
+
+        // 기타 검증
+        assertThat(sentMessage.getBidderName()).isEqualTo("가난한입찰자");
+        assertThat(sentMessage.getCurrentPrice()).isEqualTo(bidAmount); // 가격 갱신 확인
     }
 
 

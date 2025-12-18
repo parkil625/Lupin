@@ -23,6 +23,8 @@ export const BiddingPanel = ({
   bidHistory,
   userPoints,
 }: BiddingPanelProps) => {
+    const currentUserId = Number(localStorage.getItem("userId"));
+
   if (!selectedAuction || selectedAuction.status !== "ACTIVE") {
     return (
       <Card className="backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg">
@@ -102,9 +104,12 @@ export const BiddingPanel = ({
                     className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0"
                   >
                     <div>
-                      <p className="text-sm font-bold text-gray-900">
-                        {bid.userName}
-                      </p>
+                        <p className="text-sm font-bold text-gray-900">
+                            {bid.userName}
+                            {bid.userId === currentUserId && (
+                                <span className="text-[#C93831] ml-1 text-xs">(나)</span>
+                            )}
+                        </p>
                       <p className="text-xs text-gray-500 font-medium">
                         {new Date(bid.bidTime).toLocaleString()}
                       </p>

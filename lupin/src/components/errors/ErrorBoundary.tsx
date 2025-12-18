@@ -37,12 +37,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      return (
-        <ErrorPage
-          title="앱에서 오류가 발생했습니다"
-          message="예기치 않은 오류가 발생했습니다. 페이지를 새로고침하거나 홈으로 이동해주세요."
-        />
-      );
+      return <ErrorPage />;
     }
 
     return this.props.children;

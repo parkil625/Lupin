@@ -128,7 +128,6 @@ export default function AppointmentsPage({
     }
   };
 
-  // 강제 커밋용
   return (
     <div className="h-full overflow-auto p-8">
       <div className="max-w-7xl mx-auto space-y-6">

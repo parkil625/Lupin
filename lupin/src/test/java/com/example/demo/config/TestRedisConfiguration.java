@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 
 @TestConfiguration
 public class TestRedisConfiguration {

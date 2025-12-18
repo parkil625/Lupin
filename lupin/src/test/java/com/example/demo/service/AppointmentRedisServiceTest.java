@@ -201,7 +201,7 @@ class AppointmentRedisServiceTest {
         assertThat(result).containsExactly("09:00", "10:00");
         verify(appointmentRepository, times(1)).findByDoctorIdAndDateBetween(anyLong(), any(), any());
         verify(redisTemplate, times(1)).delete(anyString());
-        verify(listOperations, times(1)).rightPushAll(anyString(), anyList());
+        verify(listOperations, times(1)).rightPushAll(anyString(), (Collection<String>) any());
         verify(redisTemplate, times(1)).expire(anyString(), anyLong(), any(TimeUnit.class));
     }
 

@@ -60,7 +60,7 @@ class AppointmentServiceTest {
     private Appointment appointment;
 
     @BeforeEach
-    void setUp() throws InterruptedException {
+    void setUp() {
         patient = User.builder()
                 .id(1L)
                 .userId("patient01")
@@ -82,11 +82,6 @@ class AppointmentServiceTest {
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
-
-        // Redis mock 공통 설정
-        given(redissonClient.getLock(anyString())).willReturn(rLock);
-        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
-        given(rLock.isHeldByCurrentThread()).willReturn(true);
     }
 
     @Test

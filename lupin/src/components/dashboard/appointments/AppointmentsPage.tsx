@@ -48,24 +48,29 @@ export default function AppointmentsPage({
   }, [currentUser.id, currentUser.role]);
 
   // 채팅 시작 핸들러
-  const handleChatClick = useCallback(async (appointment: AppointmentResponse) => {
-    // 채팅 가능 여부 확인
-    try {
-      const available = await appointmentApi.isChatAvailable(appointment.id);
+  const handleChatClick = useCallback(
+    async (appointment: AppointmentResponse) => {
+      // 채팅 가능 여부 확인
+      try {
+        const available = await appointmentApi.isChatAvailable(appointment.id);
 
-      if (!available) {
-        const lockMessage = await appointmentApi.getChatLockMessage(appointment.id);
-        alert(lockMessage);
-        return;
+        if (!available) {
+          const lockMessage = await appointmentApi.getChatLockMessage(
+            appointment.id
+          );
+          alert(lockMessage);
+          return;
+        }
+
+        setSelectedAppointment(appointment);
+        setIsChatOpen(true);
+      } catch (error) {
+        console.error("채팅 가능 여부 확인 실패:", error);
+        alert("채팅 시작 중 오류가 발생했습니다.");
       }
-
-      setSelectedAppointment(appointment);
-      setIsChatOpen(true);
-    } catch (error) {
-      console.error("채팅 가능 여부 확인 실패:", error);
-      alert("채팅 시작 중 오류가 발생했습니다.");
-    }
-  }, []);
+    },
+    []
+  );
 
   // 알림 클릭으로 채팅창 자동 오픈 이벤트 수신
   useEffect(() => {
@@ -123,6 +128,7 @@ export default function AppointmentsPage({
     }
   };
 
+  // 강제 커밋용
   return (
     <div className="h-full overflow-auto p-8">
       <div className="max-w-7xl mx-auto space-y-6">

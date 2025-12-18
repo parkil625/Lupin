@@ -77,6 +77,7 @@ public class AuctionService {
         // SSE 전송
         AuctionSseMessage message = AuctionSseMessage.builder()
                 .auctionId(auctionId)
+                .bidderId(user.getId())
                 .currentPrice(auction.getCurrentPrice()) // 갱신된 가격
                 .bidderName(user.getName())              // 입찰자 이름
                 .bidTime(bidTime.toString())             // 입찰 시간

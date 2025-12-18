@@ -321,29 +321,36 @@ MedicalProps) {
 
       console.log("✅ 예약 생성 성공:", appointmentId);
 
-      // 예약된 시간 목록 다시 조회 (DB에서 최신 정보 가져오기)
-      const dateStr = selectedDate.toISOString().split("T")[0];
-      const updatedBookedTimes = await appointmentApi.getBookedTimes(
-        selectedDoctor.id,
-        dateStr
-      );
-      setBookedTimes(updatedBookedTimes);
-
-      // 채팅창을 열지 않고 예약 목록만 업데이트
+      // 예약 성공 메시지
       toast.success(
         `${selectedDate.toLocaleDateString(
           "ko-KR"
         )} ${selectedTime} ${departmentKoreanName} 예약이 완료되었습니다`
       );
 
-      // 예약 목록 다시 로드
-      const data = await appointmentApi.getPatientAppointments(
-        currentPatientId
-      );
-      setAppointments(data);
-
-      // 선택된 시간만 초기화 (진료과와 날짜는 유지하여 예약된 시간 표시)
+      // 선택된 시간을 즉시 bookedTimes에 추가 (UI 즉시 반영)
+      setBookedTimes((prev) => [...prev, selectedTime]);
       setSelectedTime("");
+
+      // 약간의 딜레이 후 서버에서 최신 데이터 조회 (Redis 캐시 무효화 대기)
+      setTimeout(async () => {
+        try {
+          const dateStr = selectedDate.toISOString().split("T")[0];
+          const updatedBookedTimes = await appointmentApi.getBookedTimes(
+            selectedDoctor.id,
+            dateStr
+          );
+          setBookedTimes(updatedBookedTimes);
+
+          // 예약 목록 다시 로드
+          const data = await appointmentApi.getPatientAppointments(
+            currentPatientId
+          );
+          setAppointments(data);
+        } catch (error) {
+          console.error("예약 목록 갱신 실패:", error);
+        }
+      }, 500);
     } catch (error) {
       console.error("❌ 예약 생성 실패:", error);
       toast.error("예약 생성에 실패했습니다. 다시 시도해주세요.");

@@ -7,6 +7,8 @@ import com.example.demo.dto.request.AppointmentRequest;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -89,8 +91,16 @@ public class AppointmentService {
             String roomId = chatService.createChatRoomForAppointment(savedAppointment.getId());
             log.info("예약 ID {}에 대한 채팅방 생성 완료: {}", savedAppointment.getId(), roomId);
 
-            // Redis 캐시 무효화 (예약된 시간 목록 갱신)
-            invalidateBookedTimesCache(doctor.getId(), request.getDate().toLocalDate());
+            // 트랜잭션 커밋 후 Redis 캐시 무효화 (트랜잭션이 성공적으로 완료된 후에만 캐시 무효화)
+            Long doctorIdFinal = doctor.getId();
+            LocalDate dateFinal = request.getDate().toLocalDate();
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    invalidateBookedTimesCache(doctorIdFinal, dateFinal);
+                    log.info("트랜잭션 커밋 후 캐시 무효화 완료: doctorId={}, date={}", doctorIdFinal, dateFinal);
+                }
+            });
 
             return savedAppointment.getId();
 
@@ -122,8 +132,16 @@ public class AppointmentService {
         // 엔티티 내부의 비즈니스 로직 호출 (상태 변경 검증 포함)
         appointment.cancel();
 
-        // Redis 캐시 무효화 (예약 취소 시 예약 가능 시간이 변경됨)
-        invalidateBookedTimesCache(appointment.getDoctor().getId(), appointment.getDate().toLocalDate());
+        // 트랜잭션 커밋 후 Redis 캐시 무효화 (예약 취소 시 예약 가능 시간이 변경됨)
+        Long doctorId = appointment.getDoctor().getId();
+        LocalDate date = appointment.getDate().toLocalDate();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                invalidateBookedTimesCache(doctorId, date);
+                log.info("예약 취소 후 캐시 무효화 완료: doctorId={}, date={}", doctorId, date);
+            }
+        });
     }
 
     @Transactional

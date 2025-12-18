@@ -7,6 +7,7 @@ import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.dto.request.AppointmentRequest;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -61,6 +63,9 @@ class AppointmentServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 트랜잭션 동기화 활성화 (TransactionSynchronizationManager 사용을 위해)
+        TransactionSynchronizationManager.initSynchronization();
+
         patient = User.builder()
                 .id(1L)
                 .userId("patient01")
@@ -82,6 +87,14 @@ class AppointmentServiceTest {
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // 트랜잭션 동기화 정리
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @Test
@@ -111,6 +124,7 @@ class AppointmentServiceTest {
         verify(appointmentRepository, times(1)).save(any(Appointment.class));
         verify(chatService, times(1)).createChatRoomForAppointment(anyLong());
         verify(rLock, times(1)).unlock();
+        // Redis 캐시 무효화는 트랜잭션 커밋 후 실행되므로 단위 테스트에서는 검증하지 않음
         // 환영 메시지 전송 기능 제거로 인해 saveMessage 검증 제거
     }
 

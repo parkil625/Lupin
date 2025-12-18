@@ -17,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.junit.jupiter.api.AfterEach;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -58,6 +60,9 @@ class AppointmentDepartmentServiceTest {
 
     @BeforeEach
     void setUp() throws InterruptedException {
+        // 트랜잭션 동기화 활성화
+        TransactionSynchronizationManager.initSynchronization();
+
         patient = User.builder()
                 .id(1L)
                 .userId("patient01")
@@ -69,6 +74,14 @@ class AppointmentDepartmentServiceTest {
         given(redissonClient.getLock(anyString())).willReturn(rLock);
         given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
         given(rLock.isHeldByCurrentThread()).willReturn(true);
+    }
+
+    @AfterEach
+    void tearDown() {
+        // 트랜잭션 동기화 정리
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @Test

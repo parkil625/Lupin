@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,6 +16,7 @@ import {
   User,
   Stethoscope,
   CheckCircle2,
+  X,
 } from "lucide-react";
 
 interface AppointmentDialogProps {
@@ -37,7 +31,8 @@ interface AppointmentDialogProps {
   setSelectedDate: (date: Date | undefined) => void;
   selectedTime: string;
   setSelectedTime: (time: string) => void;
-  onConfirm: () => void;
+  onConfirm: (doctorId: number, date: Date, time: string) => Promise<number | void>; // Returns appointment ID
+  onCancel?: (appointmentId: number) => Promise<void>; // Optional cancel callback
 }
 
 export default function AppointmentDialog({
@@ -53,11 +48,13 @@ export default function AppointmentDialog({
   selectedTime,
   setSelectedTime,
   onConfirm,
+  onCancel,
 }: AppointmentDialogProps) {
   // --- 상태 관리 ---
   const [step, setStep] = useState<1 | "success">(1);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdAppointmentId, setCreatedAppointmentId] = useState<number | null>(null);
 
   // 임시 데이터 - 실제로는 API에서 가져와야 함
   const departments = [
@@ -107,7 +104,13 @@ export default function AppointmentDialog({
     setStep("success");
 
     // 부모 컴포넌트의 onConfirm 호출 (실제 API 호출)
-    onConfirm();
+    const doctorId = parseInt(selectedDoctorId);
+    const appointmentId = await onConfirm(doctorId, selectedDate, selectedTime);
+
+    // 생성된 예약 ID 저장
+    if (typeof appointmentId === 'number') {
+      setCreatedAppointmentId(appointmentId);
+    }
 
     // API 완료 후 버튼 활성화
     setTimeout(() => {
@@ -120,28 +123,54 @@ export default function AppointmentDialog({
     setStep(1);
   };
 
-  // 예약 취소 (다이얼로그 닫기)
-  const handleCancel = () => {
-    onOpenChange(false);
-    // 상태 초기화는 useEffect의 open === false에서 자동으로 처리됨
+  // 예약 취소 (실제 예약 취소 API 호출)
+  const handleCancelAppointment = async () => {
+    if (!createdAppointmentId || !onCancel) {
+      // onCancel이 없으면 그냥 닫기
+      onOpenChange(false);
+      return;
+    }
+
+    if (!confirm("예약을 취소하시겠습니까?")) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onCancel(createdAppointmentId);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("예약 취소 실패:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-white rounded-xl p-0 overflow-hidden">
-        {/* 헤더 */}
-        <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-2xl font-black text-gray-900">
-            {step === "success" ? "예약 대기" : "진료 예약"}
-          </DialogTitle>
-          <DialogDescription>
-            {step === "success"
-              ? "예약 내용을 확인해주세요."
-              : "진료과와 의료진, 날짜를 선택해주세요."}
-          </DialogDescription>
-        </DialogHeader>
+  if (!open) return null;
 
-        <div className="px-6 pb-6">
+  return (
+    <div className="w-full h-full bg-white rounded-xl overflow-hidden">
+      {/* 헤더 */}
+      <div className="px-6 pt-6 pb-2 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-black text-gray-900">
+            {step === "success" ? "예약 대기" : "진료 예약"}
+          </h2>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500">
+          {step === "success"
+            ? "예약 내용을 확인해주세요."
+            : "진료과와 의료진, 날짜를 선택해주세요."}
+        </p>
+      </div>
+
+      <div className="px-6 pb-6 pt-4">
           {/* STEP 1: 예약 정보 입력 */}
           {step === 1 && (
             <div className="space-y-6">
@@ -335,16 +364,15 @@ export default function AppointmentDialog({
                 <Button
                   variant="outline"
                   className="flex-1 h-12 rounded-xl border-red-100 text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 font-bold hover:border-red-200"
-                  onClick={handleCancel}
+                  onClick={handleCancelAppointment}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "처리 중..." : "닫기"}
+                  {isSubmitting ? "처리 중..." : "예약 취소"}
                 </Button>
               </div>
             </div>
           )}
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

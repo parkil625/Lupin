@@ -882,9 +882,41 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             setSelectedTime={(v: string) =>
               setMedicalState((p) => ({ ...p, selectedTime: v }))
             }
-            onConfirm={() => {
-              // 예약 확정 시에는 다이얼로그를 닫지 않음 (success 화면 표시를 위해)
-              // AppointmentDialog 내부에서 "예약 취소" 버튼 클릭 시 onOpenChange로 닫힘
+            onConfirm={async (doctorId: number, date: Date, time: string) => {
+              try {
+                // 날짜와 시간을 LocalDateTime 형식으로 변환
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                const [hours, minutes] = time.split(":");
+                const hoursStr = hours.padStart(2, "0");
+                const minutesStr = minutes.padStart(2, "0");
+                const dateTimeStr = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
+
+                // 백엔드 API 호출
+                const appointmentId = await appointmentApi.createAppointment({
+                  patientId: userId,
+                  doctorId: doctorId,
+                  date: dateTimeStr,
+                });
+
+                console.log("✅ 예약 생성 성공:", appointmentId);
+
+                // 예약 성공 메시지
+                toast.success(
+                  `${date.toLocaleDateString("ko-KR")} ${time} 예약이 완료되었습니다`
+                );
+
+                return appointmentId;
+              } catch (error) {
+                console.error("❌ 예약 생성 실패:", error);
+                toast.error("예약 생성에 실패했습니다. 다시 시도해주세요.");
+                return undefined;
+              }
+            }}
+            onCancel={async (appointmentId: number) => {
+              await appointmentApi.cancelAppointment(appointmentId);
+              toast.success("예약이 취소되었습니다.");
             }}
           />
         )}

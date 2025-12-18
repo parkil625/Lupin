@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://43.202.79.166/api/:path*"
+      "destination": "https://api.lupin-care.com/api/:path*"
     },
     {
       "source": "/ws/:path*",
-      "destination": "http://43.202.79.166/ws/:path*"
+      "destination": "https://api.lupin-care.com/ws/:path*"
     },
     {
       "source": "/((?!api|ws|_next|static|[\\w-]+\\.\\w+).*)",

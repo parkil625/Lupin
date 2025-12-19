@@ -64,7 +64,10 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     if (error.response?.status === 429) {
-      toast.error("✋ 잠깐만요! 요청이 너무 많아요. 10초만 쉬었다 하세요!");
+      toast.error("✋ 잠깐만요! 너무 빨라요. 10초만 쉬었다 하세요!", {
+        id: "rate-limit-error",
+        duration: 5000,
+      });
       return Promise.reject(error);
     }
     const originalRequest = error.config as InternalAxiosRequestConfig & {

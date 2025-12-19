@@ -6,7 +6,13 @@
  * - FeedV2 디자인 적용
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { SearchInput } from "@/components/molecules";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
@@ -39,7 +45,10 @@ interface FeedViewProps {
   showSearch: boolean;
   setShowSearch: React.Dispatch<React.SetStateAction<boolean>>;
   getFeedImageIndex: (feedId: number) => number;
-  setFeedImageIndex: (feedId: number, updater: number | ((prev: number) => number)) => void;
+  setFeedImageIndex: (
+    feedId: number,
+    updater: number | ((prev: number) => number)
+  ) => void;
   hasLiked: (feedId: number) => boolean;
   handleLike: (feedId: number) => void;
   feedContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -53,17 +62,33 @@ interface FeedViewProps {
 /**
  * 댓글 패널 컴포넌트
  */
-function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; onClose?: () => void; targetCommentId?: number | null }) {
+function CommentPanel({
+  feedId,
+  onClose,
+  targetCommentId,
+}: {
+  feedId: number;
+  onClose?: () => void;
+  targetCommentId?: number | null;
+}) {
   const [commentText, setCommentText] = useState("");
   const [replyCommentText, setReplyCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [collapsedComments, setCollapsedComments] = useState<Set<number>>(new Set());
-  const [commentLikes, setCommentLikes] = useState<{ [key: number]: { liked: boolean; count: number } }>({});
+  const [collapsedComments, setCollapsedComments] = useState<Set<number>>(
+    new Set()
+  );
+  const [commentLikes, setCommentLikes] = useState<{
+    [key: number]: { liked: boolean; count: number };
+  }>({});
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [commentReported, setCommentReported] = useState<Record<number, boolean>>({});
-  const [highlightedCommentId, setHighlightedCommentId] = useState<number | null>(null);
+  const [commentReported, setCommentReported] = useState<
+    Record<number, boolean>
+  >({});
+  const [highlightedCommentId, setHighlightedCommentId] = useState<
+    number | null
+  >(null);
   const commentRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
@@ -83,58 +108,91 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
         const commentList = response.content || response;
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; writerDepartment?: string; writerActiveDays?: number; createdAt?: string }) => {
-            try {
-              const repliesData = await commentApi.getRepliesByCommentId(comment.id);
-              const replies = (repliesData || []).map((reply: { writerName?: string; writerAvatar?: string; writerDepartment?: string; writerActiveDays?: number; createdAt?: string }) => ({
-                ...reply,
-                author: reply.writerName || "알 수 없음",
-                avatar: getAvatarUrl(reply.writerAvatar),
-                department: reply.writerDepartment,
-                activeDays: reply.writerActiveDays,
-                time: getRelativeTime(reply.createdAt || new Date().toISOString()),
-              }));
-              return {
-                ...comment,
-                author: comment.writerName || "알 수 없음",
-                avatar: getAvatarUrl(comment.writerAvatar),
-                department: comment.writerDepartment,
-                activeDays: comment.writerActiveDays,
-                time: getRelativeTime(comment.createdAt || new Date().toISOString()),
-                replies,
-              };
-            } catch {
-              return {
-                ...comment,
-                author: comment.writerName || "알 수 없음",
-                avatar: getAvatarUrl(comment.writerAvatar),
-                department: comment.writerDepartment,
-                activeDays: comment.writerActiveDays,
-                time: getRelativeTime(comment.createdAt || new Date().toISOString()),
-                replies: [],
-              };
+          commentList.map(
+            async (comment: {
+              id: number;
+              writerName?: string;
+              writerAvatar?: string;
+              writerDepartment?: string;
+              writerActiveDays?: number;
+              createdAt?: string;
+            }) => {
+              try {
+                const repliesData = await commentApi.getRepliesByCommentId(
+                  comment.id
+                );
+                const replies = (repliesData || []).map(
+                  (reply: {
+                    writerName?: string;
+                    writerAvatar?: string;
+                    writerDepartment?: string;
+                    writerActiveDays?: number;
+                    createdAt?: string;
+                  }) => ({
+                    ...reply,
+                    author: reply.writerName || "알 수 없음",
+                    avatar: getAvatarUrl(reply.writerAvatar),
+                    department: reply.writerDepartment,
+                    activeDays: reply.writerActiveDays,
+                    time: getRelativeTime(
+                      reply.createdAt || new Date().toISOString()
+                    ),
+                  })
+                );
+                return {
+                  ...comment,
+                  author: comment.writerName || "알 수 없음",
+                  avatar: getAvatarUrl(comment.writerAvatar),
+                  department: comment.writerDepartment,
+                  activeDays: comment.writerActiveDays,
+                  time: getRelativeTime(
+                    comment.createdAt || new Date().toISOString()
+                  ),
+                  replies,
+                };
+              } catch {
+                return {
+                  ...comment,
+                  author: comment.writerName || "알 수 없음",
+                  avatar: getAvatarUrl(comment.writerAvatar),
+                  department: comment.writerDepartment,
+                  activeDays: comment.writerActiveDays,
+                  time: getRelativeTime(
+                    comment.createdAt || new Date().toISOString()
+                  ),
+                  replies: [],
+                };
+              }
             }
-          })
+          )
         );
         setComments(commentsWithReplies);
 
         // commentLikes 상태 초기화 (likeCount, isLiked 반영)
-        const likesState: { [key: number]: { liked: boolean; count: number } } = {};
-        commentsWithReplies.forEach((comment: { id: number; isLiked?: boolean; likeCount?: number; replies?: { id: number; isLiked?: boolean; likeCount?: number }[] }) => {
-          likesState[comment.id] = {
-            liked: comment.isLiked || false,
-            count: comment.likeCount || 0,
-          };
-          // 답글의 좋아요 상태도 초기화
-          if (comment.replies) {
-            comment.replies.forEach((reply) => {
-              likesState[reply.id] = {
-                liked: reply.isLiked || false,
-                count: reply.likeCount || 0,
-              };
-            });
+        const likesState: { [key: number]: { liked: boolean; count: number } } =
+          {};
+        commentsWithReplies.forEach(
+          (comment: {
+            id: number;
+            isLiked?: boolean;
+            likeCount?: number;
+            replies?: { id: number; isLiked?: boolean; likeCount?: number }[];
+          }) => {
+            likesState[comment.id] = {
+              liked: comment.isLiked || false,
+              count: comment.likeCount || 0,
+            };
+            // 답글의 좋아요 상태도 초기화
+            if (comment.replies) {
+              comment.replies.forEach((reply) => {
+                likesState[reply.id] = {
+                  liked: reply.isLiked || false,
+                  count: reply.likeCount || 0,
+                };
+              });
+            }
           }
-        });
+        );
         setCommentLikes(likesState);
       } catch (error) {
         console.error("댓글 로드 실패:", error);
@@ -152,9 +210,11 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
 
       // 답글인 경우 부모 댓글의 접힘 상태 해제
       for (const comment of comments) {
-        const reply = comment.replies?.find(r => Number(r.id) === numTargetId);
+        const reply = comment.replies?.find(
+          (r) => Number(r.id) === numTargetId
+        );
         if (reply) {
-          setCollapsedComments(prev => {
+          setCollapsedComments((prev) => {
             const newSet = new Set(prev);
             newSet.delete(comment.id);
             return newSet;
@@ -294,7 +354,10 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
         setComments(
           comments.map((comment) => {
             if (comment.id === replyingTo) {
-              return { ...comment, replies: [...(comment.replies || []), newReply] };
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), newReply],
+              };
             }
             return comment;
           })
@@ -327,13 +390,17 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
   };
 
   const handleReportComment = async (commentId: number) => {
-    if (commentReported[commentId]) return;
     try {
       await reportApi.reportComment(commentId);
-      setCommentReported((prev) => ({ ...prev, [commentId]: true }));
-      toast.success("신고가 접수되었습니다.");
+      setCommentReported((prev) => {
+        const isReported = !prev[commentId];
+        toast.success(
+          isReported ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
+        );
+        return { ...prev, [commentId]: isReported };
+      });
     } catch {
-      toast.error("신고에 실패했습니다.");
+      toast.error("신고 처리에 실패했습니다.");
     }
   };
 
@@ -343,15 +410,19 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
     const isReplying = replyingTo === comment.id;
     const likeInfo = commentLikes[comment.id] || { liked: false, count: 0 };
     const isDeleted = comment.isDeleted;
-    const isHighlighted = highlightedCommentId !== null && Number(highlightedCommentId) === Number(comment.id);
+    const isHighlighted =
+      highlightedCommentId !== null &&
+      Number(highlightedCommentId) === Number(comment.id);
 
     return (
       <div key={comment.id} className={depth > 0 ? "ml-8 mt-3" : ""}>
         {/* 댓글 내용 영역 - 하이라이트 대상 */}
         <div
-          ref={(el) => { commentRefs.current[comment.id] = el; }}
+          ref={(el) => {
+            commentRefs.current[comment.id] = el;
+          }}
           className="flex gap-3 transition-colors duration-500 rounded-lg"
-          style={{ backgroundColor: isHighlighted ? '#fef3c7' : undefined }}
+          style={{ backgroundColor: isHighlighted ? "#fef3c7" : undefined }}
         >
           <UserHoverCard
             name={comment.author}
@@ -362,32 +433,70 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
           />
           <div className="flex-1 min-w-0">
             {isDeleted ? (
-              <p className="text-sm text-gray-400 italic mb-2">삭제된 댓글입니다.</p>
+              <p className="text-sm text-gray-400 italic mb-2">
+                삭제된 댓글입니다.
+              </p>
             ) : (
               <>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-bold text-sm text-gray-900">{comment.author}</span>
+                  <span className="font-bold text-sm text-gray-900">
+                    {comment.author}
+                  </span>
                   <span className="text-xs text-gray-500">{comment.time}</span>
                 </div>
-                <p className="text-sm text-gray-900 break-words mb-2">{comment.content}</p>
+                <p className="text-sm text-gray-900 break-words mb-2">
+                  {comment.content}
+                </p>
                 <div className="flex items-center gap-4 mb-2">
-                  <button onClick={() => toggleCommentLike(comment.id)} className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer">
-                    <Heart className={`w-4 h-4 ${likeInfo.liked ? "fill-[#C93831] text-[#C93831]" : "text-gray-600"}`} />
-                    {likeInfo.count > 0 && <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>}
+                  <button
+                    onClick={() => toggleCommentLike(comment.id)}
+                    className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${
+                        likeInfo.liked
+                          ? "fill-[#C93831] text-[#C93831]"
+                          : "text-gray-600"
+                      }`}
+                    />
+                    {likeInfo.count > 0 && (
+                      <span className="text-xs text-gray-600 font-semibold">
+                        {likeInfo.count}
+                      </span>
+                    )}
                   </button>
                   {depth === 0 && (
-                    <button onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)} className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer">
+                    <button
+                      onClick={() =>
+                        setReplyingTo(
+                          replyingTo === comment.id ? null : comment.id
+                        )
+                      }
+                      className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
+                    >
                       답글
                     </button>
                   )}
                   {comment.author === currentUserName && (
-                    <button onClick={() => handleDeleteComment(comment.id)} className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer">
+                    <button
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
+                    >
                       삭제
                     </button>
                   )}
                   {comment.author !== currentUserName && (
-                    <button onClick={() => handleReportComment(comment.id)} disabled={commentReported[comment.id]} className={`text-xs font-semibold cursor-pointer ${commentReported[comment.id] ? "text-red-500" : "text-gray-600 hover:text-red-500"}`}>
-                      {commentReported[comment.id] ? "신고됨" : "신고"}
+                    <button
+                      onClick={() => handleReportComment(comment.id)}
+                      className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
+                    >
+                      <Siren
+                        className={`w-4 h-4 ${
+                          commentReported[comment.id]
+                            ? "fill-[#C93831] text-[#C93831]"
+                            : "text-gray-600"
+                        }`}
+                      />
                     </button>
                   )}
                 </div>
@@ -406,10 +515,20 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
                   autoFocus
                 />
                 <div className="flex gap-2 mt-2">
-                  <button onClick={() => { setReplyingTo(null); setReplyCommentText(""); }} className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 cursor-pointer">
+                  <button
+                    onClick={() => {
+                      setReplyingTo(null);
+                      setReplyCommentText("");
+                    }}
+                    className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 cursor-pointer"
+                  >
                     취소
                   </button>
-                  <button onClick={handleSendReply} disabled={!replyCommentText.trim()} className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer">
+                  <button
+                    onClick={handleSendReply}
+                    disabled={!replyCommentText.trim()}
+                    className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer"
+                  >
                     답글
                   </button>
                 </div>
@@ -417,7 +536,10 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
             )}
 
             {hasReplies && (
-              <button onClick={() => toggleCollapse(comment.id)} className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2 cursor-pointer">
+              <button
+                onClick={() => toggleCollapse(comment.id)}
+                className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2 cursor-pointer"
+              >
                 {isCollapsed ? "▶" : "▼"} 답글 {comment.replies!.length}개
               </button>
             )}
@@ -438,24 +560,45 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
     <div className="flex flex-col h-full bg-white/50 backdrop-blur-sm">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
+        <h3 className="text-lg font-bold text-gray-900">
+          댓글 {totalCommentCount}개
+        </h3>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <button onClick={() => setShowSortMenu(!showSortMenu)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+            <button
+              onClick={() => setShowSortMenu(!showSortMenu)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+            >
               <ArrowUpDown className="w-4 h-4 text-gray-900" />
-              <span className="text-sm font-semibold text-gray-900">{sortOrder === "latest" ? "최신순" : "인기순"}</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {sortOrder === "latest" ? "최신순" : "인기순"}
+              </span>
             </button>
             {showSortMenu && (
               <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
                 <button
-                  onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                  onClick={() => {
+                    setSortOrder("latest");
+                    setShowSortMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
+                    sortOrder === "latest"
+                      ? "bg-gray-50 font-semibold text-[#C93831]"
+                      : "text-gray-900"
+                  }`}
                 >
                   최신순
                 </button>
                 <button
-                  onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                  onClick={() => {
+                    setSortOrder("popular");
+                    setShowSortMenu(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
+                    sortOrder === "popular"
+                      ? "bg-gray-50 font-semibold text-[#C93831]"
+                      : "text-gray-900"
+                  }`}
                 >
                   인기순
                 </button>
@@ -479,7 +622,9 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
         <ScrollArea className="h-full">
           <div className="space-y-4 px-6 pt-4 pb-4">
             {comments.length === 0 ? (
-              <div className="text-center text-gray-500 text-sm py-8">첫 댓글을 남겨보세요!</div>
+              <div className="text-center text-gray-500 text-sm py-8">
+                첫 댓글을 남겨보세요!
+              </div>
             ) : (
               sortedComments.map((comment) => renderComment(comment))
             )}
@@ -500,7 +645,11 @@ function CommentPanel({ feedId, onClose, targetCommentId }: { feedId: number; on
               className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
             />
             {commentText && (
-              <button onClick={() => setCommentText("")} className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer" aria-label="댓글 지우기">
+              <button
+                onClick={() => setCommentText("")}
+                className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
+                aria-label="댓글 지우기"
+              >
                 <X className="w-3 h-3 text-gray-600" />
               </button>
             )}
@@ -558,7 +707,9 @@ const FeedItem = React.memo(function FeedItem({
   const isLastImage = currentImageIndex === images.length - 1;
 
   // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
-  const currentImageUrl = hasImages ? getCdnUrl(images[currentImageIndex]) : undefined;
+  const currentImageUrl = hasImages
+    ? getCdnUrl(images[currentImageIndex])
+    : undefined;
   const iconColor = useImageBrightness(currentImageUrl);
   const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
 
@@ -566,14 +717,20 @@ const FeedItem = React.memo(function FeedItem({
     try {
       await reportApi.reportFeed(feed.id);
       setIsReported(!isReported);
-      toast.success(isReported ? "신고가 취소되었습니다." : "신고가 접수되었습니다.");
+      toast.success(
+        isReported ? "신고가 취소되었습니다." : "신고가 접수되었습니다."
+      );
     } catch {
-      toast.error(isReported ? "신고 취소에 실패했습니다." : "신고에 실패했습니다.");
+      toast.error(
+        isReported ? "신고 취소에 실패했습니다." : "신고에 실패했습니다."
+      );
     }
   };
 
   return (
-    <div className={`h-full max-h-[calc(100vh-130px)] md:max-h-full w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}>
+    <div
+      className={`h-full max-h-[calc(100vh-130px)] md:max-h-full w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
+    >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
         {/* 이미지 영역 - 57% */}
@@ -588,7 +745,9 @@ const FeedItem = React.memo(function FeedItem({
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-              <p className="text-gray-500 font-medium text-lg">{feed.activity}</p>
+              <p className="text-gray-500 font-medium text-lg">
+                {feed.activity}
+              </p>
             </div>
           )}
 
@@ -621,8 +780,12 @@ const FeedItem = React.memo(function FeedItem({
                     key={index}
                     className={`w-1.5 h-1.5 rounded-full ${
                       index === currentImageIndex
-                        ? (iconColor === "white" ? "bg-white" : "bg-gray-900")
-                        : (iconColor === "white" ? "bg-white/50" : "bg-gray-900/50")
+                        ? iconColor === "white"
+                          ? "bg-white"
+                          : "bg-gray-900"
+                        : iconColor === "white"
+                        ? "bg-white/50"
+                        : "bg-gray-900/50"
                     }`}
                   />
                 ))}
@@ -647,23 +810,43 @@ const FeedItem = React.memo(function FeedItem({
               onClick={onLike}
               aria-label={liked ? "좋아요 취소" : "좋아요"}
             >
-              <Heart className={`w-6 h-6 ${liked ? "fill-[#C93831] text-[#C93831]" : iconColorClass}`} />
-              <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
+              <Heart
+                className={`w-6 h-6 ${
+                  liked ? "fill-[#C93831] text-[#C93831]" : iconColorClass
+                }`}
+              />
+              <span className={`text-xs font-bold ${iconColorClass}`}>
+                {feed.likes}
+              </span>
             </button>
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={() => setShowComments(!showComments)}
               aria-label={showComments ? "댓글 닫기" : "댓글 보기"}
             >
-              <MessageCircle className={`w-6 h-6 ${iconColorClass} ${showComments ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
-              <span className={`text-xs font-bold ${iconColorClass}`}>{feed.comments || 0}</span>
+              <MessageCircle
+                className={`w-6 h-6 ${iconColorClass} ${
+                  showComments
+                    ? iconColor === "white"
+                      ? "fill-white"
+                      : "fill-gray-900"
+                    : ""
+                }`}
+              />
+              <span className={`text-xs font-bold ${iconColorClass}`}>
+                {feed.comments || 0}
+              </span>
             </button>
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
               onClick={handleReport}
               aria-label={isReported ? "신고 취소" : "피드 신고"}
             >
-              <Siren className={`w-6 h-6 ${isReported ? "text-[#C93831] fill-[#C93831]" : iconColorClass}`} />
+              <Siren
+                className={`w-6 h-6 ${
+                  isReported ? "text-[#C93831] fill-[#C93831]" : iconColorClass
+                }`}
+              />
             </button>
           </div>
         </div>
@@ -680,21 +863,26 @@ const FeedItem = React.memo(function FeedItem({
                   </Badge>
                 )}
                 <Badge className="bg-blue-50 text-blue-600 font-medium border border-blue-200">
-                  <Zap className="w-3 h-3 mr-1" />{feed.activity}
+                  <Zap className="w-3 h-3 mr-1" />
+                  {feed.activity}
                 </Badge>
                 {(feed.calories ?? 0) > 0 && (
                   <Badge className="bg-orange-50 text-orange-600 font-medium border border-orange-200">
-                    <Flame className="w-3 h-3 mr-1" />{feed.calories}kcal
+                    <Flame className="w-3 h-3 mr-1" />
+                    {feed.calories}kcal
                   </Badge>
                 )}
               </div>
               <Badge className="bg-slate-50 text-slate-500 font-medium border border-slate-200">
-                <Clock className="w-3 h-3 mr-1" />{feed.time}
+                <Clock className="w-3 h-3 mr-1" />
+                {feed.time}
               </Badge>
             </div>
 
             {/* 본문 */}
-            <p className="text-gray-900 text-sm">{parseBlockNoteContent(feed.content)}</p>
+            <p className="text-gray-900 text-sm">
+              {parseBlockNoteContent(feed.content)}
+            </p>
           </div>
         </ScrollArea>
       </div>
@@ -704,7 +892,11 @@ const FeedItem = React.memo(function FeedItem({
         <>
           {/* 모바일용 전체화면 오버레이 (하단 네비 제외) */}
           <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
-            <CommentPanel feedId={feed.id} onClose={() => setShowComments(false)} targetCommentId={targetCommentId} />
+            <CommentPanel
+              feedId={feed.id}
+              onClose={() => setShowComments(false)}
+              targetCommentId={targetCommentId}
+            />
           </div>
           {/* 데스크톱용 사이드 패널 */}
           <div className="hidden md:block h-full aspect-[7/16] border-l border-gray-200/50 flex-shrink-0">
@@ -740,7 +932,8 @@ export default function FeedView({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 스토어에서 targetCommentIdForFeed와 pivotFeedId 읽기
-  const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } = useFeedStore();
+  const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } =
+    useFeedStore();
 
   // targetCommentIdForFeed 사용 후 정리 (컴포넌트 언마운트 또는 다른 페이지로 이동 시)
   useEffect(() => {
@@ -754,9 +947,9 @@ export default function FeedView({
   // [최적화] LCP 이미지 Preload - 첫 번째 피드 이미지
   useEffect(() => {
     if (allFeeds.length > 0 && allFeeds[0].images?.[0]) {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
       link.href = getCdnUrl(allFeeds[0].images[0]);
       document.head.appendChild(link);
       return () => link.remove();
@@ -764,8 +957,8 @@ export default function FeedView({
   }, [allFeeds]);
 
   // 검색 자동완성 목록 (메모이제이션)
-  const authorSuggestions = useMemo(() =>
-    [...new Set(allFeeds.map((feed) => feed.author || feed.writerName))],
+  const authorSuggestions = useMemo(
+    () => [...new Set(allFeeds.map((feed) => feed.author || feed.writerName))],
     [allFeeds]
   );
 
@@ -781,7 +974,9 @@ export default function FeedView({
   // 특정 피드로 스크롤
   useEffect(() => {
     if (scrollToFeedId && scrollRef.current) {
-      const feedElement = scrollRef.current.querySelector(`[data-feed-id="${scrollToFeedId}"]`);
+      const feedElement = scrollRef.current.querySelector(
+        `[data-feed-id="${scrollToFeedId}"]`
+      );
       if (feedElement) {
         feedElement.scrollIntoView({ behavior: "smooth", block: "start" });
         setScrollToFeedId(null);
@@ -793,7 +988,11 @@ export default function FeedView({
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    if (scrollHeight - scrollTop - clientHeight < 200 && hasMoreFeeds && !isLoadingFeeds) {
+    if (
+      scrollHeight - scrollTop - clientHeight < 200 &&
+      hasMoreFeeds &&
+      !isLoadingFeeds
+    ) {
       loadMoreFeeds();
     }
   }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds]);
@@ -804,7 +1003,9 @@ export default function FeedView({
         containerRef.current = el;
         if (feedContainerRef) {
           // eslint-disable-next-line react-hooks/immutability -- 부모 컴포넌트에 ref 전달 필요
-          (feedContainerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+          (
+            feedContainerRef as React.MutableRefObject<HTMLDivElement | null>
+          ).current = el;
         }
       }}
       className="h-full flex flex-col p-4 gap-4"
@@ -835,11 +1036,21 @@ export default function FeedView({
               feed={feed}
               currentImageIndex={getFeedImageIndex(feed.id)}
               liked={hasLiked(feed.id)}
-              onPrevImage={() => setFeedImageIndex(feed.id, (prev) => Math.max(0, prev - 1))}
-              onNextImage={() => setFeedImageIndex(feed.id, (prev) => Math.min(feed.images.length - 1, prev + 1))}
+              onPrevImage={() =>
+                setFeedImageIndex(feed.id, (prev) => Math.max(0, prev - 1))
+              }
+              onNextImage={() =>
+                setFeedImageIndex(feed.id, (prev) =>
+                  Math.min(feed.images.length - 1, prev + 1)
+                )
+              }
               onLike={() => handleLike(feed.id)}
               isPriority={index === 0}
-              targetCommentId={index === 0 && pivotFeedId && feed.id === pivotFeedId ? targetCommentIdForFeed : null}
+              targetCommentId={
+                index === 0 && pivotFeedId && feed.id === pivotFeedId
+                  ? targetCommentIdForFeed
+                  : null
+              }
             />
           </div>
         ))}

@@ -174,7 +174,12 @@ export default function DoctorChatPage() {
         setSelectedChatMember({
           id: chatRoom.patientId,
           name: chatRoom.patientName,
-          profileImage: "",
+          avatar: "",
+          age: 0,
+          gender: "",
+          lastVisit: "",
+          condition: "",
+          status: "in-progress",
         });
       }
     };

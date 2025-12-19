@@ -60,6 +60,7 @@ export default function Medical({
   // 예약 화면 상태 (채팅이 없으면 기본으로 예약 화면 표시)
   const [, setShowAppointmentView] = useState(true);
   const [viewState, setViewState] = useState<"FORM" | "SUCCESS">("FORM");
+  const [isModifying, setIsModifying] = useState(false); // 예약 변경 중인지 여부
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState("");
@@ -277,6 +278,16 @@ export default function Medical({
   // 예약 확인 핸들러
   const handleConfirmAppointment = async () => {
     if (!selectedDepartment || !selectedDate || !selectedTime) return;
+
+    // 예약 개수 제한 체크 (SCHEDULED 상태인 예약만 카운트)
+    const activeAppointmentsCount = appointments.filter(
+      apt => apt.status === "SCHEDULED" || apt.status === "IN_PROGRESS"
+    ).length;
+
+    if (activeAppointmentsCount >= 5 && !isModifying) {
+      toast.error("예약은 최대 5개까지만 가능합니다. 기존 예약을 취소하거나 완료 후 진행해주세요.");
+      return;
+    }
 
     // 진료과 한글 이름 매핑
     const departmentNames: Record<string, string> = {
@@ -544,7 +555,21 @@ export default function Medical({
               </div>
               <div className="flex-1 overflow-y-auto px-4 pb-4">
                 <div className="space-y-2">
-                  {appointments.map((apt) => {
+                  {appointments
+                    .filter((apt) => {
+                      // CANCELLED 상태인 예약은 최대 5개까지만 표시
+                      if (apt.status === "CANCELLED") {
+                        const cancelledAppointments = appointments.filter(
+                          a => a.status === "CANCELLED"
+                        );
+                        const cancelledIndex = cancelledAppointments.findIndex(
+                          a => a.id === apt.id
+                        );
+                        return cancelledIndex < 5;
+                      }
+                      return true; // 다른 상태는 모두 표시
+                    })
+                    .map((apt) => {
                     const appointmentDate = new Date(apt.date);
                     const formattedDate = appointmentDate.toLocaleDateString(
                       "ko-KR",
@@ -782,7 +807,7 @@ export default function Medical({
                         </svg>
                       </div>
                       <h2 className="text-2xl font-black text-gray-900 mb-2">
-                        예약이 완료되었습니다
+                        {isModifying ? "예약이 변경되었습니다" : "예약이 완료되었습니다"}
                       </h2>
                       <p className="text-gray-600">
                         예약 정보를 확인해주세요
@@ -816,18 +841,81 @@ export default function Medical({
                       </div>
                     </div>
 
-                    <Button
-                      onClick={() => {
-                        setViewState("FORM");
-                        setLastCreatedAppointment(null);
-                        setSelectedDepartment("");
-                        setSelectedDate(undefined);
-                        setSelectedTime("");
-                      }}
-                      className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12"
-                    >
-                      확인
-                    </Button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        onClick={async () => {
+                          if (!lastCreatedAppointment) return;
+
+                          try {
+                            // 방금 생성한 예약 취소
+                            const latestAppointment = appointments.find(
+                              apt => apt.doctorName === lastCreatedAppointment.doctorName &&
+                                     apt.status === "SCHEDULED"
+                            );
+
+                            if (latestAppointment) {
+                              await appointmentApi.cancelAppointment(latestAppointment.id);
+
+                              // 예약 목록 갱신
+                              const data = await appointmentApi.getPatientAppointments(currentPatientId);
+                              setAppointments(data);
+                            }
+
+                            // FORM으로 돌아가서 수정 가능하게
+                            setViewState("FORM");
+                            setIsModifying(true); // 예약 변경 모드 활성화
+                            // 기존 정보는 유지 (사용자가 다시 선택할 수 있도록)
+                            setLastCreatedAppointment(null);
+                          } catch (error) {
+                            console.error("예약 변경 실패:", error);
+                            toast.error("예약 변경에 실패했습니다.");
+                          }
+                        }}
+                        variant="outline"
+                        className="rounded-xl h-12 border-2 border-[#C93831] text-[#C93831] hover:bg-[#C93831] hover:text-white font-bold"
+                      >
+                        예약 변경
+                      </Button>
+
+                      <Button
+                        onClick={async () => {
+                          if (!lastCreatedAppointment) return;
+
+                          if (!confirm("예약을 취소하시겠습니까?")) return;
+
+                          try {
+                            // 방금 생성한 예약 취소
+                            const latestAppointment = appointments.find(
+                              apt => apt.doctorName === lastCreatedAppointment.doctorName &&
+                                     apt.status === "SCHEDULED"
+                            );
+
+                            if (latestAppointment) {
+                              await appointmentApi.cancelAppointment(latestAppointment.id);
+                              toast.success("예약이 취소되었습니다.");
+
+                              // 예약 목록 갱신
+                              const data = await appointmentApi.getPatientAppointments(currentPatientId);
+                              setAppointments(data);
+                            }
+
+                            // FORM으로 돌아가기
+                            setViewState("FORM");
+                            setIsModifying(false); // 예약 변경 모드 해제
+                            setLastCreatedAppointment(null);
+                            setSelectedDepartment("");
+                            setSelectedDate(undefined);
+                            setSelectedTime("");
+                          } catch (error) {
+                            console.error("예약 취소 실패:", error);
+                            toast.error("예약 취소에 실패했습니다.");
+                          }
+                        }}
+                        className="rounded-xl h-12 bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold"
+                      >
+                        예약 취소
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : (

@@ -88,7 +88,6 @@ const AVAILABLE_DATES = [
   new Date(2024, 10, 18),
 ];
 const AVAILABLE_TIMES = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
-const BOOKED_TIMES = ["10:00", "15:00"];
 
 // Loading Fallback
 const PageLoader = () => (
@@ -346,10 +345,12 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     showChat: false,
     showPrescriptionForm: false,
     selectedDepartment: "",
+    selectedDoctorId: "",
     selectedTime: "",
     chatMessage: "",
   });
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   const [selectedPrescription, setSelectedPrescription] =
     useState<Prescription | null>(null);
   const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(
@@ -366,6 +367,28 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       .then((u) => u?.avatar && setProfileImage(u.avatar))
       .catch(() => {});
   }, []);
+
+  // Fetch booked times when doctor or date changes
+  useEffect(() => {
+    const fetchBookedTimes = async () => {
+      if (!medicalState.selectedDoctorId || !selectedDate) {
+        setBookedTimes([]);
+        return;
+      }
+
+      try {
+        const doctorId = parseInt(medicalState.selectedDoctorId);
+        const dateStr = selectedDate.toISOString().split("T")[0]; // YYYY-MM-DD
+        const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
+        setBookedTimes(booked);
+      } catch (error) {
+        console.error("Failed to fetch booked times:", error);
+        setBookedTimes([]);
+      }
+    };
+
+    fetchBookedTimes();
+  }, [medicalState.selectedDoctorId, selectedDate]);
 
   // Handlers
   const handleNavSelect = useCallback(
@@ -871,10 +894,14 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             }
             availableDates={AVAILABLE_DATES}
             availableTimes={AVAILABLE_TIMES}
-            bookedTimes={BOOKED_TIMES}
+            bookedTimes={bookedTimes}
             selectedDepartment={medicalState.selectedDepartment}
             setSelectedDepartment={(v: string) =>
               setMedicalState((p) => ({ ...p, selectedDepartment: v }))
+            }
+            selectedDoctorId={medicalState.selectedDoctorId}
+            setSelectedDoctorId={(v: string) =>
+              setMedicalState((p) => ({ ...p, selectedDoctorId: v }))
             }
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}

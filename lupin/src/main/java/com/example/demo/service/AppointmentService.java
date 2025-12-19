@@ -263,12 +263,7 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
 
-        // 취소된 예약은 채팅 불가
-        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
-            return false;
-        }
-
-        return AppointmentTimeUtils.isChatAvailable(appointment.getDate());
+        return AppointmentTimeUtils.isChatAvailable(appointment.getStatus());
     }
 
     /**
@@ -278,6 +273,6 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
 
-        return AppointmentTimeUtils.getChatLockMessage(appointment.getDate());
+        return AppointmentTimeUtils.getChatLockMessage(appointment.getDate(), appointment.getStatus());
     }
 }

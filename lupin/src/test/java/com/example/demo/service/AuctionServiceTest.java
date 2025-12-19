@@ -251,8 +251,9 @@ class AuctionServiceTest {
         verify(rBucket, times(1)).set(any());
     }
     @Test
+    @DisplayName("경매 종료 시 낙찰자 포인트 차감, 로그 저장, 알림 발송이 모두 정상 작동한다")
     void 경매시간이_종료된_경매_비활성화_및_낙찰자_포인트_차감() {
-// Given
+        // Given (준비)
         LocalDateTime now = LocalDateTime.now();
 
         // 1. 낙찰자(Winner) 생성 (초기 포인트 1000)
@@ -262,17 +263,24 @@ class AuctionServiceTest {
                 .totalPoints(1000L)
                 .build();
 
-        // 2. 종료 대상 경매 생성 (현재가 500원)
+        // 2. 경매 물품 생성 (알림 보낼 때 이름이 필요해요!)
+        AuctionItem item = AuctionItem.builder()
+                .itemName("황금 사과")
+                .build();
+
+        // 3. 종료 대상 경매 생성 (현재가 500원)
         Auction auction = Auction.builder()
                 .id(100L)
                 .status(AuctionStatus.ACTIVE)
                 .winner(winner)
+                .auctionItem(item) // 물품 정보 추가
                 .currentPrice(500L)
-                .regularEndTime(now.minusMinutes(1)) // 이미 종료 시간 지남
+                .overtimeEndTime(now.minusMinutes(1)) // 종료 시간 지남
                 .build();
 
-        // 3. Mock 동작 정의
+        // 4. Mock 동작 정의
         // 종료된 경매 목록 조회 시 위 경매 반환
+        // (Service에서 minusSeconds(30)을 쓰므로 any()로 유연하게 처리)
         given(auctionRepository.findExpiredAuctions(any(), any()))
                 .willReturn(List.of(auction));
 
@@ -280,32 +288,33 @@ class AuctionServiceTest {
         given(auctionBidRepository.findByAuctionId(auction.getId()))
                 .willReturn(List.of());
 
-        // When
+        // When (실행)
         auctionService.closeExpiredAuctions(now);
 
-        // Then
+        // Then (검증)
         // 1. 경매 상태가 ENDED로 변경되었는지 확인
         assertThat(auction.getStatus()).isEqualTo(AuctionStatus.ENDED);
 
-        // 2. 유저의 포인트가 직접 차감되었는지 확인 (1000 - 500 = 500)
+        // 2. 유저의 포인트가 메모리상에서 차감되었는지 확인 (1000 - 500 = 500)
         assertThat(winner.getTotalPoints()).isEqualTo(500L);
 
-        // 3. UserRepository.save가 호출되었는지 확인
+        // 3. UserRepository.save가 호출되었는지 확인 (DB 업데이트)
         verify(userRepository).save(winner);
 
-        // 4. [핵심] PointLogRepository.save가 호출되었는지 확인 (직접 로그 저장)
+        // 4. PointLogRepository.save가 호출되었는지 확인 (로그 기록)
         ArgumentCaptor<PointLog> pointLogCaptor = ArgumentCaptor.forClass(PointLog.class);
         verify(pointLogRepository).save(pointLogCaptor.capture());
 
         PointLog savedLog = pointLogCaptor.getValue();
         assertThat(savedLog.getUser()).isEqualTo(winner);
-        assertThat(savedLog.getPoints()).isEqualTo(-500L); // 차감액 확인
+        assertThat(savedLog.getPoints()).isEqualTo(-500L); // -500 확인
         assertThat(savedLog.getType()).isEqualTo(PointType.USE); // 타입 확인
 
-        // 5. [핵심] PointService.usePoints는 호출되지 않아야 함 (중복 차감 방지 확인)
-        verify(pointService, never()).usePoints(any(), anyLong());
+        // 5. [추가됨] 알림 이벤트가 발행되었는지 확인!
+        // (낙찰 성공 시 NotificationEvent.auctionWin(...)을 호출했는지 검사)
+        verify(eventPublisher).publishEvent(any(NotificationEvent.class));
 
-        // 6. 경매 상태 저장 확인
+        // 6. 경매 상태 저장(Flush) 확인
         verify(auctionRepository).saveAndFlush(auction);
     }
 

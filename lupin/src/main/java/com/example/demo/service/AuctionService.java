@@ -8,10 +8,7 @@ import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.domain.enums.BidStatus;
 import com.example.demo.domain.enums.PointType;
 import com.example.demo.dto.AuctionSseMessage;
-import com.example.demo.dto.response.AuctionBidResponse;
-import com.example.demo.dto.response.AuctionStatusResponse;
-import com.example.demo.dto.response.OngoingAuctionResponse;
-import com.example.demo.dto.response.ScheduledAuctionResponse;
+import com.example.demo.dto.response.*;
 import com.example.demo.event.NotificationEvent;
 import com.example.demo.repository.AuctionBidRepository;
 import com.example.demo.repository.AuctionRepository;
@@ -28,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -219,5 +217,24 @@ public class AuctionService {
                 log.error("경매 ID {} 초읽기 전환 실패: {}", auction.getId(), e.getMessage());
             }
         }
+    }
+
+    public List<AuctionResponse> getMonthlyWinners() {
+        // 1. 이번 달의 시작(1일)과 끝 계산
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+
+        // 2. DB 조회 (이번 달에 종료된 경매)
+        List<Auction> winners = auctionRepository.findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc(
+                AuctionStatus.ENDED,
+                startOfMonth,
+                now
+        );
+
+        // 3. 예쁘게 포장해서 반환 (낙찰자 없으면 제외)
+        return winners.stream()
+                .filter(a -> a.getWinner() != null) // 낙찰자가 있는 경우만
+                .map(a -> AuctionResponse.from(a, a.getWinner().getName()))
+                .collect(Collectors.toList());
     }
 }

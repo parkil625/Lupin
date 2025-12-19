@@ -685,6 +685,54 @@ class AuctionServiceTest {
         assertThat(sentMessage.getCurrentPrice()).isEqualTo(bidAmount); // 가격 갱신 확인
     }
 
+    @Test
+    @DisplayName("이달의 낙찰자 조회 - 낙찰자가 있는 경매만 반환된다")
+    void getMonthlyWinners_Success() {
+        // Given
+        LocalDateTime now = LocalDateTime.now();
+
+        // 1. 낙찰자가 있는 경매 (성공 케이스)
+        User winner = createUser(1L, "낙찰왕");
+        Auction auctionWithWinner = Auction.builder()
+                .id(1L)
+                .status(AuctionStatus.ENDED)
+                .winner(winner)
+                .currentPrice(5000L)
+                .regularEndTime(now.minusDays(1)) // 어제 종료됨
+                .build();
+        // (DTO 변환 시 item 정보가 필요하므로 세팅)
+        AuctionItem item1 = createAuctionItem(auctionWithWinner);
+        ReflectionTestUtils.setField(auctionWithWinner, "auctionItem", item1);
+
+        // 2. 낙찰자가 없는 경매 (유찰 케이스 - 필터링되어야 함)
+        Auction auctionNoWinner = Auction.builder()
+                .id(2L)
+                .status(AuctionStatus.ENDED)
+                .winner(null) // 낙찰자 없음
+                .regularEndTime(now.minusDays(2))
+                .build();
+        AuctionItem item2 = createAuctionItem(auctionNoWinner);
+        ReflectionTestUtils.setField(auctionNoWinner, "auctionItem", item2);
+
+        // 3. Mock: Repository가 위 두 경매를 반환하도록 설정
+        // (날짜 범위는 메서드 내부에서 계산되므로 any()로 처리)
+        given(auctionRepository.findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc(
+                eq(AuctionStatus.ENDED), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .willReturn(List.of(auctionWithWinner, auctionNoWinner));
+
+        // When
+        List<com.example.demo.dto.response.AuctionResponse> results = auctionService.getMonthlyWinners();
+
+        // Then
+        // 1. 낙찰자가 없는 2번 경매는 제외되어 size는 1이어야 함
+        assertThat(results).hasSize(1);
+
+        // 2. 포함된 경매가 1번 경매인지, 낙찰자 이름이 올바른지 검증
+        assertThat(results.get(0).getAuctionId()).isEqualTo(1L);
+        assertThat(results.get(0).getWinnerName()).isEqualTo("낙찰왕");
+        assertThat(results.get(0).getCurrentPrice()).isEqualTo(5000L);
+    }
+
 
     // ===========================
     // Helper Methods

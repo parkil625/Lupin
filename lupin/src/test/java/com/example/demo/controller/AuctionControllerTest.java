@@ -203,5 +203,43 @@ class AuctionControllerTest {
                 .andExpect(jsonPath("$[1].userName").value("도전자"));
 
     }
+    @Test
+    @WithMockUser(username = "testuser")
+    @DisplayName("GET /winners/monthly - 이달의 낙찰자 조회 성공")
+    void getMonthlyWinners_Success() throws Exception {
+        // Given
+        // 1. 가짜 응답 데이터(AuctionResponse) 생성
+        // (AuctionResponse DTO에 Builder가 있다고 가정하고 작성했습니다)
+        // 만약 import가 안 되면 import com.example.demo.dto.response.AuctionResponse; 추가 필요
+        com.example.demo.dto.response.AuctionResponse winner1 = com.example.demo.dto.response.AuctionResponse.builder()
+                .auctionId(100L)
+                .winnerName("낙찰왕") // 우리가 추가했던 필드
+                .currentPrice(15000L)
+                .status(AuctionStatus.ENDED)
+                .build();
+
+        com.example.demo.dto.response.AuctionResponse winner2 = com.example.demo.dto.response.AuctionResponse.builder()
+                .auctionId(101L)
+                .winnerName("행운아")
+                .currentPrice(30000L)
+                .status(AuctionStatus.ENDED)
+                .build();
+
+        List<com.example.demo.dto.response.AuctionResponse> responseList = List.of(winner1, winner2);
+
+        // 2. 서비스 메소드 호출 시 가짜 데이터 반환하도록 설정 (Stubbing)
+        given(auctionService.getMonthlyWinners()).willReturn(responseList);
+
+        // When & Then
+        mockMvc.perform(get("/api/auction/winners/monthly") // 3. 요청 전송
+                        .with(csrf()) // 보안 설정 통과용
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print()) // 로그 출력
+                .andExpect(status().isOk()) // 4. 상태 코드 200 검증
+                .andExpect(jsonPath("$.size()").value(2)) // 리스트 크기 검증
+                .andExpect(jsonPath("$[0].winnerName").value("낙찰왕")) // 첫 번째 데이터 검증
+                .andExpect(jsonPath("$[0].currentPrice").value(15000))
+                .andExpect(jsonPath("$[1].winnerName").value("행운아")); // 두 번째 데이터 검증
+    }
 
 }

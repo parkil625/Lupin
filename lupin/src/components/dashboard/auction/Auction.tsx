@@ -17,6 +17,7 @@ import { AuctionData, BidHistory } from "@/types/auction.types";
 import { useAuctionTimer } from "@/hooks/useAuctionTimer";
 import { AuctionCard } from "./AuctionCard";
 import { BiddingPanel } from "./BiddingPanel";
+import { MonthlyWinnerDialog } from "./MonthlyWinnerDialog";
 
 export default function Auction() {
   const [auctions, setAuctions] = useState<AuctionData[]>([]);
@@ -300,6 +301,7 @@ try {
                       ※ 입찰은 즉시 효력이 발생하며 취소할 수 없습니다.
                   </p>
               </div>
+                <MonthlyWinnerDialog />
               <Card className="backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg px-6 py-4">
                 <div className="text-center">
                   <p className="text-sm text-gray-600 font-bold mb-1">

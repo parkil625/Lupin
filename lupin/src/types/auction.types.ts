@@ -24,7 +24,7 @@ export interface AuctionData {
   
   // totalBids, viewers는 별도 API나 DTO에 없다면 제외하거나 optional로 변경
   totalBids?: number;
-  viewers?: number;
+  winnerName?: string;
 }
 
 // 입찰 내역 타입 (기존 유지 혹은 백엔드 DTO에 맞춤)

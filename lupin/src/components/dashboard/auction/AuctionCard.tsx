@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card"; 
 import { Badge } from "@/components/ui/badge"; 
 import { AuctionData } from "@/types/auction.types";
-import { Gavel, Clock, Trophy, Calendar, Users, Eye } from "lucide-react";
+import { Gavel, Clock, Trophy, Calendar, Users} from "lucide-react";
 // Badge 컴포넌트가 별도 파일이라면 import 경로를 수정하세요.
 // import { Badge } from "@/components/ui/badge"; 
 
@@ -142,10 +142,6 @@ export const AuctionCard = ({
                   <div className="flex items-center gap-1 text-sm font-bold text-gray-600">
                     <Users className="w-4 h-4" />
                     {auction.totalBids || 0}번 입찰
-                  </div>
-                  <div className="flex items-center gap-1 text-sm font-bold text-orange-600">
-                    <Eye className="w-4 h-4" />
-                    {auction.viewers || 0}명 시청 중
                   </div>
                 </>
               )}

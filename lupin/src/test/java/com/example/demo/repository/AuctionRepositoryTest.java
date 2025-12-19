@@ -285,6 +285,66 @@ class AuctionRepositoryTest {
         // 단순 ID 비교라면 아래처럼만 해도 충분합니다.
         assertThat(result.get(0).getId()).isEqualTo(targetAuction.getId());
     }
+    @Test
+    @DisplayName("상태와 종료시간 범위로 경매를 조회하면, 조건에 맞는 경매만 종료시간 내림차순으로 반환된다")
+    void findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc() {
+        // Given
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startSearch = now.minusDays(7); // 검색 시작: 7일 전
+        LocalDateTime endSearch = now.plusDays(1);    // 검색 종료: 내일
 
+        // 1. [검색 대상] 종료되었고, 범위 내에 있는 경매 (어제 종료) -> 1순위
+        Auction target1 = Auction.builder()
+                .status(AuctionStatus.ENDED)
+                .startTime(now.minusDays(2))
+                .regularEndTime(now.minusDays(1)) // 범위 안 (최신)
+                .currentPrice(1000L)
+                .overtimeStarted(false)
+                .build();
+
+        // 2. [검색 대상] 종료되었고, 범위 내에 있는 경매 (3일 전 종료) -> 2순위
+        Auction target2 = Auction.builder()
+                .status(AuctionStatus.ENDED)
+                .startTime(now.minusDays(4))
+                .regularEndTime(now.minusDays(3)) // 범위 안 (과거)
+                .currentPrice(2000L)
+                .overtimeStarted(false)
+                .build();
+
+        // 3. [제외 대상] 상태가 안 맞음 (진행 중)
+        Auction activeAuction = Auction.builder()
+                .status(AuctionStatus.ACTIVE)
+                .startTime(now.minusHours(1))
+                .regularEndTime(now.plusHours(1))
+                .currentPrice(3000L)
+                .overtimeStarted(false)
+                .build();
+
+        // 4. [제외 대상] 날짜가 안 맞음 (범위 밖 - 아주 옛날)
+        Auction oldAuction = Auction.builder()
+                .status(AuctionStatus.ENDED)
+                .startTime(now.minusDays(20))
+                .regularEndTime(now.minusDays(19)) // 19일 전 (검색 시작일보다 이전)
+                .currentPrice(4000L)
+                .overtimeStarted(false)
+                .build();
+
+        // 데이터 저장
+        auctionRepository.saveAll(List.of(target2, activeAuction, target1, oldAuction));
+
+        // When
+        List<Auction> result = auctionRepository.findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc(
+                AuctionStatus.ENDED,
+                startSearch,
+                endSearch
+        );
+
+        // Then
+        assertThat(result).hasSize(2); // target1, target2만 나와야 함 (나머지 제외)
+
+        // 정렬 확인: 날짜가 더 나중인(최신인) target1이 먼저 와야 함
+        assertThat(result.get(0).getId()).isEqualTo(target1.getId());
+        assertThat(result.get(1).getId()).isEqualTo(target2.getId());
+    }
 
 }

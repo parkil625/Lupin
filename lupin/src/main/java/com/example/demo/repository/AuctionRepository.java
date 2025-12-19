@@ -88,4 +88,10 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
 
     List<Auction> findAllByStatus(AuctionStatus auctionStatus);
+
+    List<Auction> findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc(
+            AuctionStatus status,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 }

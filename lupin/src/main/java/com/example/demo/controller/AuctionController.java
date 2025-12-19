@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.AuctionRequest;
 import com.example.demo.dto.response.AuctionBidResponse;
+import com.example.demo.dto.response.AuctionResponse;
 import com.example.demo.dto.response.OngoingAuctionResponse;
 import com.example.demo.dto.response.ScheduledAuctionResponse;
 import com.example.demo.security.CurrentUser;
@@ -72,6 +73,11 @@ public class AuctionController {
     @GetMapping(value = "/stream/{auctionId}", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> streamAuction(@PathVariable Long auctionId) {
         return ResponseEntity.ok(auctionSseService.subscribe(auctionId));
+    }
+
+    @GetMapping("/winners/monthly")
+    public ResponseEntity<List<AuctionResponse>> getMonthlyWinners() {
+        return ResponseEntity.ok(auctionService.getMonthlyWinners());
     }
 
 }

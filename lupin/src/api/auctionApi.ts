@@ -46,3 +46,7 @@ export const getBidHistory= async () => {
     return response.data;
 }
 
+export const getMonthlyWinners = async (): Promise<AuctionData[]> => {
+    const response = await client.get("/auction/winners/monthly");
+    return response.data;
+};

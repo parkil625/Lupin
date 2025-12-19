@@ -374,7 +374,6 @@ export const 진료페이지: Story = {
   render: () => (
     <DashboardWrapper selectedNav="medical">
       <Medical
-        setShowAppointment={() => {}}
         setShowChat={() => {}}
         setSelectedPrescription={() => {}}
       />

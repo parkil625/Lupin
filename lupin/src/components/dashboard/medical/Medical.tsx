@@ -30,15 +30,13 @@ import { userApi } from "@/api/userApi";
 import { toast } from "sonner";
 
 interface MedicalProps {
-  setShowAppointment: (show: boolean) => void;
   setShowChat: (show: boolean) => void;
   setSelectedPrescription: (prescription: Prescription | null) => void;
 }
 
 export default function Medical({
   setSelectedPrescription,
-}: // 원격의 props는 제거 (로컬의 인라인 예약 기능으로 대체)
-MedicalProps) {
+}: MedicalProps) {
   // 현재 로그인한 환자 정보 (localStorage에서 가져오기)
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
   const currentPatientId = currentUserId; // 환자의 경우 userId와 patientId가 동일
@@ -61,10 +59,17 @@ MedicalProps) {
 
   // 예약 화면 상태 (채팅이 없으면 기본으로 예약 화면 표시)
   const [, setShowAppointmentView] = useState(true);
+  const [viewState, setViewState] = useState<"FORM" | "SUCCESS">("FORM");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState("");
   const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [lastCreatedAppointment, setLastCreatedAppointment] = useState<{
+    doctorName: string;
+    departmentName: string;
+    date: string;
+    time: string;
+  } | null>(null);
 
   // 한국 공휴일 (2024년 기준)
   const holidays = [
@@ -325,16 +330,33 @@ MedicalProps) {
 
       console.log("✅ 예약 생성 성공:", appointmentId);
 
-      // 예약 성공 메시지
-      toast.success(
-        `${selectedDate.toLocaleDateString(
-          "ko-KR"
-        )} ${selectedTime} ${departmentKoreanName} 예약이 완료되었습니다`
-      );
+      // 예약 정보 저장 (성공 화면에 표시용)
+      setLastCreatedAppointment({
+        doctorName: selectedDoctor.name,
+        departmentName: departmentKoreanName,
+        date: selectedDate.toLocaleDateString("ko-KR"),
+        time: selectedTime,
+      });
 
       // 선택된 시간을 즉시 bookedTimes에 추가 (UI 즉시 반영)
       setBookedTimes((prev) => [...prev, selectedTime]);
       setSelectedTime("");
+
+      // 예약 목록 즉시 업데이트 (낙관적 업데이트)
+      const newAppointment: AppointmentResponse = {
+        id: appointmentId,
+        patientId: currentPatientId,
+        patientName: "",
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        departmentName: departmentKoreanName,
+        date: dateTimeStr,
+        status: "SCHEDULED",
+      };
+      setAppointments((prev) => [newAppointment, ...prev]);
+
+      // 성공 화면으로 전환
+      setViewState("SUCCESS");
 
       // 약간의 딜레이 후 서버에서 최신 데이터 조회 (Redis 캐시 무효화 대기)
       setTimeout(async () => {
@@ -350,7 +372,7 @@ MedicalProps) {
           );
           setBookedTimes(updatedBookedTimes);
 
-          // 예약 목록 다시 로드
+          // 예약 목록 다시 로드 (서버에서 최신 데이터)
           const data = await appointmentApi.getPatientAppointments(
             currentPatientId
           );
@@ -739,8 +761,77 @@ MedicalProps) {
                     </Button>
                   </div>
                 </>
+              ) : viewState === "SUCCESS" && lastCreatedAppointment ? (
+                // 예약 성공 화면
+                <div className="h-full overflow-y-auto flex flex-col items-center justify-center">
+                  <div className="w-[400px] bg-white rounded-2xl shadow-lg p-8">
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg
+                          className="w-8 h-8 text-green-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                      <h2 className="text-2xl font-black text-gray-900 mb-2">
+                        예약이 완료되었습니다
+                      </h2>
+                      <p className="text-gray-600">
+                        예약 정보를 확인해주세요
+                      </p>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-xl p-6 mb-6 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">담당 의사</span>
+                        <span className="font-bold text-gray-900">
+                          {lastCreatedAppointment.doctorName} 의사
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">진료과</span>
+                        <span className="font-bold text-gray-900">
+                          {lastCreatedAppointment.departmentName}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">예약 날짜</span>
+                        <span className="font-bold text-gray-900">
+                          {lastCreatedAppointment.date}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">예약 시간</span>
+                        <span className="font-bold text-[#C93831]">
+                          {lastCreatedAppointment.time}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => {
+                        setViewState("FORM");
+                        setLastCreatedAppointment(null);
+                        setSelectedDepartment("");
+                        setSelectedDate(undefined);
+                        setSelectedTime("");
+                      }}
+                      className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12"
+                    >
+                      확인
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                // 인라인 예약 화면 (HEAD의 로직 유지)
+                // 인라인 예약 화면 (FORM 상태)
                 <div className="h-full overflow-y-auto flex flex-col items-center justify-center">
                   <div className="w-[320px]">
                     <h2 className="text-2xl font-black text-gray-900 mb-4 text-center">

@@ -54,9 +54,6 @@ const PrescriptionModal = lazy(
   () => import("./dashboard/dialogs/PrescriptionModal")
 );
 const ChatDialog = lazy(() => import("./dashboard/dialogs/ChatDialog"));
-const AppointmentDialog = lazy(
-  () => import("./dashboard/dialogs/AppointmentDialog")
-);
 const PrescriptionFormDialog = lazy(
   () => import("./dashboard/dialogs/PrescriptionFormDialog")
 );
@@ -76,18 +73,9 @@ import {
   notificationApi,
   commentApi,
   userApi,
-  appointmentApi,
 } from "@/api";
 import { useFeedStore, mapBackendFeed } from "@/store/useFeedStore";
 import { useNotificationSse } from "@/hooks/useNotificationSse";
-
-// Static Constants (메모리 최적화)
-const AVAILABLE_DATES = [
-  new Date(2024, 10, 15),
-  new Date(2024, 10, 16),
-  new Date(2024, 10, 18),
-];
-const AVAILABLE_TIMES = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
 // Loading Fallback
 const PageLoader = () => (
@@ -244,8 +232,16 @@ function useDashboardLogic(
       } else if (notification.type === "APPOINTMENT_REMINDER") {
         // refId = appointmentId
         if (userType === "doctor") {
-          // 의사: 채팅 페이지로 직접 이동
+          // 의사: 채팅 페이지로 직접 이동 후 채팅창 자동 오픈
           navigateFn("/dashboard/chat");
+
+          // 페이지 이동 후 채팅창 오픈 이벤트 발생
+          setTimeout(() => {
+            const event = new CustomEvent("openAppointmentChat", {
+              detail: { appointmentId: refId },
+            });
+            window.dispatchEvent(event);
+          }, 300);
         } else {
           // 환자: Medical 페이지로 이동 (진료 예약 페이지)
           navigateFn("/dashboard/medical");
@@ -327,18 +323,12 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   >({});
   const [scrollToFeedId, setScrollToFeedId] = useState<number | null>(null);
 
-  // Medical Logic States
+  // Medical Logic States (Chat only - appointment logic moved to Medical.tsx)
   const [medicalState, setMedicalState] = useState({
-    showAppointment: false,
     showChat: false,
     showPrescriptionForm: false,
-    selectedDepartment: "",
-    selectedDoctorId: "",
-    selectedTime: "",
     chatMessage: "",
   });
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   const [selectedPrescription, setSelectedPrescription] =
     useState<Prescription | null>(null);
   const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(
@@ -355,32 +345,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       .then((u) => u?.avatar && setProfileImage(u.avatar))
       .catch(() => {});
   }, []);
-
-  // Fetch booked times when doctor or date changes
-  useEffect(() => {
-    const fetchBookedTimes = async () => {
-      if (!medicalState.selectedDoctorId || !selectedDate) {
-        setBookedTimes([]);
-        return;
-      }
-
-      try {
-        const doctorId = parseInt(medicalState.selectedDoctorId);
-        // 로컬 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 문제 방지)
-        const year = selectedDate.getFullYear();
-        const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-        const day = String(selectedDate.getDate()).padStart(2, "0");
-        const dateStr = `${year}-${month}-${day}`;
-        const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
-        setBookedTimes(booked);
-      } catch (error) {
-        console.error("Failed to fetch booked times:", error);
-        setBookedTimes([]);
-      }
-    };
-
-    fetchBookedTimes();
-  }, [medicalState.selectedDoctorId, selectedDate]);
 
   // Handlers
   const handleNavSelect = useCallback(
@@ -702,9 +666,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           {selectedNav === "auction" && <AuctionView />}
           {selectedNav === "medical" && (
             <MedicalView
-              setShowAppointment={(v) =>
-                setMedicalState((p) => ({ ...p, showAppointment: v }))
-              }
               setShowChat={(v) =>
                 setMedicalState((p) => ({ ...p, showChat: v }))
               }
@@ -873,86 +834,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
                   },
                 ]);
                 setMedicalState((p) => ({ ...p, chatMessage: "" }));
-              }
-            }}
-          />
-        )}
-
-        {medicalState.showAppointment && (
-          <AppointmentDialog
-            open={medicalState.showAppointment}
-            onOpenChange={(v: boolean) =>
-              setMedicalState((p) => ({ ...p, showAppointment: v }))
-            }
-            availableDates={AVAILABLE_DATES}
-            availableTimes={AVAILABLE_TIMES}
-            bookedTimes={bookedTimes}
-            selectedDepartment={medicalState.selectedDepartment}
-            setSelectedDepartment={(v: string) =>
-              setMedicalState((p) => ({ ...p, selectedDepartment: v }))
-            }
-            selectedDoctorId={medicalState.selectedDoctorId}
-            setSelectedDoctorId={(v: string) =>
-              setMedicalState((p) => ({ ...p, selectedDoctorId: v }))
-            }
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            selectedTime={medicalState.selectedTime}
-            setSelectedTime={(v: string) =>
-              setMedicalState((p) => ({ ...p, selectedTime: v }))
-            }
-            onConfirm={async (doctorId: number, date: Date, time: string) => {
-              try {
-                // 날짜와 시간을 LocalDateTime 형식으로 변환
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, "0");
-                const day = String(date.getDate()).padStart(2, "0");
-                const [hours, minutes] = time.split(":");
-                const hoursStr = hours.padStart(2, "0");
-                const minutesStr = minutes.padStart(2, "0");
-                const dateTimeStr = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
-
-                // 백엔드 API 호출
-                const appointmentId = await appointmentApi.createAppointment({
-                  patientId: userId,
-                  doctorId: doctorId,
-                  date: dateTimeStr,
-                });
-
-                console.log("✅ 예약 생성 성공:", appointmentId);
-
-                // 예약 성공 메시지
-                toast.success(
-                  `${date.toLocaleDateString("ko-KR")} ${time} 예약이 완료되었습니다`
-                );
-
-                // 예약된 시간 목록 즉시 갱신
-                if (selectedDate) {
-                  const dateStr = `${year}-${month}-${day}`;
-                  const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
-                  setBookedTimes(booked);
-                }
-
-                return appointmentId;
-              } catch (error) {
-                console.error("❌ 예약 생성 실패:", error);
-                toast.error("예약 생성에 실패했습니다. 다시 시도해주세요.");
-                return undefined;
-              }
-            }}
-            onCancel={async (appointmentId: number) => {
-              await appointmentApi.cancelAppointment(appointmentId);
-              toast.success("예약이 취소되었습니다.");
-
-              // 예약된 시간 목록 즉시 갱신
-              if (medicalState.selectedDoctorId && selectedDate) {
-                const doctorId = parseInt(medicalState.selectedDoctorId);
-                const year = selectedDate.getFullYear();
-                const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-                const day = String(selectedDate.getDate()).padStart(2, "0");
-                const dateStr = `${year}-${month}-${day}`;
-                const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
-                setBookedTimes(booked);
               }
             }}
           />

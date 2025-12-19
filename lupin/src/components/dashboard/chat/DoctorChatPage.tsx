@@ -156,6 +156,36 @@ export default function DoctorChatPage() {
     loadChatRooms();
   }, [loadChatRooms]);
 
+  // 알림 클릭 시 채팅창 자동 오픈 (5분 전 알림)
+  useEffect(() => {
+    const handleOpenChat = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ appointmentId: number }>;
+      const { appointmentId } = customEvent.detail;
+
+      // appointmentId로 roomId 생성
+      const roomId = `appointment_${appointmentId}`;
+
+      // 채팅방 목록에서 해당 채팅방 찾기
+      const chatRoom = chatRooms.find((room) => room.roomId === roomId);
+
+      if (chatRoom && chatRoom.status === "IN_PROGRESS") {
+        // IN_PROGRESS 상태인 경우에만 채팅창 오픈
+        setActiveRoomId(roomId);
+        setSelectedChatMember({
+          id: chatRoom.patientId,
+          name: chatRoom.patientName,
+          profileImage: "",
+        });
+      }
+    };
+
+    window.addEventListener("openAppointmentChat", handleOpenChat);
+
+    return () => {
+      window.removeEventListener("openAppointmentChat", handleOpenChat);
+    };
+  }, [chatRooms]);
+
   // activeRoomId가 변경될 때마다 메시지를 새로 로드
   useEffect(() => {
     // roomId가 없으면 로드하지 않음

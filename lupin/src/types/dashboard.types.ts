@@ -41,6 +41,7 @@ export interface Comment {
   isDeleted?: boolean;
   likeCount?: number;
   isLiked?: boolean;
+  updatedAt?: string;
 }
 
 export interface Prescription {

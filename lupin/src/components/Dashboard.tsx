@@ -378,7 +378,11 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
 
       try {
         const doctorId = parseInt(medicalState.selectedDoctorId);
-        const dateStr = selectedDate.toISOString().split("T")[0]; // YYYY-MM-DD
+        // 로컬 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 문제 방지)
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+        const day = String(selectedDate.getDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
         const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
         setBookedTimes(booked);
       } catch (error) {
@@ -934,6 +938,13 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
                   `${date.toLocaleDateString("ko-KR")} ${time} 예약이 완료되었습니다`
                 );
 
+                // 예약된 시간 목록 즉시 갱신
+                if (selectedDate) {
+                  const dateStr = `${year}-${month}-${day}`;
+                  const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
+                  setBookedTimes(booked);
+                }
+
                 return appointmentId;
               } catch (error) {
                 console.error("❌ 예약 생성 실패:", error);
@@ -944,6 +955,17 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
             onCancel={async (appointmentId: number) => {
               await appointmentApi.cancelAppointment(appointmentId);
               toast.success("예약이 취소되었습니다.");
+
+              // 예약된 시간 목록 즉시 갱신
+              if (medicalState.selectedDoctorId && selectedDate) {
+                const doctorId = parseInt(medicalState.selectedDoctorId);
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+                const day = String(selectedDate.getDate()).padStart(2, "0");
+                const dateStr = `${year}-${month}-${day}`;
+                const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
+                setBookedTimes(booked);
+              }
             }}
           />
         )}

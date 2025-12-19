@@ -60,6 +60,14 @@ export const appointmentApi = {
   },
 
   /**
+   * 진료 완료
+   * PUT /api/appointment/{appointmentId}/complete
+   */
+  completeAppointment: async (appointmentId: number): Promise<void> => {
+    await apiClient.put(`/appointment/${appointmentId}/complete`);
+  },
+
+  /**
    * 특정 의사와 날짜의 예약된 시간 조회
    * GET /api/appointment/booked-times?doctorId={doctorId}&date={date}
    */

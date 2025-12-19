@@ -158,7 +158,11 @@ export default function DoctorChatPage() {
 
   // activeRoomId가 변경될 때마다 메시지를 새로 로드
   useEffect(() => {
-    if (!activeRoomId) return;
+    // roomId가 없거나 placeholder면 로드하지 않음
+    if (!activeRoomId || activeRoomId === "placeholder") {
+      setMessages([]);
+      return;
+    }
 
     const loadMessages = async () => {
       try {
@@ -191,12 +195,32 @@ export default function DoctorChatPage() {
     }
   }, [isConnected, activeRoomId, currentUserId, loadChatRooms]);
 
-  const handleFinishConsultation = () => {
-    if (!selectedChatMember) return;
-    toast.success(`${selectedChatMember.name}님의 진료가 완료되었습니다.`);
-    setSelectedChatMember(null);
-    setActiveRoomId(null);
-    setMessages([]);
+  const handleFinishConsultation = async () => {
+    if (!selectedChatMember || !activeRoomId) return;
+
+    if (!confirm(`${selectedChatMember.name}님의 진료를 종료하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      // roomId에서 appointmentId 추출 (appointment_123 -> 123)
+      const appointmentId = parseInt(activeRoomId.replace('appointment_', ''));
+
+      // 진료 완료 API 호출
+      const { appointmentApi } = await import('@/api');
+      await appointmentApi.completeAppointment(appointmentId);
+
+      toast.success(`${selectedChatMember.name}님의 진료가 완료되었습니다.`);
+      setSelectedChatMember(null);
+      setActiveRoomId(null);
+      setMessages([]);
+
+      // 채팅방 목록 갱신
+      await loadChatRooms();
+    } catch (error) {
+      console.error('진료 종료 실패:', error);
+      toast.error('진료 종료 중 오류가 발생했습니다.');
+    }
   };
 
   const handleSendDoctorChat = () => {
@@ -278,12 +302,12 @@ export default function DoctorChatPage() {
               </h3>
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
-                  {chatRooms.length === 0 ? (
+                  {chatRooms.filter(room => room.status === 'IN_PROGRESS').length === 0 ? (
                     <div className="text-center text-gray-500 py-8">
-                      채팅방이 없습니다
+                      진료 중인 환자가 없습니다
                     </div>
                   ) : (
-                    chatRooms.map((room) => {
+                    chatRooms.filter(room => room.status === 'IN_PROGRESS').map((room) => {
                       const isMyNameInList = room.patientName === "김민준";
                       const displayName = isMyNameInList
                         ? "김강민"

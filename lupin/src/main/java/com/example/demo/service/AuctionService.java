@@ -106,45 +106,44 @@ public class AuctionService {
         for (Auction auction : auctions) {
             List<AuctionBid> auctionBids = auctionBidRepository.findByAuctionId(auction.getId());
 
-            // 상태 변경 (ACTIVE -> ENDED) 및 우승자 확정
+            // 1. 메모리 상에서 상태 변경 (ACTIVE -> ENDED) 및 우승자 확정
             auction.deactivate(auctionBids);
 
-            // [수정된 부분] 낙찰자가 존재하면 포인트 차감 (이벤트 발행 없이 직접 처리)
+            // [수정된 부분] try-catch 블록 제거!
+            // 에러가 발생하면 즉시 예외가 전파되어 트랜잭션이 롤백되어야 합니다.
+            // 그래야 경매가 '종료' 상태로 저장되지 않고, 다음 스케줄러가 다시 시도할 수 있습니다.
             if (auction.getWinner() != null) {
-                try {
-                    User winner = auction.getWinner();
-                    Long price = auction.getCurrentPrice();
+                User winner = auction.getWinner();
+                Long price = auction.getCurrentPrice();
 
-                    // 1. 유저 포인트 직접 차감
-                    winner.deductPoints(price);
+                // 2. 유저 포인트 직접 차감 (여기서 에러 나면 바로 롤백됨)
+                winner.deductPoints(price);
 
-                    // 2. 변경된 유저 정보 저장
-                    userRepository.save(winner);
+                // 3. 변경된 유저 정보 저장
+                userRepository.save(winner);
 
-                    // 3. 포인트 로그 직접 생성 및 저장 (PointService를 안 거치므로 이벤트 발생 X)
-                    PointLog pointLog = PointLog.builder()
-                            .user(winner)
-                            .points(-price) // 사용이므로 음수
-                            .type(PointType.USE)
-                            .build();
-                    pointLogRepository.save(pointLog);
+                // 4. 포인트 로그 직접 생성 및 저장
+                PointLog pointLog = PointLog.builder()
+                        .user(winner)
+                        .points(-price) // 사용이므로 음수
+                        .type(PointType.USE)
+                        .build();
+                pointLogRepository.save(pointLog);
 
-                    log.info("경매 ID {} 낙찰 -> 사용자 {} 포인트 차감 완료 (금액: {})",
-                            auction.getId(), winner.getId(), price);
+                log.info("경매 ID {} 낙찰 -> 사용자 {} 포인트 차감 완료 (금액: {})",
+                        auction.getId(), winner.getId(), price);
 
-                    eventPublisher.publishEvent(NotificationEvent.auctionWin(
-                            winner.getId(),
-                            auction.getId(),
-                            auction.getAuctionItem().getItemName(), // 물품 이름
-                            price
-                    ));
-
-                } catch (Exception e) {
-                    log.error("경매 ID {} 포인트 차감 중 오류 발생: {}", auction.getId(), e.getMessage());
-                }
+                // 5. 알림 전송 (여기서 에러 나도 롤백되어 재발송 시도 가능)
+                eventPublisher.publishEvent(NotificationEvent.auctionWin(
+                        winner.getId(),
+                        auction.getId(),
+                        auction.getAuctionItem().getItemName(), // 물품 이름
+                        price
+                ));
             }
 
-            // 변경 사항 DB 반영
+            // 6. 변경 사항 DB 반영
+            // 위 과정에서 하나라도 에러가 나면 이 코드는 실행되지 않고 롤백됩니다.
             auctionRepository.saveAndFlush(auction);
             log.info("경매 ID {} -> 종료(ENDED) 처리 완료", auction.getId());
         }

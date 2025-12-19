@@ -27,6 +27,8 @@ interface AppointmentDialogProps {
   bookedTimes: string[];
   selectedDepartment: string;
   setSelectedDepartment: (dept: string) => void;
+  selectedDoctorId: string;
+  setSelectedDoctorId: (doctorId: string) => void;
   selectedDate: Date | undefined;
   setSelectedDate: (date: Date | undefined) => void;
   selectedTime: string;
@@ -43,6 +45,8 @@ export default function AppointmentDialog({
   bookedTimes,
   selectedDepartment,
   setSelectedDepartment,
+  selectedDoctorId,
+  setSelectedDoctorId,
   selectedDate,
   setSelectedDate,
   selectedTime,
@@ -52,7 +56,6 @@ export default function AppointmentDialog({
 }: AppointmentDialogProps) {
   // --- 상태 관리 ---
   const [step, setStep] = useState<1 | "success">(1);
-  const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdAppointmentId, setCreatedAppointmentId] = useState<number | null>(null);
 
@@ -82,7 +85,7 @@ export default function AppointmentDialog({
       }, 200); // 애니메이션 이후 초기화
       return () => clearTimeout(timer);
     }
-  }, [open, setSelectedDepartment, setSelectedDate, setSelectedTime]);
+  }, [open, setSelectedDepartment, setSelectedDoctorId, setSelectedDate, setSelectedTime]);
 
   // 선택된 정보 객체 찾기 (화면 표시용)
   const selectedDept = departments.find((d) => d.id === selectedDepartment);

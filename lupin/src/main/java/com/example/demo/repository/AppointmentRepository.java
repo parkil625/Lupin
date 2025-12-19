@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Appointment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -62,4 +63,10 @@ List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patien
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    // 예약 시간이 5분 전인 예약들의 상태를 일괄적으로 진료 중(IN_PROGRESS)로 변경
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Appointment a SET a.status = 'IN_PROGRESS' " +
+       "WHERE a.status = 'SCHEDULED' AND a.date <= :thresholdTime")
+       int bulkUpdateStatusToInProgress(@Param("thresholdTime") LocalDateTime thresholdTime);
 }

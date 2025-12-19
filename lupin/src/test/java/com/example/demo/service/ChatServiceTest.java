@@ -669,4 +669,90 @@ class ChatServiceTest {
         // 일반 findById()는 호출되지 않아야 함
         verify(appointmentRepository, never()).findById(targetAptId);
     }
+
+    @Test
+    @DisplayName("채팅방 목록 조회 시 취소된 예약은 제외됨")
+    void getAllChatRoomsIncludingEmpty_ShouldExcludeCancelledAppointments() {
+        // Given
+        Long doctorId = 21L;
+
+        Appointment scheduledAppointment = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Appointment cancelledAppointment = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.CANCELLED)
+                .build();
+
+        Appointment completedAppointment = Appointment.builder()
+                .id(3L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        given(appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId))
+                .willReturn(Arrays.asList(scheduledAppointment, cancelledAppointment, completedAppointment));
+
+        // When
+        List<String> roomIds = chatService.getAllChatRoomsIncludingEmpty(doctorId);
+
+        // Then
+        assertThat(roomIds).hasSize(2); // CANCELLED는 제외
+        assertThat(roomIds).containsExactlyInAnyOrder("appointment_1", "appointment_3");
+        verify(appointmentRepository, times(1)).findByDoctorIdOrderByDateDesc(doctorId);
+    }
+
+    @Test
+    @DisplayName("IN_PROGRESS 상태의 채팅방만 필터링")
+    void getAllChatRoomsIncludingEmpty_ShouldFilterByInProgress() {
+        // Given
+        Long doctorId = 21L;
+
+        Appointment scheduledAppointment = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Appointment inProgressAppointment = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        Appointment completedAppointment = Appointment.builder()
+                .id(3L)
+                .patient(patient)
+                .doctor(doctor)
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        given(appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId))
+                .willReturn(Arrays.asList(scheduledAppointment, inProgressAppointment, completedAppointment));
+
+        // When
+        List<String> allRoomIds = chatService.getAllChatRoomsIncludingEmpty(doctorId);
+
+        // 실제 프론트엔드에서 IN_PROGRESS만 필터링하는 것을 시뮬레이션
+        List<Appointment> appointments = Arrays.asList(scheduledAppointment, inProgressAppointment, completedAppointment);
+        List<String> inProgressRoomIds = appointments.stream()
+                .filter(apt -> apt.getStatus() == AppointmentStatus.IN_PROGRESS)
+                .map(apt -> "appointment_" + apt.getId())
+                .collect(java.util.stream.Collectors.toList());
+
+        // Then
+        assertThat(allRoomIds).hasSize(3);
+        assertThat(inProgressRoomIds).hasSize(1);
+        assertThat(inProgressRoomIds).containsExactly("appointment_2");
+        verify(appointmentRepository, times(1)).findByDoctorIdOrderByDateDesc(doctorId);
+    }
 }

@@ -142,7 +142,7 @@ export default function DoctorChatPage() {
   );
 
   const { isConnected, sendMessage: sendWebSocketMessage } = useWebSocket({
-    roomId: activeRoomId || "placeholder",
+    roomId: activeRoomId || "",
     userId: currentUserId,
     onMessageReceived: handleMessageReceived,
   });
@@ -158,8 +158,8 @@ export default function DoctorChatPage() {
 
   // activeRoomId가 변경될 때마다 메시지를 새로 로드
   useEffect(() => {
-    // roomId가 없거나 placeholder면 로드하지 않음
-    if (!activeRoomId || activeRoomId === "placeholder") {
+    // roomId가 없으면 로드하지 않음
+    if (!activeRoomId) {
       setMessages([]);
       return;
     }
@@ -181,7 +181,7 @@ export default function DoctorChatPage() {
 
   // 읽음 처리 로직
   useEffect(() => {
-    if (isConnected && activeRoomId && activeRoomId !== "placeholder") {
+    if (isConnected && activeRoomId) {
       const markMessagesAsRead = async () => {
         try {
           await chatApi.markAsRead(activeRoomId, currentUserId);
@@ -233,7 +233,7 @@ export default function DoctorChatPage() {
 
   // 입력창 포커스 시 읽음 처리
   const handleInputFocus = async () => {
-    if (activeRoomId && activeRoomId !== "placeholder") {
+    if (activeRoomId) {
       try {
         await chatApi.markAsRead(activeRoomId, currentUserId);
         await loadChatRooms();

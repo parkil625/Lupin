@@ -12,6 +12,9 @@ export const useNotificationSse = ({
 }: UseNotificationSseProps) => {
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const isConnectedRef = useRef(false);
+  const lastConnectTimeRef = useRef<number>(0);
   // 콜백을 ref로 저장하여 의존성 문제 해결
   const onNotificationReceivedRef = useRef(onNotificationReceived);
 
@@ -30,7 +33,7 @@ export const useNotificationSse = ({
 
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      console.log('[SSE] 토큰 없음, 연결 스킵');
+      // 토큰 없을 때는 로그 출력하지 않음 (로그인 전 정상 상태)
       return;
     }
 
@@ -39,13 +42,23 @@ export const useNotificationSse = ({
     const baseUrl = isLocal ? 'http://localhost:8081' : window.location.origin;
     const sseUrl = `${baseUrl}/api/notifications/subscribe?token=${encodeURIComponent(token)}`;
 
-    console.log('[SSE] 연결 시도');
+    // 개발 환경에서만 최초 연결 시도 로그 출력
+    if (isLocal && reconnectAttemptsRef.current === 0) {
+      console.log('[SSE] 연결 시도');
+    }
 
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
 
-    eventSource.addEventListener('connect', (event) => {
-      console.log('[SSE] 연결 성공:', event.data);
+    eventSource.addEventListener('connect', () => {
+      isConnectedRef.current = true;
+      reconnectAttemptsRef.current = 0; // 연결 성공 시 재시도 카운터 리셋
+      lastConnectTimeRef.current = Date.now();
+
+      // 개발 환경에서만 최초 연결 성공 로그 출력
+      if (isLocal && lastConnectTimeRef.current - (lastConnectTimeRef.current || 0) > 60000) {
+        console.log('[SSE] 연결 성공');
+      }
     });
 
     // Heartbeat 이벤트 (연결 유지용, 로그 생략)
@@ -56,6 +69,7 @@ export const useNotificationSse = ({
     eventSource.addEventListener('notification', (event) => {
       try {
         const notification: Notification = JSON.parse(event.data);
+        // 알림 수신 시에만 로그 출력 (중요한 이벤트)
         console.log('[SSE] 알림 수신:', notification);
         onNotificationReceivedRef.current(notification);
       } catch (error) {
@@ -64,16 +78,36 @@ export const useNotificationSse = ({
     });
 
     eventSource.onerror = () => {
-      // SSE 연결 끊김은 정상적인 동작 (서버/로드밸런서 타임아웃)
-      console.log('[SSE] 연결 끊김, 5초 후 재연결...');
+      const wasConnected = isConnectedRef.current;
+      isConnectedRef.current = false;
+
       eventSource.close();
       eventSourceRef.current = null;
 
-      // 5초 후 재연결 시도
+      // 정상적인 타임아웃 재연결은 로그 출력하지 않음
+      // 연결 실패가 3회 이상 반복되는 경우에만 경고 로그 출력
+      if (!wasConnected) {
+        reconnectAttemptsRef.current += 1;
+
+        if (reconnectAttemptsRef.current >= 3) {
+          console.warn('[SSE] 연결 실패 반복 중 (재시도 자동 진행)');
+          // 3회 이후부터는 카운터를 리셋하여 중복 로그 방지
+          reconnectAttemptsRef.current = 0;
+        }
+      }
+
+      // 재연결 대기 시간: Exponential backoff
+      const baseDelay = 5000; // 5초
+      const maxDelay = 30000; // 최대 30초
+      const delay = Math.min(
+        baseDelay * Math.pow(1.5, reconnectAttemptsRef.current),
+        maxDelay
+      );
+
+      // 재연결 시도 (로그 없이)
       reconnectTimeoutRef.current = setTimeout(() => {
-        console.log('[SSE] 재연결 시도...');
         connect();
-      }, 5000);
+      }, delay);
     };
   }, [enabled]);
 
@@ -86,7 +120,7 @@ export const useNotificationSse = ({
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
-      console.log('[SSE] 연결 해제');
+      // 연결 해제 로그 제거 (정상적인 동작)
     }
   }, []);
 

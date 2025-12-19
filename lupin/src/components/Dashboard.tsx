@@ -247,25 +247,8 @@ function useDashboardLogic(
           // 의사: 채팅 페이지로 직접 이동
           navigateFn("/dashboard/chat");
         } else {
-          // 환자: 예약 내역 페이지로 이동하고 채팅 자동 오픈
-          navigateFn("/dashboard/appointments");
-
-          // 예약 페이지 로드 후 채팅 자동 오픈을 위한 상태 전달
-          setTimeout(async () => {
-            try {
-              const available = await appointmentApi.isChatAvailable(refId);
-              if (available) {
-                // AppointmentsPage에서 자동으로 채팅을 열 수 있도록 이벤트 발생
-                window.dispatchEvent(
-                  new CustomEvent("openAppointmentChat", {
-                    detail: { appointmentId: refId },
-                  })
-                );
-              }
-            } catch (error) {
-              console.error("채팅 가능 여부 확인 실패:", error);
-            }
-          }, 500);
+          // 환자: Medical 페이지로 이동 (진료 예약 페이지)
+          navigateFn("/dashboard/medical");
         }
       }
     },

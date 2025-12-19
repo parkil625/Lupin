@@ -100,6 +100,8 @@ export function FeedDetailContent({
   const [commentReported, setCommentReported] = useState<
     Record<number, boolean>
   >({});
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentText, setEditCommentText] = useState("");
 
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
@@ -387,6 +389,50 @@ export function FeedDetailContent({
     }
   };
 
+  const startEdit = (id: number, content: string) => {
+    setEditingCommentId(id);
+    setEditCommentText(content);
+  };
+  const cancelEdit = () => {
+    setEditingCommentId(null);
+    setEditCommentText("");
+  };
+  const handleUpdateComment = async (commentId: number) => {
+    if (!editCommentText.trim()) return;
+    try {
+      await commentApi.updateComment(commentId, editCommentText);
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === commentId)
+            return {
+              ...c,
+              content: editCommentText,
+              updatedAt: new Date().toISOString(),
+            };
+          if (c.replies) {
+            return {
+              ...c,
+              replies: c.replies.map((r) =>
+                r.id === commentId
+                  ? {
+                      ...r,
+                      content: editCommentText,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : r
+              ),
+            };
+          }
+          return c;
+        })
+      );
+      cancelEdit();
+      toast.success("댓글이 수정되었습니다.");
+    } catch {
+      toast.error("댓글 수정에 실패했습니다.");
+    }
+  };
+
   const handleReportComment = async (commentId: number) => {
     try {
       await reportApi.reportComment(commentId);
@@ -446,9 +492,44 @@ export function FeedDetailContent({
                   </span>
                   <span className="text-xs text-gray-900">{comment.time}</span>
                 </div>
-                <p className="text-sm text-gray-900 break-words mb-2">
-                  {comment.content}
-                </p>
+                {editingCommentId === comment.id ? (
+                  <div className="mb-2">
+                    <input
+                      type="text"
+                      value={editCommentText}
+                      onChange={(e) => setEditCommentText(e.target.value)}
+                      className="w-full py-1 text-sm border-b-2 border-[#C93831] outline-none bg-transparent"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleUpdateComment(comment.id);
+                        if (e.key === "Escape") cancelEdit();
+                      }}
+                    />
+                    <div className="flex gap-2 mt-1 justify-end">
+                      <button
+                        onClick={cancelEdit}
+                        className="text-xs text-gray-500"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={() => handleUpdateComment(comment.id)}
+                        className="text-xs text-[#C93831] font-bold"
+                      >
+                        저장
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-900 break-words mb-2">
+                    {comment.content}
+                    {comment.updatedAt && (
+                      <span className="text-xs text-gray-400 ml-1">
+                        (수정됨)
+                      </span>
+                    )}
+                  </p>
+                )}
 
                 <div className="flex items-center gap-4 mb-2">
                   <button
@@ -480,13 +561,22 @@ export function FeedDetailContent({
                       답글
                     </button>
                   )}
+
                   {comment.author === currentUserName && (
-                    <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="text-xs text-gray-600 hover:text-red-500 font-semibold"
-                    >
-                      삭제
-                    </button>
+                    <>
+                      <button
+                        onClick={() => startEdit(comment.id, comment.content)}
+                        className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
+                      >
+                        삭제
+                      </button>
+                    </>
                   )}
                   {comment.author !== currentUserName && (
                     <button

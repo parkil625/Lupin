@@ -49,6 +49,7 @@ interface BackendComment {
   createdAt: string;
   likeCount?: number;
   isLiked?: boolean;
+  updatedAt?: string;
   [key: string]: unknown;
 }
 import {
@@ -102,6 +103,8 @@ export default function FeedDetailDialogHome({
   const [commentReported, setCommentReported] = useState<{
     [key: number]: boolean;
   }>({});
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentText, setEditCommentText] = useState("");
 
   // 현재 사용자 정보
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
@@ -504,6 +507,55 @@ export default function FeedDetailDialogHome({
     }
   };
 
+  // [수정 기능 핸들러 추가]
+  const startEdit = (id: number, content: string) => {
+    setEditingCommentId(id);
+    setEditCommentText(content);
+  };
+
+  const cancelEdit = () => {
+    setEditingCommentId(null);
+    setEditCommentText("");
+  };
+
+  const handleUpdateComment = async (commentId: number) => {
+    if (!editCommentText.trim()) return;
+    try {
+      await commentApi.updateComment(commentId, editCommentText);
+      setComments((prev) =>
+        prev.map((c) => {
+          // 댓글 본문 업데이트 & 수정됨 표시를 위한 updatedAt 갱신
+          if (c.id === commentId)
+            return {
+              ...c,
+              content: editCommentText,
+              updatedAt: new Date().toISOString(),
+            };
+          // 답글인 경우 처리
+          if (c.replies) {
+            return {
+              ...c,
+              replies: c.replies.map((r) =>
+                r.id === commentId
+                  ? {
+                      ...r,
+                      content: editCommentText,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  : r
+              ),
+            };
+          }
+          return c;
+        })
+      );
+      cancelEdit();
+      toast.success("댓글이 수정되었습니다.");
+    } catch {
+      toast.error("댓글 수정에 실패했습니다.");
+    }
+  };
+
   // 댓글 렌더링 함수 (재귀적으로 대댓글 표시)
   const renderComment = (comment: Comment, depth: number = 0) => {
     const isReply = depth > 0;
@@ -543,9 +595,46 @@ export default function FeedDetailDialogHome({
                       {comment.time}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-900 break-words mb-2">
-                    {comment.content}
-                  </p>
+                  {/* [수정 기능 UI 교체] */}
+                  {editingCommentId === comment.id ? (
+                    <div className="mb-2">
+                      <input
+                        type="text"
+                        value={editCommentText}
+                        onChange={(e) => setEditCommentText(e.target.value)}
+                        className="w-full py-1 text-sm border-b-2 border-[#C93831] outline-none bg-transparent"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter")
+                            handleUpdateComment(comment.id);
+                          if (e.key === "Escape") cancelEdit();
+                        }}
+                      />
+                      <div className="flex gap-2 mt-1 justify-end">
+                        <button
+                          onClick={cancelEdit}
+                          className="text-xs text-gray-500 hover:text-gray-700"
+                        >
+                          취소
+                        </button>
+                        <button
+                          onClick={() => handleUpdateComment(comment.id)}
+                          className="text-xs text-[#C93831] font-bold"
+                        >
+                          저장
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-900 break-words mb-2">
+                      {comment.content}
+                      {comment.updatedAt && (
+                        <span className="text-xs text-gray-400 ml-1">
+                          (수정됨)
+                        </span>
+                      )}
+                    </p>
+                  )}
                   <div className="flex items-center gap-4 mb-2">
                     <button
                       onClick={() => toggleCommentLike(comment.id)}
@@ -577,12 +666,20 @@ export default function FeedDetailDialogHome({
                       </button>
                     )}
                     {comment.author === currentUserName && (
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
-                      >
-                        삭제
-                      </button>
+                      <>
+                        <button
+                          onClick={() => startEdit(comment.id, comment.content)}
+                          className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
+                        >
+                          삭제
+                        </button>
+                      </>
                     )}
                     {comment.author !== currentUserName && (
                       <button

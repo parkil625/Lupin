@@ -846,6 +846,17 @@ export default function Medical({
                         onClick={async () => {
                           if (!lastCreatedAppointment) return;
 
+                          // 1시간 전 체크
+                          const appointmentDateTime = new Date(`${lastCreatedAppointment.date} ${lastCreatedAppointment.time}`);
+                          const now = new Date();
+                          const diffInMs = appointmentDateTime.getTime() - now.getTime();
+                          const oneHourInMs = 60 * 60 * 1000;
+
+                          if (diffInMs <= oneHourInMs && diffInMs > 0) {
+                            toast.error("곧 진료 시간이라 변경이 불가능합니다!");
+                            return;
+                          }
+
                           try {
                             // 방금 생성한 예약 취소
                             const latestAppointment = appointments.find(
@@ -880,6 +891,17 @@ export default function Medical({
                       <Button
                         onClick={async () => {
                           if (!lastCreatedAppointment) return;
+
+                          // 1시간 전 체크
+                          const appointmentDateTime = new Date(`${lastCreatedAppointment.date} ${lastCreatedAppointment.time}`);
+                          const now = new Date();
+                          const diffInMs = appointmentDateTime.getTime() - now.getTime();
+                          const oneHourInMs = 60 * 60 * 1000;
+
+                          if (diffInMs <= oneHourInMs && diffInMs > 0) {
+                            toast.error("곧 진료 시간이라 취소가 불가능합니다!");
+                            return;
+                          }
 
                           if (!confirm("예약을 취소하시겠습니까?")) return;
 

@@ -968,6 +968,11 @@ const FeedItem = React.memo(function FeedItem({
               <Badge className="bg-slate-50 text-slate-500 font-medium border border-slate-200">
                 <Clock className="w-3 h-3 mr-1" />
                 {feed.time}
+                {feed.updatedAt && (
+                  <span className="ml-1 text-[10px] text-slate-400">
+                    (수정됨)
+                  </span>
+                )}
               </Badge>
             </div>
 

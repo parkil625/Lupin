@@ -59,7 +59,10 @@ export function FeedCard({
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onImageIndexChange(feed.id, Math.min(feed.images.length - 1, currentImageIndex + 1));
+    onImageIndexChange(
+      feed.id,
+      Math.min(feed.images.length - 1, currentImageIndex + 1)
+    );
   };
 
   return (
@@ -76,7 +79,9 @@ export function FeedCard({
             {hasImages ? (
               <>
                 <img
-                  src={getCdnUrl(feed.images[currentImageIndex] || feed.images[0])}
+                  src={getCdnUrl(
+                    feed.images[currentImageIndex] || feed.images[0]
+                  )}
                   alt={feed.activity}
                   className="w-full h-full object-cover"
                 />
@@ -89,7 +94,11 @@ export function FeedCard({
                         onClick={handlePrevImage}
                         className="absolute left-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
                       >
-                        <ChevronLeft className={`w-8 h-8 ${iconColor === "white" ? "text-white" : "text-black"}`} />
+                        <ChevronLeft
+                          className={`w-8 h-8 ${
+                            iconColor === "white" ? "text-white" : "text-black"
+                          }`}
+                        />
                       </button>
                     )}
                     {currentImageIndex < feed.images.length - 1 && (
@@ -97,7 +106,11 @@ export function FeedCard({
                         onClick={handleNextImage}
                         className="absolute right-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
                       >
-                        <ChevronRight className={`w-8 h-8 ${iconColor === "white" ? "text-white" : "text-black"}`} />
+                        <ChevronRight
+                          className={`w-8 h-8 ${
+                            iconColor === "white" ? "text-white" : "text-black"
+                          }`}
+                        />
                       </button>
                     )}
                     {/* 인디케이터 */}
@@ -106,7 +119,9 @@ export function FeedCard({
                         <div
                           key={idx}
                           className={`w-1.5 h-1.5 rounded-full ${
-                            idx === currentImageIndex ? "bg-white" : "bg-white/50"
+                            idx === currentImageIndex
+                              ? "bg-white"
+                              : "bg-white/50"
                           }`}
                         />
                       ))}
@@ -147,7 +162,11 @@ export function FeedCard({
                     }`}
                   />
                 </div>
-                <span className={`text-xs font-bold ${iconColor === "white" ? "text-white" : "text-black"}`}>
+                <span
+                  className={`text-xs font-bold ${
+                    iconColor === "white" ? "text-white" : "text-black"
+                  }`}
+                >
                   {feed.likes}
                 </span>
               </button>
@@ -157,9 +176,17 @@ export function FeedCard({
                 className="flex flex-col items-center gap-1 group"
               >
                 <div className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
-                  <MessageCircle className={`w-6 h-6 ${iconColor === "white" ? "text-white" : "text-black"}`} />
+                  <MessageCircle
+                    className={`w-6 h-6 ${
+                      iconColor === "white" ? "text-white" : "text-black"
+                    }`}
+                  />
                 </div>
-                <span className={`text-xs font-bold ${iconColor === "white" ? "text-white" : "text-black"}`}>
+                <span
+                  className={`text-xs font-bold ${
+                    iconColor === "white" ? "text-white" : "text-black"
+                  }`}
+                >
                   {feed.comments}
                 </span>
               </button>
@@ -174,9 +201,7 @@ export function FeedCard({
         </div>
 
         {/* 댓글 패널 */}
-        {showComments && (
-          <FeedCommentSection feedId={feed.id} />
-        )}
+        {showComments && <FeedCommentSection feedId={feed.id} />}
       </div>
     </div>
   );
@@ -201,8 +226,10 @@ function FeedBadges({ feed }: { feed: Feed }) {
       </div>
       <div className="flex items-center gap-1.5 flex-shrink-0">
         <Badge className="bg-white text-gray-700 px-3 py-1 font-bold text-xs flex items-center gap-1 border-0">
-          {feed.updatedAt && <Pencil className="w-3 h-3" />}
           {feed.time}
+          {feed.updatedAt && (
+            <span className="text-gray-400 font-normal ml-1">(수정됨)</span>
+          )}
         </Badge>
       </div>
     </div>

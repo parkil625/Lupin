@@ -141,6 +141,15 @@ export default function AppointmentDialog({
     setIsSubmitting(true);
     try {
       await onCancel(createdAppointmentId);
+
+      // 예약 취소 후 폼 초기화
+      setStep(1);
+      setSelectedDepartment("");
+      setSelectedDoctorId("");
+      setSelectedDate(undefined);
+      setSelectedTime("");
+      setCreatedAppointmentId(null);
+
       onOpenChange(false);
     } catch (error) {
       console.error("예약 취소 실패:", error);

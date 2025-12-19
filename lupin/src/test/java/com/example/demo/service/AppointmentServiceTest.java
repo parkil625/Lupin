@@ -20,7 +20,9 @@ import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +58,9 @@ class AppointmentServiceTest {
 
     @InjectMocks
     private AppointmentService appointmentService;
+
+    @Mock
+    private org.springframework.data.redis.core.ListOperations<String, String> listOperations;
 
     private User patient;
     private User doctor;
@@ -193,5 +198,166 @@ class AppointmentServiceTest {
         assertThat(result.get(0).getId()).isEqualTo(2L);
         assertThat(result.get(1).getId()).isEqualTo(1L);
         verify(appointmentRepository, times(1)).findByPatientIdOrderByDateDesc(patientId);
+    }
+
+    @Test
+    @DisplayName("예약 취소 시 상태가 CANCELLED로 변경됨")
+    void cancelAppointment_ShouldChangeStatusToCancelled() {
+        // Given
+        Long appointmentId = 1L;
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(appointment));
+
+        // When
+        appointmentService.cancelAppointment(appointmentId);
+
+        // Then
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+        // Redis 캐시 무효화는 트랜잭션 커밋 후 실행되므로 단위 테스트에서는 검증하지 않음
+    }
+
+    @Test
+    @DisplayName("이미 취소된 예약은 다시 취소할 수 없음")
+    void cancelAppointment_ShouldThrowExceptionWhenAlreadyCancelled() {
+        // Given
+        Long appointmentId = 1L;
+        Appointment cancelledAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.CANCELLED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(cancelledAppointment));
+
+        // When & Then
+        assertThatThrownBy(() -> appointmentService.cancelAppointment(appointmentId))
+                .isInstanceOf(Exception.class);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
+
+    @Test
+    @DisplayName("완료된 예약은 취소할 수 없음")
+    void cancelAppointment_ShouldThrowExceptionWhenCompleted() {
+        // Given
+        Long appointmentId = 1L;
+        Appointment completedAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(completedAppointment));
+
+        // When & Then
+        assertThatThrownBy(() -> appointmentService.cancelAppointment(appointmentId))
+                .isInstanceOf(Exception.class);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
+
+    @Test
+    @DisplayName("예약된 시간 조회 - 캐시 미스 시 DB에서 조회")
+    void getBookedTimesByDoctorAndDate_ShouldFetchFromDbWhenCacheMiss() {
+        // Given
+        Long doctorId = 21L;
+        LocalDate date = LocalDate.of(2025, 12, 1);
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        Appointment appointment1 = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 10, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Appointment appointment2 = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        given(redisTemplate.opsForList()).willReturn(listOperations);
+        given(listOperations.size(anyString())).willReturn(null); // 캐시 미스
+        given(appointmentRepository.findByDoctorIdAndDateBetween(doctorId, startOfDay, endOfDay))
+                .willReturn(Arrays.asList(appointment1, appointment2));
+
+        // When
+        List<String> bookedTimes = appointmentService.getBookedTimesByDoctorAndDate(doctorId, date);
+
+        // Then
+        assertThat(bookedTimes).hasSize(2);
+        assertThat(bookedTimes).containsExactly("10:00", "14:00");
+        verify(appointmentRepository, times(1)).findByDoctorIdAndDateBetween(doctorId, startOfDay, endOfDay);
+        verify(listOperations, times(1)).rightPushAll(anyString(), anyList());
+    }
+
+    @Test
+    @DisplayName("예약된 시간 조회 - 캐시 히트")
+    void getBookedTimesByDoctorAndDate_ShouldReturnFromCacheWhenCacheHit() {
+        // Given
+        Long doctorId = 21L;
+        LocalDate date = LocalDate.of(2025, 12, 1);
+        List<String> cachedTimes = Arrays.asList("10:00", "14:00");
+
+        given(redisTemplate.opsForList()).willReturn(listOperations);
+        given(listOperations.size(anyString())).willReturn(2L);
+        given(listOperations.range(anyString(), eq(0L), eq(-1L))).willReturn(cachedTimes);
+
+        // When
+        List<String> bookedTimes = appointmentService.getBookedTimesByDoctorAndDate(doctorId, date);
+
+        // Then
+        assertThat(bookedTimes).hasSize(2);
+        assertThat(bookedTimes).containsExactly("10:00", "14:00");
+        verify(appointmentRepository, never()).findByDoctorIdAndDateBetween(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("예약된 시간 조회 - 취소된 예약은 제외")
+    void getBookedTimesByDoctorAndDate_ShouldExcludeCancelledAppointments() {
+        // Given
+        Long doctorId = 21L;
+        LocalDate date = LocalDate.of(2025, 12, 1);
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        Appointment scheduledAppointment = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 10, 0))
+                .status(AppointmentStatus.SCHEDULED)
+                .build();
+
+        Appointment cancelledAppointment = Appointment.builder()
+                .id(2L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.CANCELLED)
+                .build();
+
+        given(redisTemplate.opsForList()).willReturn(listOperations);
+        given(listOperations.size(anyString())).willReturn(null);
+        given(appointmentRepository.findByDoctorIdAndDateBetween(doctorId, startOfDay, endOfDay))
+                .willReturn(Arrays.asList(scheduledAppointment, cancelledAppointment));
+
+        // When
+        List<String> bookedTimes = appointmentService.getBookedTimesByDoctorAndDate(doctorId, date);
+
+        // Then
+        assertThat(bookedTimes).hasSize(1);
+        assertThat(bookedTimes).containsExactly("10:00");
+        verify(appointmentRepository, times(1)).findByDoctorIdAndDateBetween(doctorId, startOfDay, endOfDay);
     }
 }

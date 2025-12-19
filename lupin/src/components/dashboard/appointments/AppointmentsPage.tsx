@@ -4,6 +4,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Calendar as CalendarIcon,
   FileText,
   MessageCircle,
@@ -24,6 +31,7 @@ export default function AppointmentsPage({
   const [selectedAppointment, setSelectedAppointment] =
     useState<AppointmentResponse | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   // 예약 목록 불러오기
   useEffect(() => {
@@ -98,12 +106,15 @@ export default function AppointmentsPage({
     try {
       await appointmentApi.cancelAppointment(appointmentId);
 
-      // 상태 업데이트: 목록에서 즉시 반영
-      setAppointments((prev) =>
-        prev.map((apt) =>
-          apt.id === appointmentId ? { ...apt, status: "CANCELLED" } : apt
-        )
-      );
+      // 상태 업데이트: 서버에서 최신 목록 다시 가져오기
+      let data: AppointmentResponse[] = [];
+      if (currentUser.role === "DOCTOR") {
+        data = await appointmentApi.getDoctorAppointments(currentUser.id);
+      } else if (currentUser.role === "PATIENT") {
+        data = await appointmentApi.getPatientAppointments(currentUser.id);
+      }
+      setAppointments(data);
+
       // alert보다는 toast 사용을 권장하지만 여기선 기존 로직 유지
       alert("예약이 성공적으로 취소되었습니다.");
     } catch (error) {
@@ -128,25 +139,56 @@ export default function AppointmentsPage({
     }
   };
 
+  // 상태 필터에 따라 예약 목록 필터링
+  const filteredAppointments = appointments.filter((apt) => {
+    if (statusFilter === "ALL") return true;
+    if (statusFilter === "SCHEDULED") return apt.status === "SCHEDULED";
+    if (statusFilter === "IN_PROGRESS_OR_COMPLETED")
+      return apt.status === "IN_PROGRESS" || apt.status === "COMPLETED";
+    if (statusFilter === "CANCELLED") return apt.status === "CANCELLED";
+    return true;
+  });
+
   return (
     <div className="h-full overflow-auto p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-5xl font-black text-gray-900 mb-2">예약 관리</h1>
-          <p className="text-gray-700 font-medium text-lg">
-            {currentUser.role === "DOCTOR"
-              ? "담당 환자 예약 현황"
-              : "내 진료 예약 현황"}
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-5xl font-black text-gray-900 mb-2">
+              예약 관리
+            </h1>
+            <p className="text-gray-700 font-medium text-lg">
+              {currentUser.role === "DOCTOR"
+                ? "담당 환자 예약 현황"
+                : "내 진료 예약 현황"}
+            </p>
+          </div>
+          <div className="min-w-[200px]">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="rounded-xl h-11 bg-white border-gray-200 shadow-sm">
+                <SelectValue placeholder="전체 예약" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">전체 예약</SelectItem>
+                <SelectItem value="SCHEDULED">예약된 진료</SelectItem>
+                <SelectItem value="IN_PROGRESS_OR_COMPLETED">
+                  진행 중/완료된 진료
+                </SelectItem>
+                <SelectItem value="CANCELLED">취소된 진료</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {appointments.length === 0 ? (
+        {filteredAppointments.length === 0 ? (
           <div className="text-center py-20 text-gray-500 bg-white/50 rounded-2xl border border-dashed border-gray-300">
-            예정된 예약이 없습니다.
+            {statusFilter === "ALL"
+              ? "예정된 예약이 없습니다."
+              : "해당 조건의 예약이 없습니다."}
           </div>
         ) : (
           <div className="grid lg:grid-cols-2 gap-6">
-            {appointments.map((apt) => {
+            {filteredAppointments.map((apt) => {
               const badge = getStatusBadge(apt.status);
 
               return (

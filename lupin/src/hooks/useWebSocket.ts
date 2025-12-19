@@ -19,6 +19,12 @@ export const useWebSocket = ({
     const clientRef = useRef<Client | null>(null);
 
     useEffect(() => {
+        // roomId가 없으면 WebSocket 연결하지 않음
+        if (!roomId) {
+            setIsConnected(false);
+            return;
+        }
+
         // ----------------------------------------------------
         // [업그레이드] 도메인 자동 감지 로직
         // ----------------------------------------------------
@@ -30,7 +36,7 @@ export const useWebSocket = ({
             ? 'http://localhost:8081/ws'
             : `${window.location.origin}/ws`;
 
-        console.log(`[WebSocket] 연결 URL: ${socketUrl}`);
+        console.log(`[WebSocket] 연결 URL: ${socketUrl}, RoomID: ${roomId}`);
 
         const client = new Client({
             webSocketFactory: () => new SockJS(socketUrl),

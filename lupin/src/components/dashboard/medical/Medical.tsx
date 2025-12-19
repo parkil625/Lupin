@@ -191,7 +191,11 @@ MedicalProps) {
 
         // 첫 번째 의사의 예약된 시간 조회
         const doctorId = doctors[0].id;
-        const dateStr = selectedDate.toISOString().split("T")[0]; // YYYY-MM-DD 형식
+        // 로컬 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 문제 방지)
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+        const day = String(selectedDate.getDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
 
         const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
         setBookedTimes(booked);
@@ -335,7 +339,11 @@ MedicalProps) {
       // 약간의 딜레이 후 서버에서 최신 데이터 조회 (Redis 캐시 무효화 대기)
       setTimeout(async () => {
         try {
-          const dateStr = selectedDate.toISOString().split("T")[0];
+          // 로컬 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 문제 방지)
+          const year = selectedDate.getFullYear();
+          const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+          const day = String(selectedDate.getDate()).padStart(2, "0");
+          const dateStr = `${year}-${month}-${day}`;
           const updatedBookedTimes = await appointmentApi.getBookedTimes(
             selectedDoctor.id,
             dateStr
@@ -392,6 +400,12 @@ MedicalProps) {
 
   // 메시지 로드
   useEffect(() => {
+    // roomId가 없으면 메시지 로드하지 않음
+    if (!roomId) {
+      setMessages([]);
+      return;
+    }
+
     const loadMessages = async () => {
       try {
         const loadedMessages = await chatApi.getAllMessagesByRoomId(roomId);

@@ -842,8 +842,12 @@ export function FeedDetailContent({
                   )}
                 </div>
                 <Badge className="bg-white text-gray-700 px-3 py-1 font-bold text-xs flex items-center gap-1 border-0 flex-shrink-0">
-                  {feed.updatedAt && <Pencil className="w-3 h-3" />}
                   {feed.time}
+                  {feed.updatedAt && (
+                    <span className="text-gray-400 font-normal ml-1">
+                      (수정됨)
+                    </span>
+                  )}
                 </Badge>
               </div>
 

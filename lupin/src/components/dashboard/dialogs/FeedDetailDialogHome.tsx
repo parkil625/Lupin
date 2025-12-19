@@ -99,7 +99,9 @@ export default function FeedDetailDialogHome({
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [feedReported, setFeedReported] = useState(false);
-  const [commentReported, setCommentReported] = useState<{ [key: number]: boolean }>({});
+  const [commentReported, setCommentReported] = useState<{
+    [key: number]: boolean;
+  }>({});
 
   // 현재 사용자 정보
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
@@ -107,7 +109,9 @@ export default function FeedDetailDialogHome({
 
   // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
   const hasImages = feed?.images && feed.images.length > 0;
-  const currentImageUrl = hasImages ? getCdnUrl(feed.images[currentImageIndex]) : undefined;
+  const currentImageUrl = hasImages
+    ? getCdnUrl(feed.images[currentImageIndex])
+    : undefined;
   const iconColor = useImageBrightness(currentImageUrl);
   const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
 
@@ -123,7 +127,9 @@ export default function FeedDetailDialogHome({
         const response = await commentApi.getCommentsByFeedId(feed.id, 0, 100);
         const allComments = response.content || response;
         // parentId가 있는 댓글은 답글이므로 최상위 목록에서 제외
-        const commentList = allComments.filter((c: BackendComment & { parentId?: number }) => !c.parentId);
+        const commentList = allComments.filter(
+          (c: BackendComment & { parentId?: number }) => !c.parentId
+        );
 
         // 아바타 URL 변환 헬퍼 (CDN 사용)
         const getAvatarUrl = (avatarUrl?: string): string => {
@@ -135,17 +141,21 @@ export default function FeedDetailDialogHome({
         const commentsWithReplies = await Promise.all(
           commentList.map(async (comment: BackendComment) => {
             try {
-              const repliesData = await commentApi.getRepliesByCommentId(comment.id);
-              const replies = (repliesData || []).map((reply: BackendComment) => ({
-                ...reply,
-                author: reply.writerName || "알 수 없음",
-                avatar: getAvatarUrl(reply.writerAvatar),
-                department: reply.writerDepartment,
-                activeDays: reply.writerActiveDays,
-                time: getRelativeTime(reply.createdAt),
-                likeCount: reply.likeCount || 0,
-                isLiked: reply.isLiked || false,
-              }));
+              const repliesData = await commentApi.getRepliesByCommentId(
+                comment.id
+              );
+              const replies = (repliesData || []).map(
+                (reply: BackendComment) => ({
+                  ...reply,
+                  author: reply.writerName || "알 수 없음",
+                  avatar: getAvatarUrl(reply.writerAvatar),
+                  department: reply.writerDepartment,
+                  activeDays: reply.writerActiveDays,
+                  time: getRelativeTime(reply.createdAt),
+                  likeCount: reply.likeCount || 0,
+                  isLiked: reply.isLiked || false,
+                })
+              );
               return {
                 ...comment,
                 author: comment.writerName || "알 수 없음",
@@ -176,7 +186,8 @@ export default function FeedDetailDialogHome({
         setComments(commentsWithReplies);
 
         // commentLikes 상태 초기화
-        const likesState: { [key: number]: { liked: boolean; count: number } } = {};
+        const likesState: { [key: number]: { liked: boolean; count: number } } =
+          {};
         commentsWithReplies.forEach((comment) => {
           likesState[comment.id] = {
             liked: comment.isLiked || false,
@@ -226,36 +237,48 @@ export default function FeedDetailDialogHome({
 
   // 댓글 신고 핸들러
   const handleReportComment = async (commentId: number) => {
-    if (commentReported[commentId]) return;
     try {
       await reportApi.reportComment(commentId);
-      setCommentReported(prev => ({ ...prev, [commentId]: true }));
-      toast.success("신고가 접수되었습니다.");
+      setCommentReported((prev) => {
+        const isReported = !prev[commentId]; // 상태 반전
+        toast.success(
+          isReported ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
+        );
+        return { ...prev, [commentId]: isReported };
+      });
     } catch {
-      toast.error("신고에 실패했습니다.");
+      toast.error("신고 처리에 실패했습니다.");
     }
   };
 
   // targetCommentId가 양수이면 해당 댓글로 스크롤 및 하이라이트 (-1은 무시)
   useEffect(() => {
-    if (targetCommentId && targetCommentId > 0 && open && comments.length > 0 && showComments) {
+    if (
+      targetCommentId &&
+      targetCommentId > 0 &&
+      open &&
+      comments.length > 0 &&
+      showComments
+    ) {
       const numTargetId = Number(targetCommentId);
-      console.log('[Highlight] 조건 충족, targetCommentId:', numTargetId);
+      console.log("[Highlight] 조건 충족, targetCommentId:", numTargetId);
 
       // targetCommentId가 답글인지 확인하고, 답글이면 부모 댓글 펼치기
       let parentIdToExpand: number | null = null;
       for (const comment of comments) {
         // 최상위 댓글인지 확인
         if (Number(comment.id) === numTargetId) {
-          console.log('[Highlight] 최상위 댓글 찾음');
+          console.log("[Highlight] 최상위 댓글 찾음");
           break; // 최상위 댓글이면 펼칠 필요 없음
         }
         // 답글인지 확인
         if (comment.replies) {
-          const reply = comment.replies.find(r => Number(r.id) === numTargetId);
+          const reply = comment.replies.find(
+            (r) => Number(r.id) === numTargetId
+          );
           if (reply) {
             parentIdToExpand = comment.id;
-            console.log('[Highlight] 답글 찾음, 부모:', parentIdToExpand);
+            console.log("[Highlight] 답글 찾음, 부모:", parentIdToExpand);
             break;
           }
         }
@@ -263,7 +286,7 @@ export default function FeedDetailDialogHome({
 
       // 부모 댓글이 접혀있으면 펼치기
       if (parentIdToExpand && collapsedComments.has(parentIdToExpand)) {
-        setCollapsedComments(prev => {
+        setCollapsedComments((prev) => {
           const newSet = new Set(prev);
           newSet.delete(parentIdToExpand);
           return newSet;
@@ -273,21 +296,27 @@ export default function FeedDetailDialogHome({
       // DOM 업데이트 후 스크롤 (500ms로 증가)
       // 모바일/데스크톱 두 패널에 같은 ID가 있으므로 querySelectorAll 사용
       setTimeout(() => {
-        const commentElements = document.querySelectorAll(`[id="comment-${targetCommentId}"]`);
-        console.log('[Highlight] 요소 검색:', `comment-${targetCommentId}`, commentElements.length + '개 찾음');
+        const commentElements = document.querySelectorAll(
+          `[id="comment-${targetCommentId}"]`
+        );
+        console.log(
+          "[Highlight] 요소 검색:",
+          `comment-${targetCommentId}`,
+          commentElements.length + "개 찾음"
+        );
 
         commentElements.forEach((commentElement) => {
           const el = commentElement as HTMLElement;
           // 보이는 요소만 스크롤
           if (el.offsetParent !== null) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
           }
 
           // 하이라이트 효과 - 배경색만 변경
-          el.style.backgroundColor = '#fef3c7'; // amber-100
+          el.style.backgroundColor = "#fef3c7"; // amber-100
 
           setTimeout(() => {
-            el.style.backgroundColor = '';
+            el.style.backgroundColor = "";
           }, 3000);
         });
       }, 500);
@@ -306,7 +335,9 @@ export default function FeedDetailDialogHome({
 
         // 새 댓글을 리스트에 추가 (서버에서 받은 아바타 URL 사용)
         const authorName = response.writerName || currentUserName;
-        const avatarUrl = response.writerAvatar ? getCdnUrl(response.writerAvatar) : "";
+        const avatarUrl = response.writerAvatar
+          ? getCdnUrl(response.writerAvatar)
+          : "";
         const newComment: Comment = {
           id: response.id,
           author: authorName,
@@ -337,7 +368,9 @@ export default function FeedDetailDialogHome({
 
         // 새 답글을 해당 댓글에 추가 (서버에서 받은 아바타 URL 사용)
         const replyAuthorName = response.writerName || currentUserName;
-        const replyAvatarUrl = response.writerAvatar ? getCdnUrl(response.writerAvatar) : "";
+        const replyAvatarUrl = response.writerAvatar
+          ? getCdnUrl(response.writerAvatar)
+          : "";
         const newReply: Comment = {
           id: response.id,
           author: replyAuthorName,
@@ -410,9 +443,7 @@ export default function FeedDetailDialogHome({
       ...prev,
       [commentId]: {
         liked: newLiked,
-        count: newLiked
-          ? current.count + 1
-          : Math.max(0, current.count - 1),
+        count: newLiked ? current.count + 1 : Math.max(0, current.count - 1),
       },
     }));
 
@@ -447,10 +478,11 @@ export default function FeedDetailDialogHome({
   // 댓글 삭제
   const handleDeleteComment = async (commentId: number) => {
     // 루트 댓글인지 확인
-    const isRootComment = comments.some(c => c.id === commentId);
-    const confirmMessage = isRootComment && comments.find(c => c.id === commentId)?.replies?.length
-      ? "이 댓글과 모든 답글이 삭제됩니다. 삭제하시겠습니까?"
-      : "댓글을 삭제하시겠습니까?";
+    const isRootComment = comments.some((c) => c.id === commentId);
+    const confirmMessage =
+      isRootComment && comments.find((c) => c.id === commentId)?.replies?.length
+        ? "이 댓글과 모든 답글이 삭제됩니다. 삭제하시겠습니까?"
+        : "댓글을 삭제하시겠습니까?";
 
     if (!confirm(confirmMessage)) return;
 
@@ -458,12 +490,12 @@ export default function FeedDetailDialogHome({
       await commentApi.deleteComment(commentId);
 
       // 로컬 상태에서 댓글 처리
-      setComments(prevComments => {
+      setComments((prevComments) => {
         return prevComments
-          .filter(c => c.id !== commentId) // 루트 댓글 완전 삭제 (답글도 함께 삭제)
-          .map(c => ({
+          .filter((c) => c.id !== commentId) // 루트 댓글 완전 삭제 (답글도 함께 삭제)
+          .map((c) => ({
             ...c,
-            replies: c.replies?.filter(r => r.id !== commentId) || [] // 다른 루트 댓글의 답글에서 삭제
+            replies: c.replies?.filter((r) => r.id !== commentId) || [], // 다른 루트 댓글의 답글에서 삭제
           }));
       });
     } catch (error) {
@@ -484,7 +516,10 @@ export default function FeedDetailDialogHome({
     return (
       <div key={comment.id} className={isReply ? "ml-8 mt-3" : ""}>
         {/* 하이라이트 대상: 이 댓글만 (답글 제외) */}
-        <div id={`comment-${comment.id}`} className="transition-colors duration-500 rounded-lg">
+        <div
+          id={`comment-${comment.id}`}
+          className="transition-colors duration-500 rounded-lg"
+        >
           <div className="flex gap-3">
             <UserHoverCard
               name={comment.author}
@@ -495,40 +530,78 @@ export default function FeedDetailDialogHome({
             />
             <div className="flex-1 min-w-0">
               {isDeleted ? (
-                <p className="text-sm text-gray-400 italic mb-2">삭제된 댓글입니다.</p>
+                <p className="text-sm text-gray-400 italic mb-2">
+                  삭제된 댓글입니다.
+                </p>
               ) : (
                 <>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-sm text-gray-900">{comment.author}</span>
-                    <span className="text-xs text-gray-500">{comment.time}</span>
+                    <span className="font-bold text-sm text-gray-900">
+                      {comment.author}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {comment.time}
+                    </span>
                   </div>
-                  <p className="text-sm text-gray-900 break-words mb-2">{comment.content}</p>
+                  <p className="text-sm text-gray-900 break-words mb-2">
+                    {comment.content}
+                  </p>
                   <div className="flex items-center gap-4 mb-2">
                     <button
                       onClick={() => toggleCommentLike(comment.id)}
                       className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
                     >
-                      <Heart className={`w-4 h-4 ${likeInfo.liked ? "fill-[#C93831] text-[#C93831]" : "text-gray-600"}`} />
-                      {likeInfo.count > 0 && <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>}
+                      <Heart
+                        className={`w-4 h-4 ${
+                          likeInfo.liked
+                            ? "fill-[#C93831] text-[#C93831]"
+                            : "text-gray-600"
+                        }`}
+                      />
+                      {likeInfo.count > 0 && (
+                        <span className="text-xs text-gray-600 font-semibold">
+                          {likeInfo.count}
+                        </span>
+                      )}
                     </button>
                     {depth === 0 && (
                       <button
-                        onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                        onClick={() =>
+                          setReplyingTo(
+                            replyingTo === comment.id ? null : comment.id
+                          )
+                        }
                         className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
-                      >답글</button>
+                      >
+                        답글
+                      </button>
                     )}
                     {comment.author === currentUserName && (
                       <button
                         onClick={() => handleDeleteComment(comment.id)}
                         className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
-                      >삭제</button>
+                      >
+                        삭제
+                      </button>
                     )}
                     {comment.author !== currentUserName && (
                       <button
                         onClick={() => handleReportComment(comment.id)}
-                        disabled={commentReported[comment.id]}
-                        className={`text-xs font-semibold cursor-pointer ${commentReported[comment.id] ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
-                      >{commentReported[comment.id] ? '신고됨' : '신고'}</button>
+                        className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
+                        aria-label={
+                          commentReported[comment.id]
+                            ? "신고 취소"
+                            : "댓글 신고"
+                        }
+                      >
+                        <Siren
+                          className={`w-4 h-4 ${
+                            commentReported[comment.id]
+                              ? "fill-[#C93831] text-[#C93831]" // 신고됨: 빨간색 채움
+                              : "text-gray-600" // 기본: 회색
+                          }`}
+                        />
+                      </button>
                     )}
                   </div>
                 </>
@@ -541,19 +614,49 @@ export default function FeedDetailDialogHome({
                     value={replyCommentText}
                     onChange={(e) => setReplyCommentText(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendReply()}
-                    style={{ width: "100%", padding: "0.5rem 0", fontSize: "0.875rem", background: "transparent", border: "none", borderBottom: "2px solid #d1d5db", outline: "none", transition: "border-color 0.2s" }}
-                    onFocus={(e) => (e.target.style.borderBottomColor = "#C93831")}
-                    onBlur={(e) => (e.target.style.borderBottomColor = "#d1d5db")}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem 0",
+                      fontSize: "0.875rem",
+                      background: "transparent",
+                      border: "none",
+                      borderBottom: "2px solid #d1d5db",
+                      outline: "none",
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={(e) =>
+                      (e.target.style.borderBottomColor = "#C93831")
+                    }
+                    onBlur={(e) =>
+                      (e.target.style.borderBottomColor = "#d1d5db")
+                    }
                     autoFocus
                   />
                   <div className="flex gap-2 mt-2">
-                    <button onClick={() => { setReplyingTo(null); setReplyCommentText(""); }} className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 cursor-pointer">취소</button>
-                    <button onClick={handleSendReply} disabled={!replyCommentText.trim()} className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer">답글</button>
+                    <button
+                      onClick={() => {
+                        setReplyingTo(null);
+                        setReplyCommentText("");
+                      }}
+                      className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 cursor-pointer"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleSendReply}
+                      disabled={!replyCommentText.trim()}
+                      className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer"
+                    >
+                      답글
+                    </button>
                   </div>
                 </div>
               )}
               {hasReplies && (
-                <button onClick={() => toggleCollapse(comment.id)} className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2 cursor-pointer">
+                <button
+                  onClick={() => toggleCollapse(comment.id)}
+                  className="text-xs text-[#C93831] hover:text-[#B02F28] font-semibold flex items-center gap-1 mb-2 cursor-pointer"
+                >
                   {isCollapsed ? "▶" : "▼"} 답글 {comment.replies!.length}개
                 </button>
               )}
@@ -591,14 +694,28 @@ export default function FeedDetailDialogHome({
                 {showSortMenu && (
                   <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
                     <button
-                      onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                      onClick={() => {
+                        setSortOrder("latest");
+                        setShowSortMenu(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
+                        sortOrder === "latest"
+                          ? "bg-gray-50 font-semibold text-[#C93831]"
+                          : "text-gray-900"
+                      }`}
                     >
                       최신순
                     </button>
                     <button
-                      onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                      onClick={() => {
+                        setSortOrder("popular");
+                        setShowSortMenu(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
+                        sortOrder === "popular"
+                          ? "bg-gray-50 font-semibold text-[#C93831]"
+                          : "text-gray-900"
+                      }`}
                     >
                       인기순
                     </button>
@@ -617,7 +734,9 @@ export default function FeedDetailDialogHome({
             <ScrollArea className="h-full">
               <div className="space-y-4 px-6 pt-4 pb-4">
                 {comments.length === 0 ? (
-                  <div className="text-center text-gray-500 text-sm py-8">첫 댓글을 남겨보세요!</div>
+                  <div className="text-center text-gray-500 text-sm py-8">
+                    첫 댓글을 남겨보세요!
+                  </div>
                 ) : (
                   sortedComments.map((comment) => renderComment(comment))
                 )}
@@ -678,255 +797,318 @@ export default function FeedDetailDialogHome({
             }
           }}
         >
-        <DialogHeader className="sr-only">
-          <DialogTitle>피드 상세보기</DialogTitle>
-          <DialogDescription>
-            피드의 상세 내용을 확인할 수 있습니다.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="relative h-full flex flex-col md:flex-row overflow-hidden">
-          {/* Main Feed Content (Left) - 모바일에서 h-full aspect-[9/16] (Feed.tsx와 동일) */}
-          <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] md:aspect-auto md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
-            {feed.images && feed.images.length > 0 ? (
-              <>
-                {/* Image Carousel - 모바일에서 57% 높이 (Feed.tsx와 동일) */}
-                <div className="relative h-[57%] md:h-[545px] w-full md:max-w-[475px] overflow-hidden">
-                  <img
-                    src={getCdnUrl(feed.images[currentImageIndex] || feed.images[0])}
-                    alt={feed.activity}
-                    className="w-full h-full object-cover"
-                  />
-
-                  {feed.images.length > 1 && (
-                    <>
-                      {currentImageIndex > 0 && (
-                        <button
-                          onClick={onPrevImage}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
-                        >
-                          <ChevronLeft className={`w-8 h-8 ${iconColorClass}`} />
-                        </button>
+          <DialogHeader className="sr-only">
+            <DialogTitle>피드 상세보기</DialogTitle>
+            <DialogDescription>
+              피드의 상세 내용을 확인할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative h-full flex flex-col md:flex-row overflow-hidden">
+            {/* Main Feed Content (Left) - 모바일에서 h-full aspect-[9/16] (Feed.tsx와 동일) */}
+            <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] md:aspect-auto md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
+              {feed.images && feed.images.length > 0 ? (
+                <>
+                  {/* Image Carousel - 모바일에서 57% 높이 (Feed.tsx와 동일) */}
+                  <div className="relative h-[57%] md:h-[545px] w-full md:max-w-[475px] overflow-hidden">
+                    <img
+                      src={getCdnUrl(
+                        feed.images[currentImageIndex] || feed.images[0]
                       )}
-                      {currentImageIndex < feed.images.length - 1 && (
-                        <button
-                          onClick={onNextImage}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
-                        >
-                          <ChevronRight className={`w-8 h-8 ${iconColorClass}`} />
-                        </button>
-                      )}
-                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                        {feed.images.map((_, idx) => (
-                          <div
-                            key={idx}
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              idx === currentImageIndex
-                                ? (iconColor === "white" ? "bg-white" : "bg-gray-900")
-                                : (iconColor === "white" ? "bg-white/50" : "bg-gray-900/50")
-                            }`}
-                          ></div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Author Avatar with HoverCard */}
-                  <div className="absolute top-4 left-4">
-                    <UserHoverCard
-                      name={feed.author || feed.writerName}
-                      department={feed.writerDepartment}
-                      activeDays={feed.writerActiveDays}
-                      avatarUrl={feed.writerAvatar}
+                      alt={feed.activity}
+                      className="w-full h-full object-cover"
                     />
-                  </div>
 
-                  {/* Menu Button */}
-                  <div className="absolute top-4 right-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="cursor-pointer hover:scale-110 transition-transform">
-                          <MoreVertical className={`w-6 h-6 ${iconColorClass}`} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
-                      >
-                        <DropdownMenuItem
-                          onClick={() => {
-                            onOpenChange(false);
-                            onEdit?.(feed);
-                          }}
-                          className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
-                        >
-                          <Edit className="w-4 h-4" />
-                          <span className="font-medium">수정</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            if (window.confirm("정말 삭제하시겠습니까?")) {
-                              onDelete?.(feed.id);
-                              onOpenChange(false);
-                            }
-                          }}
-                          className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          <span className="font-medium">삭제</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                    {feed.images.length > 1 && (
+                      <>
+                        {currentImageIndex > 0 && (
+                          <button
+                            onClick={onPrevImage}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
+                          >
+                            <ChevronLeft
+                              className={`w-8 h-8 ${iconColorClass}`}
+                            />
+                          </button>
+                        )}
+                        {currentImageIndex < feed.images.length - 1 && (
+                          <button
+                            onClick={onNextImage}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
+                          >
+                            <ChevronRight
+                              className={`w-8 h-8 ${iconColorClass}`}
+                            />
+                          </button>
+                        )}
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                          {feed.images.map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                idx === currentImageIndex
+                                  ? iconColor === "white"
+                                    ? "bg-white"
+                                    : "bg-gray-900"
+                                  : iconColor === "white"
+                                  ? "bg-white/50"
+                                  : "bg-gray-900/50"
+                              }`}
+                            ></div>
+                          ))}
+                        </div>
+                      </>
+                    )}
 
-                  {/* Right Actions */}
-                  <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                    <div className="flex flex-col items-center gap-1">
-                      <Heart className="w-6 h-6 text-[#C93831] fill-[#C93831]" />
-                      <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
+                    {/* Author Avatar with HoverCard */}
+                    <div className="absolute top-4 left-4">
+                      <UserHoverCard
+                        name={feed.author || feed.writerName}
+                        department={feed.writerDepartment}
+                        activeDays={feed.writerActiveDays}
+                        avatarUrl={feed.writerAvatar}
+                      />
                     </div>
-
-                    <button
-                      className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
-                      onClick={() => setShowComments(!showComments)}
-                    >
-                      <MessageCircle className={`w-6 h-6 ${iconColorClass} ${showComments ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
-                      <span className={`text-xs font-bold ${iconColorClass}`}>{totalCommentCount}</span>
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* No Image Layout */}
-                <div className="relative p-6 bg-transparent h-[545px]">
-                  <div className="flex items-center justify-between">
-                    <UserHoverCard
-                      name={feed.author || feed.writerName}
-                      department={feed.writerDepartment}
-                      activeDays={feed.writerActiveDays}
-                      avatarUrl={feed.writerAvatar}
-                    />
 
                     {/* Menu Button */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="cursor-pointer hover:scale-110 transition-transform">
-                          <MoreVertical className={`w-6 h-6 ${iconColorClass}`} />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
-                      >
-                        <DropdownMenuItem
-                          onClick={() => {
-                            onOpenChange(false);
-                            onEdit?.(feed);
-                          }}
-                          className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
+                    <div className="absolute top-4 right-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="cursor-pointer hover:scale-110 transition-transform">
+                            <MoreVertical
+                              className={`w-6 h-6 ${iconColorClass}`}
+                            />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
                         >
-                          <Edit className="w-4 h-4" />
-                          <span className="font-medium">수정</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            if (window.confirm("정말 삭제하시겠습니까?")) {
-                              onDelete?.(feed.id);
+                          <DropdownMenuItem
+                            onClick={() => {
                               onOpenChange(false);
-                            }
-                          }}
-                          className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50"
+                              onEdit?.(feed);
+                            }}
+                            className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
+                          >
+                            <Edit className="w-4 h-4" />
+                            <span className="font-medium">수정</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if (window.confirm("정말 삭제하시겠습니까?")) {
+                                onDelete?.(feed.id);
+                                onOpenChange(false);
+                              }
+                            }}
+                            className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span className="font-medium">삭제</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Right Actions */}
+                    <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
+                      <div className="flex flex-col items-center gap-1">
+                        <Heart className="w-6 h-6 text-[#C93831] fill-[#C93831]" />
+                        <span className={`text-xs font-bold ${iconColorClass}`}>
+                          {feed.likes}
+                        </span>
+                      </div>
+
+                      <button
+                        className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
+                        onClick={() => setShowComments(!showComments)}
+                      >
+                        <MessageCircle
+                          className={`w-6 h-6 ${iconColorClass} ${
+                            showComments
+                              ? iconColor === "white"
+                                ? "fill-white"
+                                : "fill-gray-900"
+                              : ""
+                          }`}
+                        />
+                        <span className={`text-xs font-bold ${iconColorClass}`}>
+                          {totalCommentCount}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* No Image Layout */}
+                  <div className="relative p-6 bg-transparent h-[545px]">
+                    <div className="flex items-center justify-between">
+                      <UserHoverCard
+                        name={feed.author || feed.writerName}
+                        department={feed.writerDepartment}
+                        activeDays={feed.writerActiveDays}
+                        avatarUrl={feed.writerAvatar}
+                      />
+
+                      {/* Menu Button */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="cursor-pointer hover:scale-110 transition-transform">
+                            <MoreVertical
+                              className={`w-6 h-6 ${iconColorClass}`}
+                            />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-48 bg-white/95 backdrop-blur-xl border border-gray-200"
                         >
-                          <Trash2 className="w-4 h-4" />
-                          <span className="font-medium">삭제</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Right Actions for No-Image Posts */}
-                  <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
-                    <div className="flex flex-col items-center gap-1">
-                      <Heart className="w-6 h-6 text-[#C93831] fill-[#C93831]" />
-                      <span className={`text-xs font-bold ${iconColorClass}`}>{feed.likes}</span>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              onOpenChange(false);
+                              onEdit?.(feed);
+                            }}
+                            className="flex items-center gap-2 cursor-pointer text-gray-900 hover:bg-gray-100"
+                          >
+                            <Edit className="w-4 h-4" />
+                            <span className="font-medium">수정</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if (window.confirm("정말 삭제하시겠습니까?")) {
+                                onDelete?.(feed.id);
+                                onOpenChange(false);
+                              }
+                            }}
+                            className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span className="font-medium">삭제</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
-                    <button
-                      className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
-                      onClick={() => setShowComments(!showComments)}
-                    >
-                      <MessageCircle className={`w-6 h-6 ${iconColorClass} ${showComments ? (iconColor === "white" ? "fill-white" : "fill-gray-900") : ""}`} />
-                      <span className={`text-xs font-bold ${iconColorClass}`}>{totalCommentCount}</span>
-                    </button>
+                    {/* Right Actions for No-Image Posts */}
+                    <div className="absolute right-4 bottom-4 flex flex-col gap-4 z-10">
+                      <div className="flex flex-col items-center gap-1">
+                        <Heart className="w-6 h-6 text-[#C93831] fill-[#C93831]" />
+                        <span className={`text-xs font-bold ${iconColorClass}`}>
+                          {feed.likes}
+                        </span>
+                      </div>
 
-                    <button
-                      className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
-                      onClick={handleReportFeed}
-                    >
-                      <Siren className={`w-6 h-6 ${feedReported ? "text-[#C93831] fill-[#C93831]" : iconColorClass}`} />
-                    </button>
+                      <button
+                        className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
+                        onClick={() => setShowComments(!showComments)}
+                      >
+                        <MessageCircle
+                          className={`w-6 h-6 ${iconColorClass} ${
+                            showComments
+                              ? iconColor === "white"
+                                ? "fill-white"
+                                : "fill-gray-900"
+                              : ""
+                          }`}
+                        />
+                        <span className={`text-xs font-bold ${iconColorClass}`}>
+                          {totalCommentCount}
+                        </span>
+                      </button>
+
+                      <button
+                        className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
+                        onClick={handleReportFeed}
+                      >
+                        <Siren
+                          className={`w-6 h-6 ${
+                            feedReported
+                              ? "text-[#C93831] fill-[#C93831]"
+                              : iconColorClass
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
 
-            {/* Feed Content (Always visible) - 모바일에서 43% 높이 (Feed.tsx와 동일) */}
-            <ScrollArea
-              className="h-[43%] md:flex-1 bg-transparent w-full md:w-[475px] md:max-w-[475px]"
-            >
-              <div className="p-4 md:p-6 space-y-3">
-                <div className="space-y-3 w-full md:max-w-[427px]">
-                  {/* Badges */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2 flex-wrap">
-                      <Badge className="bg-amber-50 text-amber-600 font-medium border border-amber-200">
-                        <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
-                      </Badge>
-                      <Badge className="bg-blue-50 text-blue-600 font-medium border border-blue-200">
-                        <Zap className="w-3 h-3 mr-1" />{feed.activity}
-                      </Badge>
-                      {(feed.calories ?? 0) > 0 && (
-                        <Badge className="bg-orange-50 text-orange-600 font-medium border border-orange-200">
-                          <Flame className="w-3 h-3 mr-1" />{feed.calories}kcal
+              {/* Feed Content (Always visible) - 모바일에서 43% 높이 (Feed.tsx와 동일) */}
+              <ScrollArea className="h-[43%] md:flex-1 bg-transparent w-full md:w-[475px] md:max-w-[475px]">
+                <div className="p-4 md:p-6 space-y-3">
+                  <div className="space-y-3 w-full md:max-w-[427px]">
+                    {/* Badges */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge className="bg-amber-50 text-amber-600 font-medium border border-amber-200">
+                          <Sparkles className="w-3 h-3 mr-1" />+{feed.points}
                         </Badge>
-                      )}
+                        <Badge className="bg-blue-50 text-blue-600 font-medium border border-blue-200">
+                          <Zap className="w-3 h-3 mr-1" />
+                          {feed.activity}
+                        </Badge>
+                        {(feed.calories ?? 0) > 0 && (
+                          <Badge className="bg-orange-50 text-orange-600 font-medium border border-orange-200">
+                            <Flame className="w-3 h-3 mr-1" />
+                            {feed.calories}kcal
+                          </Badge>
+                        )}
+                      </div>
+                      <Badge className="bg-slate-50 text-slate-500 font-medium border border-slate-200">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {feed.time}
+                      </Badge>
                     </div>
-                    <Badge className="bg-slate-50 text-slate-500 font-medium border border-slate-200">
-                      <Clock className="w-3 h-3 mr-1" />{feed.time}
-                    </Badge>
+
+                    {/* Content */}
+                    <FeedContentDisplay content={feed?.content || ""} />
                   </div>
-
-                  {/* Content */}
-                  <FeedContentDisplay content={feed?.content || ""} />
                 </div>
-              </div>
-            </ScrollArea>
-          </div>
+              </ScrollArea>
+            </div>
 
-          {/* Comments Panel - 데스크톱용 사이드 패널 (모바일은 Dialog 밖에 위치) */}
-          {showComments && (
+            {/* Comments Panel - 데스크톱용 사이드 패널 (모바일은 Dialog 밖에 위치) */}
+            {showComments && (
               <div className="hidden md:flex flex-1 bg-transparent border-l border-gray-200/30 flex-col overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200/50 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-gray-900">댓글 {totalCommentCount}개</h3>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    댓글 {totalCommentCount}개
+                  </h3>
                   <div className="relative">
                     <button
                       onClick={() => setShowSortMenu(!showSortMenu)}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                     >
                       <ArrowUpDown className="w-4 h-4 text-gray-900" />
-                      <span className="text-sm font-semibold text-gray-900">{sortOrder === "latest" ? "최신순" : "인기순"}</span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {sortOrder === "latest" ? "최신순" : "인기순"}
+                      </span>
                     </button>
                     {showSortMenu && (
                       <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
                         <button
-                          onClick={() => { setSortOrder("latest"); setShowSortMenu(false); }}
-                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "latest" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                          onClick={() => {
+                            setSortOrder("latest");
+                            setShowSortMenu(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
+                            sortOrder === "latest"
+                              ? "bg-gray-50 font-semibold text-[#C93831]"
+                              : "text-gray-900"
+                          }`}
                         >
                           최신순
                         </button>
                         <button
-                          onClick={() => { setSortOrder("popular"); setShowSortMenu(false); }}
-                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${sortOrder === "popular" ? "bg-gray-50 font-semibold text-[#C93831]" : "text-gray-900"}`}
+                          onClick={() => {
+                            setSortOrder("popular");
+                            setShowSortMenu(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
+                            sortOrder === "popular"
+                              ? "bg-gray-50 font-semibold text-[#C93831]"
+                              : "text-gray-900"
+                          }`}
                         >
                           인기순
                         </button>
@@ -938,7 +1120,9 @@ export default function FeedDetailDialogHome({
                   <ScrollArea className="h-full">
                     <div className="space-y-4 px-6 pt-4 pb-4">
                       {comments.length === 0 ? (
-                        <div className="text-center text-gray-500 text-sm py-8">첫 댓글을 남겨보세요!</div>
+                        <div className="text-center text-gray-500 text-sm py-8">
+                          첫 댓글을 남겨보세요!
+                        </div>
                       ) : (
                         sortedComments.map((comment) => renderComment(comment))
                       )}
@@ -953,7 +1137,9 @@ export default function FeedDetailDialogHome({
                         placeholder="댓글을 입력하세요..."
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleSendComment()
+                        }
                         className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
                       />
                       {commentText && (
@@ -975,8 +1161,8 @@ export default function FeedDetailDialogHome({
                   </div>
                 </div>
               </div>
-          )}
-        </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>

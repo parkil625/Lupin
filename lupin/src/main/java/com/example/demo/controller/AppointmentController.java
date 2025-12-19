@@ -60,6 +60,12 @@ public class AppointmentController {
         return ResponseEntity.ok("예약이 취소되었습니다.");
     }
 
+    @PutMapping("/{appointmentId}/complete")
+    public ResponseEntity<String> completeAppointment(@PathVariable Long appointmentId) {
+        appointmentService.completeConsultation(appointmentId);
+        return ResponseEntity.ok("진료가 완료되었습니다.");
+    }
+
     @GetMapping("/booked-times")
     public ResponseEntity<List<String>> getBookedTimes(
             @RequestParam("doctorId") Long doctorId,

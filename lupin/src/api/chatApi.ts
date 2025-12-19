@@ -26,6 +26,7 @@ export interface ChatRoomResponse {
   lastMessage?: string;
   unreadCount: number;
   lastMessageTime?: string;
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'UNKNOWN';
 }
 
 export const chatApi = {

@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../store/useAuthStore";
+import { toast } from "sonner";
 
 /**
  * Axios 인스턴스 생성
@@ -62,6 +63,10 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
+    if (error.response?.status === 429) {
+      toast.error("✋ 잠깐만요! 요청이 너무 많아요. 10초만 쉬었다 하세요!");
+      return Promise.reject(error);
+    }
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };

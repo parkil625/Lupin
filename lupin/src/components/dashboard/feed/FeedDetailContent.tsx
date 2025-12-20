@@ -509,13 +509,13 @@ export function FeedDetailContent({
                     <div className="flex gap-2 mt-1 justify-end">
                       <button
                         onClick={cancelEdit}
-                        className="text-xs text-gray-500"
+                        className="text-xs text-gray-500 hover:text-gray-800 transition-colors font-medium"
                       >
                         취소
                       </button>
                       <button
                         onClick={() => handleUpdateComment(comment.id)}
-                        className="text-xs text-[#C93831] font-bold"
+                        className="text-xs text-[#C93831] font-bold hover:text-[#a02b25] transition-colors"
                       >
                         저장
                       </button>
@@ -532,7 +532,9 @@ export function FeedDetailContent({
                   </p>
                 )}
 
-                <div className="flex items-center gap-4 mb-2">
+                {/* [수정] 수정 모드가 아닐 때만 하단 액션 버튼 표시 */}
+                {editingCommentId !== comment.id && (
+                  <div className="flex items-center gap-4 mb-2">
                   <button
                     onClick={() => toggleCommentLike(comment.id)}
                     className="flex items-center gap-1 hover:opacity-70 transition-opacity"
@@ -592,10 +594,9 @@ export function FeedDetailContent({
                         }`}
                       />
                     </button>
-                  )}
-                </div>
-              </>
-            )}
+                    )}
+                  </div>
+                )}
 
             {isReplying && (
               <div className="mb-3">

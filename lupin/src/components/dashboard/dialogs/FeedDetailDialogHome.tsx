@@ -613,30 +613,32 @@ export default function FeedDetailDialogHome({
                         }}
                       />
                       <div className="flex gap-2 mt-1 justify-end">
-                        <button
-                          onClick={cancelEdit}
-                          className="text-xs text-gray-500 hover:text-gray-700"
-                        >
-                          취소
-                        </button>
-                        <button
-                          onClick={() => handleUpdateComment(comment.id)}
-                          className="text-xs text-[#C93831] font-bold"
-                        >
-                          저장
-                        </button>
-                      </div>
+                      <button
+                        onClick={cancelEdit}
+                        className="text-xs text-gray-500 hover:text-gray-900 transition-colors font-medium"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={() => handleUpdateComment(comment.id)}
+                        className="text-xs text-[#C93831] font-bold hover:text-[#a02b25] transition-colors"
+                      >
+                        저장
+                      </button>
                     </div>
-                  ) : (
-                    <p className="text-sm text-gray-900 break-words mb-2">
-                      {comment.content}
-                      {comment.updatedAt && (
-                        <span className="text-xs text-gray-400 ml-1">
-                          (수정됨)
-                        </span>
-                      )}
-                    </p>
-                  )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-900 break-words mb-2">
+                    {comment.content}
+                    {comment.updatedAt && (
+                      <span className="text-xs text-gray-400 ml-1">
+                        (수정됨)
+                      </span>
+                    )}
+                  </p>
+                )}
+                {/* [수정] 수정 모드가 아닐 때만 하단 액션 버튼 표시 */}
+                {editingCommentId !== comment.id && (
                   <div className="flex items-center gap-4 mb-2">
                     <button
                       onClick={() => toggleCommentLike(comment.id)}

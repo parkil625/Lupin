@@ -595,6 +595,11 @@ export default function FeedDetailDialogHome({
                     </span>
                     <span className="text-xs text-gray-500">
                       {comment.time}
+                      {comment.updatedAt && (
+                        <span className="ml-1 text-gray-400 font-normal">
+                          (수정됨)
+                        </span>
+                      )}
                     </span>
                   </div>
                   {/* [수정 기능 UI 교체] */}
@@ -615,13 +620,15 @@ export default function FeedDetailDialogHome({
                       <div className="flex gap-2 mt-1 justify-end">
                         <button
                           onClick={cancelEdit}
-                          className="text-xs text-gray-500 hover:text-gray-900 transition-colors font-medium"
+                          // [수정] cursor-pointer 추가
+                          className="text-xs text-gray-500 hover:text-gray-900 transition-colors font-medium cursor-pointer"
                         >
                           취소
                         </button>
                         <button
                           onClick={() => handleUpdateComment(comment.id)}
-                          className="text-xs text-[#C93831] font-bold hover:text-[#a02b25] transition-colors"
+                          // [수정] cursor-pointer 추가
+                          className="text-xs text-[#C93831] font-bold hover:text-[#a02b25] transition-colors cursor-pointer"
                         >
                           저장
                         </button>
@@ -630,11 +637,6 @@ export default function FeedDetailDialogHome({
                   ) : (
                     <p className="text-sm text-gray-900 break-words mb-2">
                       {comment.content}
-                      {comment.updatedAt && (
-                        <span className="text-xs text-gray-400 ml-1">
-                          (수정됨)
-                        </span>
-                      )}
                     </p>
                   )}
                   {/* [수정] 수정 모드가 아닐 때만 하단 액션 버튼 표시 */}

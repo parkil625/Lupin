@@ -289,11 +289,13 @@ export default function FeedDetailDialogHome({
 
       // 부모 댓글이 접혀있으면 펼치기
       if (parentIdToExpand && collapsedComments.has(parentIdToExpand)) {
-        setCollapsedComments((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(parentIdToExpand);
-          return newSet;
-        });
+        setTimeout(() => {
+          setCollapsedComments((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(parentIdToExpand);
+            return newSet;
+          });
+        }, 0);
       }
 
       // DOM 업데이트 후 스크롤 (500ms로 증가)

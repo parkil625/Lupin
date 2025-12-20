@@ -289,7 +289,6 @@ export default function FeedDetailDialogHome({
 
       // 부모 댓글이 접혀있으면 펼치기
       if (parentIdToExpand && collapsedComments.has(parentIdToExpand)) {
-        // [수정] setTimeout으로 감싸서 에러 해결
         setTimeout(() => {
           setCollapsedComments((prev) => {
             const newSet = new Set(prev);

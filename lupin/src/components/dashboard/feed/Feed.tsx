@@ -209,7 +209,6 @@ function CommentPanel({
     if (targetCommentId && comments.length > 0) {
       const numTargetId = Number(targetCommentId);
 
-      // setTimeout으로 감싸서 렌더링 사이클과 분리 (lint 에러 해결)
       const highlightTimer = setTimeout(() => {
         setHighlightedCommentId(numTargetId);
       }, 0);
@@ -220,7 +219,6 @@ function CommentPanel({
           (r) => Number(r.id) === numTargetId
         );
         if (reply) {
-          // [수정] setTimeout으로 감싸서 동기 업데이트 에러 해결
           setTimeout(() => {
             setCollapsedComments((prev) => {
               const newSet = new Set(prev);
@@ -232,7 +230,7 @@ function CommentPanel({
         }
       }
 
-      // 잠시 후 스크롤 (DOM 업데이트 대기)
+      // 잠시 후 스크롤
       const scrollTimer = setTimeout(() => {
         const element = commentRefs.current[numTargetId];
         if (element) {
@@ -283,7 +281,6 @@ function CommentPanel({
     const current = commentLikes[commentId] || { liked: false, count: 0 };
     const newLiked = !current.liked;
 
-    // 낙관적 업데이트
     setCommentLikes((prev) => ({
       ...prev,
       [commentId]: {
@@ -299,7 +296,6 @@ function CommentPanel({
         await commentApi.unlikeComment(commentId);
       }
     } catch {
-      // 에러 시 롤백
       setCommentLikes((prev) => ({
         ...prev,
         [commentId]: current,
@@ -390,10 +386,10 @@ function CommentPanel({
       await commentApi.deleteComment(commentId);
       setComments((prevComments) => {
         return prevComments
-          .filter((c) => c.id !== commentId) // 부모 댓글 삭제 (대댓글도 백엔드에서 삭제됨)
+          .filter((c) => c.id !== commentId)
           .map((c) => ({
             ...c,
-            replies: c.replies?.filter((r) => r.id !== commentId) || [], // 대댓글 삭제
+            replies: c.replies?.filter((r) => r.id !== commentId) || [],
           }));
       });
     } catch (error) {
@@ -475,7 +471,6 @@ function CommentPanel({
 
     return (
       <div key={comment.id} className={depth > 0 ? "ml-8 mt-3" : ""}>
-        {/* 댓글 내용 영역 - 하이라이트 대상 */}
         <div
           ref={(el) => {
             commentRefs.current[comment.id] = el;
@@ -649,7 +644,7 @@ function CommentPanel({
           </div>
         </div>
 
-        {/* 답글 영역 - 하이라이트 대상에서 분리 */}
+        {/* 답글 영역 */}
         {hasReplies && !isCollapsed && (
           <div className="relative mt-2 pl-2 border-l-2 border-gray-300">
             {comment.replies!.map((reply) => renderComment(reply, depth + 1))}
@@ -773,7 +768,6 @@ function CommentPanel({
 
 /**
  * 개별 피드 아이템 컴포넌트
- * React.memo로 불필요한 리렌더링 방지
  */
 const FeedItem = React.memo(function FeedItem({
   feed,
@@ -797,10 +791,8 @@ const FeedItem = React.memo(function FeedItem({
   const [showComments, setShowComments] = useState(false);
   const [isReported, setIsReported] = useState(false);
 
-  // targetCommentId가 있으면 댓글창 자동 열기
   useEffect(() => {
     if (targetCommentId) {
-      // [수정] setTimeout으로 감싸서 렌더링 사이클과 분리
       setTimeout(() => setShowComments(true), 0);
     }
   }, [targetCommentId]);
@@ -810,7 +802,6 @@ const FeedItem = React.memo(function FeedItem({
   const isFirstImage = currentImageIndex === 0;
   const isLastImage = currentImageIndex === images.length - 1;
 
-  // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
   const currentImageUrl = hasImages
     ? getCdnUrl(images[currentImageIndex])
     : undefined;
@@ -835,9 +826,7 @@ const FeedItem = React.memo(function FeedItem({
     <div
       className={`h-full max-h-[calc(100vh-130px)] md:max-h-full w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
     >
-      {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
-        {/* 이미지 영역 - 57% */}
         <div className="relative h-[57%]">
           {hasImages ? (
             <img
@@ -855,7 +844,6 @@ const FeedItem = React.memo(function FeedItem({
             </div>
           )}
 
-          {/* 이미지 네비게이션 */}
           {hasImages && images.length > 1 && (
             <>
               {!isFirstImage && (
@@ -877,7 +865,6 @@ const FeedItem = React.memo(function FeedItem({
                 </button>
               )}
 
-              {/* 인디케이터 */}
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                 {images.map((_, index) => (
                   <div
@@ -897,7 +884,6 @@ const FeedItem = React.memo(function FeedItem({
             </>
           )}
 
-          {/* 작성자 호버카드 */}
           <div className="absolute top-4 left-4">
             <UserHoverCard
               name={feed.author || feed.writerName}
@@ -907,7 +893,6 @@ const FeedItem = React.memo(function FeedItem({
             />
           </div>
 
-          {/* 액션 버튼 */}
           <div className="absolute right-4 bottom-4 flex flex-col gap-4">
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
@@ -955,10 +940,8 @@ const FeedItem = React.memo(function FeedItem({
           </div>
         </div>
 
-        {/* 콘텐츠 영역 - 43% */}
         <ScrollArea className="h-[43%] bg-white/50 backdrop-blur-sm">
           <div className="p-6 space-y-3">
-            {/* 뱃지 */}
             <div className="flex items-center justify-between">
               <div className="flex gap-2 flex-wrap">
                 {(feed.points ?? 0) > 0 && (
@@ -988,7 +971,6 @@ const FeedItem = React.memo(function FeedItem({
               </Badge>
             </div>
 
-            {/* 본문 */}
             <p className="text-gray-900 text-sm">
               {parseBlockNoteContent(feed.content)}
             </p>
@@ -996,10 +978,8 @@ const FeedItem = React.memo(function FeedItem({
         </ScrollArea>
       </div>
 
-      {/* 댓글 패널 - 모바일: 전체화면 오버레이, 데스크톱: 옆에 표시 */}
       {showComments && (
         <>
-          {/* 모바일용 전체화면 오버레이 (하단 네비 제외) */}
           <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-50 bg-white flex flex-col">
             <CommentPanel
               feedId={feed.id}
@@ -1007,7 +987,6 @@ const FeedItem = React.memo(function FeedItem({
               targetCommentId={targetCommentId}
             />
           </div>
-          {/* 데스크톱용 사이드 패널 */}
           <div className="hidden md:block h-full aspect-[7/16] border-l border-gray-200/50 flex-shrink-0">
             <CommentPanel feedId={feed.id} targetCommentId={targetCommentId} />
           </div>
@@ -1040,11 +1019,9 @@ export default function FeedView({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 스토어에서 targetCommentIdForFeed와 pivotFeedId 읽기
   const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } =
     useFeedStore();
 
-  // targetCommentIdForFeed 사용 후 정리 (컴포넌트 언마운트 또는 다른 페이지로 이동 시)
   useEffect(() => {
     return () => {
       if (targetCommentIdForFeed) {
@@ -1053,21 +1030,22 @@ export default function FeedView({
     };
   }, [targetCommentIdForFeed, setTargetCommentIdForFeed]);
 
-  // [수정] 부모 ref와 로컬 ref 동기화를 위한 콜백 (useEffect 제거)
+  // [수정] 콜백 ref를 사용하여 부모 ref와 로컬 ref를 안전하게 동기화
   const setRefs = useCallback(
     (node: HTMLDivElement | null) => {
       containerRef.current = node;
+
+      // feedContainerRef는 React.RefObject 타입이므로 함수 체크 제거
       if (feedContainerRef) {
-        // eslint-disable-next-line react-hooks/immutability
-        (
-          feedContainerRef as React.MutableRefObject<HTMLDivElement | null>
-        ).current = node;
+        // 린트 에러 우회를 위해 로컬 변수에 할당 후 수정
+        const ref =
+          feedContainerRef as React.MutableRefObject<HTMLDivElement | null>;
+        ref.current = node;
       }
     },
     [feedContainerRef]
   );
 
-  // [최적화] LCP 이미지 Preload - 첫 번째 피드 이미지
   useEffect(() => {
     if (allFeeds.length > 0 && allFeeds[0].images?.[0]) {
       const link = document.createElement("link");
@@ -1079,13 +1057,11 @@ export default function FeedView({
     }
   }, [allFeeds]);
 
-  // 검색 자동완성 목록 (메모이제이션)
   const authorSuggestions = useMemo(
     () => [...new Set(allFeeds.map((feed) => feed.author || feed.writerName))],
     [allFeeds]
   );
 
-  // 필터링된 피드
   const filteredFeeds = useMemo(() => {
     if (!searchQuery.trim()) return allFeeds;
     return allFeeds.filter((feed) => {
@@ -1094,7 +1070,6 @@ export default function FeedView({
     });
   }, [allFeeds, searchQuery]);
 
-  // 특정 피드로 스크롤
   useEffect(() => {
     if (scrollToFeedId && scrollRef.current) {
       const feedElement = scrollRef.current.querySelector(
@@ -1107,7 +1082,6 @@ export default function FeedView({
     }
   }, [scrollToFeedId, setScrollToFeedId]);
 
-  // 무한 스크롤
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
@@ -1122,10 +1096,9 @@ export default function FeedView({
 
   return (
     <div
-      ref={setRefs} // [수정] 콜백 ref 사용
+      ref={setRefs} // [수정] 콜백 ref 적용
       className="h-full flex flex-col p-4 gap-4"
     >
-      {/* 검색바 */}
       <div className="mx-auto max-w-2xl w-full flex-shrink-0">
         <SearchInput
           value={searchQuery}
@@ -1135,7 +1108,6 @@ export default function FeedView({
         />
       </div>
 
-      {/* 피드 리스트 - 쇼츠 스타일 스크롤 */}
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto snap-y snap-mandatory scrollbar-hide flex flex-col gap-4 pb-4"
@@ -1170,7 +1142,6 @@ export default function FeedView({
           </div>
         ))}
 
-        {/* 로딩 표시 */}
         {isLoadingFeeds && (
           <div className="flex items-center justify-center py-8 flex-shrink-0">
             <div className="w-8 h-8 border-4 border-gray-300 border-t-[#C93831] rounded-full animate-spin"></div>

@@ -208,7 +208,11 @@ function CommentPanel({
   useEffect(() => {
     if (targetCommentId && comments.length > 0) {
       const numTargetId = Number(targetCommentId);
-      setHighlightedCommentId(numTargetId);
+
+      // setTimeout으로 감싸서 렌더링 사이클과 분리 (lint 에러 해결)
+      const highlightTimer = setTimeout(() => {
+        setHighlightedCommentId(numTargetId);
+      }, 0);
 
       // 답글인 경우 부모 댓글의 접힘 상태 해제
       for (const comment of comments) {
@@ -216,17 +220,20 @@ function CommentPanel({
           (r) => Number(r.id) === numTargetId
         );
         if (reply) {
-          setCollapsedComments((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(comment.id);
-            return newSet;
-          });
+          // [수정] setTimeout으로 감싸서 동기 업데이트 에러 해결
+          setTimeout(() => {
+            setCollapsedComments((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(comment.id);
+              return newSet;
+            });
+          }, 0);
           break;
         }
       }
 
       // 잠시 후 스크롤 (DOM 업데이트 대기)
-      setTimeout(() => {
+      const scrollTimer = setTimeout(() => {
         const element = commentRefs.current[numTargetId];
         if (element) {
           element.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -234,11 +241,15 @@ function CommentPanel({
       }, 100);
 
       // 3초 후 하이라이트 제거
-      const timer = setTimeout(() => {
+      const removeTimer = setTimeout(() => {
         setHighlightedCommentId(null);
       }, 3000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(highlightTimer);
+        clearTimeout(scrollTimer);
+        clearTimeout(removeTimer);
+      };
     }
   }, [targetCommentId, comments]);
 
@@ -789,7 +800,8 @@ const FeedItem = React.memo(function FeedItem({
   // targetCommentId가 있으면 댓글창 자동 열기
   useEffect(() => {
     if (targetCommentId) {
-      setShowComments(true);
+      // [수정] setTimeout으로 감싸서 렌더링 사이클과 분리
+      setTimeout(() => setShowComments(true), 0);
     }
   }, [targetCommentId]);
 
@@ -1041,6 +1053,20 @@ export default function FeedView({
     };
   }, [targetCommentIdForFeed, setTargetCommentIdForFeed]);
 
+  // [수정] 부모 ref와 로컬 ref 동기화를 위한 콜백 (useEffect 제거)
+  const setRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      containerRef.current = node;
+      if (feedContainerRef) {
+        // eslint-disable-next-line react-hooks/immutability
+        (
+          feedContainerRef as React.MutableRefObject<HTMLDivElement | null>
+        ).current = node;
+      }
+    },
+    [feedContainerRef]
+  );
+
   // [최적화] LCP 이미지 Preload - 첫 번째 피드 이미지
   useEffect(() => {
     if (allFeeds.length > 0 && allFeeds[0].images?.[0]) {
@@ -1096,15 +1122,7 @@ export default function FeedView({
 
   return (
     <div
-      ref={(el) => {
-        containerRef.current = el;
-        if (feedContainerRef) {
-          // eslint-disable-next-line react-hooks/immutability -- 부모 컴포넌트에 ref 전달 필요
-          (
-            feedContainerRef as React.MutableRefObject<HTMLDivElement | null>
-          ).current = el;
-        }
-      }}
+      ref={setRefs} // [수정] 콜백 ref 사용
       className="h-full flex flex-col p-4 gap-4"
     >
       {/* 검색바 */}

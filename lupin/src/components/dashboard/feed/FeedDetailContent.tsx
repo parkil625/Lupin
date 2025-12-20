@@ -212,11 +212,14 @@ export function FeedDetailContent({
 
       // 부모 댓글이 접혀있으면 펼치기
       if (parentIdToExpand && collapsedComments.has(parentIdToExpand)) {
-        setCollapsedComments((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(parentIdToExpand);
-          return newSet;
-        });
+        // [수정] setTimeout으로 감싸서 에러 해결
+        setTimeout(() => {
+          setCollapsedComments((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(parentIdToExpand);
+            return newSet;
+          });
+        }, 0);
       }
 
       // DOM 업데이트 후 스크롤
@@ -490,109 +493,85 @@ export function FeedDetailContent({
                   <span className="font-bold text-sm text-gray-900">
                     {comment.author}
                   </span>
-                  <span className="text-xs text-gray-900">{comment.time}</span>
-                </div>
-                {editingCommentId === comment.id ? (
-                  <div className="mb-2">
-                    <input
-                      type="text"
-                      value={editCommentText}
-                      onChange={(e) => setEditCommentText(e.target.value)}
-                      className="w-full py-1 text-sm border-b-2 border-[#C93831] outline-none bg-transparent"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleUpdateComment(comment.id);
-                        if (e.key === "Escape") cancelEdit();
-                      }}
-                    />
-                    <div className="flex gap-2 mt-1 justify-end">
-                      <button
-                        onClick={cancelEdit}
-                        className="text-xs text-gray-500"
-                      >
-                        취소
-                      </button>
-                      <button
-                        onClick={() => handleUpdateComment(comment.id)}
-                        className="text-xs text-[#C93831] font-bold"
-                      >
-                        저장
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-900 break-words mb-2">
-                    {comment.content}
+                  <span className="text-xs text-gray-900">
+                    {comment.time}
+                    {/* (수정됨) 이동 */}
                     {comment.updatedAt && (
-                      <span className="text-xs text-gray-400 ml-1">
+                      <span className="ml-1 text-[10px] text-gray-400">
                         (수정됨)
                       </span>
                     )}
-                  </p>
-                )}
+                  </span>
+                </div>
+                {/* 본문에서 (수정됨) 제거 */}
+                <p className="text-sm text-gray-900 break-words mb-2">
+                  {comment.content}
+                </p>
 
-                <div className="flex items-center gap-4 mb-2">
-                  <button
-                    onClick={() => toggleCommentLike(comment.id)}
-                    className="flex items-center gap-1 hover:opacity-70 transition-opacity"
-                  >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        likeInfo.liked
-                          ? "fill-[#C93831] text-[#C93831]"
-                          : "text-gray-600"
-                      }`}
-                    />
-                    {likeInfo.count > 0 && (
-                      <span className="text-xs text-gray-600 font-semibold">
-                        {likeInfo.count}
-                      </span>
-                    )}
-                  </button>
-                  {depth === 0 && (
+                {/* 수정 중 아닐 때만 버튼 표시 */}
+                {editingCommentId !== comment.id && (
+                  <div className="flex items-center gap-4 mb-2">
                     <button
-                      onClick={() =>
-                        setReplyingTo(
-                          replyingTo === comment.id ? null : comment.id
-                        )
-                      }
-                      className="text-xs text-gray-600 hover:text-[#C93831] font-semibold"
-                    >
-                      답글
-                    </button>
-                  )}
-
-                  {comment.author === currentUserName && (
-                    <>
-                      <button
-                        onClick={() => startEdit(comment.id, comment.content)}
-                        className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
-                      >
-                        삭제
-                      </button>
-                    </>
-                  )}
-                  {comment.author !== currentUserName && (
-                    <button
-                      onClick={() => handleReportComment(comment.id)}
+                      onClick={() => toggleCommentLike(comment.id)}
                       className="flex items-center gap-1 hover:opacity-70 transition-opacity"
                     >
-                      <Siren
+                      <Heart
                         className={`w-4 h-4 ${
-                          commentReported[comment.id]
+                          likeInfo.liked
                             ? "fill-[#C93831] text-[#C93831]"
                             : "text-gray-600"
                         }`}
                       />
+                      {likeInfo.count > 0 && (
+                        <span className="text-xs text-gray-600 font-semibold">
+                          {likeInfo.count}
+                        </span>
+                      )}
                     </button>
-                  )}
-                </div>
+                    {depth === 0 && (
+                      <button
+                        onClick={() =>
+                          setReplyingTo(
+                            replyingTo === comment.id ? null : comment.id
+                          )
+                        }
+                        className="text-xs text-gray-600 hover:text-[#C93831] font-semibold"
+                      >
+                        답글
+                      </button>
+                    )}
+                    {comment.author === currentUserName && (
+                      <>
+                        <button
+                          onClick={() => startEdit(comment.id, comment.content)}
+                          className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="text-xs text-gray-600 hover:text-red-500 font-semibold"
+                        >
+                          삭제
+                        </button>
+                      </>
+                    )}
+                    {comment.author !== currentUserName && (
+                      <button
+                        onClick={() => handleReportComment(comment.id)}
+                        className="flex items-center gap-1 hover:opacity-70 transition-opacity"
+                      >
+                        <Siren
+                          className={`w-4 h-4 ${
+                            commentReported[comment.id]
+                              ? "fill-[#C93831] text-[#C93831]"
+                              : "text-gray-600"
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
+                )}
               </>
             )}
 

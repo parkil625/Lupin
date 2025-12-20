@@ -117,14 +117,15 @@ class CommentServiceTest {
                 .content("원래 댓글")
                 .build();
 
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(existingComment));
+        // [수정] 서비스 코드 변경에 맞춰 Mock 기대값 수정 (findById -> findByIdWithDetails)
+        given(commentRepository.findByIdWithDetails(commentId)).willReturn(Optional.of(existingComment));
 
         // when
         Comment result = commentService.updateComment(writer, commentId, newContent);
 
         // then
         assertThat(result.getContent()).isEqualTo(newContent);
-        verify(commentRepository).findById(commentId);
+        verify(commentRepository).findByIdWithDetails(commentId);
     }
 
     @Test
@@ -350,7 +351,8 @@ class CommentServiceTest {
     void updateNonExistentCommentThrowsException() {
         // given
         Long commentId = 999L;
-        given(commentRepository.findById(commentId)).willReturn(Optional.empty());
+        // [수정] findById -> findByIdWithDetails
+        given(commentRepository.findByIdWithDetails(commentId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> commentService.updateComment(writer, commentId, "수정"))
@@ -458,7 +460,8 @@ class CommentServiceTest {
                 .content("원래 댓글")
                 .build();
 
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        // [수정] findById -> findByIdWithDetails
+        given(commentRepository.findByIdWithDetails(commentId)).willReturn(Optional.of(comment));
 
         // when & then
         assertThatThrownBy(() -> commentService.updateComment(otherUser, commentId, "수정 내용"))

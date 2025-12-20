@@ -207,27 +207,31 @@ function CommentPanel({
   // 타겟 댓글 하이라이트 및 스크롤
   useEffect(() => {
     if (targetCommentId && comments.length > 0) {
-      const numTargetId = Number(targetCommentId);
-      setHighlightedCommentId(numTargetId);
+      const numTargetId = Number(targetCommentId); // [수정] 여기서 정의
 
-      // 답글인 경우 부모 댓글의 접힘 상태 해제
-      for (const comment of comments) {
-        const reply = comment.replies?.find(
-          (r) => Number(r.id) === numTargetId
-        );
-        if (reply) {
-          setCollapsedComments((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(comment.id);
-            return newSet;
-          });
-          break;
+      // [수정] 비동기 처리로 렌더링 충돌 방지
+      setTimeout(() => {
+        setHighlightedCommentId(numTargetId);
+
+        // 답글인 경우 부모 댓글의 접힘 상태 해제
+        for (const comment of comments) {
+          const reply = comment.replies?.find(
+            (r) => Number(r.id) === numTargetId
+          );
+          if (reply) {
+            setCollapsedComments((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(comment.id);
+              return newSet;
+            });
+            break;
+          }
         }
-      }
+      }, 0);
 
       // 잠시 후 스크롤 (DOM 업데이트 대기)
       setTimeout(() => {
-        const element = commentRefs.current[numTargetId];
+        const element = commentRefs.current[numTargetId]; // 이제 numTargetId 접근 가능
         if (element) {
           element.scrollIntoView({ behavior: "smooth", block: "center" });
         }
@@ -789,7 +793,7 @@ const FeedItem = React.memo(function FeedItem({
   // targetCommentId가 있으면 댓글창 자동 열기
   useEffect(() => {
     if (targetCommentId) {
-      setShowComments(true);
+      setTimeout(() => setShowComments(true), 0);
     }
   }, [targetCommentId]);
 
@@ -1081,6 +1085,14 @@ export default function FeedView({
     }
   }, [scrollToFeedId, setScrollToFeedId]);
 
+  useEffect(() => {
+    if (feedContainerRef && containerRef.current) {
+      const ref =
+        feedContainerRef as React.MutableRefObject<HTMLDivElement | null>;
+      ref.current = containerRef.current;
+    }
+  }, [feedContainerRef]);
+
   // 무한 스크롤
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -1095,18 +1107,7 @@ export default function FeedView({
   }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds]);
 
   return (
-    <div
-      ref={(el) => {
-        containerRef.current = el;
-        if (feedContainerRef) {
-          // eslint-disable-next-line react-hooks/immutability -- 부모 컴포넌트에 ref 전달 필요
-          (
-            feedContainerRef as React.MutableRefObject<HTMLDivElement | null>
-          ).current = el;
-        }
-      }}
-      className="h-full flex flex-col p-4 gap-4"
-    >
+    <div ref={containerRef} className="h-full flex flex-col p-4 gap-4">
       {/* 검색바 */}
       <div className="mx-auto max-w-2xl w-full flex-shrink-0">
         <SearchInput

@@ -9,13 +9,7 @@
 
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Heart,
-  MessageCircle,
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-} from "lucide-react";
+import { Heart, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { useImageBrightness } from "@/hooks";

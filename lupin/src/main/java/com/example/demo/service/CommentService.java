@@ -72,7 +72,7 @@ public class CommentService {
 
     @Transactional
     public Comment updateComment(User user, Long commentId, String content) {
-        Comment comment = commentRepository.findById(commentId)
+        Comment comment = commentRepository.findByIdWithDetails(commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
 
         comment.validateOwner(user);

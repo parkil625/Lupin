@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { Notification } from '@/types/dashboard.types';
+import { useEffect, useRef, useCallback } from "react";
+import { Notification } from "@/types/dashboard.types";
 
 interface UseNotificationSseProps {
   onNotificationReceived: (notification: Notification) => void;
@@ -11,7 +11,9 @@ export const useNotificationSse = ({
   enabled = true,
 }: UseNotificationSseProps) => {
   const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const reconnectAttemptsRef = useRef(0);
   const isConnectedRef = useRef(false);
   const lastConnectTimeRef = useRef<number>(0);
@@ -31,49 +33,41 @@ export const useNotificationSse = ({
       eventSourceRef.current.close();
     }
 
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
       // 토큰 없을 때는 로그 출력하지 않음 (로그인 전 정상 상태)
       return;
     }
 
     // SSE URL 구성
-    const isLocal = window.location.hostname === 'localhost';
-    const baseUrl = isLocal ? 'http://localhost:8081' : window.location.origin;
-    const sseUrl = `${baseUrl}/api/notifications/subscribe?token=${encodeURIComponent(token)}`;
-
-    // 개발 환경에서만 최초 연결 시도 로그 출력
-    if (isLocal && reconnectAttemptsRef.current === 0) {
-      console.log('[SSE] 연결 시도');
-    }
+    const isLocal = window.location.hostname === "localhost";
+    const baseUrl = isLocal ? "http://localhost:8081" : window.location.origin;
+    const sseUrl = `${baseUrl}/api/notifications/subscribe?token=${encodeURIComponent(
+      token
+    )}`;
 
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
 
-    eventSource.addEventListener('connect', () => {
+    eventSource.addEventListener("connect", () => {
       isConnectedRef.current = true;
       reconnectAttemptsRef.current = 0; // 연결 성공 시 재시도 카운터 리셋
       lastConnectTimeRef.current = Date.now();
-
-      // 개발 환경에서만 최초 연결 성공 로그 출력
-      if (isLocal && lastConnectTimeRef.current - (lastConnectTimeRef.current || 0) > 60000) {
-        console.log('[SSE] 연결 성공');
-      }
     });
 
     // Heartbeat 이벤트 (연결 유지용, 로그 생략)
-    eventSource.addEventListener('heartbeat', () => {
+    eventSource.addEventListener("heartbeat", () => {
       // 연결 유지용 heartbeat - 별도 처리 불필요
     });
 
-    eventSource.addEventListener('notification', (event) => {
+    eventSource.addEventListener("notification", (event) => {
       try {
         const notification: Notification = JSON.parse(event.data);
         // 알림 수신 시에만 로그 출력 (중요한 이벤트)
-        console.log('[SSE] 알림 수신:', notification);
+        console.log("[SSE] 알림 수신:", notification);
         onNotificationReceivedRef.current(notification);
       } catch (error) {
-        console.error('[SSE] 알림 파싱 에러:', error);
+        console.error("[SSE] 알림 파싱 에러:", error);
       }
     });
 
@@ -90,8 +84,6 @@ export const useNotificationSse = ({
         reconnectAttemptsRef.current += 1;
 
         if (reconnectAttemptsRef.current >= 3) {
-          console.warn('[SSE] 연결 실패 반복 중 (재시도 자동 진행)');
-          // 3회 이후부터는 카운터를 리셋하여 중복 로그 방지
           reconnectAttemptsRef.current = 0;
         }
       }

@@ -535,68 +535,70 @@ export function FeedDetailContent({
                 {/* [수정] 수정 모드가 아닐 때만 하단 액션 버튼 표시 */}
                 {editingCommentId !== comment.id && (
                   <div className="flex items-center gap-4 mb-2">
-                  <button
-                    onClick={() => toggleCommentLike(comment.id)}
-                    className="flex items-center gap-1 hover:opacity-70 transition-opacity"
-                  >
-                    <Heart
-                      className={`w-4 h-4 ${
-                        likeInfo.liked
-                          ? "fill-[#C93831] text-[#C93831]"
-                          : "text-gray-600"
-                      }`}
-                    />
-                    {likeInfo.count > 0 && (
-                      <span className="text-xs text-gray-600 font-semibold">
-                        {likeInfo.count}
-                      </span>
-                    )}
-                  </button>
-                  {depth === 0 && (
                     <button
-                      onClick={() =>
-                        setReplyingTo(
-                          replyingTo === comment.id ? null : comment.id
-                        )
-                      }
-                      className="text-xs text-gray-600 hover:text-[#C93831] font-semibold"
-                    >
-                      답글
-                    </button>
-                  )}
-
-                  {comment.author === currentUserName && (
-                    <>
-                      <button
-                        onClick={() => startEdit(comment.id, comment.content)}
-                        className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
-                      >
-                        삭제
-                      </button>
-                    </>
-                  )}
-                  {comment.author !== currentUserName && (
-                    <button
-                      onClick={() => handleReportComment(comment.id)}
+                      onClick={() => toggleCommentLike(comment.id)}
                       className="flex items-center gap-1 hover:opacity-70 transition-opacity"
                     >
-                      <Siren
+                      <Heart
                         className={`w-4 h-4 ${
-                          commentReported[comment.id]
+                          likeInfo.liked
                             ? "fill-[#C93831] text-[#C93831]"
                             : "text-gray-600"
                         }`}
                       />
+                      {likeInfo.count > 0 && (
+                        <span className="text-xs text-gray-600 font-semibold">
+                          {likeInfo.count}
+                        </span>
+                      )}
                     </button>
+                    {depth === 0 && (
+                      <button
+                        onClick={() =>
+                          setReplyingTo(
+                            replyingTo === comment.id ? null : comment.id
+                          )
+                        }
+                        className="text-xs text-gray-600 hover:text-[#C93831] font-semibold"
+                      >
+                        답글
+                      </button>
+                    )}
+
+                    {comment.author === currentUserName && (
+                      <>
+                        <button
+                          onClick={() => startEdit(comment.id, comment.content)}
+                          className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
+                        >
+                          삭제
+                        </button>
+                      </>
+                    )}
+                    {comment.author !== currentUserName && (
+                      <button
+                        onClick={() => handleReportComment(comment.id)}
+                        className="flex items-center gap-1 hover:opacity-70 transition-opacity"
+                      >
+                        <Siren
+                          className={`w-4 h-4 ${
+                            commentReported[comment.id]
+                              ? "fill-[#C93831] text-[#C93831]"
+                              : "text-gray-600"
+                          }`}
+                        />
+                      </button>
                     )}
                   </div>
                 )}
+              </>
+            )}
 
             {isReplying && (
               <div className="mb-3">

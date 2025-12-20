@@ -613,98 +613,101 @@ export default function FeedDetailDialogHome({
                         }}
                       />
                       <div className="flex gap-2 mt-1 justify-end">
-                      <button
-                        onClick={cancelEdit}
-                        className="text-xs text-gray-500 hover:text-gray-900 transition-colors font-medium"
-                      >
-                        취소
-                      </button>
-                      <button
-                        onClick={() => handleUpdateComment(comment.id)}
-                        className="text-xs text-[#C93831] font-bold hover:text-[#a02b25] transition-colors"
-                      >
-                        저장
-                      </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="text-xs text-gray-500 hover:text-gray-900 transition-colors font-medium"
+                        >
+                          취소
+                        </button>
+                        <button
+                          onClick={() => handleUpdateComment(comment.id)}
+                          className="text-xs text-[#C93831] font-bold hover:text-[#a02b25] transition-colors"
+                        >
+                          저장
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-900 break-words mb-2">
-                    {comment.content}
-                    {comment.updatedAt && (
-                      <span className="text-xs text-gray-400 ml-1">
-                        (수정됨)
-                      </span>
-                    )}
-                  </p>
-                )}
-                {/* [수정] 수정 모드가 아닐 때만 하단 액션 버튼 표시 */}
-                {editingCommentId !== comment.id && (
-                  <div className="flex items-center gap-4 mb-2">
-                    <button
-                      onClick={() => toggleCommentLike(comment.id)}
-                      className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
-                    >
-                      <Heart
-                        className={`w-4 h-4 ${
-                          likeInfo.liked
-                            ? "fill-[#C93831] text-[#C93831]"
-                            : "text-gray-600"
-                        }`}
-                      />
-                      {likeInfo.count > 0 && (
-                        <span className="text-xs text-gray-600 font-semibold">
-                          {likeInfo.count}
+                  ) : (
+                    <p className="text-sm text-gray-900 break-words mb-2">
+                      {comment.content}
+                      {comment.updatedAt && (
+                        <span className="text-xs text-gray-400 ml-1">
+                          (수정됨)
                         </span>
                       )}
-                    </button>
-                    {depth === 0 && (
+                    </p>
+                  )}
+                  {/* [수정] 수정 모드가 아닐 때만 하단 액션 버튼 표시 */}
+                  {editingCommentId !== comment.id && (
+                    <div className="flex items-center gap-4 mb-2">
                       <button
-                        onClick={() =>
-                          setReplyingTo(
-                            replyingTo === comment.id ? null : comment.id
-                          )
-                        }
-                        className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
-                      >
-                        답글
-                      </button>
-                    )}
-                    {comment.author === currentUserName && (
-                      <>
-                        <button
-                          onClick={() => startEdit(comment.id, comment.content)}
-                          className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
-                        >
-                          수정
-                        </button>
-                        <button
-                          onClick={() => handleDeleteComment(comment.id)}
-                          className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
-                        >
-                          삭제
-                        </button>
-                      </>
-                    )}
-                    {comment.author !== currentUserName && (
-                      <button
-                        onClick={() => handleReportComment(comment.id)}
+                        onClick={() => toggleCommentLike(comment.id)}
                         className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
-                        aria-label={
-                          commentReported[comment.id]
-                            ? "신고 취소"
-                            : "댓글 신고"
-                        }
                       >
-                        <Siren
+                        <Heart
                           className={`w-4 h-4 ${
-                            commentReported[comment.id]
-                              ? "fill-[#C93831] text-[#C93831]" // 신고됨: 빨간색 채움
-                              : "text-gray-600" // 기본: 회색
+                            likeInfo.liked
+                              ? "fill-[#C93831] text-[#C93831]"
+                              : "text-gray-600"
                           }`}
                         />
+                        {likeInfo.count > 0 && (
+                          <span className="text-xs text-gray-600 font-semibold">
+                            {likeInfo.count}
+                          </span>
+                        )}
                       </button>
-                    )}
-                  </div>
+                      {depth === 0 && (
+                        <button
+                          onClick={() =>
+                            setReplyingTo(
+                              replyingTo === comment.id ? null : comment.id
+                            )
+                          }
+                          className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
+                        >
+                          답글
+                        </button>
+                      )}
+                      {comment.author === currentUserName && (
+                        <>
+                          <button
+                            onClick={() =>
+                              startEdit(comment.id, comment.content)
+                            }
+                            className="text-xs text-gray-600 hover:text-[#C93831] font-semibold cursor-pointer"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="text-xs text-gray-600 hover:text-red-500 font-semibold cursor-pointer"
+                          >
+                            삭제
+                          </button>
+                        </>
+                      )}
+                      {comment.author !== currentUserName && (
+                        <button
+                          onClick={() => handleReportComment(comment.id)}
+                          className="flex items-center gap-1 hover:opacity-70 transition-opacity cursor-pointer"
+                          aria-label={
+                            commentReported[comment.id]
+                              ? "신고 취소"
+                              : "댓글 신고"
+                          }
+                        >
+                          <Siren
+                            className={`w-4 h-4 ${
+                              commentReported[comment.id]
+                                ? "fill-[#C93831] text-[#C93831]" // 신고됨: 빨간색 채움
+                                : "text-gray-600" // 기본: 회색
+                            }`}
+                          />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
               {isReplying && (

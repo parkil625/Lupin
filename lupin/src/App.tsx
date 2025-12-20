@@ -11,11 +11,19 @@ import LandingPage from "./components/LandingPage";
 // 🚀 [최적화 2] Lazy Loading + Preload 지원
 // 마우스 hover 시 미리 다운로드 시작 가능
 const Login = lazyWithPreload(() => import("./components/auth/Login"));
-const NaverCallback = lazyWithPreload(() => import("./components/auth/NaverCallback"));
-const KakaoCallback = lazyWithPreload(() => import("./components/auth/KakaoCallback"));
+const NaverCallback = lazyWithPreload(
+  () => import("./components/auth/NaverCallback")
+);
+const KakaoCallback = lazyWithPreload(
+  () => import("./components/auth/KakaoCallback")
+);
 const Dashboard = lazyWithPreload(() => import("./components/Dashboard"));
-const NotFoundPage = lazyWithPreload(() => import("./components/errors/NotFoundPage"));
-const ErrorPage = lazyWithPreload(() => import("./components/errors/ErrorPage"));
+const NotFoundPage = lazyWithPreload(
+  () => import("./components/errors/NotFoundPage")
+);
+const ErrorPage = lazyWithPreload(
+  () => import("./components/errors/ErrorPage")
+);
 
 // 로딩 중에 보여줄 가벼운 스피너 (화면 깜빡임 방지)
 const PageLoader = () => (
@@ -92,7 +100,6 @@ export default function App() {
             />
 
             {/* 에러 페이지 */}
-            <Route path="/demo/404" element={<NotFoundPage />} />
             <Route path="/demo/500" element={<ErrorPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

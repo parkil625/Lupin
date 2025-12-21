@@ -51,7 +51,7 @@ public class AuthService {
      */
     public LoginDto login(LoginRequest request) {
         // [트랜잭션 외부] 유저 조회 (읽기 전용, 빠름)
-        User user = findUserForLogin(request.getEmail());
+        User user = findUserForLogin(request.getUserId());
 
         // [트랜잭션 외부] BCrypt 검증 (CPU 집약적, 느림)
         // DB 커넥션을 점유하지 않은 상태에서 수행

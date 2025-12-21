@@ -83,7 +83,7 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        String userId = jwtTokenProvider.getEmail(refreshToken);
+        String userId = jwtTokenProvider.getUserId(refreshToken);
         String storedRefreshToken = refreshTokenRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
 
@@ -111,7 +111,7 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
-        String userId = jwtTokenProvider.getEmail(accessToken);
+        String userId = jwtTokenProvider.getUserId(accessToken);
         refreshTokenRepository.deleteByUserId(userId);
 
         long expiration = jwtTokenProvider.getExpiration(accessToken);

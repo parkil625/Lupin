@@ -113,7 +113,7 @@ class AuthServiceTest {
         // given
         String refreshToken = "validRefreshToken";
         given(jwtTokenProvider.validateToken(refreshToken)).willReturn(true);
-        given(jwtTokenProvider.getEmail(refreshToken)).willReturn("test@example.com");
+        given(jwtTokenProvider.getUserId(refreshToken)).willReturn("test@example.com");
         given(refreshTokenRepository.findByUserId("test@example.com")).willReturn(Optional.of(refreshToken));
         given(userRepository.findByUserId("test@example.com")).willReturn(Optional.of(user));
         given(jwtTokenProvider.createAccessToken(anyString(), anyString())).willReturn("newAccessToken");
@@ -146,7 +146,7 @@ class AuthServiceTest {
         // given
         String refreshToken = "validRefreshToken";
         given(jwtTokenProvider.validateToken(refreshToken)).willReturn(true);
-        given(jwtTokenProvider.getEmail(refreshToken)).willReturn("test@example.com");
+        given(jwtTokenProvider.getUserId(refreshToken)).willReturn("test@example.com");
         given(refreshTokenRepository.findByUserId("test@example.com")).willReturn(Optional.of("differentToken"));
 
         // when & then
@@ -161,7 +161,7 @@ class AuthServiceTest {
         // given
         String accessToken = "Bearer validAccessToken";
         given(jwtTokenProvider.validateToken("validAccessToken")).willReturn(true);
-        given(jwtTokenProvider.getEmail("validAccessToken")).willReturn("test@example.com");
+        given(jwtTokenProvider.getUserId("validAccessToken")).willReturn("test@example.com");
         given(jwtTokenProvider.getExpiration("validAccessToken")).willReturn(3600000L);
 
         // when

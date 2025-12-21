@@ -135,7 +135,7 @@ public class JwtTokenProvider {
         return validateAndParseClaims(token).isPresent();
     }
 
-    public String getEmail(String token) {
+    public String getUserId(String token) {
         return parseClaims(token).getSubject();
     }
 

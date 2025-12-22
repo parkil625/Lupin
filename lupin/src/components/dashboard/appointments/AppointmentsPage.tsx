@@ -11,11 +11,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Calendar as CalendarIcon,
   FileText,
   MessageCircle,
   XCircle,
   User,
+  CheckCircle2,
 } from "lucide-react";
 import { appointmentApi, AppointmentResponse } from "@/api/appointmentApi";
 import ChatRoom from "@/components/dashboard/chat/ChatRoom";
@@ -32,6 +39,7 @@ export default function AppointmentsPage({
     useState<AppointmentResponse | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [completedPopupOpen, setCompletedPopupOpen] = useState(false);
 
   // 예약 목록 불러오기
   useEffect(() => {
@@ -139,12 +147,20 @@ export default function AppointmentsPage({
     }
   };
 
-  // 상태 필터에 따라 예약 목록 필터링
+  // 완료된 예약만 필터링
+  const completedAppointments = appointments.filter(
+    (apt) => apt.status === "COMPLETED"
+  );
+
+  // 상태 필터에 따라 예약 목록 필터링 (완료된 예약은 제외)
   const filteredAppointments = appointments.filter((apt) => {
+    // 완료된 예약은 카드 목록에서 제외
+    if (apt.status === "COMPLETED") return false;
+
     if (statusFilter === "ALL") return true;
     if (statusFilter === "SCHEDULED") return apt.status === "SCHEDULED";
     if (statusFilter === "IN_PROGRESS_OR_COMPLETED")
-      return apt.status === "IN_PROGRESS" || apt.status === "COMPLETED";
+      return apt.status === "IN_PROGRESS";
     if (statusFilter === "CANCELLED") return apt.status === "CANCELLED";
     return true;
   });
@@ -163,20 +179,32 @@ export default function AppointmentsPage({
                 : "내 진료 예약 현황"}
             </p>
           </div>
-          <div className="min-w-[200px]">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="rounded-xl h-11 bg-white border-gray-200 shadow-sm">
-                <SelectValue placeholder="전체 예약" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">전체 예약</SelectItem>
-                <SelectItem value="SCHEDULED">예약된 진료</SelectItem>
-                <SelectItem value="IN_PROGRESS_OR_COMPLETED">
-                  진행 중/완료된 진료
-                </SelectItem>
-                <SelectItem value="CANCELLED">취소된 진료</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex gap-3">
+            {completedAppointments.length > 0 && (
+              <Button
+                variant="outline"
+                className="rounded-xl border-green-600 text-green-600 hover:bg-green-50"
+                onClick={() => setCompletedPopupOpen(true)}
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                완료된 진료 ({completedAppointments.length})
+              </Button>
+            )}
+            <div className="min-w-[200px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="rounded-xl h-11 bg-white border-gray-200 shadow-sm">
+                  <SelectValue placeholder="전체 예약" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">전체 예약</SelectItem>
+                  <SelectItem value="SCHEDULED">예약된 진료</SelectItem>
+                  <SelectItem value="IN_PROGRESS_OR_COMPLETED">
+                    진행 중 진료
+                  </SelectItem>
+                  <SelectItem value="CANCELLED">취소된 진료</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -291,6 +319,86 @@ export default function AppointmentsPage({
           </div>
         )}
       </div>
+
+      {/* 완료된 진료 팝업 */}
+      <Dialog open={completedPopupOpen} onOpenChange={setCompletedPopupOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black">
+              완료된 진료 내역
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {completedAppointments.map((apt) => {
+              const badge = getStatusBadge(apt.status);
+              return (
+                <Card
+                  key={apt.id}
+                  className="bg-white border border-gray-200 shadow-md"
+                >
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-12 h-12 border-2 border-white shadow-md">
+                          <AvatarFallback className="bg-slate-100">
+                            <User className="w-5 h-5 text-gray-400" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {currentUser.role === "DOCTOR"
+                              ? apt.patientName
+                              : apt.doctorName}
+                          </h3>
+                          <div className="text-xs text-gray-500">
+                            예약 번호: #{apt.id}
+                          </div>
+                        </div>
+                      </div>
+                      <Badge
+                        className={`${badge.className} text-white font-bold border-0 px-2 py-1`}
+                      >
+                        {badge.text}
+                      </Badge>
+                    </div>
+                    <div className="p-3 rounded-xl space-y-2 mb-4 bg-green-50 border-2 border-green-200">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CalendarIcon className="w-4 h-4 text-blue-500" />
+                        <span className="font-medium">
+                          {new Date(apt.date).toLocaleString("ko-KR", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            weekday: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <FileText className="w-4 h-4 text-purple-500" />
+                        <span className="font-medium">
+                          {apt.departmentName || "진료 예약"}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200 border shadow-sm font-bold h-10"
+                      onClick={() => {
+                        handleChatClick(apt);
+                        setCompletedPopupOpen(false);
+                      }}
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      1:1 채팅
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 채팅방 다이얼로그 */}
       {selectedAppointment && (

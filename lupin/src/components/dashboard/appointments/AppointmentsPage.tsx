@@ -227,7 +227,15 @@ export default function AppointmentsPage({
                       </Badge>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-xl space-y-3 mb-5 border border-gray-100">
+                    <div className={`p-4 rounded-xl space-y-3 mb-5 border-2 ${
+                      apt.status === "SCHEDULED"
+                        ? "bg-blue-50 border-blue-200"
+                        : apt.status === "COMPLETED"
+                        ? "bg-green-50 border-green-200"
+                        : apt.status === "CANCELLED"
+                        ? "bg-gray-50 border-gray-200"
+                        : "bg-gray-50 border-gray-100"
+                    }`}>
                       <div className="flex items-center gap-3 text-gray-700">
                         <div className="p-2 bg-white rounded-lg shadow-sm">
                           <CalendarIcon className="w-4 h-4 text-blue-500" />
@@ -256,19 +264,23 @@ export default function AppointmentsPage({
                     {apt.status === "SCHEDULED" && (
                       <div className="flex gap-3">
                         <Button
-                          className="flex-1 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200 border shadow-sm font-bold h-11"
-                          onClick={() => handleChatClick(apt)}
-                        >
-                          <MessageCircle className="w-4 h-4 mr-2" />
-                          1:1 채팅
-                        </Button>
-                        <Button
                           variant="outline"
                           className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-bold h-11"
                           onClick={() => handleCancelAppointment(apt.id)}
                         >
                           <XCircle className="w-4 h-4 mr-2" />
                           예약 취소
+                        </Button>
+                      </div>
+                    )}
+                    {(apt.status === "COMPLETED" || apt.status === "CANCELLED") && (
+                      <div className="flex gap-3">
+                        <Button
+                          className="flex-1 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200 border shadow-sm font-bold h-11"
+                          onClick={() => handleChatClick(apt)}
+                        >
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          1:1 채팅
                         </Button>
                       </div>
                     )}

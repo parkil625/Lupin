@@ -38,6 +38,7 @@ public class AppointmentService {
     private final ChatService chatService;
     private final RedissonClient redissonClient;
     private final RedisTemplate<String, String> redisTemplate;
+    private final org.springframework.messaging.simp.SimpMessageSendingOperations messagingTemplate;
 
     private static final String APPOINTMENT_LOCK_PREFIX = "appointment:lock:doctor:";
     private static final String BOOKED_TIMES_CACHE_PREFIX = "appointment:booked:";
@@ -174,6 +175,26 @@ public class AppointmentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
 
         appointment.complete();
+
+        // WebSocket으로 진료 종료 알림 전송
+        String roomId = "appointment_" + appointmentId;
+        try {
+            messagingTemplate.convertAndSend("/queue/chat/" + roomId, new ConsultationEndNotification(appointmentId));
+            log.info("진료 종료 알림 전송 완료: appointmentId={}, roomId={}", appointmentId, roomId);
+        } catch (Exception e) {
+            log.error("진료 종료 알림 전송 실패: {}", e.getMessage());
+        }
+    }
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    public static class ConsultationEndNotification {
+        private Long appointmentId;
+        private String type = "CONSULTATION_END";
+
+        public ConsultationEndNotification(Long appointmentId) {
+            this.appointmentId = appointmentId;
+        }
     }
 
     public List<String> getBookedTimesByDoctorAndDate(Long doctorId, LocalDate date) {

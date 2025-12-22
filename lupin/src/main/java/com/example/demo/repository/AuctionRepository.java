@@ -89,9 +89,18 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     List<Auction> findAllByStatus(AuctionStatus auctionStatus);
 
-    List<Auction> findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc(
-            AuctionStatus status,
-            LocalDateTime start,
-            LocalDateTime end
+    @Query("""
+        SELECT a
+        FROM Auction a
+        JOIN FETCH a.winner w
+        JOIN FETCH a.auctionItem i
+        WHERE a.status = :status
+          AND a.regularEndTime BETWEEN :start AND :end
+        ORDER BY a.regularEndTime DESC
+    """)
+    List<Auction> findMonthlyWinners(
+            @Param("status") AuctionStatus status,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
     );
 }

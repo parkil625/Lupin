@@ -15,6 +15,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -285,66 +286,63 @@ class AuctionRepositoryTest {
         // 단순 ID 비교라면 아래처럼만 해도 충분합니다.
         assertThat(result.get(0).getId()).isEqualTo(targetAuction.getId());
     }
+
     @Test
-    @DisplayName("상태와 종료시간 범위로 경매를 조회하면, 조건에 맞는 경매만 종료시간 내림차순으로 반환된다")
-    void findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc() {
+    @DisplayName("이달의 낙찰 목록 조회 - Fetch Join으로 N+1 없이 조회된다")
+    void findMonthlyWinnersTest() {
         // Given
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startSearch = now.minusDays(7); // 검색 시작: 7일 전
-        LocalDateTime endSearch = now.plusDays(1);    // 검색 종료: 내일
+        LocalDateTime startOfMonth = now.minusDays(7);
+        LocalDateTime endOfMonth = now.plusDays(1);
 
-        // 1. [검색 대상] 종료되었고, 범위 내에 있는 경매 (어제 종료) -> 1순위
-        Auction target1 = Auction.builder()
+        // 1. 낙찰자(User) 생성 및 저장
+        // [수정 포인트] userId 설정 필수, Role은 MEMBER로 변경
+        User winner = User.builder()
+                .userId("winner_king")  // [필수] 유저 아이디 (DB 컬럼: user_id)
+                .name("낙찰왕")
+                .password("password123")
+                .role(Role.MEMBER)      // [수정] Role.ROLE_USER -> Role.MEMBER (DB 스키마 기준)
+                .build();
+
+        userRepository.save(winner);
+
+        // 2. [조회 대상] 종료된 경매 생성
+        Auction targetAuction = Auction.builder()
                 .status(AuctionStatus.ENDED)
-                .startTime(now.minusDays(2))
-                .regularEndTime(now.minusDays(1)) // 범위 안 (최신)
-                .currentPrice(1000L)
-                .overtimeStarted(false)
+                .startTime(now.minusDays(3))
+                .regularEndTime(now.minusDays(1))
+                .currentPrice(5000L)
+                .winner(winner)
                 .build();
 
-        // 2. [검색 대상] 종료되었고, 범위 내에 있는 경매 (3일 전 종료) -> 2순위
-        Auction target2 = Auction.builder()
-                .status(AuctionStatus.ENDED)
-                .startTime(now.minusDays(4))
-                .regularEndTime(now.minusDays(3)) // 범위 안 (과거)
-                .currentPrice(2000L)
-                .overtimeStarted(false)
+        // 3. 경매 물품 생성 및 연결
+        AuctionItem item = AuctionItem.builder()
+                .itemName("전설의 아이템")
+                .itemImage("image.jpg")
+                .auction(targetAuction)
                 .build();
 
-        // 3. [제외 대상] 상태가 안 맞음 (진행 중)
-        Auction activeAuction = Auction.builder()
-                .status(AuctionStatus.ACTIVE)
-                .startTime(now.minusHours(1))
-                .regularEndTime(now.plusHours(1))
-                .currentPrice(3000L)
-                .overtimeStarted(false)
-                .build();
+        // 4. Cascade 설정 덕분에 item은 자동으로 저장됨 (Setter나 Reflection 사용)
+        // Auction 엔티티에 setAuctionItem 메서드가 없으면 ReflectionTestUtils 사용
+        org.springframework.test.util.ReflectionTestUtils.setField(targetAuction, "auctionItem", item);
 
-        // 4. [제외 대상] 날짜가 안 맞음 (범위 밖 - 아주 옛날)
-        Auction oldAuction = Auction.builder()
-                .status(AuctionStatus.ENDED)
-                .startTime(now.minusDays(20))
-                .regularEndTime(now.minusDays(19)) // 19일 전 (검색 시작일보다 이전)
-                .currentPrice(4000L)
-                .overtimeStarted(false)
-                .build();
-
-        // 데이터 저장
-        auctionRepository.saveAll(List.of(target2, activeAuction, target1, oldAuction));
+        auctionRepository.save(targetAuction);
+        entityManager.persist(item);
+        // 5. 영속성 컨텍스트 초기화 (실제 DB 조회 검증용)
+        entityManager.flush();
+        entityManager.clear();
 
         // When
-        List<Auction> result = auctionRepository.findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc(
+        List<Auction> results = auctionRepository.findMonthlyWinners(
                 AuctionStatus.ENDED,
-                startSearch,
-                endSearch
+                startOfMonth,
+                endOfMonth
         );
 
         // Then
-        assertThat(result).hasSize(2); // target1, target2만 나와야 함 (나머지 제외)
-
-        // 정렬 확인: 날짜가 더 나중인(최신인) target1이 먼저 와야 함
-        assertThat(result.get(0).getId()).isEqualTo(target1.getId());
-        assertThat(result.get(1).getId()).isEqualTo(target2.getId());
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getWinner().getName()).isEqualTo("낙찰왕");
+        assertThat(results.get(0).getAuctionItem().getItemName()).isEqualTo("전설의 아이템");
     }
 
 }

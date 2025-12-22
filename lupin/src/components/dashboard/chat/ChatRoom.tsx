@@ -57,9 +57,12 @@ export default function ChatRoom({
       // 진료 종료 알림 처리
       if (msg.type === 'CONSULTATION_END') {
         if (currentUser.role === 'PATIENT') {
-          // 환자는 채팅창 닫고 예약 목록으로 돌아가기
+          // 환자는 채팅창 닫고 초기 화면으로 돌아가기
           onOpenChange(false);
-          window.location.reload(); // 예약 목록 새로고침
+          // Medical 컴포넌트 상태 초기화를 위한 이벤트 발생 (의사 이름 포함)
+          window.dispatchEvent(new CustomEvent('consultationEnded', {
+            detail: { doctorName: msg.doctorName || targetUser.name }
+          }));
         }
         return;
       }

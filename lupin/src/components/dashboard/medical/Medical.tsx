@@ -27,6 +27,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { appointmentApi, AppointmentResponse } from "@/api/appointmentApi";
 import { userApi } from "@/api/userApi";
+import { prescriptionApi } from "@/api/prescriptionApi";
 import { toast } from "sonner";
 
 interface MedicalProps {
@@ -489,50 +490,12 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   };
 
   // -------------------------------------------------------------------------
-  // [공통] 목업 데이터
+  // [처방전] 상태 및 로직
   // -------------------------------------------------------------------------
 
-  const prescriptions: Prescription[] = [
-    {
-      id: 1,
-      name: "감기약 처방",
-      date: "11월 10일",
-      doctor: "이의사",
-      medicines: ["타이레놀 500mg", "콧물약", "기침약"],
-      diagnosis: "급성 상기도 감염",
-      instructions:
-        "하루 3회, 식후 30분에 복용하세요. 충분한 휴식과 수분 섭취가 필요합니다.",
-    },
-    {
-      id: 2,
-      name: "소화제 처방",
-      date: "10월 28일",
-      doctor: "최의사",
-      medicines: ["소화제", "제산제"],
-      diagnosis: "소화불량",
-      instructions: "하루 2회, 식후에 복용하세요.",
-    },
-    {
-      id: 3,
-      name: "진통제 처방",
-      date: "10월 15일",
-      doctor: "김준호 의사",
-      medicines: ["이부프로펜 200mg"],
-      diagnosis: "근육통",
-      instructions: "통증이 있을 때 4-6시간 간격으로 복용하세요.",
-    },
-    {
-      id: 4,
-      name: "알레르기약",
-      date: "10월 1일",
-      doctor: "박의사",
-      medicines: ["항히스타민제"],
-      diagnosis: "알레르기성 비염",
-      instructions: "하루 1회, 취침 전 복용하세요.",
-    },
-  ];
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
 
-  // 예약 목록 로드
+  // 예약 목록 및 처방전 로드
   useEffect(() => {
     const loadAppointments = async () => {
       try {
@@ -551,7 +514,17 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       }
     };
 
+    const loadPrescriptions = async () => {
+      try {
+        const data = await prescriptionApi.getPatientPrescriptions(currentPatientId);
+        setPrescriptions(data);
+      } catch (error) {
+        console.error("처방전 목록 로드 실패:", error);
+      }
+    };
+
     loadAppointments();
+    loadPrescriptions();
   }, [currentPatientId]);
 
   // 알림에서 채팅방 자동 오픈 이벤트 처리
@@ -599,6 +572,41 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       window.removeEventListener("openAppointmentChat", handleOpenAppointmentChat);
     };
   }, [appointments]);
+
+  // 진료 종료 이벤트 처리 (환자 측)
+  useEffect(() => {
+    const handleConsultationEnded = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ doctorName: string }>;
+      const doctorName = customEvent.detail?.doctorName || "담당 의사";
+
+      // 채팅 상태 초기화
+      setActiveAppointment(null);
+      setIsChatEnded(true);
+      setMessages([]);
+      setShowAppointmentView(true);
+      setViewState("LIST");
+
+      // 예약 목록 및 처방전 새로고침
+      try {
+        const appointmentsData = await appointmentApi.getPatientAppointments(currentPatientId);
+        setAppointments(appointmentsData);
+
+        const prescriptionsData = await prescriptionApi.getPatientPrescriptions(currentPatientId);
+        setPrescriptions(prescriptionsData);
+
+        toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
+      } catch (error) {
+        console.error("데이터 새로고침 실패:", error);
+        toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
+      }
+    };
+
+    window.addEventListener("consultationEnded", handleConsultationEnded);
+
+    return () => {
+      window.removeEventListener("consultationEnded", handleConsultationEnded);
+    };
+  }, [currentPatientId]);
 
   // -------------------------------------------------------------------------
   // [렌더링]
@@ -754,30 +762,48 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
               </div>
               <div className="flex-1 overflow-y-auto px-4 pb-4">
                 <div className="space-y-2">
-                  {prescriptions.map((pres) => (
-                    <div
-                      key={pres.id}
-                      className="p-3 rounded-xl bg-white/80 border border-gray-200"
-                    >
-                      <div className="font-bold text-gray-900 mb-1 text-sm">
-                        {pres.name}
-                      </div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        {pres.doctor} 원장
-                      </div>
-                      <div className="text-xs text-gray-500 mb-2">
-                        {pres.date}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-full rounded-lg text-xs"
-                        onClick={() => setSelectedPrescription(pres)}
-                      >
-                        상세보기
-                      </Button>
+                  {prescriptions.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 text-sm">
+                      처방전이 없습니다
                     </div>
-                  ))}
+                  ) : (
+                    prescriptions.map((pres) => (
+                      <div
+                        key={pres.id}
+                        className="p-3 rounded-xl bg-white/80 border border-gray-200"
+                      >
+                        <div className="font-bold text-gray-900 mb-1 text-sm">
+                          {pres.diagnosis}
+                        </div>
+                        <div className="text-xs text-gray-600 mb-1">
+                          {pres.doctorName} 의사
+                        </div>
+                        <div className="text-xs text-gray-500 mb-2">
+                          {new Date(pres.date).toLocaleDateString("ko-KR")}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full rounded-lg text-xs"
+                          onClick={() => setSelectedPrescription({
+                            id: pres.id,
+                            name: pres.diagnosis,
+                            date: new Date(pres.date).toLocaleDateString("ko-KR"),
+                            doctor: pres.doctorName,
+                            medicines: pres.medicines.map((m: any) =>
+                              `${m.medicineName} ${m.dosage}`
+                            ),
+                            diagnosis: pres.diagnosis,
+                            instructions: pres.medicines.map((m: any) =>
+                              m.instructions || `${m.frequency} 복용`
+                            ).join(", "),
+                          })}
+                        >
+                          상세보기
+                        </Button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </Card>
@@ -1033,12 +1059,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                               )}
                               {isScheduled && (
                                 <>
-                                  <Button
-                                    onClick={() => handleAppointmentClick(apt)}
-                                    className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm"
-                                  >
-                                    채팅 시작
-                                  </Button>
                                   <div className="grid grid-cols-2 gap-2">
                                     <Button
                                       onClick={async () => {

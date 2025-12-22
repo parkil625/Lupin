@@ -194,7 +194,7 @@ export default function AppointmentsPage({
               return (
                 <Card
                   key={apt.id}
-                  className="backdrop-blur-2xl bg-white/80 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">

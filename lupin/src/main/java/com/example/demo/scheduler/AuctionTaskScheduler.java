@@ -25,7 +25,7 @@ public class AuctionTaskScheduler {
     private final Map<Long, ScheduledFuture<?>> scheduledEndTasks = new ConcurrentHashMap<>();
 
     public AuctionTaskScheduler(
-            @Qualifier("messageBrokerTaskScheduler") TaskScheduler taskScheduler,
+            @Qualifier("auctionScheduler") TaskScheduler taskScheduler,
             @Lazy AuctionService auctionService) {
         this.taskScheduler = taskScheduler;
         this.auctionService = auctionService;

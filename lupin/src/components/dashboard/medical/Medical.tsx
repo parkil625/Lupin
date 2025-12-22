@@ -42,6 +42,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
   const [appointments, setAppointments] = useState<AppointmentResponse[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("ALL"); // 예약 상태 필터
 
   // -------------------------------------------------------------------------
   // [HEAD] 예약 관련 상태 및 로직 (인라인 예약 기능을 위해 복구)
@@ -571,15 +572,34 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
             {/* 예약 내역 - 고정 높이 350px */}
             <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[350px] flex flex-col overflow-hidden">
               <div className="p-4 flex-shrink-0">
-                <h3 className="text-lg font-black text-gray-900 mb-3 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-[#C93831]" />
-                  예약 내역
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-[#C93831]" />
+                    예약 내역
+                  </h3>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[130px] h-8 text-xs">
+                      <SelectValue placeholder="전체" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">전체</SelectItem>
+                      <SelectItem value="SCHEDULED">예약됨</SelectItem>
+                      <SelectItem value="IN_PROGRESS">진행중</SelectItem>
+                      <SelectItem value="COMPLETED">완료</SelectItem>
+                      <SelectItem value="CANCELLED">취소됨</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto px-4 pb-4">
                 <div className="space-y-2">
                   {appointments
                     .filter((apt) => {
+                      // 상태 필터 적용
+                      if (statusFilter !== "ALL" && apt.status !== statusFilter) {
+                        return false;
+                      }
+
                       // CANCELLED 상태인 예약은 최대 5개까지만 표시
                       if (apt.status === "CANCELLED") {
                         const cancelledAppointments = appointments.filter(
@@ -609,21 +629,22 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         }
                       );
 
-                      const statusMap = {
-                        SCHEDULED: "예정",
-                        IN_PROGRESS: "진행중",
-                        COMPLETED: "완료",
-                        CANCELLED: "취소됨",
+                      const statusConfig = {
+                        SCHEDULED: { label: "예약", color: "#7950F2" },
+                        IN_PROGRESS: { label: "진료 중", color: "#20C997" },
+                        COMPLETED: { label: "진료 완료", color: "#868E96" },
+                        CANCELLED: { label: "예약 취소", color: "#E03131" },
                       };
-                      const displayStatus = statusMap[apt.status] || apt.status;
+                      const config = statusConfig[apt.status] || { label: apt.status, color: "#868E96" };
                       const isScheduled = apt.status === "SCHEDULED";
+                      const isInProgress = apt.status === "IN_PROGRESS";
 
                       return (
                         <div
                           key={apt.id}
                           onClick={() => handleAppointmentClick(apt)}
                           className={`p-3 rounded-xl ${
-                            isScheduled
+                            isScheduled || isInProgress
                               ? "bg-white/80 hover:bg-white cursor-pointer"
                               : "bg-gray-100/50 cursor-default"
                           }`}
@@ -638,11 +659,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                               </div>
                             </div>
                             <Badge
-                              className={`${
-                                isScheduled ? "bg-green-500" : "bg-gray-500"
-                              } text-white font-bold border-0 text-xs`}
+                              style={{ backgroundColor: config.color }}
+                              className="text-white font-bold border-0 text-xs"
                             >
-                              {displayStatus}
+                              {config.label}
                             </Badge>
                           </div>
                           <div className="text-xs text-gray-600 font-medium mb-2">

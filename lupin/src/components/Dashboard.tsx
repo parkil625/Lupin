@@ -243,8 +243,16 @@ function useDashboardLogic(
             window.dispatchEvent(event);
           }, 300);
         } else {
-          // 환자: Medical 페이지로 이동 (진료 예약 페이지)
+          // 환자: Medical 페이지로 이동 후 채팅창 자동 오픈
           navigateFn("/dashboard/medical");
+
+          // 페이지 이동 후 채팅창 오픈 이벤트 발생
+          setTimeout(() => {
+            const event = new CustomEvent("openAppointmentChat", {
+              detail: { appointmentId: refId },
+            });
+            window.dispatchEvent(event);
+          }, 300);
         }
       }
     },

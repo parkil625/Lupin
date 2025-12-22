@@ -179,8 +179,11 @@ public class AppointmentService {
         // WebSocket으로 진료 종료 알림 전송
         String roomId = "appointment_" + appointmentId;
         try {
-            messagingTemplate.convertAndSend("/queue/chat/" + roomId, new ConsultationEndNotification(appointmentId));
-            log.info("진료 종료 알림 전송 완료: appointmentId={}, roomId={}", appointmentId, roomId);
+            String doctorName = appointment.getDoctor().getName();
+            messagingTemplate.convertAndSend("/queue/chat/" + roomId,
+                new ConsultationEndNotification(appointmentId, doctorName));
+            log.info("진료 종료 알림 전송 완료: appointmentId={}, roomId={}, doctor={}",
+                appointmentId, roomId, doctorName);
         } catch (Exception e) {
             log.error("진료 종료 알림 전송 실패: {}", e.getMessage());
         }
@@ -188,12 +191,15 @@ public class AppointmentService {
 
     @lombok.Data
     @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
     public static class ConsultationEndNotification {
         private Long appointmentId;
+        private String doctorName;
         private String type = "CONSULTATION_END";
 
-        public ConsultationEndNotification(Long appointmentId) {
+        public ConsultationEndNotification(Long appointmentId, String doctorName) {
             this.appointmentId = appointmentId;
+            this.doctorName = doctorName;
         }
     }
 

@@ -53,25 +53,31 @@ export default function PrescriptionDialog({
     setMedicines(updated);
   };
 
-  const handleSearchMedicine = async () => {
-    if (!searchQuery.trim()) return;
+  const handleSearchMedicine = async (query?: string) => {
+    const searchTerm = query || searchQuery;
+    if (!searchTerm.trim() || searchTerm.length < 2) {
+      setSearchResults([]);
+      return;
+    }
 
     setIsSearching(true);
     try {
-      const results = await prescriptionApi.searchMedicines(searchQuery);
+      const results = await prescriptionApi.searchMedicines(searchTerm);
       setSearchResults(results);
     } catch (error) {
       console.error("약품 검색 실패:", error);
-      alert("약품 검색에 실패했습니다.");
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
   };
 
-  const handleSelectMedicine = (medicine: MedicineResponse, index: number) => {
+  const [selectedMedicineIndex, setSelectedMedicineIndex] = useState<number>(0);
+
+  const handleSelectMedicine = (medicine: MedicineResponse) => {
     const updated = [...medicines];
-    updated[index] = {
-      ...updated[index],
+    updated[selectedMedicineIndex] = {
+      ...updated[selectedMedicineIndex],
       medicineId: medicine.id,
       medicineName: medicine.name,
       dosage: medicine.standardDosage || "",
@@ -152,45 +158,6 @@ export default function PrescriptionDialog({
             />
           </div>
 
-          {/* 약품 검색 */}
-          <div>
-            <Label className="text-base font-black mb-2 block">약품 검색</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="약품명으로 검색"
-                className="rounded-xl"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearchMedicine()}
-              />
-              <Button
-                variant="outline"
-                className="rounded-xl"
-                onClick={handleSearchMedicine}
-                disabled={isSearching}
-              >
-                <Search className="w-4 h-4 mr-2" />
-                검색
-              </Button>
-            </div>
-
-            {searchResults.length > 0 && (
-              <div className="mt-2 p-3 rounded-xl border bg-white max-h-48 overflow-y-auto">
-                {searchResults.map((medicine) => (
-                  <div
-                    key={medicine.id}
-                    className="p-2 hover:bg-gray-50 rounded cursor-pointer"
-                    onClick={() => handleSelectMedicine(medicine, 0)}
-                  >
-                    <div className="font-semibold">{medicine.name}</div>
-                    <div className="text-sm text-gray-600">
-                      {medicine.manufacturer} · {medicine.standardDosage} {medicine.unit}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* 처방 의약품 */}
           <div>
@@ -198,22 +165,72 @@ export default function PrescriptionDialog({
             <div className="space-y-3">
               {medicines.map((medicine, index) => (
                 <div key={index} className="p-4 rounded-xl border bg-gray-50 space-y-3">
+                  {/* 약품 검색 */}
+                  <div className="relative">
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <Input
+                          placeholder="약품명으로 검색 (타이레놀, 부루펜 등)"
+                          className="rounded-xl"
+                          value={index === selectedMedicineIndex ? searchQuery : medicine.medicineName}
+                          onChange={(e) => {
+                            setSelectedMedicineIndex(index);
+                            setSearchQuery(e.target.value);
+                            handleMedicineChange(index, "medicineName", e.target.value);
+                            handleSearchMedicine(e.target.value);
+                          }}
+                          onFocus={() => {
+                            setSelectedMedicineIndex(index);
+                            setSearchQuery(medicine.medicineName);
+                            if (medicine.medicineName.length >= 2) {
+                              handleSearchMedicine(medicine.medicineName);
+                            }
+                          }}
+                        />
+                        {index === selectedMedicineIndex && searchResults.length > 0 && (
+                          <div className="absolute z-10 mt-1 w-full p-2 rounded-xl border bg-white shadow-lg max-h-60 overflow-y-auto">
+                            {searchResults.map((med) => (
+                              <div
+                                key={med.id}
+                                className="p-3 hover:bg-blue-50 rounded-lg cursor-pointer border-b last:border-b-0"
+                                onClick={() => handleSelectMedicine(med)}
+                              >
+                                <div className="font-bold text-sm text-gray-900">{med.name}</div>
+                                <div className="text-xs text-gray-600 mt-1">
+                                  {med.manufacturer} · {med.standardDosage}
+                                </div>
+                                {med.description && (
+                                  <div className="text-xs text-gray-500 mt-1">{med.description}</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {medicines.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-xl text-red-600"
+                          onClick={() => handleRemoveMedicine(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 용량, 빈도, 일수 */}
                   <div className="flex gap-2">
                     <Input
-                      placeholder="약품명"
-                      className="rounded-xl flex-1"
-                      value={medicine.medicineName}
-                      onChange={(e) => handleMedicineChange(index, "medicineName", e.target.value)}
-                    />
-                    <Input
                       placeholder="용량 (예: 500mg)"
-                      className="rounded-xl w-32"
+                      className="rounded-xl flex-1"
                       value={medicine.dosage}
                       onChange={(e) => handleMedicineChange(index, "dosage", e.target.value)}
                     />
                     <Input
                       placeholder="복용 빈도 (예: 1일 3회)"
-                      className="rounded-xl w-40"
+                      className="rounded-xl flex-1"
                       value={medicine.frequency}
                       onChange={(e) => handleMedicineChange(index, "frequency", e.target.value)}
                     />
@@ -224,17 +241,9 @@ export default function PrescriptionDialog({
                       value={medicine.durationDays || ""}
                       onChange={(e) => handleMedicineChange(index, "durationDays", e.target.value ? parseInt(e.target.value) : undefined)}
                     />
-                    {medicines.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="rounded-xl text-red-600"
-                        onClick={() => handleRemoveMedicine(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
                   </div>
+
+                  {/* 복용 지침 */}
                   <Textarea
                     placeholder="복용 지침 (선택사항)"
                     className="rounded-xl"

@@ -4,13 +4,17 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST:localhost}:3306/lupin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/lupin?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:1234}
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      connection-timeout: 30000
+      maximum-pool-size: 20                # 최대 풀 크기 증가 (10 -> 20)
+      minimum-idle: 10                     # 최소 유휴 연결 증가 (5 -> 10)
+      connection-timeout: 20000            # 연결 타임아웃 감소 (30초 -> 20초)
+      idle-timeout: 300000                 # 유휴 타임아웃 5분
+      max-lifetime: 1200000                # 최대 수명 20분
+      leak-detection-threshold: 60000      # 연결 누수 감지 1분
+      pool-name: LupinHikariCP             # 풀 이름
 
   security:
     oauth2:
@@ -51,12 +55,14 @@ spring:
     redis:
       host: localhost
       port: 6379
-      timeout: 3000ms
+      timeout: 5000ms                      # 연결 타임아웃 증가 (3초 -> 5초)
       lettuce:
         pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 2
+          max-active: 16                   # 최대 활성 연결 증가 (8 -> 16)
+          max-idle: 16                     # 최대 유휴 연결 증가
+          min-idle: 4                      # 최소 유휴 연결 증가 (2 -> 4)
+          max-wait: 5000ms                 # 연결 대기 최대 시간
+        shutdown-timeout: 200ms            # 종료 타임아웃
 
   cloud:
     aws:
@@ -162,8 +168,10 @@ resilience4j:
 redisson:
   singleServerConfig:
     address: "redis://localhost:6379"
-    connectionMinimumIdleSize: 5
-    connectionPoolSize: 10
-    timeout: 3000
-    retryAttempts: 3
-    retryInterval: 1500
+    connectionMinimumIdleSize: 8           # 최소 유휴 연결 증가 (5 -> 8)
+    connectionPoolSize: 20                 # 연결 풀 크기 증가 (10 -> 20)
+    timeout: 5000                          # 타임아웃 증가 (3초 -> 5초)
+    retryAttempts: 5                       # 재시도 횟수 증가 (3 -> 5)
+    retryInterval: 1000                    # 재시도 간격 감소 (1.5초 -> 1초)
+    keepAlive: true                        # 연결 유지
+    tcpNoDelay: true                       # TCP NoDelay 활성화 (지연 감소)

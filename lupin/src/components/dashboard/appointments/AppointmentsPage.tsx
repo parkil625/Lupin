@@ -255,15 +255,17 @@ export default function AppointmentsPage({
                       </Badge>
                     </div>
 
-                    <div className={`p-4 rounded-xl space-y-3 mb-5 border-2 ${
-                      apt.status === "SCHEDULED"
-                        ? "bg-blue-50 border-blue-200"
-                        : apt.status === "COMPLETED"
-                        ? "bg-green-50 border-green-200"
-                        : apt.status === "CANCELLED"
-                        ? "bg-gray-50 border-gray-200"
-                        : "bg-gray-50 border-gray-100"
-                    }`}>
+                    <div
+                      className={`p-4 rounded-xl space-y-3 mb-5 border-2 ${
+                        apt.status === "SCHEDULED"
+                          ? "bg-blue-50 border-blue-200"
+                          : apt.status === "COMPLETED"
+                          ? "bg-green-50 border-green-200"
+                          : apt.status === "CANCELLED"
+                          ? "bg-white border-gray-200"
+                          : "bg-white border-gray-100"
+                      }`}
+                    >
                       <div className="flex items-center gap-3 text-gray-700">
                         <div className="p-2 bg-white rounded-lg shadow-sm">
                           <CalendarIcon className="w-4 h-4 text-blue-500" />
@@ -301,7 +303,8 @@ export default function AppointmentsPage({
                         </Button>
                       </div>
                     )}
-                    {(apt.status === "COMPLETED" || apt.status === "CANCELLED") && (
+                    {(apt.status === "COMPLETED" ||
+                      apt.status === "CANCELLED") && (
                       <div className="flex gap-3">
                         <Button
                           className="flex-1 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200 border shadow-sm font-bold h-11"

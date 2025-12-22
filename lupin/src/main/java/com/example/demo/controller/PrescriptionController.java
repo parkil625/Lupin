@@ -1,0 +1,105 @@
+package com.example.demo.controller;
+
+import com.example.demo.domain.entity.User;
+import com.example.demo.dto.prescription.MedicineResponse;
+import com.example.demo.dto.prescription.PrescriptionRequest;
+import com.example.demo.dto.prescription.PrescriptionResponse;
+import com.example.demo.repository.MedicineRepository;
+import com.example.demo.security.CurrentUser;
+import com.example.demo.service.PrescriptionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Tag(name = "Prescription", description = "처방전 관리 API")
+@RestController
+@RequestMapping("/api/prescriptions")
+@RequiredArgsConstructor
+public class PrescriptionController {
+
+    private final PrescriptionService prescriptionService;
+    private final MedicineRepository medicineRepository;
+
+    @Operation(summary = "처방전 발급", description = "의사가 환자에게 처방전을 발급합니다.")
+    @PostMapping
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<PrescriptionResponse> createPrescription(
+            @CurrentUser User currentUser,
+            @Valid @RequestBody PrescriptionRequest request
+    ) {
+        PrescriptionResponse response = prescriptionService.createPrescription(
+                currentUser.getId(),
+                request
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "환자 처방전 목록 조회", description = "환자의 모든 처방전을 조회합니다.")
+    @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR')")
+    public ResponseEntity<List<PrescriptionResponse>> getPatientPrescriptions(
+            @PathVariable Long patientId,
+            @CurrentUser User currentUser
+    ) {
+        // 환자 본인이거나 의사만 조회 가능
+        if (currentUser.getRole().name().equals("PATIENT") && !currentUser.getId().equals(patientId)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        List<PrescriptionResponse> prescriptions = prescriptionService.getPatientPrescriptions(patientId);
+        return ResponseEntity.ok(prescriptions);
+    }
+
+    @Operation(summary = "의사 발급 처방전 목록 조회", description = "의사가 발급한 모든 처방전을 조회합니다.")
+    @GetMapping("/doctor/{doctorId}")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<List<PrescriptionResponse>> getDoctorPrescriptions(
+            @PathVariable Long doctorId,
+            @CurrentUser User currentUser
+    ) {
+        // 본인의 처방전만 조회 가능
+        if (!currentUser.getId().equals(doctorId)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        List<PrescriptionResponse> prescriptions = prescriptionService.getDoctorPrescriptions(doctorId);
+        return ResponseEntity.ok(prescriptions);
+    }
+
+    @Operation(summary = "처방전 상세 조회", description = "처방전 ID로 상세 정보를 조회합니다.")
+    @GetMapping("/{id}")
+    public ResponseEntity<PrescriptionResponse> getPrescription(@PathVariable Long id) {
+        return prescriptionService.getPrescriptionById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "약품 검색", description = "약품명으로 검색합니다.")
+    @GetMapping("/medicines/search")
+    public ResponseEntity<List<MedicineResponse>> searchMedicines(@RequestParam String query) {
+        List<MedicineResponse> medicines = medicineRepository
+                .findByNameContainingIgnoreCaseAndIsActiveTrue(query)
+                .stream()
+                .map(MedicineResponse::from)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(medicines);
+    }
+
+    @Operation(summary = "전체 약품 목록 조회", description = "활성화된 모든 약품을 조회합니다.")
+    @GetMapping("/medicines")
+    public ResponseEntity<List<MedicineResponse>> getAllMedicines() {
+        List<MedicineResponse> medicines = medicineRepository
+                .findByIsActiveTrueOrderByNameAsc()
+                .stream()
+                .map(MedicineResponse::from)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(medicines);
+    }
+}

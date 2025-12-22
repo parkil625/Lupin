@@ -1,9 +1,10 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.entity.Appointment;
-import com.example.demo.domain.entity.Prescription;
-import com.example.demo.domain.entity.User;
+import com.example.demo.domain.entity.*;
+import com.example.demo.dto.prescription.PrescriptionRequest;
+import com.example.demo.dto.prescription.PrescriptionResponse;
 import com.example.demo.repository.AppointmentRepository;
+import com.example.demo.repository.MedicineRepository;
 import com.example.demo.repository.PrescriptionRepository;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class PrescriptionService {
     private final PrescriptionRepository prescriptionRepository;
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
+    private final MedicineRepository medicineRepository;
 
     @Transactional
     public void updateDiagnosis(Long prescriptionId, Long doctorId, String newDiagnosis) {
@@ -109,5 +113,84 @@ public class PrescriptionService {
         appointment.complete();
 
         return prescriptionRepository.save(prescription);
+    }
+
+    @Transactional
+    public PrescriptionResponse createPrescription(Long doctorId, PrescriptionRequest request) {
+        Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
+                .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+
+        // 담당 의사 검증
+        if (!appointment.getDoctor().getId().equals(doctorId)) {
+            throw new IllegalArgumentException("해당 예약의 담당 의사만 처방전을 발행할 수 있습니다.");
+        }
+
+        // 환자 정보 검증
+        if (!appointment.getPatient().getId().equals(request.getPatientId())) {
+            throw new IllegalArgumentException("해당 예약의 환자 정보가 일치하지 않습니다.");
+        }
+
+        // 중복 처방전 발행 방지
+        Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(request.getAppointmentId());
+        if (existingPrescription.isPresent()) {
+            throw new IllegalStateException("이미 처방전이 발행된 예약입니다.");
+        }
+
+        User doctor = userRepository.findById(doctorId)
+                .orElseThrow(() -> new IllegalArgumentException("의사를 찾을 수 없습니다."));
+
+        User patient = userRepository.findById(request.getPatientId())
+                .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
+
+        Prescription prescription = Prescription.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .diagnosis(request.getDiagnosis())
+                .date(LocalDate.now())
+                .build();
+
+        // 약품 추가
+        for (PrescriptionRequest.MedicineItem item : request.getMedicines()) {
+            Medicine medicine = null;
+            if (item.getMedicineId() != null) {
+                medicine = medicineRepository.findById(item.getMedicineId()).orElse(null);
+            }
+
+            PrescriptionMed prescriptionMed = PrescriptionMed.builder()
+                    .medicine(medicine)
+                    .medicineName(item.getMedicineName())
+                    .dosage(item.getDosage())
+                    .frequency(item.getFrequency())
+                    .durationDays(item.getDurationDays())
+                    .instructions(item.getInstructions())
+                    .build();
+
+            prescription.addMedicine(prescriptionMed);
+        }
+
+        appointment.complete();
+        Prescription savedPrescription = prescriptionRepository.save(prescription);
+
+        return PrescriptionResponse.from(savedPrescription);
+    }
+
+    public List<PrescriptionResponse> getPatientPrescriptions(Long patientId) {
+        List<Prescription> prescriptions = prescriptionRepository.findByPatientIdOrderByDateDesc(patientId);
+        return prescriptions.stream()
+                .map(PrescriptionResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    public List<PrescriptionResponse> getDoctorPrescriptions(Long doctorId) {
+        List<Prescription> prescriptions = prescriptionRepository.findByDoctorIdOrderByDateDesc(doctorId);
+        return prescriptions.stream()
+                .map(PrescriptionResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<PrescriptionResponse> getPrescriptionById(Long id) {
+        return prescriptionRepository.findById(id)
+                .map(PrescriptionResponse::from);
     }
 }

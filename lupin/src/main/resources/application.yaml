@@ -87,6 +87,8 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.BasicBinder: trace
     com.example.demo: debug
+    org.springframework.web.socket: warn
+    org.springframework.messaging: warn
 
 app:
   seed-data:

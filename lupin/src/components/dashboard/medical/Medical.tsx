@@ -554,6 +554,52 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     loadAppointments();
   }, [currentPatientId]);
 
+  // 알림에서 채팅방 자동 오픈 이벤트 처리
+  useEffect(() => {
+    const handleOpenAppointmentChat = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ appointmentId: number }>;
+      const { appointmentId } = customEvent.detail;
+
+      try {
+        // 해당 예약 찾기
+        const appointment = appointments.find(apt => apt.id === appointmentId);
+
+        if (appointment) {
+          // 채팅 가능 여부 확인
+          const available = await appointmentApi.isChatAvailable(appointmentId);
+
+          if (!available) {
+            const lockMessage = await appointmentApi.getChatLockMessage(appointmentId);
+            toast.error(lockMessage);
+            return;
+          }
+
+          // 채팅방 열기
+          setActiveAppointment({
+            id: appointment.id,
+            doctorId: appointment.doctorId,
+            doctorName: appointment.doctorName,
+            type: "진료 상담",
+          });
+          setIsChatEnded(false);
+          setShowAppointmentView(false);
+          setMessages([]);
+        } else {
+          toast.error("해당 예약을 찾을 수 없습니다.");
+        }
+      } catch (error) {
+        console.error("채팅방 오픈 실패:", error);
+        toast.error("채팅방을 여는 중 오류가 발생했습니다.");
+      }
+    };
+
+    window.addEventListener("openAppointmentChat", handleOpenAppointmentChat);
+
+    return () => {
+      window.removeEventListener("openAppointmentChat", handleOpenAppointmentChat);
+    };
+  }, [appointments]);
+
   // -------------------------------------------------------------------------
   // [렌더링]
   // -------------------------------------------------------------------------
@@ -915,22 +961,24 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                 </div>
               ) : viewState === "LIST" ? (
                 // 예약 목록 상세 화면
-                <div className="h-full overflow-y-auto flex flex-col items-center justify-center p-6">
-                  <div className="w-full max-w-[800px]">
-                    <div className="mb-6 flex items-center justify-between">
-                      <h2 className="text-3xl font-black text-gray-900">
+                <div className="h-full overflow-y-auto flex flex-col items-center justify-center">
+                  <div className="w-[320px]">
+                    <div className="mb-6">
+                      <h2 className="text-2xl font-black text-gray-900 mb-4 text-center">
                         예약 목록
                       </h2>
                       <Button
                         onClick={() => setViewState("FORM")}
-                        className="rounded-xl bg-[#C93831] hover:bg-[#B02F28] text-white font-bold"
+                        className="w-full rounded-xl bg-[#C93831] hover:bg-[#B02F28] text-white font-bold"
                       >
                         새 예약 만들기
                       </Button>
                     </div>
 
                     <div className="space-y-4">
-                      {appointments.map((apt) => {
+                      {appointments
+                        .filter((apt) => apt.status === "SCHEDULED" || apt.status === "IN_PROGRESS")
+                        .map((apt) => {
                         const appointmentDate = new Date(apt.date);
                         const formattedDate = appointmentDate.toLocaleDateString("ko-KR", {
                           year: "numeric",
@@ -953,46 +1001,84 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         const isInProgress = apt.status === "IN_PROGRESS";
 
                         return (
-                          <Card key={apt.id} className="p-6 bg-white/80">
-                            <div className="flex items-start justify-between mb-4">
+                          <Card key={apt.id} className="p-4 bg-white/80 rounded-xl">
+                            <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-1">
+                                <h3 className="font-bold text-gray-900 text-sm mb-1">
                                   {apt.doctorName} 의사
                                 </h3>
-                                <p className="text-gray-600">{apt.departmentName || "진료 예약"}</p>
+                                <p className="text-xs text-gray-600">{apt.departmentName || "진료 예약"}</p>
                               </div>
                               <Badge
                                 style={{ backgroundColor: config.color }}
-                                className="text-white font-bold border-0"
+                                className="text-white font-bold border-0 text-xs"
                               >
                                 {config.label}
                               </Badge>
                             </div>
-                            <div className="mb-4">
-                              <div className="flex items-center gap-2 text-gray-700 mb-2">
-                                <Clock className="w-4 h-4" />
+                            <div className="mb-3">
+                              <div className="flex items-center gap-2 text-gray-700 text-xs">
+                                <Clock className="w-3 h-3" />
                                 <span className="font-medium">{formattedDate} {formattedTime}</span>
                               </div>
                             </div>
-                            {(isScheduled || isInProgress) && (
-                              <div className="flex gap-2">
+                            <div className="space-y-2">
+                              {isInProgress && (
                                 <Button
                                   onClick={() => handleAppointmentClick(apt)}
-                                  className="flex-1 rounded-xl bg-[#20C997] hover:bg-[#18A37A] text-white font-bold"
+                                  className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm"
                                 >
                                   채팅 시작
                                 </Button>
-                                {isScheduled && (
+                              )}
+                              {isScheduled && (
+                                <>
                                   <Button
-                                    onClick={(e) => handleCancelAppointment(apt.id, e)}
-                                    variant="outline"
-                                    className="rounded-xl border-2 border-[#E03131] text-[#E03131] hover:bg-[#E03131] hover:text-white font-bold"
+                                    onClick={() => handleAppointmentClick(apt)}
+                                    className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm"
                                   >
-                                    예약 취소
+                                    채팅 시작
                                   </Button>
-                                )}
-                              </div>
-                            )}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                      onClick={async () => {
+                                        // 1시간 전 체크
+                                        const appointmentDateTime = new Date(apt.date);
+                                        const now = new Date();
+                                        const diffInMs = appointmentDateTime.getTime() - now.getTime();
+                                        const oneHourInMs = 60 * 60 * 1000;
+
+                                        if (diffInMs <= oneHourInMs && diffInMs > 0) {
+                                          toast.error("곧 진료 시간이라 변경이 불가능합니다!");
+                                          return;
+                                        }
+
+                                        try {
+                                          await appointmentApi.cancelAppointment(apt.id);
+                                          const data = await appointmentApi.getPatientAppointments(currentPatientId);
+                                          setAppointments(data);
+                                          setViewState("FORM");
+                                        } catch (error) {
+                                          console.error("예약 변경 실패:", error);
+                                          toast.error("예약 변경에 실패했습니다.");
+                                        }
+                                      }}
+                                      variant="outline"
+                                      className="rounded-xl h-10 border-2 border-[#C93831] text-[#C93831] hover:bg-[#C93831] hover:text-white font-bold text-sm"
+                                    >
+                                      예약 변경
+                                    </Button>
+                                    <Button
+                                      onClick={(e) => handleCancelAppointment(apt.id, e)}
+                                      variant="outline"
+                                      className="rounded-xl h-10 border-2 border-[#E03131] text-[#E03131] hover:bg-[#E03131] hover:text-white font-bold text-sm"
+                                    >
+                                      예약 취소
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </Card>
                         );
                       })}

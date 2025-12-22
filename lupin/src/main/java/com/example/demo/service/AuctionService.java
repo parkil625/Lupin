@@ -102,50 +102,47 @@ public class AuctionService {
         List<Auction> auctions = auctionRepository.findExpiredAuctions(now, endedTimeThreshold);
 
         for (Auction auction : auctions) {
-            List<AuctionBid> auctionBids = auctionBidRepository.findByAuctionId(auction.getId());
-
-            // 1. 메모리 상에서 상태 변경 (ACTIVE -> ENDED) 및 우승자 확정
-            auction.deactivate(auctionBids);
-
-            // [수정된 부분] try-catch 블록 제거!
-            // 에러가 발생하면 즉시 예외가 전파되어 트랜잭션이 롤백되어야 합니다.
-            // 그래야 경매가 '종료' 상태로 저장되지 않고, 다음 스케줄러가 다시 시도할 수 있습니다.
-            if (auction.getWinner() != null) {
-                User winner = auction.getWinner();
-                Long price = auction.getCurrentPrice();
-
-                // 2. 유저 포인트 직접 차감 (여기서 에러 나면 바로 롤백됨)
-                winner.deductPoints(price);
-
-                // 3. 변경된 유저 정보 저장
-                userRepository.save(winner);
-
-                // 4. 포인트 로그 직접 생성 및 저장
-                PointLog pointLog = PointLog.builder()
-                        .user(winner)
-                        .points(-price) // 사용이므로 음수
-                        .type(PointType.USE)
-                        .build();
-                pointLogRepository.save(pointLog);
-
-                log.info("경매 ID {} 낙찰 -> 사용자 {} 포인트 차감 완료 (금액: {})",
-                        auction.getId(), winner.getId(), price);
-
-                // 5. 알림 전송 (여기서 에러 나도 롤백되어 재발송 시도 가능)
-                eventPublisher.publishEvent(NotificationEvent.auctionWin(
-                        winner.getId(),
-                        auction.getId(),
-                        auction.getAuctionItem().getItemName(), // 물품 이름
-                        price
-                ));
+            try {
+                processSingleAuctionClose(auction);
+            } catch (Exception e) {
+                log.error("경매 ID {} 종료 처리 중 오류 발생", auction.getId(), e);
+                // 여기서 에러를 잡아내면, 다른 경매들은 정상적으로 처리됩니다.
             }
-
-            // 6. 변경 사항 DB 반영
-            // 위 과정에서 하나라도 에러가 나면 이 코드는 실행되지 않고 롤백됩니다.
-            auctionRepository.saveAndFlush(auction);
-            log.info("경매 ID {} -> 종료(ENDED) 처리 완료", auction.getId());
         }
     }
+
+
+    public void processSingleAuctionClose(Auction auction) {
+        List<AuctionBid> auctionBids = auctionBidRepository.findByAuctionId(auction.getId());
+
+        auction.deactivate(auctionBids);
+        auctionRepository.saveAndFlush(auction);
+
+        if (auction.getWinner() != null) {
+            User winner = auction.getWinner();
+            Long price = auction.getCurrentPrice();
+
+            winner.deductPoints(price);
+            userRepository.save(winner);
+
+            // 4. 포인트 로그 직접 생성 및 저장
+            PointLog pointLog = PointLog.builder()
+                    .user(winner)
+                    .points(-price) // 사용이므로 음수
+                    .type(PointType.USE)
+                    .build();
+            pointLogRepository.save(pointLog);
+
+            // 여기서 메소드가 끝나면 즉시 커밋되고 -> 알림이 바로 전송됩니다!
+            eventPublisher.publishEvent(NotificationEvent.auctionWin(
+                    winner.getId(),
+                    auction.getId(),
+                    auction.getAuctionItem().getItemName(), // 물품 이름
+                    price
+            ));
+        }
+    }
+
 
 
     // 현재 진행중인 경매정보와 경매물품조회
@@ -225,7 +222,7 @@ public class AuctionService {
         LocalDateTime startOfMonth = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
 
         // 2. DB 조회 (이번 달에 종료된 경매)
-        List<Auction> winners = auctionRepository.findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc(
+        List<Auction> winners = auctionRepository.findMonthlyWinners(
                 AuctionStatus.ENDED,
                 startOfMonth,
                 now

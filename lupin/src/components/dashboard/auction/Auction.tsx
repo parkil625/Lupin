@@ -8,20 +8,20 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Clock } from "lucide-react";
+import {Calendar, Clock, Trophy} from "lucide-react";
 import AnimatedBackground from "../shared/AnimatedBackground";
-// [수정 1] placeBid 추가 import
-import { getActiveAuction, getScheduledAuctions, placeBid, getUserPoints, getBidHistory } from "@/api/auctionApi";
+import { getActiveAuction, getScheduledAuctions, placeBid, getUserPoints, getBidHistory,getEndedAuctions } from "@/api/auctionApi";
 // 분리된 컴포넌트 및 훅 import
 import { AuctionData, BidHistory } from "@/types/auction.types";
 import { useAuctionTimer } from "@/hooks/useAuctionTimer";
 import { AuctionCard } from "./AuctionCard";
 import { BiddingPanel } from "./BiddingPanel";
-import { MonthlyWinnerDialog } from "./MonthlyWinnerDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Auction() {
   const [auctions, setAuctions] = useState<AuctionData[]>([]);
   const [scheduledAuctions, setScheduledAuctions] = useState<AuctionData[]>([]);
+  const [endedAuctions, setEndedAuctions] = useState<AuctionData[]>([]);
   const [selectedAuction, setSelectedAuction] = useState<AuctionData | null>(null);
   const [bidAmount, setBidAmount] = useState("");
   const [bidHistory, setBidHistory] = useState<BidHistory[]>([]);
@@ -177,9 +177,10 @@ export default function Auction() {
 
             // 1. [순서 변경] 경매 정보부터 먼저 가져옵니다.
             // (이 요청이 처리되는 동안 서버에서 낙찰/정산 로직이 돌 시간을 벋니다.)
-            const [activeAuctionData, scheduledAuctionList] = await Promise.all([
+            const [activeAuctionData, scheduledAuctionList, endedAuctionList] = await Promise.all([
                 getActiveAuction().catch(() => null),
-                getScheduledAuctions().catch(() => [])
+                getScheduledAuctions().catch(() => []),
+                getEndedAuctions().catch(() => [])
             ]);
 
             // 2. [핵심] 경매 조회가 끝난 '후에' 포인트를 조회합니다.
@@ -215,6 +216,10 @@ export default function Auction() {
                 setScheduledAuctions(scheduledAuctionList);
             }
 
+            if (endedAuctionList) {
+                setEndedAuctions(endedAuctionList);
+            }
+
         } catch (error) {
             console.error("경매 목록 조회 실패:", error);
         } finally {
@@ -234,11 +239,11 @@ export default function Auction() {
 try {
     const historyData = await getBidHistory();
     // API 데이터로 상태 업데이트
-    setBidHistory(historyData); 
+    setBidHistory(historyData);
   } catch (error) {
     console.error("입찰 내역 조회 실패:", error);
     // 에러 발생 시 빈 배열 처리 (Mock Data가 남아있으면 안 됨)
-    setBidHistory([]); 
+    setBidHistory([]);
   }
   };
 
@@ -296,12 +301,9 @@ try {
               <div>
                 <h1 className="text-5xl font-black text-gray-900 mb-2">경매</h1>
                   <p className="text-gray-600 font-bold">
-                      매일 밤 10시, 포인트로 입찰하고 상품을 획득하세요!<br />
-                      영국식 경매 방식으로 진행되며, 입찰할수록 가격이 올라가고 정해진 시간 동안 추가 입찰이 없으면 최고가 입찰자가 낙찰됩니다.<br />
-                      ※ 입찰은 즉시 효력이 발생하며 취소할 수 없습니다.
+                      매일 밤 10시, 포인트로 입찰하고 상품을 획득하세요!
                   </p>
               </div>
-                <MonthlyWinnerDialog />
               <Card className="backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg px-6 py-4">
                 <div className="text-center">
                   <p className="text-sm text-gray-600 font-bold mb-1">
@@ -350,24 +352,64 @@ try {
                   )}
                 </div>
 
-                {/* 2. 예정된 경매 섹션 */}
-                {scheduledAuctions.length > 0 && (
-                  <div>
-                    <h2 className="text-2xl font-black text-gray-900 mb-4">
-                      예정된 경매
-                    </h2>
-                    <div className="space-y-4">
-                      {scheduledAuctions.map((auction) => (
-                        <AuctionCard
-                          key={auction.auctionId}
-                          auction={auction}
-                          isSelected={false}
-                          onSelect={() => {}} // 예정된 경매는 선택 불가
-                        />
-                      ))}
-                    </div>
+                  {/* 2. [변경] 탭 영역 (예정된 경매 <-> 종료된 경매) */}
+                  <div className="mt-8">
+                      <Tabs defaultValue="scheduled" className="w-full">
+                          <TabsList className="grid w-full grid-cols-2 mb-4 bg-gray-100 p-1 rounded-xl">
+                              <TabsTrigger
+                                  value="scheduled"
+                                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                              >
+                                  <Calendar className="w-4 h-4 mr-2"/>
+                                  예정된 경매
+                              </TabsTrigger>
+                              <TabsTrigger
+                                  value="ended"
+                                  className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                              >
+                                  <Trophy className="w-4 h-4 mr-2 text-yellow-600"/>
+                                  종료된 경매
+                              </TabsTrigger>
+                          </TabsList>
+
+                          {/* 탭 1: 예정된 경매 */}
+                          <TabsContent value="scheduled" className="space-y-4">
+                              {scheduledAuctions.length > 0 ? (
+                                  scheduledAuctions.map((auction) => (
+                                      <AuctionCard
+                                          key={auction.auctionId}
+                                          auction={auction}
+                                          isSelected={false}
+                                          onSelect={() => {}}
+                                      />
+                                  ))
+                              ) : (
+                                  <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
+                                      <p>예정된 경매가 없습니다.</p>
+                                  </div>
+                              )}
+                          </TabsContent>
+
+                          {/* 탭 2: 종료된 경매 */}
+                          <TabsContent value="ended" className="space-y-4">
+                              {endedAuctions.length > 0 ? (
+                                  endedAuctions.map((auction) => (
+                                      <AuctionCard
+                                          key={auction.auctionId}
+                                          auction={auction}
+                                          status="ENDED" // 카드에 종료 상태 명시
+                                          winnerName={auction.winnerName} // 낙찰자 이름 전달
+                                          winningBid={auction.currentPrice} // 낙찰가 전달
+                                      />
+                                  ))
+                              ) : (
+                                  <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
+                                      <p>아직 종료된 경매 기록이 없습니다.</p>
+                                  </div>
+                              )}
+                          </TabsContent>
+                      </Tabs>
                   </div>
-                )}
               </div>
 
               {/* Right Column: Bidding Panel */}

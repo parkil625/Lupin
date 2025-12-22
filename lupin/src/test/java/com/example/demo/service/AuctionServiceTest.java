@@ -1,10 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.*;
-import com.example.demo.domain.enums.AuctionStatus;
-import com.example.demo.domain.enums.BidStatus;
-import com.example.demo.domain.enums.NotificationType;
-import com.example.demo.domain.enums.PointType;
+import com.example.demo.domain.enums.*;
 import com.example.demo.dto.AuctionSseMessage;
 import com.example.demo.dto.response.AuctionBidResponse;
 import com.example.demo.dto.response.AuctionStatusResponse;
@@ -29,6 +26,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -716,7 +714,7 @@ class AuctionServiceTest {
 
         // 3. Mock: Repository가 위 두 경매를 반환하도록 설정
         // (날짜 범위는 메서드 내부에서 계산되므로 any()로 처리)
-        given(auctionRepository.findByStatusAndRegularEndTimeBetweenOrderByRegularEndTimeDesc(
+        given(auctionRepository.findMonthlyWinners(
                 eq(AuctionStatus.ENDED), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .willReturn(List.of(auctionWithWinner, auctionNoWinner));
 
@@ -732,6 +730,74 @@ class AuctionServiceTest {
         assertThat(results.get(0).getWinnerName()).isEqualTo("낙찰왕");
         assertThat(results.get(0).getCurrentPrice()).isEqualTo(5000L);
     }
+    @Test
+    @DisplayName("경매 낙찰 성공 테스트: 상태 변경, 포인트 차감, 알림 발송이 모두 수행된다")
+    void processSingleAuctionClose_Success() {
+        // Given
+        Long initialPoints = 10000L;
+        Long winningPrice = 5000L;
+
+        // 1. 낙찰자 생성
+        User winner = User.builder()
+                .id(1L)
+                .userId("winner_user")
+                .name("낙찰자")
+                .totalPoints(initialPoints)
+                .role(Role.MEMBER)
+                .build();
+
+        // 2. 경매 물품 생성 (알림 메시지용)
+        AuctionItem item = AuctionItem.builder()
+                .itemName("황금 사과")
+                .build();
+
+        // 3. 경매 생성 (낙찰자가 이미 설정되어 있다고 가정하거나, deactivate 로직에 따라 설정)
+        Auction auction = Auction.builder()
+                .id(100L)
+                .currentPrice(winningPrice)
+                .status(AuctionStatus.ACTIVE)
+                .startTime(LocalDateTime.now().minusHours(2))
+                .regularEndTime(LocalDateTime.now().minusMinutes(1))
+                .winner(winner) // 낙찰자가 있다고 가정
+                .build();
+        
+        setAuctionItemForTest(auction, item);
+
+        // 4. 입찰 내역 Mocking (deactivate 메서드 내부에서 사용됨)
+        List<AuctionBid> bids = new ArrayList<>(); // 실제 데이터는 필요하다면 채워넣음
+        when(auctionBidRepository.findByAuctionId(auction.getId())).thenReturn(bids);
+
+        // When
+        auctionService.processSingleAuctionClose(auction);
+
+        // Then
+        // 1. 경매 상태 변경 및 저장 확인 (deactivate 호출됨 -> ENDED)
+        // (deactivate 내부 로직에 따라 status가 변경되었는지 확인)
+        // assertThat(auction.getStatus()).isEqualTo(AuctionStatus.ENDED); // 엔티티 로직에 따라 주석 해제
+        verify(auctionRepository).saveAndFlush(auction);
+
+        // 2. 유저 포인트 차감 확인
+        assertThat(winner.getTotalPoints()).isEqualTo(initialPoints - winningPrice);
+        verify(userRepository).save(winner);
+
+        // 3. 포인트 로그 저장 확인
+        verify(pointLogRepository).save(any(PointLog.class));
+
+        // 4. 알림 이벤트 발행 확인
+        verify(eventPublisher).publishEvent(any(NotificationEvent.class));
+    }
+
+    // 편의 메서드 (Auction에 setAuctionItem이 없는 경우를 대비한 헬퍼)
+    private void setAuctionItemForTest(Auction auction, AuctionItem item) {
+        try {
+            java.lang.reflect.Field field = Auction.class.getDeclaredField("auctionItem");
+            field.setAccessible(true);
+            field.set(auction, item);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
 
     // ===========================

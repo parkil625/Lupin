@@ -59,14 +59,13 @@ public class Feed {
     @Column(name = "comment_count", nullable = false)
     private int commentCount = 0;
 
-    @Column(name = "thumbnail_url", length = 500)
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT") // TEXT로 변경하여 제한 해제
     private String thumbnailUrl;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -88,6 +87,7 @@ public class Feed {
     public void update(String content, String activity) {
         this.content = content;
         this.activity = activity;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void updateScore(long points, int calories) {

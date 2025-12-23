@@ -17,11 +17,16 @@ export const useWebSocket = ({
                              }: UseWebSocketProps) => {
     const [isConnected, setIsConnected] = useState(false);
     const clientRef = useRef<Client | null>(null);
+    const onMessageReceivedRef = useRef(onMessageReceived);
+
+    // 콜백이 변경되면 ref 업데이트
+    useEffect(() => {
+        onMessageReceivedRef.current = onMessageReceived;
+    }, [onMessageReceived]);
 
     useEffect(() => {
         // roomId가 없으면 WebSocket 연결하지 않음
         if (!roomId) {
-            setIsConnected(false);
             // 기존 연결이 있다면 정리
             if (clientRef.current?.active) {
                 console.log('🔌 WebSocket 연결 해제 (roomId 없음)');
@@ -60,7 +65,7 @@ export const useWebSocket = ({
                 client.subscribe(`/queue/chat/${roomId}`, (message) => {
                     const receivedMessage: ChatMessageResponse = JSON.parse(message.body);
                     console.log('📩 메시지 수신:', receivedMessage);
-                    onMessageReceived(receivedMessage);
+                    onMessageReceivedRef.current(receivedMessage);
                 });
             },
             onStompError: (frame) => {
@@ -91,6 +96,8 @@ export const useWebSocket = ({
                 console.log('🔌 WebSocket 정리 중 - RoomID:', roomId);
                 client.deactivate();
             }
+            // cleanup 시 연결 상태 초기화
+            setIsConnected(false);
         };
     }, [roomId, userId]);
 

@@ -15,6 +15,7 @@ import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.event.NotificationEvent;
+import jakarta.persistence.EntityManager; // [추가]
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class FeedReportService {
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final UserPenaltyService userPenaltyService;
+    private final EntityManager entityManager; // [추가]
 
     @Transactional
     public void toggleReport(User reporter, Long feedId) {
@@ -50,6 +52,10 @@ public class FeedReportService {
                     .feed(feed)
                     .build();
             feedReportRepository.save(feedReport);
+
+            // [수정] 즉시 DB 반영 및 영속성 컨텍스트 분리 (삭제 시 충돌 방지)
+            entityManager.flush();
+            entityManager.detach(feedReport);
 
             checkAndApplyPenalty(feed);
         }

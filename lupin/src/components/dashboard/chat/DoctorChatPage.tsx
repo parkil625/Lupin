@@ -331,14 +331,14 @@ export default function DoctorChatPage() {
         <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-2xl flex-1 mx-auto overflow-hidden h-full w-full">
           <div className="h-full flex">
             {/* 좌측: 대화 목록 */}
-            <div className="w-96 border-r border-gray-200 p-4 flex flex-col h-full">
-              <h3 className="text-xl font-black text-gray-900 mb-4 flex-shrink-0">
+            <div className="w-96 border-r border-gray-200 px-6 py-6 flex flex-col h-full">
+              <h3 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2 flex-shrink-0">
                 대화 목록
               </h3>
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
                   {chatRooms.filter(room => room.status === 'IN_PROGRESS').length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
+                    <div className="flex items-center justify-center h-full text-gray-500">
                       진료 중인 환자가 없습니다
                     </div>
                   ) : (

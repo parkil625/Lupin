@@ -12,6 +12,7 @@ import com.example.demo.repository.FeedImageRepository;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedReportRepository;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import jakarta.persistence.EntityManager;
+
 
 import java.util.Optional;
 
@@ -63,6 +65,9 @@ class FeedReportServiceTest {
     @Mock
     private EntityManager entityManager;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private FeedReportService feedReportService;
 
@@ -78,6 +83,7 @@ class FeedReportServiceTest {
                 .name("신고자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(reporter, "id", 100L); // ID 설정 추가
 
         writer = User.builder()
                 .userId("writer")
@@ -85,6 +91,7 @@ class FeedReportServiceTest {
                 .name("작성자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(writer, "id", 200L); // ID 설정 추가
 
         feed = Feed.builder()
                 .writer(writer)
@@ -92,6 +99,9 @@ class FeedReportServiceTest {
                 .content("피드 내용")
                 .build();
         ReflectionTestUtils.setField(feed, "id", 1L);
+
+        // UserRepository 가짜 동작 설정 (중요!)
+        given(userRepository.findById(any())).willReturn(Optional.of(reporter));
     }
 
     @Test

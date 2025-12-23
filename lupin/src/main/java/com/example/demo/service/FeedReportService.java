@@ -42,30 +42,31 @@ public class FeedReportService {
 
     @Transactional
     public void toggleReport(User reporter, Long feedId) {
-        // 1. [중요] 컨트롤러에서 넘어온 reporter 대신, DB에서 진짜 유저 정보를 다시 가져옵니다.
+        // 1. 신고자(User) 조회
         User managedReporter = userRepository.findById(reporter.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 2. 게시글 찾기 (이미 잘하셨습니다)
-        Feed feed = feedRepository.findById(feedId)
+        // 2. [핵심 수정] Feed를 프록시 객체로 조회하여 불필요한 Cascade 체크 방지
+        Feed feedProxy = feedRepository.getReferenceById(feedId);
+
+        // 3. 중복 신고 체크 (존재 여부 확인은 findById로 확실하게)
+        Feed feedCheck = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
-        if (feedReportRepository.existsByReporterAndFeed(managedReporter, feed)) {
-            feedReportRepository.deleteByReporterAndFeed(managedReporter, feed);
+        if (feedReportRepository.existsByReporterAndFeed(managedReporter, feedProxy)) {
+            feedReportRepository.deleteByReporterAndFeed(managedReporter, feedProxy);
         } else {
-            // 3. 진짜 유저(managedReporter)와 진짜 피드(feed)로 신고장 작성
+            // 4. 프록시 객체를 사용하여 신고 생성
             FeedReport feedReport = FeedReport.builder()
-                    .reporter(managedReporter) // 여기가 핵심입니다!
-                    .feed(feed)
+                    .reporter(managedReporter)
+                    .feed(feedProxy)
                     .build();
             
-            feedReportRepository.save(feedReport);
-            
-            // [중요] 변경 사항을 먼저 DB에 다 털어넣습니다.
-            feedReportRepository.flush(); 
+            // 5. 저장 및 즉시 반영 (saveAndFlush 사용)
+            feedReportRepository.saveAndFlush(feedReport);
 
-            // 신고 누적 체크 및 삭제 로직 실행
-            checkAndApplyPenalty(feed);
+            // 6. 패널티 체크에는 실제 엔티티 사용
+            checkAndApplyPenalty(feedCheck);
         }
     }
 
@@ -93,47 +94,44 @@ public class FeedReportService {
     private void deleteFeedByReport(Feed feed) {
         String feedIdStr = String.valueOf(feed.getId());
 
-        // FEED_LIKE, COMMENT 알림 삭제 (refId = feedId)
+        // 1. 관련 알림 삭제
         notificationRepository.deleteByRefIdAndType(feedIdStr, NotificationType.FEED_LIKE);
         notificationRepository.deleteByRefIdAndType(feedIdStr, NotificationType.COMMENT);
 
-        // 댓글 ID 수집 (부모 댓글만)
         List<String> parentCommentIds = commentRepository.findByFeed(feed).stream()
                 .filter(c -> c.getParent() == null)
                 .map(c -> String.valueOf(c.getId()))
                 .toList();
 
-        // REPLY 알림 삭제 (refId = 부모 댓글 ID)
         if (!parentCommentIds.isEmpty()) {
             notificationRepository.deleteByRefIdInAndType(parentCommentIds, NotificationType.REPLY);
         }
 
-        // 모든 댓글 ID 수집 (COMMENT_LIKE 삭제용)
         List<String> allCommentIds = commentRepository.findByFeed(feed).stream()
                 .map(c -> String.valueOf(c.getId()))
                 .toList();
 
-        // COMMENT_LIKE 알림 삭제 (refId = commentId)
         if (!allCommentIds.isEmpty()) {
             notificationRepository.deleteByRefIdInAndType(allCommentIds, NotificationType.COMMENT_LIKE);
         }
 
+        // 2. 연관 데이터 삭제
         feedLikeRepository.deleteByFeed(feed);
-        feedImageRepository.deleteByFeed(feed);
-        feedReportRepository.deleteByFeed(feed);
+        feedReportRepository.deleteByFeed(feed); // 이미지 삭제 전 신고 먼저 삭제
 
-        // [수정] 강제로 영속성 컨텍스트를 비워서 '유령 이미지' 문제를 원천 차단합니다.
+        // 3. [핵심 수정] 영속성 컨텍스트를 비워서 충돌 방지
         entityManager.flush();
         entityManager.clear();
 
-        // 다시 조회해서 삭제 (이제 깨끗한 상태에서 삭제하므로 에러 안 남)
+        // 4. 다시 조회 후 '이미지 관계'를 명시적으로 끊음
         Feed targetFeed = feedRepository.findById(Long.parseLong(feedIdStr))
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
         
-        // [핵심] 삭제하기 전에 연관된 이미지들을 먼저 끊어줍니다 (Cascade 문제 방지)
+        // 이미지를 먼저 비우고 DB에 반영 (CascadeType.ALL 문제 해결)
         targetFeed.getImages().clear();
-        feedRepository.saveAndFlush(targetFeed); // 관계 끊은거 반영
+        feedRepository.saveAndFlush(targetFeed);
 
+        // 5. 최종 삭제
         feedRepository.delete(targetFeed);
     }
 

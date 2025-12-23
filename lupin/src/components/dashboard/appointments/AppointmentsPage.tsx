@@ -130,6 +130,33 @@ export default function AppointmentsPage({
     };
   }, [currentUser.id, currentUser.role]);
 
+  // 환자 측 진료 종료 이벤트 수신 (진료 종료 알림 및 예약 목록 새로고침)
+  useEffect(() => {
+    const handleConsultationEnded = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ doctorName: string }>;
+      const { doctorName } = customEvent.detail;
+
+      // 환자에게 알림 메시지 표시
+      alert(`${doctorName} 의사의 진료가 종료되었습니다.`);
+
+      // 예약 목록 새로고침
+      try {
+        if (currentUser.role === "PATIENT") {
+          const data = await appointmentApi.getPatientAppointments(currentUser.id);
+          setAppointments(data);
+        }
+      } catch (error) {
+        console.error("예약 목록 새로고침 실패:", error);
+      }
+    };
+
+    window.addEventListener("consultationEnded", handleConsultationEnded);
+
+    return () => {
+      window.removeEventListener("consultationEnded", handleConsultationEnded);
+    };
+  }, [currentUser.id, currentUser.role]);
+
   // 예약 취소 핸들러
   const handleCancelAppointment = async (appointmentId: number) => {
     if (!confirm("정말로 예약을 취소하시겠습니까?")) return;

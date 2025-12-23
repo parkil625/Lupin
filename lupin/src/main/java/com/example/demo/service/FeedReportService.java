@@ -113,7 +113,15 @@ public class FeedReportService {
         feedLikeRepository.deleteByFeed(feed);
         feedImageRepository.deleteByFeed(feed);
         feedReportRepository.deleteByFeed(feed);
-        feedRepository.delete(feed);
+
+        // [수정] 영속성 컨텍스트 초기화 (삭제 충돌 및 500 에러 방지)
+        entityManager.flush();
+        entityManager.clear();
+
+        // 다시 조회해서 삭제 (안전하게 Soft Delete 수행)
+        Feed targetFeed = feedRepository.findById(Long.parseLong(feedIdStr))
+                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
+        feedRepository.delete(targetFeed);
     }
 
     /**

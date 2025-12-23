@@ -179,7 +179,9 @@ const AvatarSection = memo(
       try {
         if (image?.includes("s3."))
           await imageApi.deleteImage(image).catch(() => {});
-        const url = await imageApi.uploadProfileImage(file);
+
+        const response = await imageApi.uploadProfileImage(file);
+        const url = response.url;
 
         const uid = parseInt(localStorage.getItem("userId") || "0");
         if (uid) await userApi.updateAvatar(uid, url);

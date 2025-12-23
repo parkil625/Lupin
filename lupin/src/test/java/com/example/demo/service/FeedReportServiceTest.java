@@ -25,10 +25,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.HashSet;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -98,9 +101,11 @@ class FeedReportServiceTest {
                 .content("피드 내용")
                 .build();
         ReflectionTestUtils.setField(feed, "id", 1L);
+        // 이미지 Set 초기화 (NullPointer 방지)
+        ReflectionTestUtils.setField(feed, "images", new HashSet<>());
 
-        // 기본적으로 유저는 찾을 수 있다고 가정
-        given(userRepository.findById(any())).willReturn(Optional.of(reporter));
+        // [중요] any() 대신 anyLong() 또는 eq() 사용으로 매칭 정확도 향상
+        given(userRepository.findById(anyLong())).willReturn(Optional.of(reporter));
     }
 
     @Test
@@ -108,7 +113,7 @@ class FeedReportServiceTest {
     void reportFeedTest() {
         // given
         Long feedId = 1L;
-        // [수정] existsById와 getReferenceById를 Mocking
+        // existsById와 getReferenceById Mocking
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
         
@@ -127,7 +132,6 @@ class FeedReportServiceTest {
     void cancelReportTest() {
         // given
         Long feedId = 1L;
-        // [수정] existsById와 getReferenceById를 Mocking
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
         
@@ -147,7 +151,7 @@ class FeedReportServiceTest {
     void reportFeedNotFoundTest() {
         // given
         Long feedId = 999L;
-        // [수정] 존재하지 않음을 명시 (findById 대신 existsById 사용)
+        // existsById가 false를 반환하도록 설정
         given(feedRepository.existsById(feedId)).willReturn(false);
 
         // when & then
@@ -175,7 +179,7 @@ class FeedReportServiceTest {
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);
         given(userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)).willReturn(false);
         
-        // 삭제 로직에서 findById가 호출됨
+        // 삭제 로직에서 사용하는 findById
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
 
         // when

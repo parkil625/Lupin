@@ -66,7 +66,6 @@ public class Feed {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -88,6 +87,7 @@ public class Feed {
     public void update(String content, String activity) {
         this.content = content;
         this.activity = activity;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void updateScore(long points, int calories) {

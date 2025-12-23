@@ -60,11 +60,11 @@ public class FeedReportService {
                     .build();
             
             feedReportRepository.save(feedReport);
+            
+            // [중요] 변경 사항을 먼저 DB에 다 털어넣습니다.
+            feedReportRepository.flush(); 
 
-            // 즉시 DB 반영
-            entityManager.flush();
-            entityManager.detach(feedReport);
-
+            // 신고 누적 체크 및 삭제 로직 실행
             checkAndApplyPenalty(feed);
         }
     }
@@ -122,13 +122,18 @@ public class FeedReportService {
         feedImageRepository.deleteByFeed(feed);
         feedReportRepository.deleteByFeed(feed);
 
-        // [수정] 영속성 컨텍스트 초기화 (삭제 충돌 및 500 에러 방지)
+        // [수정] 강제로 영속성 컨텍스트를 비워서 '유령 이미지' 문제를 원천 차단합니다.
         entityManager.flush();
         entityManager.clear();
 
-        // 다시 조회해서 삭제 (안전하게 Soft Delete 수행)
+        // 다시 조회해서 삭제 (이제 깨끗한 상태에서 삭제하므로 에러 안 남)
         Feed targetFeed = feedRepository.findById(Long.parseLong(feedIdStr))
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
+        
+        // [핵심] 삭제하기 전에 연관된 이미지들을 먼저 끊어줍니다 (Cascade 문제 방지)
+        targetFeed.getImages().clear();
+        feedRepository.saveAndFlush(targetFeed); // 관계 끊은거 반영
+
         feedRepository.delete(targetFeed);
     }
 

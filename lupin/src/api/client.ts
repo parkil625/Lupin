@@ -8,7 +8,7 @@ import { toast } from "sonner";
  */
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
-  timeout: 10000,
+  timeout: 60000, // 60초(1분)로 넉넉하게 변경
   headers: {
     "Content-Type": "application/json",
   },

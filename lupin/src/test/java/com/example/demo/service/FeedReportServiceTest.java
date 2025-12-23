@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
+import jakarta.persistence.EntityManager;
 
 import java.util.Optional;
 
@@ -58,6 +59,9 @@ class FeedReportServiceTest {
 
     @Mock
     private UserPenaltyService userPenaltyService;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private FeedReportService feedReportService;

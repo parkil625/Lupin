@@ -49,7 +49,7 @@ export default function Auction() {
         eventSource.addEventListener("refresh", (e: MessageEvent) => {
             try {
                 const data = JSON.parse(e.data);
-                console.log("⚡ SSE 데이터 도착:", data);
+                console.log("SSE 데이터 도착:", data);
 
                 if (selectedAuction && selectedAuction.auctionId === data.auctionId) {
                     setSelectedAuction((prev) => {
@@ -65,7 +65,7 @@ export default function Auction() {
                         return {
                             ...prev,
                             currentPrice: data.currentPrice,
-
+                            totalBids: data.totalBids,
                             // 정규 시간은 유지 (골대 유지)
                             regularEndTime: prev.regularEndTime,
 
@@ -82,6 +82,7 @@ export default function Auction() {
                         item.auctionId === data.auctionId
                             ? {
                                 ...item,
+                                totalBids: data.totalBids,
                                 currentPrice: data.currentPrice,
                                 // 목록에서도 연장 정보를 갱신하고 싶다면 아래 주석 해제
                                 // overtimeEndTime: data.newEndTime || item.overtimeEndTime,

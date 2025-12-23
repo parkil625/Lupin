@@ -7,7 +7,7 @@
 
 -- 1. 테이블이 없으면 생성 (CREATE TABLE IF NOT EXISTS)
 
-SET time_zone = '+09:00';
+
 
 CREATE TABLE IF NOT EXISTS auctions (
                                         auction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -223,3 +223,5 @@ VALUES (
            '/auctionEndedImg2.webp',
            @ended_auction_id_2
        );
+
+--재배포

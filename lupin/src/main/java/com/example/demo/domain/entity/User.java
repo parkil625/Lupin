@@ -54,7 +54,7 @@ public class User {
     @Column(length = 100)
     private String department;
 
-    @Column(length = 500)
+    @Column(columnDefinition = "TEXT") // <--- 길이 제한 없는 TEXT 타입으로 변경 (가장 안전)
     private String avatar;
 
     @Enumerated(EnumType.STRING)

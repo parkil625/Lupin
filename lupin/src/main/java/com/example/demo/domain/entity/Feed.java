@@ -59,7 +59,7 @@ public class Feed {
     @Column(name = "comment_count", nullable = false)
     private int commentCount = 0;
 
-    @Column(name = "thumbnail_url", length = 500)
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT") // TEXT로 변경하여 제한 해제
     private String thumbnailUrl;
 
     @CreatedDate

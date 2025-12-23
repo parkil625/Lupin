@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Nginx
@@ -15,7 +15,8 @@ services:
 
   # Spring Boot 앱
   app:
-    build: .
+    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
+    env_file: .env
     container_name: lupin-app
     expose:
       - "8081"

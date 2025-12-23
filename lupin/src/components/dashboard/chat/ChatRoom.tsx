@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, FileText, CheckCircle2 } from 'lucide-react';
 import PrescriptionDialog from './PrescriptionDialog';
-import axiosInstance from '@/api/axiosInstance';
+import apiClient from '@/api/client';
 
 interface ChatRoomProps {
   open: boolean;
@@ -48,13 +48,13 @@ export default function ChatRoom({
     chatApi
       .markAsRead(roomId, currentUser.id)
       .catch((err) => console.error('읽음 처리 실패:', err));
-  }, [roomId, currentUser.id]); // open 제거 - appointmentId가 바뀔 때만 로드
+  }, [open, roomId, currentUser.id]);
 
   // 2. 웹소켓 연결
   const { isConnected, sendMessage } = useWebSocket({
     roomId,
     userId: currentUser.id,
-    onMessageReceived: (msg: any) => {
+    onMessageReceived: (msg: ChatMessageResponse & { type?: string; doctorName?: string }) => {
       // 진료 종료 알림 처리
       if (msg.type === 'CONSULTATION_END') {
         if (currentUser.role === 'PATIENT') {
@@ -90,7 +90,7 @@ export default function ChatRoom({
 
     setIsEndingConsultation(true);
     try {
-      await axiosInstance.put(`/api/appointment/${appointmentId}/complete`);
+      await apiClient.put(`/api/appointment/${appointmentId}/complete`);
       // 성공 시 채팅창 닫기
       onOpenChange(false);
       // 의사 측 페이지 업데이트를 위한 이벤트 발생

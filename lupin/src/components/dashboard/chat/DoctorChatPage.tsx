@@ -345,11 +345,6 @@ export default function DoctorChatPage() {
     }).filter(m => m.quantity > 0)); // 수량이 0이면 제거
   };
 
-  // 약품 삭제
-  const handleRemoveMedicine = (id: number) => {
-    setSelectedMedicines(selectedMedicines.filter(m => m.id !== id));
-  };
-
   const handleOpenMedicineDialog = () => {
     setSearchQuery("");
     setSearchResults([]);

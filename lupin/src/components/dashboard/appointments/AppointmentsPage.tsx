@@ -216,8 +216,8 @@ export default function AppointmentsPage({
   });
 
   return (
-    <div className="h-full overflow-auto p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="h-full overflow-auto">
+      <div className="max-w-7xl mx-auto space-y-6 p-8 pb-16">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-5xl font-black text-gray-900 mb-2">

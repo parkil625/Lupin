@@ -89,6 +89,7 @@ public class AuctionService {
                 .bidderName(user.getName())              // 입찰자 이름
                 .bidTime(bidTime.toString())             // 입찰 시간
                 .newEndTime(auction.getEndTime().toString()) // 연장된 종료 시간
+                .totalBids(auction.getTotalBids())
                 .build();
 
         auctionSseService.broadcast(message);

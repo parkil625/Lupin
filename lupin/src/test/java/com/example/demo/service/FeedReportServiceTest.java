@@ -12,8 +12,9 @@ import com.example.demo.repository.FeedImageRepository;
 import com.example.demo.repository.FeedLikeRepository;
 import com.example.demo.repository.FeedReportRepository;
 import com.example.demo.repository.FeedRepository;
-import com.example.demo.repository.UserRepository;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,8 +24,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
-import jakarta.persistence.EntityManager;
-
 
 import java.util.Optional;
 
@@ -40,6 +39,9 @@ class FeedReportServiceTest {
 
     @Mock
     private FeedReportRepository feedReportRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private FeedRepository feedRepository;
@@ -65,9 +67,6 @@ class FeedReportServiceTest {
     @Mock
     private EntityManager entityManager;
 
-    @Mock
-    private UserRepository userRepository;
-
     @InjectMocks
     private FeedReportService feedReportService;
 
@@ -83,7 +82,7 @@ class FeedReportServiceTest {
                 .name("신고자")
                 .role(Role.MEMBER)
                 .build();
-        ReflectionTestUtils.setField(reporter, "id", 100L); // ID 설정 추가
+        ReflectionTestUtils.setField(reporter, "id", 100L);
 
         writer = User.builder()
                 .userId("writer")
@@ -91,7 +90,7 @@ class FeedReportServiceTest {
                 .name("작성자")
                 .role(Role.MEMBER)
                 .build();
-        ReflectionTestUtils.setField(writer, "id", 200L); // ID 설정 추가
+        ReflectionTestUtils.setField(writer, "id", 200L);
 
         feed = Feed.builder()
                 .writer(writer)
@@ -100,7 +99,7 @@ class FeedReportServiceTest {
                 .build();
         ReflectionTestUtils.setField(feed, "id", 1L);
 
-        // UserRepository 가짜 동작 설정 (중요!)
+        // 기본적으로 유저는 찾을 수 있다고 가정
         given(userRepository.findById(any())).willReturn(Optional.of(reporter));
     }
 
@@ -109,15 +108,18 @@ class FeedReportServiceTest {
     void reportFeedTest() {
         // given
         Long feedId = 1L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        // [수정] existsById와 getReferenceById를 Mocking
+        given(feedRepository.existsById(feedId)).willReturn(true);
+        given(feedRepository.getReferenceById(feedId)).willReturn(feed);
+        
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         feedReportService.toggleReport(reporter, feedId);
 
         // then
-        verify(feedReportRepository).save(any(FeedReport.class));
+        verify(feedReportRepository).saveAndFlush(any(FeedReport.class));
     }
 
     @Test
@@ -125,7 +127,10 @@ class FeedReportServiceTest {
     void cancelReportTest() {
         // given
         Long feedId = 1L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        // [수정] existsById와 getReferenceById를 Mocking
+        given(feedRepository.existsById(feedId)).willReturn(true);
+        given(feedRepository.getReferenceById(feedId)).willReturn(feed);
+        
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(true);
 
         // when
@@ -134,6 +139,7 @@ class FeedReportServiceTest {
         // then
         verify(feedReportRepository).deleteByReporterAndFeed(reporter, feed);
         verify(feedReportRepository, never()).save(any(FeedReport.class));
+        verify(feedReportRepository, never()).saveAndFlush(any(FeedReport.class));
     }
 
     @Test
@@ -141,7 +147,8 @@ class FeedReportServiceTest {
     void reportFeedNotFoundTest() {
         // given
         Long feedId = 999L;
-        given(feedRepository.findById(feedId)).willReturn(Optional.empty());
+        // [수정] 존재하지 않음을 명시 (findById 대신 existsById 사용)
+        given(feedRepository.existsById(feedId)).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> feedReportService.toggleReport(reporter, feedId))
@@ -157,13 +164,19 @@ class FeedReportServiceTest {
         long likeCount = 1L;
         long reportCount = 5L;
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.existsById(feedId)).willReturn(true);
+        given(feedRepository.getReferenceById(feedId)).willReturn(feed);
+        
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        
         given(feedLikeRepository.countByFeed(feed)).willReturn(likeCount);
         given(feedReportRepository.countByFeed(feed)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);
         given(userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)).willReturn(false);
+        
+        // 삭제 로직에서 findById가 호출됨
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
 
         // when
         feedReportService.toggleReport(reporter, feedId);
@@ -180,9 +193,12 @@ class FeedReportServiceTest {
         long likeCount = 10L;
         long reportCount = 2L;
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.existsById(feedId)).willReturn(true);
+        given(feedRepository.getReferenceById(feedId)).willReturn(feed);
+        
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        
         given(feedLikeRepository.countByFeed(feed)).willReturn(likeCount);
         given(feedReportRepository.countByFeed(feed)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(false);
@@ -202,9 +218,12 @@ class FeedReportServiceTest {
         long likeCount = 1L;
         long reportCount = 5L;
 
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+        given(feedRepository.existsById(feedId)).willReturn(true);
+        given(feedRepository.getReferenceById(feedId)).willReturn(feed);
+        
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        
         given(feedLikeRepository.countByFeed(feed)).willReturn(likeCount);
         given(feedReportRepository.countByFeed(feed)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);

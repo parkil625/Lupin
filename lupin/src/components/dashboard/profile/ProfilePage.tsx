@@ -293,22 +293,58 @@ const BasicInfoForm = memo(
     onSubmit: (data: ProfileFormData) => void;
   }) => {
     // [핵심] useForm을 자식 컴포넌트 내부에 선언하여 입력 시 페이지 전체 리렌더링 차단
+    // [수정] reset 함수 추가 및 하드코딩된 기본값(175, 70 등) 제거
     const {
       register,
       handleSubmit,
       setValue,
       watch,
+      reset,
       formState: { errors },
     } = useForm<ProfileFormData>({
       resolver: zodResolver(profileSchema),
       defaultValues: {
-        height: localStorage.getItem("userHeight") || "175",
-        weight: localStorage.getItem("userWeight") || "70",
-        birthDate: localStorage.getItem("userBirthDate") || "1990-01-01",
-        gender: localStorage.getItem("userGender") || "남성",
+        // 로컬 스토리지 값이 없으면 빈 문자열("")로 설정하여 가짜 값이 보이지 않게 함
+        height: localStorage.getItem("userHeight") || "",
+        weight: localStorage.getItem("userWeight") || "",
+        birthDate: localStorage.getItem("userBirthDate") || "",
+        gender: localStorage.getItem("userGender") || "",
       },
     });
     const gender = watch("gender");
+
+    // [추가] 컴포넌트 마운트 시 DB에서 실제 내 정보 불러오기
+    useEffect(() => {
+      const fetchMyInfo = async () => {
+        try {
+          const userId = Number(localStorage.getItem("userId"));
+          if (!userId) return;
+
+          const userData = await userApi.getUserById(userId);
+
+          // 가져온 데이터로 폼 업데이트 (DB에 값이 없으면 빈 칸 유지)
+          reset({
+            height: userData.height ? String(userData.height) : "",
+            weight: userData.weight ? String(userData.weight) : "",
+            birthDate: userData.birthDate || "",
+            gender: userData.gender || "",
+          });
+
+          // 로컬 스토리지 동기화 (화면 새로고침 시 깜빡임 방지용)
+          if (userData.height)
+            localStorage.setItem("userHeight", String(userData.height));
+          if (userData.weight)
+            localStorage.setItem("userWeight", String(userData.weight));
+          if (userData.birthDate)
+            localStorage.setItem("userBirthDate", userData.birthDate);
+          if (userData.gender)
+            localStorage.setItem("userGender", userData.gender);
+        } catch (error) {
+          console.error("정보 불러오기 실패:", error);
+        }
+      };
+      fetchMyInfo();
+    }, [reset]);
 
     return (
       <form

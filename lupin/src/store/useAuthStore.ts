@@ -52,10 +52,19 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error("Logout API error:", error);
         } finally {
+          // [수정] 모든 개인정보 관련 키 삭제 (잔존 데이터 방지)
           localStorage.removeItem("accessToken");
           localStorage.removeItem("userId");
           localStorage.removeItem("userEmail");
           localStorage.removeItem("userName");
+          localStorage.removeItem("userDepartment");
+
+          // 프로필 정보도 반드시 삭제
+          localStorage.removeItem("userHeight");
+          localStorage.removeItem("userWeight");
+          localStorage.removeItem("userBirthDate");
+          localStorage.removeItem("userGender");
+
           set({ isLoggedIn: false, userRole: "member" });
           window.location.href = "/login";
         }

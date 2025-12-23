@@ -15,7 +15,7 @@ import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.event.NotificationEvent;
-import jakarta.persistence.EntityManager; // [추가]
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -29,6 +29,7 @@ import java.util.List;
 public class FeedReportService {
 
     private final FeedReportRepository feedReportRepository;
+    private final com.example.demo.repository.UserRepository userRepository;
     private final FeedRepository feedRepository;
     private final FeedLikeRepository feedLikeRepository;
     private final FeedImageRepository feedImageRepository;
@@ -41,19 +42,26 @@ public class FeedReportService {
 
     @Transactional
     public void toggleReport(User reporter, Long feedId) {
+        // 1. [중요] 컨트롤러에서 넘어온 reporter 대신, DB에서 진짜 유저 정보를 다시 가져옵니다.
+        User managedReporter = userRepository.findById(reporter.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 게시글 찾기 (이미 잘하셨습니다)
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
-        if (feedReportRepository.existsByReporterAndFeed(reporter, feed)) {
-            feedReportRepository.deleteByReporterAndFeed(reporter, feed);
+        if (feedReportRepository.existsByReporterAndFeed(managedReporter, feed)) {
+            feedReportRepository.deleteByReporterAndFeed(managedReporter, feed);
         } else {
+            // 3. 진짜 유저(managedReporter)와 진짜 피드(feed)로 신고장 작성
             FeedReport feedReport = FeedReport.builder()
-                    .reporter(reporter)
+                    .reporter(managedReporter) // 여기가 핵심입니다!
                     .feed(feed)
                     .build();
+            
             feedReportRepository.save(feedReport);
 
-            // [수정] 즉시 DB 반영 및 영속성 컨텍스트 분리 (삭제 시 충돌 방지)
+            // 즉시 DB 반영
             entityManager.flush();
             entityManager.detach(feedReport);
 

@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,21 @@ public class PrescriptionResponse {
             departmentName = prescription.getAppointment().getDepartmentName();
         }
 
+        List<MedicineItem> medicineItems = new ArrayList<>();
+        if (prescription.getMedicines() != null && !prescription.getMedicines().isEmpty()) {
+            medicineItems = prescription.getMedicines().stream()
+                    .map(med -> MedicineItem.builder()
+                            .id(med.getId())
+                            .medicineId(med.getMedicine() != null ? med.getMedicine().getId() : null)
+                            .medicineName(med.getMedicineName())
+                            .dosage(med.getDosage())
+                            .frequency(med.getFrequency())
+                            .durationDays(med.getDurationDays())
+                            .instructions(med.getInstructions())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
         return PrescriptionResponse.builder()
                 .id(prescription.getId())
                 .patientId(prescription.getPatient().getId())
@@ -59,17 +75,7 @@ public class PrescriptionResponse {
                         prescription.getAppointment().getId() : null)
                 .diagnosis(prescription.getDiagnosis())
                 .date(prescription.getDate())
-                .medicines(prescription.getMedicines().stream()
-                        .map(med -> MedicineItem.builder()
-                                .id(med.getId())
-                                .medicineId(med.getMedicine() != null ? med.getMedicine().getId() : null)
-                                .medicineName(med.getMedicineName())
-                                .dosage(med.getDosage())
-                                .frequency(med.getFrequency())
-                                .durationDays(med.getDurationDays())
-                                .instructions(med.getInstructions())
-                                .build())
-                        .collect(Collectors.toList()))
+                .medicines(medicineItems)
                 .build();
     }
 }

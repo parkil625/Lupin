@@ -425,13 +425,24 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
   // currentUserId 변경 시 ref 업데이트
   useEffect(() => {
-    handleMessageReceivedRef.current = (message: ChatMessageResponse) => {
+    handleMessageReceivedRef.current = async (message: ChatMessageResponse) => {
       setMessages((prev) => [...prev, message]);
       if (message.senderId !== currentUserId) {
         toast.success("새 메시지가 도착했습니다");
+
+        // 처방전 발급 메시지인 경우 처방전 목록 새로고침
+        if (message.content.includes("처방전")) {
+          try {
+            const data = await prescriptionApi.getPatientPrescriptions(currentPatientId);
+            setPrescriptions(data);
+          } catch (error) {
+            // 에러 무시 (조용히 처리)
+            setPrescriptions([]);
+          }
+        }
       }
     };
-  }, [currentUserId]);
+  }, [currentUserId, currentPatientId]);
 
   // 메시지 수신 콜백 (안정적인 참조 유지)
   const handleMessageReceived = useCallback((message: ChatMessageResponse) => {
@@ -517,7 +528,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         const data = await prescriptionApi.getPatientPrescriptions(currentPatientId);
         setPrescriptions(data);
       } catch (error) {
-        console.error("처방전 목록 로드 실패:", error);
+        // 에러 발생 시 빈 배열로 설정 (500 에러 무시)
+        setPrescriptions([]);
       }
     };
 

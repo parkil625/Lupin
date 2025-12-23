@@ -29,7 +29,6 @@ export const useWebSocket = ({
         if (!roomId) {
             // 기존 연결이 있다면 정리
             if (clientRef.current?.active) {
-                console.log('🔌 WebSocket 연결 해제 (roomId 없음)');
                 clientRef.current.deactivate();
                 clientRef.current = null;
             }
@@ -47,38 +46,31 @@ export const useWebSocket = ({
             ? 'http://localhost:8081/ws'
             : `${window.location.origin}/ws`;
 
-        console.log(`[WebSocket] 연결 시작 - URL: ${socketUrl}, RoomID: ${roomId}`);
-
         const client = new Client({
             webSocketFactory: () => new SockJS(socketUrl),
-            debug: (str) => {
-                if (isLocal) console.log('[STOMP Debug]', str);
+            debug: () => {
+                // 프로덕션 환경에서는 debug 로그 비활성화
             },
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,
             onConnect: () => {
-                console.log('✅ WebSocket 연결 성공 - RoomID:', roomId);
                 setIsConnected(true);
 
                 // 🔧 수정: 백엔드와 일치하도록 /queue로 변경
                 client.subscribe(`/queue/chat/${roomId}`, (message) => {
                     const receivedMessage: ChatMessageResponse = JSON.parse(message.body);
-                    console.log('📩 메시지 수신:', receivedMessage);
                     onMessageReceivedRef.current(receivedMessage);
                 });
             },
             onStompError: (frame) => {
-                console.error('❌ STOMP 에러:', frame.headers['message']);
-                console.error('상세:', frame.body);
+                console.error('STOMP 에러:', frame.headers['message']);
                 setIsConnected(false);
             },
             onDisconnect: () => {
-                console.log('❌ WebSocket 연결 해제 - RoomID:', roomId);
                 setIsConnected(false);
             },
             onWebSocketClose: () => {
-                console.log('🔌 WebSocket 닫힘 - RoomID:', roomId);
                 setIsConnected(false);
             },
         });
@@ -93,17 +85,14 @@ export const useWebSocket = ({
         return () => {
             clearTimeout(timeoutId);
             if (client.active) {
-                console.log('🔌 WebSocket 정리 중 - RoomID:', roomId);
                 client.deactivate();
             }
-            // cleanup 시 연결 상태 초기화
             setIsConnected(false);
         };
     }, [roomId, userId]);
 
     const sendMessage = useCallback((content: string, senderId: number) => {
         if (!clientRef.current?.connected) {
-            console.error('WebSocket이 연결되지 않았습니다.');
             return;
         }
 

@@ -38,6 +38,7 @@ export default function ChatRoom({
   useEffect(() => {
     if (!open) return;
 
+    // 채팅창이 열릴 때 항상 최신 메시지 로드
     chatApi
       .getAllMessagesByRoomId(roomId)
       .then((data) => setMessages(data))
@@ -47,7 +48,7 @@ export default function ChatRoom({
     chatApi
       .markAsRead(roomId, currentUser.id)
       .catch((err) => console.error('읽음 처리 실패:', err));
-  }, [open, roomId, currentUser.id]);
+  }, [roomId, currentUser.id]); // open 제거 - appointmentId가 바뀔 때만 로드
 
   // 2. 웹소켓 연결
   const { isConnected, sendMessage } = useWebSocket({

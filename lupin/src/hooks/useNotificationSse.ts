@@ -49,6 +49,21 @@ export const useNotificationSse = ({
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
 
+    const handleReconnect = () => {
+      // 재연결 대기 시간: Exponential backoff
+      const baseDelay = 5000; // 5초
+      const maxDelay = 30000; // 최대 30초
+      const delay = Math.min(
+        baseDelay * Math.pow(1.5, reconnectAttemptsRef.current),
+        maxDelay
+      );
+
+      // 재연결 시도 (로그 없이)
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connect();
+      }, delay);
+    };
+
     eventSource.addEventListener("connect", () => {
       isConnectedRef.current = true;
       reconnectAttemptsRef.current = 0; // 연결 성공 시 재시도 카운터 리셋
@@ -88,18 +103,7 @@ export const useNotificationSse = ({
         }
       }
 
-      // 재연결 대기 시간: Exponential backoff
-      const baseDelay = 5000; // 5초
-      const maxDelay = 30000; // 최대 30초
-      const delay = Math.min(
-        baseDelay * Math.pow(1.5, reconnectAttemptsRef.current),
-        maxDelay
-      );
-
-      // 재연결 시도 (로그 없이)
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
-      }, delay);
+      handleReconnect();
     };
   }, [enabled]);
 

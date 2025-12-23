@@ -27,7 +27,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { appointmentApi, AppointmentResponse } from "@/api/appointmentApi";
 import { userApi } from "@/api/userApi";
-import { prescriptionApi } from "@/api/prescriptionApi";
+import { prescriptionApi, PrescriptionResponse } from "@/api/prescriptionApi";
 import { toast } from "sonner";
 
 interface MedicalProps {
@@ -58,7 +58,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   const [isChatEnded, setIsChatEnded] = useState(false);
 
   // 예약 화면 상태 (채팅이 없으면 기본으로 예약 화면 표시)
-  const [, setShowAppointmentView] = useState(true);
   const [viewState, setViewState] = useState<"FORM" | "SUCCESS" | "LIST">("FORM");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -239,7 +238,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           type: "진료 상담",
         });
         setIsChatEnded(false);
-        setShowAppointmentView(false);
         setMessages([]); // 새 채팅방 열 때 이전 메시지 초기화
       } catch (error) {
         console.error("채팅 가능 여부 확인 실패:", error);
@@ -493,7 +491,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   // [처방전] 상태 및 로직
   // -------------------------------------------------------------------------
 
-  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [prescriptions, setPrescriptions] = useState<PrescriptionResponse[]>([]);
 
   // 예약 목록 및 처방전 로드
   useEffect(() => {
@@ -555,7 +553,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
             type: "진료 상담",
           });
           setIsChatEnded(false);
-          setShowAppointmentView(false);
           setMessages([]);
         } else {
           toast.error("해당 예약을 찾을 수 없습니다.");
@@ -583,7 +580,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       setActiveAppointment(null);
       setIsChatEnded(true);
       setMessages([]);
-      setShowAppointmentView(true);
       setViewState("LIST");
 
       // 예약 목록 및 처방전 새로고침
@@ -790,11 +786,11 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             name: pres.diagnosis,
                             date: new Date(pres.date).toLocaleDateString("ko-KR"),
                             doctor: pres.doctorName,
-                            medicines: pres.medicines.map((m: any) =>
+                            medicines: pres.medicines.map((m) =>
                               `${m.medicineName} ${m.dosage}`
                             ),
                             diagnosis: pres.diagnosis,
-                            instructions: pres.medicines.map((m: any) =>
+                            instructions: pres.medicines.map((m) =>
                               m.instructions || `${m.frequency} 복용`
                             ).join(", "),
                           })}

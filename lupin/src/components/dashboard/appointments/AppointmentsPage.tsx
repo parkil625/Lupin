@@ -107,6 +107,29 @@ export default function AppointmentsPage({
     };
   }, [appointments, handleChatClick]);
 
+  // 의사 측 진료 종료 이벤트 수신 (예약 목록 새로고침)
+  useEffect(() => {
+    const handleDoctorConsultationEnded = async () => {
+      try {
+        let data: AppointmentResponse[] = [];
+        if (currentUser.role === "DOCTOR") {
+          data = await appointmentApi.getDoctorAppointments(currentUser.id);
+        } else if (currentUser.role === "PATIENT") {
+          data = await appointmentApi.getPatientAppointments(currentUser.id);
+        }
+        setAppointments(data);
+      } catch (error) {
+        console.error("예약 목록 새로고침 실패:", error);
+      }
+    };
+
+    window.addEventListener("doctorConsultationEnded", handleDoctorConsultationEnded);
+
+    return () => {
+      window.removeEventListener("doctorConsultationEnded", handleDoctorConsultationEnded);
+    };
+  }, [currentUser.id, currentUser.role]);
+
   // 예약 취소 핸들러
   const handleCancelAppointment = async (appointmentId: number) => {
     if (!confirm("정말로 예약을 취소하시겠습니까?")) return;

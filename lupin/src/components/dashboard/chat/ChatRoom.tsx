@@ -92,7 +92,10 @@ export default function ChatRoom({
       await axiosInstance.put(`/api/appointment/${appointmentId}/complete`);
       // 성공 시 채팅창 닫기
       onOpenChange(false);
-      window.location.reload(); // 예약 목록 새로고침
+      // 의사 측 페이지 업데이트를 위한 이벤트 발생
+      window.dispatchEvent(new CustomEvent('doctorConsultationEnded', {
+        detail: { appointmentId }
+      }));
     } catch (error) {
       console.error('진료 종료 실패:', error);
       alert('진료 종료에 실패했습니다.');

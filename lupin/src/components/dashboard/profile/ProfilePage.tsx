@@ -180,8 +180,8 @@ const AvatarSection = memo(
         if (image?.includes("s3."))
           await imageApi.deleteImage(image).catch(() => {});
 
-        const response = await imageApi.uploadProfileImage(file);
-        const url = response.url;
+        // [수정] 백엔드가 URL 문자열을 바로 반환하므로 그대로 사용합니다.
+        const url = await imageApi.uploadProfileImage(file);
 
         const uid = parseInt(localStorage.getItem("userId") || "0");
         if (uid) await userApi.updateAvatar(uid, url);

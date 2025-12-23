@@ -19,9 +19,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,13 +39,18 @@ public class AuctionService {
     private final AuctionRepository auctionRepository;
     private final UserRepository userRepository;
     private final AuctionBidRepository auctionBidRepository;
-    private final PointService pointService;
+
     private final PointLogRepository pointLogRepository;
     private final AuctionTaskScheduler auctionTaskScheduler;
     private final ApplicationEventPublisher eventPublisher;
 
     private final AuctionSseService auctionSseService;
     private final RedissonClient redissonClient;
+
+
+    @Lazy
+    @Autowired
+    private AuctionService self;
 
     // 경매 입찰 시켜주는 메소드
     public void placeBid(Long auctionId, Long userId, Long bidAmount, LocalDateTime bidTime) {
@@ -103,44 +112,54 @@ public class AuctionService {
 
         for (Auction auction : auctions) {
             try {
-                processSingleAuctionClose(auction);
+                // [2] 'this' 대신 'self'를 사용하여 프록시를 통한 호출 (트랜잭션 분리 효과)
+                self.processSingleAuctionClose(auction);
             } catch (Exception e) {
                 log.error("경매 ID {} 종료 처리 중 오류 발생", auction.getId(), e);
-                // 여기서 에러를 잡아내면, 다른 경매들은 정상적으로 처리됩니다.
+                // 이제 여기서 에러를 잡아도 전체 트랜잭션에 영향을 주지 않습니다!
             }
         }
     }
-
-
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processSingleAuctionClose(Auction auction) {
-        List<AuctionBid> auctionBids = auctionBidRepository.findByAuctionId(auction.getId());
+        // [중요 수정 1] 넘어온 auction 객체는 '남의 것'이므로, ID로 이 트랜잭션용 객체를 다시 찾습니다.
+        Auction currentAuction = auctionRepository.findById(auction.getId())
+                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다."));
 
-        auction.deactivate(auctionBids);
-        auctionRepository.saveAndFlush(auction);
+        List<AuctionBid> auctionBids = auctionBidRepository.findByAuctionId(currentAuction.getId());
 
-        if (auction.getWinner() != null) {
-            User winner = auction.getWinner();
-            Long price = auction.getCurrentPrice();
+        // 여기서 조회한 currentAuction을 변경합니다.
+        currentAuction.deactivate(auctionBids);
 
+        if (currentAuction.getWinner() != null) {
+            // [중요 수정 2] Winner 객체도 여기서 다시 조회해야 안전합니다.
+            // (currentAuction.getWinner()로 가져와도 되지만, 명시적으로 ID로 찾는 게 확실합니다)
+            User winner = userRepository.findById(currentAuction.getWinner().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+            Long price = currentAuction.getCurrentPrice();
+
+            // 새로 조회한 winner 객체를 수정
             winner.deductPoints(price);
-            userRepository.save(winner);
+            userRepository.save(winner); // 이제 정상 저장됩니다.
 
-            // 4. 포인트 로그 직접 생성 및 저장
             PointLog pointLog = PointLog.builder()
                     .user(winner)
-                    .points(-price) // 사용이므로 음수
+                    .points(-price)
                     .type(PointType.USE)
                     .build();
             pointLogRepository.save(pointLog);
 
-            // 여기서 메소드가 끝나면 즉시 커밋되고 -> 알림이 바로 전송됩니다!
             eventPublisher.publishEvent(NotificationEvent.auctionWin(
                     winner.getId(),
-                    auction.getId(),
-                    auction.getAuctionItem().getItemName(), // 물품 이름
+                    currentAuction.getId(),
+                    currentAuction.getAuctionItem().getItemName(),
                     price
             ));
         }
+
+        // 마지막에 저장
+        auctionRepository.saveAndFlush(currentAuction);
     }
 
 

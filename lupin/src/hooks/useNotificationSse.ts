@@ -17,6 +17,10 @@ export const useNotificationSse = ({
   const reconnectAttemptsRef = useRef(0);
   const isConnectedRef = useRef(false);
   const lastConnectTimeRef = useRef<number>(0);
+
+  // [핵심 해결] 재귀 호출을 위해 connect 함수를 담을 Ref 생성
+  const connectRef = useRef<() => void>(() => {});
+
   // 콜백을 ref로 저장하여 의존성 문제 해결
   const onNotificationReceivedRef = useRef(onNotificationReceived);
 
@@ -60,7 +64,8 @@ export const useNotificationSse = ({
 
       // 재연결 시도 (로그 없이)
       reconnectTimeoutRef.current = setTimeout(() => {
-        connectInternal();
+        // [수정] Ref를 통해 안전하게 자기 자신(재연결) 호출
+        connectRef.current();
       }, delay);
     };
 
@@ -106,6 +111,11 @@ export const useNotificationSse = ({
       scheduleReconnect();
     };
   }, [enabled]);
+
+  // [수정] Ref에 최신 함수 할당 (이게 있어야 connectRef.current()가 작동함)
+  useEffect(() => {
+    connectRef.current = connectInternal;
+  }, [connectInternal]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

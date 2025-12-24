@@ -78,29 +78,24 @@ public class FeedTransactionService {
      */
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity,
-                        String startImageKey, String endImageKey, List<String> otherImageKeys,
-                        Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt,
-                        boolean imagesChanged) { // [추가] 파라미터
+                           String startImageKey, String endImageKey, List<String> otherImageKeys,
+                           Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt,
+                           boolean imagesChanged) {
+
         Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
-
         feed.validateOwner(user);
 
-        // URL 정규화 (프론트에서 풀 경로가 와도 처리 가능하도록)
-        String cleanStartKey = extractKey(startImageKey);
-        String cleanEndKey = extractKey(endImageKey);
+        // [수정] 안전하게 기존 시간 찾기 (URL 포함관계 확인)
+        // 기존 맵 방식은 URL 불일치 시 null 반환 위험이 있어 findCapturedAtSafe 사용
+        LocalDateTime existingStartTime = findCapturedAtSafe(feed, startImageKey);
+        LocalDateTime existingEndTime = findCapturedAtSafe(feed, endImageKey);
 
         String oldActivity = feed.getActivity();
         long oldPoints = feed.getPoints();
 
-        // 1. 기존 이미지 시간 정보 백업
-        Map<String, LocalDateTime> oldTimeMap = feed.getImages().stream()
-                .filter(img -> img.getCapturedAt() != null)
-                .collect(Collectors.toMap(FeedImage::getS3Key, FeedImage::getCapturedAt, (a, b) -> a));
-
         feed.update(content, activity);
 
-        // 2. 점수 재계산 여부 판단 (이미지가 바뀌었거나, 운동 종류가 바뀌었을 때)
         boolean activityChanged = !activity.equals(oldActivity);
         boolean shouldRecalculate = imagesChanged || activityChanged;
 
@@ -108,14 +103,14 @@ public class FeedTransactionService {
         LocalDateTime resolvedEndTime = null;
 
         if (shouldRecalculate) {
-            // 시간 결정: 이미지가 바뀌었으면 새 추출값, 아니면(운동만 변경) 기존 값 사용
             if (imagesChanged) {
+                // 이미지 변경 시: 프론트/S3에서 추출한 새 시간 사용
                 resolvedStartTime = startTimeOpt.orElse(null);
                 resolvedEndTime = endTimeOpt.orElse(null);
             } else {
-                // 이미지는 그대로인데 운동만 바뀐 경우 -> 기존 DB 시간 사용
-                resolvedStartTime = oldTimeMap.get(cleanStartKey);
-                resolvedEndTime = oldTimeMap.get(cleanEndKey);
+                // 운동만 변경 시: 기존 DB 시간 유지
+                resolvedStartTime = existingStartTime;
+                resolvedEndTime = existingEndTime;
             }
 
             // 시간 정보가 없으면 계산 불가 (기존 유지 or 에러)
@@ -207,5 +202,17 @@ public class FeedTransactionService {
         }
     }
 
-    
+    private LocalDateTime findCapturedAtSafe(Feed feed, String urlOrKey) {
+        if (urlOrKey == null) return null;
+        return feed.getImages().stream()
+                .filter(img -> {
+                    String dbKey = img.getS3Key();
+                    // URL이나 Key가 서로 포함되어 있으면 같은 이미지로 판단
+                    return urlOrKey.contains(dbKey) || dbKey.contains(urlOrKey);
+                })
+                .findFirst()
+                .map(FeedImage::getCapturedAt)
+                .orElse(null);
+    }
+
 }

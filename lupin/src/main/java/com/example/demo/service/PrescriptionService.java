@@ -142,32 +142,19 @@ public class PrescriptionService {
         User patient = userRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
 
+        String medicationString = request.getMedicines().stream()
+                .map(item -> String.format("%s (%s, %s)", 
+                        item.getMedicineName(), item.getDosage(), item.getFrequency()))
+                .collect(Collectors.joining("\n"));
+
         Prescription prescription = Prescription.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .appointment(appointment)
                 .diagnosis(request.getDiagnosis())
+                .medications(medicationString)
                 .date(LocalDate.now())
                 .build();
-
-        // 약품 추가
-        for (PrescriptionRequest.MedicineItem item : request.getMedicines()) {
-            Medicine medicine = null;
-            if (item.getMedicineId() != null) {
-                medicine = medicineRepository.findById(item.getMedicineId()).orElse(null);
-            }
-
-            PrescriptionMed prescriptionMed = PrescriptionMed.builder()
-                    .medicine(medicine)
-                    .medicineName(item.getMedicineName())
-                    .dosage(item.getDosage())
-                    .frequency(item.getFrequency())
-                    .durationDays(item.getDurationDays())
-                    .instructions(item.getInstructions())
-                    .build();
-
-            prescription.addMedicine(prescriptionMed);
-        }
 
         appointment.complete();
         Prescription savedPrescription = prescriptionRepository.save(prescription);

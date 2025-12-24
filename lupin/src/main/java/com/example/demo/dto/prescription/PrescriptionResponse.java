@@ -1,16 +1,12 @@
 package com.example.demo.dto.prescription;
 
 import com.example.demo.domain.entity.Prescription;
-import com.example.demo.domain.entity.PrescriptionMed;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -27,41 +23,18 @@ public class PrescriptionResponse {
     private Long appointmentId;
     private String diagnosis;
     private LocalDate date;
-    private List<MedicineItem> medicines;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class MedicineItem {
-        private Long id;
-        private Long medicineId;
-        private String medicineName;
-        private String dosage;
-        private String frequency;
-        private Integer durationDays;
-        private String instructions;
-    }
+    private String medications;
 
     public static PrescriptionResponse from(Prescription prescription) {
+        // Null safety: prescription의 연관 엔티티가 null인 경우 처리
+        if (prescription.getPatient() == null || prescription.getDoctor() == null) {
+            throw new IllegalStateException("처방전에 환자 또는 의사 정보가 없습니다.");
+        }
+
         String departmentName = null;
         if (prescription.getAppointment() != null) {
             departmentName = prescription.getAppointment().getDepartmentName();
-        }
-
-        List<MedicineItem> medicineItems = new ArrayList<>();
-        if (prescription.getMedicines() != null && !prescription.getMedicines().isEmpty()) {
-            medicineItems = prescription.getMedicines().stream()
-                    .map(med -> MedicineItem.builder()
-                            .id(med.getId())
-                            .medicineId(med.getMedicine() != null ? med.getMedicine().getId() : null)
-                            .medicineName(med.getMedicineName())
-                            .dosage(med.getDosage())
-                            .frequency(med.getFrequency())
-                            .durationDays(med.getDurationDays())
-                            .instructions(med.getInstructions())
-                            .build())
-                    .collect(Collectors.toList());
         }
 
         return PrescriptionResponse.builder()
@@ -75,7 +48,7 @@ public class PrescriptionResponse {
                         prescription.getAppointment().getId() : null)
                 .diagnosis(prescription.getDiagnosis())
                 .date(prescription.getDate())
-                .medicines(medicineItems)
+                .medications(prescription.getMedications())
                 .build();
     }
 }

@@ -8,13 +8,13 @@ spring:
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:1234}
     hikari:
-      maximum-pool-size: 20                # 최대 풀 크기 증가 (10 -> 20)
-      minimum-idle: 10                     # 최소 유휴 연결 증가 (5 -> 10)
-      connection-timeout: 20000            # 연결 타임아웃 감소 (30초 -> 20초)
-      idle-timeout: 300000                 # 유휴 타임아웃 5분
-      max-lifetime: 1200000                # 최대 수명 20분
-      leak-detection-threshold: 60000      # 연결 누수 감지 1분
-      pool-name: LupinHikariCP             # 풀 이름
+      maximum-pool-size: 20 # 최대 풀 크기 증가 (10 -> 20)
+      minimum-idle: 10 # 최소 유휴 연결 증가 (5 -> 10)
+      connection-timeout: 20000 # 연결 타임아웃 감소 (30초 -> 20초)
+      idle-timeout: 300000 # 유휴 타임아웃 5분
+      max-lifetime: 1200000 # 최대 수명 20분
+      leak-detection-threshold: 60000 # 연결 누수 감지 1분
+      pool-name: LupinHikariCP # 풀 이름
 
   security:
     oauth2:
@@ -30,7 +30,7 @@ spring:
   # Flyway 설정
   flyway:
     enabled: true
-    baseline-on-migrate: true  # 기존 DB에 적용할 때 필요
+    baseline-on-migrate: true # 기존 DB에 적용할 때 필요
     locations: classpath:db/migration
 
   jpa:
@@ -42,27 +42,27 @@ spring:
         show_sql: true
         use_sql_comments: true
         dialect: org.hibernate.dialect.MySQLDialect
-        default_batch_fetch_size: 100  # [추가] 컬렉션 조회 시 100개씩 묶어서 가져옴 (성능 최적화 & 에러 방지)
+        default_batch_fetch_size: 100 # [추가] 컬렉션 조회 시 100개씩 묶어서 가져옴 (성능 최적화 & 에러 방지)
     open-in-view: false
 
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 30MB
+      max-request-size: 30MB
 
   # Redis 설정
   data:
     redis:
       host: localhost
       port: 6379
-      timeout: 5000ms                      # 연결 타임아웃 증가 (3초 -> 5초)
+      timeout: 5000ms # 연결 타임아웃 증가 (3초 -> 5초)
       lettuce:
         pool:
-          max-active: 16                   # 최대 활성 연결 증가 (8 -> 16)
-          max-idle: 16                     # 최대 유휴 연결 증가
-          min-idle: 4                      # 최소 유휴 연결 증가 (2 -> 4)
-          max-wait: 5000ms                 # 연결 대기 최대 시간
-        shutdown-timeout: 200ms            # 종료 타임아웃
+          max-active: 16 # 최대 활성 연결 증가 (8 -> 16)
+          max-idle: 16 # 최대 유휴 연결 증가
+          min-idle: 4 # 최소 유휴 연결 증가 (2 -> 4)
+          max-wait: 5000ms # 연결 대기 최대 시간
+        shutdown-timeout: 200ms # 종료 타임아웃
 
   cloud:
     aws:
@@ -94,8 +94,8 @@ app:
   seed-data:
     enabled: false
   cookie:
-    secure: true           # 운영(HTTPS): true, 개발(HTTP): false
-    same-site: None        # 크로스 도메인: None, 동일 도메인: Lax
+    secure: true # 운영(HTTPS): true, 개발(HTTP): false
+    same-site: None # 크로스 도메인: None, 동일 도메인: Lax
     refresh-token-max-age-days: 7
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://43.202.79.166,https://43.202.79.166,https://lupin-eosin.vercel.app,https://lupin-care.com,https://www.lupin-care.com,https://api.lupin-care.com}
@@ -105,10 +105,10 @@ app:
     queue-capacity: 100
     thread-name-prefix: "AsyncThread-"
   penalty:
-    duration-days: 3          # 패널티 지속 기간 (일)
-    threshold-multiplier: 2   # 패널티 적용 임계값 배수 (신고 수 >= 좋아요 수 * 배수)
+    duration-days: 3 # 패널티 지속 기간 (일)
+    threshold-multiplier: 2 # 패널티 적용 임계값 배수 (신고 수 >= 좋아요 수 * 배수)
   feed:
-    point-recovery-days: 7    # 피드 삭제 시 포인트 회수 가능 기간 (일)
+    point-recovery-days: 7 # 피드 삭제 시 포인트 회수 가능 기간 (일)
 
 # 이미지 정책 설정 (12-Factor App)
 image:
@@ -128,8 +128,8 @@ image:
 
 jwt:
   secret: ${JWT_SECRET:bHVwaW5EZXZTZWNyZXRLZXlGb3JKd3RUb2tlbkdlbmVyYXRpb24yNTZiaXRz}
-  access-token-validity-ms: 1800000      # 30분 (1000 * 60 * 30)
-  refresh-token-validity-ms: 604800000   # 7일 (1000 * 60 * 60 * 24 * 7)
+  access-token-validity-ms: 1800000 # 30분 (1000 * 60 * 30)
+  refresh-token-validity-ms: 604800000 # 7일 (1000 * 60 * 60 * 24 * 7)
 
 server:
   port: 8081
@@ -170,10 +170,10 @@ resilience4j:
 redisson:
   singleServerConfig:
     address: "redis://localhost:6379"
-    connectionMinimumIdleSize: 8           # 최소 유휴 연결 증가 (5 -> 8)
-    connectionPoolSize: 20                 # 연결 풀 크기 증가 (10 -> 20)
-    timeout: 5000                          # 타임아웃 증가 (3초 -> 5초)
-    retryAttempts: 5                       # 재시도 횟수 증가 (3 -> 5)
-    retryInterval: 1000                    # 재시도 간격 감소 (1.5초 -> 1초)
-    keepAlive: true                        # 연결 유지
-    tcpNoDelay: true                       # TCP NoDelay 활성화 (지연 감소)
+    connectionMinimumIdleSize: 8 # 최소 유휴 연결 증가 (5 -> 8)
+    connectionPoolSize: 20 # 연결 풀 크기 증가 (10 -> 20)
+    timeout: 5000 # 타임아웃 증가 (3초 -> 5초)
+    retryAttempts: 5 # 재시도 횟수 증가 (3 -> 5)
+    retryInterval: 1000 # 재시도 간격 감소 (1.5초 -> 1초)
+    keepAlive: true # 연결 유지
+    tcpNoDelay: true # TCP NoDelay 활성화 (지연 감소)

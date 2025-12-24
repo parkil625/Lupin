@@ -102,7 +102,7 @@ public class FeedTransactionService {
                 workoutScoreService.validateAndCalculate(activity, 
                         Optional.ofNullable(resolvedStartTime), 
                         Optional.ofNullable(resolvedEndTime), 
-                        LocalDate.now());
+                        feed.getCreatedAt().toLocalDate());
 
         if (!workoutResult.valid() && (resolvedStartTime != null || resolvedEndTime != null)) {
             log.warn("Feed update - Workout time validation failed - score set to 0");

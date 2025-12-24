@@ -42,6 +42,7 @@ import {
 } from "@/components/shared/FeedContent";
 import exifr from "exifr";
 import { imageApi } from "@/api/imageApi";
+import imageCompression from "browser-image-compression";
 
 interface EditFeedDialogProps {
   feed: Feed | null;
@@ -201,7 +202,21 @@ export default function EditFeedDialog({
   // 이미지 업로드 핸들러 (S3에 실제 업로드)
   const uploadImage = async (file: File, setter: (url: string) => void) => {
     try {
-      const s3Url = await imageApi.uploadFeedImage(file);
+      // [추가] 브라우저단 이미지 압축 옵션
+      const options = {
+        maxSizeMB: 1, // 최대 1MB로 제한
+        maxWidthOrHeight: 1920, // 최대 해상도 FHD급으로 제한
+        useWebWorker: true, // 별도 스레드 사용으로 화면 멈춤 방지
+        fileType: "image/webp", // 웹에 최적화된 포맷 사용
+      };
+
+      // 압축 수행 (여기서 용량이 확 줄어듭니다)
+      const compressedFile = await imageCompression(file, options);
+
+      // 원본 대신 압축된 파일(compressedFile)을 전송
+      // 기존 file -> compressedFile 로 변경
+      const s3Url = await imageApi.uploadFeedImage(compressedFile);
+
       setter(s3Url);
     } catch (error) {
       console.error("이미지 업로드 실패:", error);

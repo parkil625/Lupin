@@ -748,11 +748,16 @@ export default function CreateFeedDialog({
                 disabled={!canSubmit || isUploading}
                 className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {isUploading
-                  ? "사진 올리는 중..."
-                  : canSubmit
-                  ? "작성"
-                  : "시작/끝 사진 필요"}
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <span>사진 올리는 중...</span>
+                  </>
+                ) : canSubmit ? (
+                  "작성"
+                ) : (
+                  "시작/끝 사진 필요"
+                )}
               </Button>
             </div>
           </DialogContent>

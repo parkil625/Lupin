@@ -438,16 +438,18 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       if (message.type === "CONSULTATION_END") {
         const doctorName = message.doctorName || "담당 의사";
 
-        // 채팅창 닫기 알림
-        alert("진료가 종료되었습니다.\n예약 목록으로 이동합니다.");
-
-        // 채팅 상태 초기화
+        // 1. 즉시 상태 초기화 (UI를 먼저 변경)
         setActiveAppointment(null);
         setIsChatEnded(true);
         setMessages([]);
         setViewState("LIST");
 
-        // 예약 목록 및 처방전 새로고침
+        // 2. 동기적으로 alert 표시 (상태 변경 직후)
+        setTimeout(() => {
+          alert("진료가 종료되었습니다.\n예약 목록으로 이동합니다.");
+        }, 0);
+
+        // 3. 백그라운드에서 데이터 새로고침
         try {
           const appointmentsData = await appointmentApi.getPatientAppointments(
             currentPatientId

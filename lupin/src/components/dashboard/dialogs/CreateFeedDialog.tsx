@@ -39,7 +39,7 @@ import { Image, FileText, X } from "lucide-react";
 import { FeedContentInput } from "@/components/shared/FeedContent";
 import { imageApi } from "@/api/imageApi";
 import exifr from "exifr";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface CreateFeedDialogProps {
   open: boolean;
@@ -517,13 +517,19 @@ export default function CreateFeedDialog({
             <Button
               onClick={handleSubmit}
               disabled={!canSubmit || isUploading}
-              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              // [수정] 스피너와 텍스트 정렬을 위해 flex 관련 클래스 추가
+              className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
-              {isUploading
-                ? "사진 올리는 중..."
-                : canSubmit
-                ? "작성"
-                : "시작/끝 사진 필요"}
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>업로드 중...</span>
+                </>
+              ) : canSubmit ? (
+                "작성"
+              ) : (
+                "시작/끝 사진 필요"
+              )}
             </Button>
           </div>
         </div>

@@ -156,71 +156,32 @@ function useGoogleScript(enabled: boolean, onSuccess: (cred: string) => void) {
 // [3] Sub-Components (Isolated & Memoized)
 // ============================================================================
 
-// 3.1 Avatar Section: 이미지 업로드 로직 격리
+// 3.1 Avatar Section: 이미지 업로드 로직 격리 -> Preview 방식 변경
 const AvatarSection = memo(
   ({
-    image,
+    displayImage, // 현재 보여줄 이미지 (원본 or 미리보기)
     isEditing,
-    onUpdate,
+    onFileSelect, // 파일 선택 핸들러 (부모에게 전달)
+    onRemove, // 삭제 핸들러 (부모에게 전달)
   }: {
-    image: string | null;
+    displayImage: string | null;
     isEditing: boolean;
-    onUpdate: (url: string | null) => void;
+    onFileSelect: (file: File) => void;
+    onRemove: () => void;
   }) => {
-    const [isUploading, setIsUploading] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
-    const updateStoreAvatar = useFeedStore((s) => s.updateMyFeedsAvatar);
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 파일 선택 시 부모에게 파일 객체 전달 (업로드 X)
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file || !file.type.startsWith("image/"))
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
         return toast.error("이미지 파일만 가능합니다.");
-
-      setIsUploading(true);
-      try {
-        if (image?.includes("s3."))
-          await imageApi.deleteImage(image).catch(() => {});
-
-        // 프로필용 압축 옵션 (피드보다 더 작게 설정하여 속도 극대화)
-        const options = {
-          maxSizeMB: 0.5, // 0.5MB 이하로 압축
-          maxWidthOrHeight: 800, // 800px로 리사이징 (프로필은 클 필요 없음)
-          useWebWorker: true,
-          fileType: "image/webp",
-        };
-
-        const compressedFile = await imageCompression(file, options);
-
-        // 압축된 파일 업로드
-        const url = await imageApi.uploadProfileImage(compressedFile);
-
-        const uid = parseInt(localStorage.getItem("userId") || "0");
-        if (uid) await userApi.updateAvatar(uid, url);
-
-        onUpdate(url);
-        updateStoreAvatar(url);
-        toast.success("사진 변경 완료");
-      } catch {
-        toast.error("업로드 실패");
-      } finally {
-        setIsUploading(false);
-        if (fileRef.current) fileRef.current.value = "";
       }
-    };
 
-    const handleRemove = async () => {
-      if (!confirm("기본 이미지로 변경하시겠습니까?")) return;
-      try {
-        if (image?.includes("s3."))
-          await imageApi.deleteImage(image).catch(() => {});
-        const uid = parseInt(localStorage.getItem("userId") || "0");
-        if (uid) await userApi.updateAvatar(uid, "");
-
-        onUpdate(null);
-        updateStoreAvatar(null);
-      } catch {
-        toast.error("삭제 실패");
-      }
+      onFileSelect(file);
+      if (fileRef.current) fileRef.current.value = "";
     };
 
     return (
@@ -228,12 +189,11 @@ const AvatarSection = memo(
         <div className="w-24 md:w-32 flex-shrink-0 relative group">
           <AspectRatio ratio={1}>
             <Avatar className="w-full h-full border-4 border-white shadow-xl bg-gray-50">
-              {image ? (
+              {displayImage ? (
                 <img
-                  src={image}
+                  src={displayImage}
                   alt="Profile"
                   className="w-full h-full object-cover transition-opacity duration-300"
-                  // [LCP 최적화] LCP 요소 우선 로드
                   fetchPriority="high"
                   loading="eager"
                   decoding="async"
@@ -247,19 +207,15 @@ const AvatarSection = memo(
             {isEditing && (
               <>
                 <button
-                  onClick={() => !isUploading && fileRef.current?.click()}
-                  aria-label="프로필 사진 업로드"
-                  className="absolute bottom-0 right-0 w-9 h-9 bg-[#C93831] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#B02F28] transition-transform active:scale-95 disabled:bg-gray-300 cursor-pointer"
+                  onClick={() => fileRef.current?.click()}
+                  aria-label="프로필 사진 변경"
+                  className="absolute bottom-0 right-0 w-9 h-9 bg-[#C93831] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#B02F28] transition-transform active:scale-95 cursor-pointer"
                 >
-                  {isUploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Camera className="w-4 h-4" />
-                  )}
+                  <Camera className="w-4 h-4" />
                 </button>
-                {image && (
+                {displayImage && (
                   <button
-                    onClick={handleRemove}
+                    onClick={onRemove}
                     aria-label="프로필 사진 삭제"
                     className="absolute top-0 right-0 w-7 h-7 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center shadow hover:bg-red-100 hover:text-red-600 transition-colors cursor-pointer"
                   >
@@ -270,7 +226,7 @@ const AvatarSection = memo(
                   ref={fileRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleUpload}
+                  onChange={handleFileChange}
                   className="hidden"
                 />
               </>
@@ -303,8 +259,6 @@ const BasicInfoForm = memo(
     isEditing: boolean;
     onSubmit: (data: ProfileFormData) => void;
   }) => {
-    // [핵심] useForm을 자식 컴포넌트 내부에 선언하여 입력 시 페이지 전체 리렌더링 차단
-    // [수정] reset 함수 추가 및 하드코딩된 기본값(175, 70 등) 제거
     const {
       register,
       handleSubmit,
@@ -315,7 +269,6 @@ const BasicInfoForm = memo(
     } = useForm<ProfileFormData>({
       resolver: zodResolver(profileSchema),
       defaultValues: {
-        // 로컬 스토리지 값이 없으면 빈 문자열("")로 설정하여 가짜 값이 보이지 않게 함
         height: localStorage.getItem("userHeight") || "",
         weight: localStorage.getItem("userWeight") || "",
         birthDate: localStorage.getItem("userBirthDate") || "",
@@ -324,7 +277,6 @@ const BasicInfoForm = memo(
     });
     const gender = watch("gender");
 
-    // [추가] 컴포넌트 마운트 시 DB에서 실제 내 정보 불러오기
     useEffect(() => {
       const fetchMyInfo = async () => {
         try {
@@ -333,7 +285,6 @@ const BasicInfoForm = memo(
 
           const userData = await userApi.getUserById(userId);
 
-          // 가져온 데이터로 폼 업데이트 (DB에 값이 없으면 빈 칸 유지)
           reset({
             height: userData.height ? String(userData.height) : "",
             weight: userData.weight ? String(userData.weight) : "",
@@ -341,7 +292,6 @@ const BasicInfoForm = memo(
             gender: userData.gender || "",
           });
 
-          // 로컬 스토리지 동기화 (화면 새로고침 시 깜빡임 방지용)
           if (userData.height)
             localStorage.setItem("userHeight", String(userData.height));
           if (userData.weight)
@@ -484,7 +434,6 @@ const OAuthSection = memo(() => {
   const [connections, setConnections] = useState<OAuthConnection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 데이터 로드
   const fetchConns = useCallback(async () => {
     try {
       setConnections(await oauthApi.getConnections());
@@ -516,7 +465,6 @@ const OAuthSection = memo(() => {
     [fetchConns]
   );
 
-  // Google Script: 로딩 완료 후 연동 안 된 경우에만 로드
   const needsGoogle =
     !isLoading && !connections.some((c) => c.provider === "GOOGLE");
   const { triggerGoogle } = useGoogleScript(needsGoogle, handleLinkGoogle);
@@ -645,7 +593,6 @@ const OAuthSection = memo(() => {
             </DropdownMenu>
           </div>
         )}
-        {/* Google GSI 버튼 - 항상 렌더링되어야 스크립트 초기화 가능 */}
         <div id="hidden-google-btn" className="hidden" aria-hidden="true" />
       </div>
     </div>
@@ -659,15 +606,55 @@ OAuthSection.displayName = "OAuthSection";
 
 export default function ProfilePage({
   onLogout,
-  profileImage,
-  setProfileImage,
+  profileImage, // 현재 서버/전역 상태의 이미지
+  setProfileImage, // 전역 상태 업데이트 함수
 }: ProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
 
-  // 저장 핸들러 (API 연동 추가)
+  // [상태 추가] 이미지 수정 관련 (저장 전 미리보기용)
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
+
+  const updateStoreAvatar = useFeedStore((s) => s.updateMyFeedsAvatar);
+
+  // [헬퍼] 현재 보여줄 이미지 결정 로직
+  // 1. 삭제됨 상태면 null (기본 이미지)
+  // 2. 대기 중인 미리보기 URL이 있으면 그거
+  // 3. 없으면 원래 profileImage
+  const displayImage = isImageRemoved ? null : previewUrl || profileImage;
+
+  // 편집 모드 취소 시 미리보기 초기화
+  const handleCancel = () => {
+    setIsEditing(false);
+    setPendingImage(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setIsImageRemoved(false);
+  };
+
+  // 이미지 파일 선택 핸들러 (AvatarSection에서 호출)
+  const handleFileSelect = useCallback((file: File) => {
+    // 기존 미리보기 URL 메모리 해제
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setPendingImage(file);
+    setIsImageRemoved(false); // 파일을 선택했으므로 삭제 취소
+  }, []);
+
+  // 이미지 제거 핸들러
+  const handleRemoveImage = useCallback(() => {
+    if (!confirm("기본 이미지로 변경하시겠습니까? (저장 시 반영)")) return;
+    setPendingImage(null);
+    setPreviewUrl(null);
+    setIsImageRemoved(true); // 삭제 상태 플래그 ON
+  }, []);
+
+  // 저장 핸들러 (이미지 + 텍스트 정보 일괄 처리)
   const handleSaveProfile = useCallback(
     async (data: ProfileFormData) => {
-      // 편집 모드가 아니면 무시
       if (!isEditing) return;
 
       try {
@@ -677,36 +664,90 @@ export default function ProfilePage({
           return;
         }
 
-        // [핵심] 서버 API 호출하여 DB에 영구 저장
-        // (기존 코드에는 이 부분이 없어서 로컬 스토리지 초기화 시 데이터가 날아갔습니다)
+        // 1. 이미지 처리 (삭제 or 업로드)
+        let finalImageUrl = profileImage; // 기본값: 변경 없음
+
+        if (isImageRemoved) {
+          // A. 이미지 삭제 요청
+          // [수정] profileImage가 존재함을 명시적으로 확인하여 타입 에러 방지
+          if (profileImage && profileImage.includes("s3.")) {
+            await imageApi.deleteImage(profileImage).catch(() => {});
+          }
+          await userApi.updateAvatar(userId, "");
+          finalImageUrl = null;
+        } else if (pendingImage) {
+          // B. 새 이미지 업로드 요청
+          // 기존 이미지 삭제 (S3인 경우) - 타입 안전성 강화
+          if (profileImage && profileImage.includes("s3.")) {
+            await imageApi.deleteImage(profileImage).catch(() => {});
+          }
+
+          // 압축
+          const options = {
+            maxSizeMB: 0.5,
+            maxWidthOrHeight: 800,
+            useWebWorker: true,
+            fileType: "image/webp",
+          };
+          const compressedFile = await imageCompression(pendingImage, options);
+
+          // 업로드 및 URL 획득
+          finalImageUrl = await imageApi.uploadProfileImage(compressedFile);
+
+          // 회원 정보에 아바타 URL 업데이트
+          // [수정] finalImageUrl이 null이면 빈 문자열("")을 전달하여 타입 에러 방지
+          await userApi.updateAvatar(userId, finalImageUrl || "");
+        }
+        // C. 변경 사항 없으면(pendingImage 없고 isImageRemoved false) -> 건너뜀
+
+        // 2. 텍스트 정보 업데이트 (기존 로직)
         await userApi.updateUser(userId, {
           height: Number(data.height),
           weight: Number(data.weight),
-          birthDate: data.birthDate, // yyyy-MM-dd 문자열 그대로 전송
+          birthDate: data.birthDate,
           gender: data.gender,
-          name: localStorage.getItem("userName") || "", // 필요하다면 이름도 포함
+          name: localStorage.getItem("userName") || "",
         });
 
-        // 서버 저장 성공 시 로컬 스토리지도 업데이트 (화면 즉시 반영용)
+        // 3. 로컬 스토리지 & 전역 상태 동기화
         localStorage.setItem("userHeight", data.height);
         localStorage.setItem("userWeight", data.weight);
         localStorage.setItem("userBirthDate", data.birthDate);
         localStorage.setItem("userGender", data.gender);
 
+        // 변경된 이미지가 있다면 전역 상태 업데이트
+        if (finalImageUrl !== profileImage) {
+          setProfileImage(finalImageUrl);
+          updateStoreAvatar(finalImageUrl);
+        }
+
+        // 4. 상태 정리 및 모드 종료
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPendingImage(null);
+        setPreviewUrl(null);
+        setIsImageRemoved(false);
         setIsEditing(false);
+
         toast.success("프로필이 저장되었습니다.");
       } catch (error) {
         console.error(error);
         toast.error("저장에 실패했습니다.");
       }
     },
-    [isEditing]
+    [
+      isEditing,
+      isImageRemoved,
+      pendingImage,
+      profileImage,
+      previewUrl,
+      setProfileImage,
+      updateStoreAvatar,
+    ]
   );
 
   return (
     <div className="h-full overflow-y-auto p-4 md:p-8 bg-gray-50/50 scroll-smooth">
       <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 pb-20">
-        {/* Header Actions */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
@@ -718,21 +759,30 @@ export default function ProfilePage({
           </div>
           <ButtonGroup>
             {isEditing ? (
-              // [중요] type="button"으로 변경하여 클릭 이벤트로 폼 제출
-              <Button
-                type="button"
-                onClick={() =>
-                  document
-                    .getElementById("profile-form")
-                    ?.dispatchEvent(
-                      new Event("submit", { bubbles: true, cancelable: true })
-                    )
-                }
-                variant="outline"
-                className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold cursor-pointer"
-              >
-                <Edit className="w-4 h-4 mr-2" /> 저장
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  onClick={handleCancel}
+                  variant="outline"
+                  className="border-gray-200 hover:bg-gray-100 font-bold cursor-pointer"
+                >
+                  <X className="w-4 h-4 mr-2" /> 취소
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("profile-form")
+                      ?.dispatchEvent(
+                        new Event("submit", { bubbles: true, cancelable: true })
+                      )
+                  }
+                  variant="outline"
+                  className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold cursor-pointer"
+                >
+                  <Edit className="w-4 h-4 mr-2" /> 저장
+                </Button>
+              </>
             ) : (
               <Button
                 type="button"
@@ -757,9 +807,10 @@ export default function ProfilePage({
           <div className="p-6 md:p-10">
             {/* 1. Avatar (Isolated) */}
             <AvatarSection
-              image={profileImage}
+              displayImage={displayImage} // 현재 상태에 맞는 이미지 전달
               isEditing={isEditing}
-              onUpdate={setProfileImage}
+              onFileSelect={handleFileSelect} // 저장 X, 상태만 변경
+              onRemove={handleRemoveImage} // 저장 X, 상태만 변경
             />
 
             <div className="h-px bg-gray-100 mb-10" />

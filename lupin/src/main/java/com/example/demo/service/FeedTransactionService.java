@@ -78,89 +78,98 @@ public class FeedTransactionService {
      */
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity,
-                           String startImageKey, String endImageKey, List<String> otherImageKeys,
-                           Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt) {
+                        String startImageKey, String endImageKey, List<String> otherImageKeys,
+                        Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt,
+                        boolean imagesChanged) { // [추가] 파라미터
         Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
-        // [추가] 들어온 키값에서 도메인(https://...)을 떼고 순수 경로만 남기는 전처리
-        // 예: https://버킷.s3.../folder/img.jpg -> folder/img.jpg
-        startImageKey = extractKey(startImageKey);
-        endImageKey = extractKey(endImageKey);
-
         feed.validateOwner(user);
 
-        // [변경 감지] 기존 데이터 백업
+        // URL 정규화 (프론트에서 풀 경로가 와도 처리 가능하도록)
+        String cleanStartKey = extractKey(startImageKey);
+        String cleanEndKey = extractKey(endImageKey);
+
         String oldActivity = feed.getActivity();
         long oldPoints = feed.getPoints();
-        
-        // 기존 시작/끝 이미지 키 찾기 (순서나 타입 기반)
-        String oldStartKey = feed.getImages().stream()
-                .filter(img -> img.getImgType() == ImageType.START)
-                .map(FeedImage::getS3Key).findFirst().orElse("");
-        String oldEndKey = feed.getImages().stream()
-                .filter(img -> img.getImgType() == ImageType.END)
-                .map(FeedImage::getS3Key).findFirst().orElse("");
 
-        // 1. 기존 이미지들의 시간 정보 백업 (Key -> Time)
+        // 1. 기존 이미지 시간 정보 백업
         Map<String, LocalDateTime> oldTimeMap = feed.getImages().stream()
                 .filter(img -> img.getCapturedAt() != null)
                 .collect(Collectors.toMap(FeedImage::getS3Key, FeedImage::getCapturedAt, (a, b) -> a));
 
-        // 정보 업데이트 (활동 내용 반영)
         feed.update(content, activity);
 
-        // 2. 시간 결정: 새 추출 값이 있으면 사용, 없으면(기존 유지) 기존 DB 값 사용
-        LocalDateTime resolvedStartTime = startTimeOpt.orElse(oldTimeMap.get(startImageKey));
-        LocalDateTime resolvedEndTime = endTimeOpt.orElse(oldTimeMap.get(endImageKey));
+        // 2. 점수 재계산 여부 판단 (이미지가 바뀌었거나, 운동 종류가 바뀌었을 때)
+        boolean activityChanged = !activity.equals(oldActivity);
+        boolean shouldRecalculate = imagesChanged || activityChanged;
 
-        // 시간 정보 유실 방지 (수정 시 이미지는 그대로인데 시간이 null이 되는 경우 방지)
-        if (resolvedStartTime == null || resolvedEndTime == null) {
-            log.error("Feed update failed: Time metadata lost. startKey={}, endKey={}", startImageKey, endImageKey);
-            throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED); // 적절한 에러 코드로 대체 가능
-        }
+        LocalDateTime resolvedStartTime = null;
+        LocalDateTime resolvedEndTime = null;
 
-        // 3. 포인트/점수 재계산 여부 판단
-        // 로직: 이미지가 하나라도 바뀌었거나, 운동 종류(Activity)가 바뀌었을 때만 재계산
-        boolean isImageChanged = !startImageKey.equals(oldStartKey) || !endImageKey.equals(oldEndKey);
-        boolean isActivityChanged = !activity.equals(oldActivity);
-
-        if (isImageChanged || isActivityChanged) {
-            log.info("Recalculating score for feed {}. ImageChanged={}, ActivityChanged={}", feedId, isImageChanged, isActivityChanged);
-            
-            // 점수 계산 (WorkoutScoreService에 위임)
-            WorkoutScoreService.WorkoutResult workoutResult =
-                    workoutScoreService.validateAndCalculate(activity, 
-                            Optional.ofNullable(resolvedStartTime), 
-                            Optional.ofNullable(resolvedEndTime), 
-                            feed.getCreatedAt().toLocalDate());
-
-            if (!workoutResult.valid()) {
-                log.warn("Feed update - Workout time validation failed. Activity={}, Start={}, End={}", 
-                        activity, resolvedStartTime, resolvedEndTime);
-                // 시간이 있는데 계산 실패라면(예: 시간이 역전됨) 에러 처리 or 0점 처리 (정책에 따라 결정)
-                // 여기서는 0점으로 덮어씌워지지 않도록 방어하려면 예외를 던지는 게 낫습니다.
+        if (shouldRecalculate) {
+            // 시간 결정: 이미지가 바뀌었으면 새 추출값, 아니면(운동만 변경) 기존 값 사용
+            if (imagesChanged) {
+                resolvedStartTime = startTimeOpt.orElse(null);
+                resolvedEndTime = endTimeOpt.orElse(null);
+            } else {
+                // 이미지는 그대로인데 운동만 바뀐 경우 -> 기존 DB 시간 사용
+                resolvedStartTime = oldTimeMap.get(cleanStartKey);
+                resolvedEndTime = oldTimeMap.get(cleanEndKey);
             }
 
-            // 피드 점수 업데이트
-            feed.updateScore((long) workoutResult.score(), workoutResult.calories());
-            
-            // 포인트 조정 (PointService에 위임) - 기존 포인트와 비교하여 차액만큼 처리
-            pointService.adjustFeedPoints(user, oldPoints, workoutResult.score());
+            // 시간 정보가 없으면 계산 불가 (기존 유지 or 에러)
+            // 여기서는 운동 종류를 바꿨는데 시간이 없으면 0점이 될 수 있으므로 방어 로직 필요
+            if (resolvedStartTime != null && resolvedEndTime != null) {
+                WorkoutScoreService.WorkoutResult workoutResult =
+                        workoutScoreService.validateAndCalculate(activity, 
+                                Optional.of(resolvedStartTime), 
+                                Optional.of(resolvedEndTime), 
+                                feed.getCreatedAt().toLocalDate());
+
+                if (workoutResult.valid()) {
+                    feed.updateScore((long) workoutResult.score(), workoutResult.calories());
+                    pointService.adjustFeedPoints(user, oldPoints, workoutResult.score());
+                }
+            } else {
+                log.warn("Feed update score skipped: Time metadata missing. imagesChanged={}, activityChanged={}", imagesChanged, activityChanged);
+                // 이미지가 변경되었는데 시간이 없으면 에러 처리가 나을 수 있음
+                if (imagesChanged) {
+                    throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED);
+                }
+                // 운동만 바꿨는데 시간이 없으면? 기존 점수 유지할지 0점 만들지 정책 결정 필요.
+                // 현재는 기존 점수 유지 (updateScore 호출 안함)
+            }
         } else {
-            log.info("Skipping score calculation for feed {}. No changes in images or activity.", feedId);
-            // 포인트 변동 없음 (adjustFeedPoints 호출 안 함)
+            // 변경사항 없음 -> 시간 정보 복구 (DB 유지를 위해)
+            resolvedStartTime = oldTimeMap.get(cleanStartKey);
+            resolvedEndTime = oldTimeMap.get(cleanEndKey);
         }
 
-        feed.updateThumbnail(startImageKey);
+        feed.updateThumbnail(cleanStartKey);
 
-        // 4. 이미지 정보 갱신 (시간 정보 유지)
-        // 재계산을 안 했더라도 resolvedTime(기존 시간)을 다시 넣어줘야 DB에 유지됨
+        // 3. 이미지 정보 갱신
         feed.getImages().clear();
-        addImages(feed, startImageKey, endImageKey, otherImageKeys, resolvedStartTime, resolvedEndTime);
+        addImages(feed, cleanStartKey, cleanEndKey, otherImageKeys, resolvedStartTime, resolvedEndTime);
 
         feedRepository.flush();
         return feed;
+    }
+
+    // URL에서 순수 S3 Key만 추출하는 도우미 메서드
+    private String extractKey(String urlOrKey) {
+        if (urlOrKey == null) return null;
+        if (urlOrKey.startsWith("http")) {
+            // "com/" 뒷부분을 잘라내는 단순 파싱 예시 (실제 URL 구조에 맞춰 조정 필요)
+            // 혹은 "/"로 split해서 뒤쪽 경로만 합치는 방식 등
+            int index = urlOrKey.indexOf(".com/");
+            if (index != -1) {
+                return urlOrKey.substring(index + 5); // ".com/" 길이만큼 뒤로
+            }
+            // 만약 도메인이 다르다면 "amazonaws.com/" 등을 기준으로 자를 수도 있습니다.
+            // 가장 확실한 건 DB에 저장되는 형태와 동일하게 만드는 것입니다.
+        }
+        return urlOrKey;
     }
 
     private void addImages(Feed feed, String startImageKey, String endImageKey, List<String> otherImageKeys,
@@ -198,19 +207,5 @@ public class FeedTransactionService {
         }
     }
 
-    // URL에서 순수 S3 Key만 추출하는 도우미 메서드
-    private String extractKey(String urlOrKey) {
-        if (urlOrKey == null) return null;
-        if (urlOrKey.startsWith("http")) {
-            // "com/" 뒷부분을 잘라내는 단순 파싱 예시 (실제 URL 구조에 맞춰 조정 필요)
-            // 혹은 "/"로 split해서 뒤쪽 경로만 합치는 방식 등
-            int index = urlOrKey.indexOf(".com/");
-            if (index != -1) {
-                return urlOrKey.substring(index + 5); // ".com/" 길이만큼 뒤로
-            }
-            // 만약 도메인이 다르다면 "amazonaws.com/" 등을 기준으로 자를 수도 있습니다.
-            // 가장 확실한 건 DB에 저장되는 형태와 동일하게 만드는 것입니다.
-        }
-        return urlOrKey;
-    }
+    
 }

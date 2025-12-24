@@ -30,14 +30,18 @@ public class FeedRequest {
     @Deprecated
     private List<String> images = new ArrayList<>();
 
+    // [추가] 이미지 변경 여부 플래그
+    private boolean imagesChanged; 
+
     @Builder
-    public FeedRequest(String activity, String content, String startImage, String endImage, List<String> otherImages, List<String> images) {
+    public FeedRequest(String activity, String content, String startImage, String endImage, List<String> otherImages, List<String> images, boolean imagesChanged) {
         this.activity = activity;
         this.content = content;
         this.startImage = startImage;
         this.endImage = endImage;
         this.otherImages = otherImages != null ? otherImages : new ArrayList<>();
         this.images = images != null ? images : new ArrayList<>();
+        this.imagesChanged = imagesChanged; // [추가]
     }
 
     /**

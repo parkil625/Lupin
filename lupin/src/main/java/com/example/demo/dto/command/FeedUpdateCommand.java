@@ -15,7 +15,8 @@ public record FeedUpdateCommand(
         String activity,
         String startImageKey,
         String endImageKey,
-        List<String> otherImageKeys
+        List<String> otherImageKeys,
+        boolean imagesChanged // [추가]
 ) {
     public static FeedUpdateCommand of(User user, Long feedId, FeedRequest request) {
         return new FeedUpdateCommand(
@@ -25,7 +26,8 @@ public record FeedUpdateCommand(
                 request.getActivity(),
                 request.getStartImageKey(),
                 request.getEndImageKey(),
-                request.getOtherImageKeys()
+                request.getOtherImageKeys(),
+                request.isImagesChanged() // [추가] Request에서 값 꺼내기
         );
     }
 

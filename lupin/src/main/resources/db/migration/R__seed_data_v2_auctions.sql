@@ -1,65 +1,62 @@
 -- ============================================
--- Auction Mock Data (Entity Matched Version)
--- Description:
---   - Java Entity(Auction.java, AuctionItem.java) 구조와 100% 일치
---   - 테이블이 없으면 자동 생성 (JPA ddl-auto보다 먼저 실행되어도 안전)
+-- 1. [필수] 꼬여있는 기존 테이블을 먼저 확실히 지웁니다.
+-- ============================================
+SET FOREIGN_KEY_CHECKS = 0; -- 외래키 에러 방지
+DROP TABLE IF EXISTS auction_bids;
+DROP TABLE IF EXISTS auction_items;
+DROP TABLE IF EXISTS auctions;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================
+-- 2. 여기서부터는 작성하신 코드와 동일합니다 (새 구조로 생성)
 -- ============================================
 
--- 1. 테이블이 없으면 생성 (CREATE TABLE IF NOT EXISTS)
+CREATE TABLE auctions ( -- IF NOT EXISTS 제거함 (위에서 지웠으니 무조건 생성)
+                          auction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                          current_price BIGINT NOT NULL DEFAULT 0,
+                          start_time DATETIME NOT NULL,
+                          regular_end_time DATETIME NOT NULL,
+                          over_time_started BOOLEAN NOT NULL DEFAULT FALSE,
+                          over_time_end_time DATETIME,
+                          over_time_seconds INT NOT NULL DEFAULT 30,
+                          status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
+                          winner_id BIGINT,
+                          winning_bid BIGINT,
+                          total_bids INT NOT NULL DEFAULT 0,
 
+                          INDEX idx_auction_status (status),
+                          INDEX idx_auction_start_time (start_time),
+                          INDEX idx_auction_end_time (regular_end_time)
+);
 
+CREATE TABLE auction_items (
+                               id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                               item_name VARCHAR(200) NOT NULL,
+                               description VARCHAR(1000),
+                               item_image VARCHAR(500),
+                               auction_id BIGINT,
 
-CREATE TABLE IF NOT EXISTS auctions (
-                                        auction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                        current_price BIGINT NOT NULL DEFAULT 0,
-                                        start_time DATETIME NOT NULL,
-                                        regular_end_time DATETIME NOT NULL,
-                                        over_time_started BOOLEAN NOT NULL DEFAULT FALSE,
-                                        over_time_end_time DATETIME,
-                                        over_time_seconds INT NOT NULL DEFAULT 30,
-                                        status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
-    winner_id BIGINT,
-    winning_bid BIGINT,
-    total_bids INT NOT NULL DEFAULT 0,
+                               INDEX idx_auction_item_auction (auction_id)
+);
 
-    INDEX idx_auction_status (status),
-    INDEX idx_auction_start_time (start_time),
-    INDEX idx_auction_end_time (regular_end_time)
-    );
+CREATE TABLE auction_bids (
+                              id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                              auction_id BIGINT NOT NULL,
+                              user_id BIGINT NOT NULL,
+                              bid_amount BIGINT NOT NULL,
+                              bid_time DATETIME NOT NULL,
+                              status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
 
-CREATE TABLE IF NOT EXISTS auction_items (
-                                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                             item_name VARCHAR(200) NOT NULL,
-    description VARCHAR(1000),
-    item_image VARCHAR(500),
-    auction_id BIGINT,
-
-    INDEX idx_auction_item_auction (auction_id)
-    );
-
-CREATE TABLE IF NOT EXISTS auction_bids (
-                                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                            auction_id BIGINT NOT NULL,
-                                            user_id BIGINT NOT NULL,
-                                            bid_amount BIGINT NOT NULL,
-                                            bid_time DATETIME NOT NULL,
-                                            status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-
-    INDEX idx_bid_auction (auction_id),
-    INDEX idx_bid_user (user_id),
-    INDEX idx_bid_status (status),
-    INDEX idx_bid_time (bid_time)
-    );
-
--- 2. 기존 데이터 초기화 (순서 중요: 자식 -> 부모)
-DELETE FROM auction_bids;
-DELETE FROM auction_items;
-DELETE FROM auctions;
+                              INDEX idx_bid_auction (auction_id),
+                              INDEX idx_bid_user (user_id),
+                              INDEX idx_bid_status (status),
+                              INDEX idx_bid_time (bid_time)
+);
 
 -- 3. 데이터 입력 시작
 
 -- --------------------------------------------
--- 1. [진행 중] 아이패드 프로 12.9
+-- 1. [진행 중] 아이패드 프로 12.9 (2분 뒤 종료 테스트용)
 -- --------------------------------------------
 INSERT INTO auctions (
     current_price,
@@ -78,8 +75,8 @@ INSERT INTO auctions (
              30,
              'ACTIVE',
              0,
-             null
-    );
+             NULL -- 진행 중에는 아직 낙찰자가 없으므로 NULL이 맞습니다 (user01 제거)
+         );
 
 SET @active_auction_id = LAST_INSERT_ID();
 
@@ -157,6 +154,9 @@ VALUES (
            @scheduled_id_2
        );
 
+-- --------------------------------------------
+-- 4. [종료] 갤럭시 워치6 (낙찰됨)
+-- --------------------------------------------
 INSERT INTO auctions (
     current_price,
     start_time,
@@ -168,15 +168,15 @@ INSERT INTO auctions (
     winner_id,
     winning_bid
 ) VALUES (
-             100,                                 -- 최종 낙찰 가격
-             NOW() - INTERVAL 5 DAY,                 -- 5일 전 시작
-             NOW() - INTERVAL 4 DAY,                 -- 4일 전 종료
+             100,
+             NOW() - INTERVAL 5 DAY,
+             NOW() - INTERVAL 4 DAY,
              false,
              30,
-             'ENDED',                                -- 상태: ENDED
-             15,                                     -- 총 입찰 수 예시
+             'ENDED',
+             15,
              (SELECT id FROM users WHERE user_id = 'user01' LIMIT 1),
-    100                                  -- 낙찰가
+    100
     );
 
 SET @ended_auction_id_1 = LAST_INSERT_ID();
@@ -204,8 +204,8 @@ INSERT INTO auctions (
     winning_bid
 ) VALUES (
              200,
-             NOW() - INTERVAL 10 DAY,                -- 10일 전 시작
-             NOW() - INTERVAL 9 DAY,                 -- 9일 전 종료
+             NOW() - INTERVAL 10 DAY,
+             NOW() - INTERVAL 9 DAY,
              false,
              30,
              'ENDED',
@@ -223,5 +223,3 @@ VALUES (
            '/auctionEndedImg2.webp',
            @ended_auction_id_2
        );
-
---재배포

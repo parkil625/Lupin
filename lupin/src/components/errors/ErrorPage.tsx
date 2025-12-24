@@ -46,7 +46,7 @@ export default function ErrorPage() {
             새로고침
           </Button>
           <Button
-            onClick={() => navigate("/")}
+            onClick={() => (window.location.href = "/")}
             size="lg"
             className="bg-[#C93831] hover:bg-[#A62B25] text-white border-none shadow-lg"
           >

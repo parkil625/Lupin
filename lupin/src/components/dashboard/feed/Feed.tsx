@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { SearchInput } from "@/components/molecules";
+import SearchInput from "@/components/molecules/SearchInput";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";

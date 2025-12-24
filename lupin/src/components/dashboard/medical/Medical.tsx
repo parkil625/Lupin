@@ -431,7 +431,43 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
   // currentUserId 변경 시 ref 업데이트
   useEffect(() => {
-    handleMessageReceivedRef.current = async (message: ChatMessageResponse) => {
+    handleMessageReceivedRef.current = async (
+      message: ChatMessageResponse & { type?: string; doctorName?: string }
+    ) => {
+      // 진료 종료 알림 처리
+      if (message.type === "CONSULTATION_END") {
+        const doctorName = message.doctorName || "담당 의사";
+
+        // 채팅창 닫기 알림
+        alert("진료가 종료되었습니다.\n예약 목록으로 이동합니다.");
+
+        // 채팅 상태 초기화
+        setActiveAppointment(null);
+        setIsChatEnded(true);
+        setMessages([]);
+        setViewState("LIST");
+
+        // 예약 목록 및 처방전 새로고침
+        try {
+          const appointmentsData = await appointmentApi.getPatientAppointments(
+            currentPatientId
+          );
+          setAppointments(appointmentsData);
+
+          const prescriptionsData = await prescriptionApi.getPatientPrescriptions(
+            currentPatientId
+          );
+          setPrescriptions(prescriptionsData);
+
+          toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
+        } catch (error) {
+          console.error("데이터 새로고침 실패:", error);
+          toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
+        }
+        return;
+      }
+
+      // 일반 채팅 메시지 처리
       setMessages((prev) => [...prev, message]);
       if (message.senderId !== currentUserId) {
         toast.success("새 메시지가 도착했습니다");

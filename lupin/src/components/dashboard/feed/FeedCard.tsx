@@ -8,12 +8,28 @@
  */
 
 import React, { useState } from "react";
+// 추가할 코드
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Siren,
+} from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { useImageBrightness } from "@/hooks";
-import { getCdnUrl } from "@/api";
+import { getCdnUrl, reportApi } from "@/api"; // reportApi 추가 확인 필요
+import { useFeedStore } from "@/store/useFeedStore";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 import { FeedCommentSection } from "./FeedCommentSection";
 
@@ -37,7 +53,27 @@ export function FeedCard({
   onImageIndexChange,
   onLike,
 }: FeedCardProps) {
+  // 추가할 코드
   const [showComments, setShowComments] = useState(false);
+  const { deleteFeed } = useFeedStore(); // 스토어에서 삭제 액션 가져오기
+
+  // [신고 핸들러] 신고 성공 시 목록에서 즉시 제거 (Optimistic Update)
+  const handleReport = async () => {
+    if (!confirm("정말 이 게시글을 신고하시겠습니까?")) return;
+
+    try {
+      // 1. 서버에 신고 요청
+      await reportApi.reportFeed(feed.id);
+
+      // 2. [핵심] 성공했다면, 화면 목록에서 즉시 삭제! (새로고침 불필요)
+      deleteFeed(feed.id);
+
+      toast.success("신고가 접수되어 게시글이 숨김 처리되었습니다.");
+    } catch (error) {
+      console.error(error);
+      toast.error("신고 처리에 실패했습니다.");
+    }
+  };
 
   // 이미지 밝기에 따른 아이콘 색상 (CDN URL 사용)
   const currentImage = feed.images?.[currentImageIndex] || feed.images?.[0];
@@ -130,13 +166,33 @@ export function FeedCard({
             )}
 
             {/* 작성자 아바타 */}
-            <div className="absolute top-4 left-4">
+            <div className="absolute top-4 left-4 z-10">
               <UserHoverCard
                 name={feed.author || feed.writerName}
                 department={feed.writerDepartment}
                 activeDays={feed.writerActiveDays}
                 avatarUrl={feed.writerAvatar}
               />
+            </div>
+
+            {/* [추가] 우측 상단 더보기 메뉴 (신고) */}
+            <div className="absolute top-4 right-4 z-10">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-2 rounded-full bg-black/20 hover:bg-black/40 text-white backdrop-blur-md transition-colors outline-none">
+                    <MoreHorizontal className="w-5 h-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem
+                    onClick={handleReport}
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer gap-2"
+                  >
+                    <Siren className="w-4 h-4" />
+                    <span>신고하기</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* 액션 버튼 */}

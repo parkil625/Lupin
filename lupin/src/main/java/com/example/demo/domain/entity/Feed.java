@@ -12,9 +12,11 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
+import com.example.demo.domain.enums.ImageType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Table(name = "feeds", indexes = {
@@ -37,8 +39,8 @@ public class Feed {
     private User writer;
 
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
-    @BatchSize(size = 10)
-    private Set<FeedImage> images = new HashSet<>();
+    @OrderBy("sortOrder ASC")
+    private List<FeedImage> images = new ArrayList<>();
 
     @Column(nullable = false, length = 50)
     private String activity;
@@ -79,7 +81,7 @@ public class Feed {
         this.content = content;
         this.points = points;
         this.calories = calories;
-        this.images = new HashSet<>();
+        this.images = new ArrayList<>();
         this.likeCount = 0;
         this.commentCount = 0;
     }
@@ -119,6 +121,18 @@ public class Feed {
 
     public void updateThumbnail(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public Optional<FeedImage> getStartImage() {
+        return this.images.stream()
+                .filter(img -> img.getImgType() == ImageType.START)
+                .findFirst();
+    }
+
+    public Optional<FeedImage> getEndImage() {
+        return this.images.stream()
+                .filter(img -> img.getImgType() == ImageType.END)
+                .findFirst();
     }
 
     /**

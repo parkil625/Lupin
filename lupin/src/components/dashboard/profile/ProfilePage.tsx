@@ -46,6 +46,7 @@ import { oauthApi, OAuthConnection } from "@/api/oauthApi";
 import { userApi } from "@/api/userApi";
 import { useFeedStore } from "@/store/useFeedStore";
 import { Skeleton } from "@/components/ui/skeleton";
+import imageCompression from "browser-image-compression";
 
 // ============================================================================
 // [1] Static Constants & Types
@@ -180,8 +181,18 @@ const AvatarSection = memo(
         if (image?.includes("s3."))
           await imageApi.deleteImage(image).catch(() => {});
 
-        // [수정] 백엔드가 URL 문자열을 바로 반환하므로 그대로 사용합니다.
-        const url = await imageApi.uploadProfileImage(file);
+        // 프로필용 압축 옵션 (피드보다 더 작게 설정하여 속도 극대화)
+        const options = {
+          maxSizeMB: 0.5, // 0.5MB 이하로 압축
+          maxWidthOrHeight: 800, // 800px로 리사이징 (프로필은 클 필요 없음)
+          useWebWorker: true,
+          fileType: "image/webp",
+        };
+
+        const compressedFile = await imageCompression(file, options);
+
+        // 압축된 파일 업로드
+        const url = await imageApi.uploadProfileImage(compressedFile);
 
         const uid = parseInt(localStorage.getItem("userId") || "0");
         if (uid) await userApi.updateAvatar(uid, url);

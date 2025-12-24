@@ -6,13 +6,7 @@
  * - FeedV2 디자인 적용
  */
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { SearchInput } from "@/components/molecules";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
@@ -37,6 +31,32 @@ import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
+import * as ReactWindow from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const List = (ReactWindow as any).FixedSizeList;
+
+// any 제거를 위한 데이터 타입 정의
+interface FeedData {
+  feeds: Feed[];
+  getFeedImageIndex: (feedId: number) => number;
+  setFeedImageIndex: (
+    feedId: number,
+    updater: number | ((prev: number) => number)
+  ) => void;
+  hasLiked: (feedId: number) => boolean;
+  handleLike: (feedId: number) => void;
+  pivotFeedId?: number | null;
+  targetCommentIdForFeed?: number | null;
+}
+
+// [수정] react-window 행 컴포넌트 Props 정의
+interface ListChildComponentProps {
+  index: number;
+  style: React.CSSProperties;
+  data: FeedData;
+}
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -1017,6 +1037,55 @@ const FeedItem = React.memo(function FeedItem({
 });
 
 /**
+ * 윈도윙을 위한 개별 행 컴포넌트 (Memoization 적용)
+ */
+const FeedRow = React.memo(
+  ({ index, style, data }: ListChildComponentProps) => {
+    const {
+      feeds,
+      getFeedImageIndex,
+      setFeedImageIndex,
+      hasLiked,
+      handleLike,
+      pivotFeedId,
+      targetCommentIdForFeed,
+    } = data;
+    const feed = feeds[index];
+
+    return (
+      <div style={style} className="snap-start snap-always">
+        {/* gap-4(16px)를 표현하기 위해 높이에서 16px를 뺀 만큼만 채움 */}
+        <div className="w-full h-[calc(100%-16px)]">
+          <FeedItem
+            feed={feed}
+            currentImageIndex={getFeedImageIndex(feed.id)}
+            liked={hasLiked(feed.id)}
+            onPrevImage={() =>
+              setFeedImageIndex(feed.id, (prev: number) =>
+                Math.max(0, prev - 1)
+              )
+            }
+            onNextImage={() =>
+              setFeedImageIndex(feed.id, (prev: number) =>
+                Math.min(feed.images.length - 1, prev + 1)
+              )
+            }
+            onLike={() => handleLike(feed.id)}
+            isPriority={index === 0}
+            targetCommentId={
+              index === 0 && pivotFeedId && feed.id === pivotFeedId
+                ? targetCommentIdForFeed
+                : null
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+);
+FeedRow.displayName = "FeedRow"; // [수정] 이 줄을 추가하면 에러가 사라집니다!
+
+/**
  * 피드 페이지 메인 컴포넌트
  */
 export default function FeedView({
@@ -1037,7 +1106,9 @@ export default function FeedView({
   isLoadingFeeds,
 }: FeedViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const listRef = useRef<any>(null);
 
   // 스토어에서 targetCommentIdForFeed와 pivotFeedId 읽기
   const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } =
@@ -1079,18 +1150,16 @@ export default function FeedView({
     });
   }, [allFeeds, searchQuery]);
 
-  // 특정 피드로 스크롤
+  // 특정 피드로 스크롤 (윈도윙 적용)
   useEffect(() => {
-    if (scrollToFeedId && scrollRef.current) {
-      const feedElement = scrollRef.current.querySelector(
-        `[data-feed-id="${scrollToFeedId}"]`
-      );
-      if (feedElement) {
-        feedElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (scrollToFeedId && listRef.current) {
+      const index = filteredFeeds.findIndex((f) => f.id === scrollToFeedId);
+      if (index !== -1) {
+        listRef.current.scrollToItem(index, "start");
         setScrollToFeedId(null);
       }
     }
-  }, [scrollToFeedId, setScrollToFeedId]);
+  }, [scrollToFeedId, setScrollToFeedId, filteredFeeds]);
 
   useEffect(() => {
     if (feedContainerRef && containerRef.current) {
@@ -1099,19 +1168,6 @@ export default function FeedView({
       ref.current = containerRef.current;
     }
   }, [feedContainerRef]);
-
-  // 무한 스크롤
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    if (
-      scrollHeight - scrollTop - clientHeight < 200 &&
-      hasMoreFeeds &&
-      !isLoadingFeeds
-    ) {
-      loadMoreFeeds();
-    }
-  }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds]);
 
   return (
     <div ref={containerRef} className="h-full flex flex-col p-4 gap-4">
@@ -1125,45 +1181,56 @@ export default function FeedView({
         />
       </div>
 
-      {/* 피드 리스트 - 쇼츠 스타일 스크롤 */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto snap-y snap-mandatory scrollbar-hide flex flex-col gap-4 pb-4"
-        onScroll={handleScroll}
-      >
-        {filteredFeeds.map((feed, index) => (
-          <div
-            key={feed.id}
-            data-feed-id={feed.id}
-            className="h-full flex-shrink-0 snap-start snap-always"
-          >
-            <FeedItem
-              feed={feed}
-              currentImageIndex={getFeedImageIndex(feed.id)}
-              liked={hasLiked(feed.id)}
-              onPrevImage={() =>
-                setFeedImageIndex(feed.id, (prev) => Math.max(0, prev - 1))
-              }
-              onNextImage={() =>
-                setFeedImageIndex(feed.id, (prev) =>
-                  Math.min(feed.images.length - 1, prev + 1)
-                )
-              }
-              onLike={() => handleLike(feed.id)}
-              isPriority={index === 0}
-              targetCommentId={
-                index === 0 && pivotFeedId && feed.id === pivotFeedId
-                  ? targetCommentIdForFeed
-                  : null
-              }
-            />
-          </div>
-        ))}
+      {/* 피드 리스트 - 윈도윙 적용 */}
+      <div className="flex-1 w-full h-full relative">
+        <AutoSizer>
+          {({ height, width }) => {
+            // FeedRow에 전달할 데이터 객체
+            const itemData: FeedData = {
+              feeds: filteredFeeds,
+              getFeedImageIndex,
+              setFeedImageIndex,
+              hasLiked,
+              handleLike,
+              pivotFeedId,
+              targetCommentIdForFeed,
+            };
 
-        {/* 로딩 표시 */}
+            return (
+              <List
+                ref={listRef}
+                height={height}
+                width={width}
+                itemCount={filteredFeeds.length}
+                // [중요] gap-4(16px)를 위해 itemSize를 높이+16으로 설정
+                itemSize={height + 16}
+                itemData={itemData}
+                className="snap-y snap-mandatory scrollbar-hide"
+                onItemsRendered={({
+                  visibleStopIndex,
+                }: {
+                  visibleStopIndex: number;
+                }) => {
+                  // 마지막 아이템이 보이면 추가 로드
+                  if (
+                    visibleStopIndex >= filteredFeeds.length - 1 &&
+                    hasMoreFeeds &&
+                    !isLoadingFeeds
+                  ) {
+                    loadMoreFeeds();
+                  }
+                }}
+              >
+                {FeedRow}
+              </List>
+            );
+          }}
+        </AutoSizer>
+
+        {/* 로딩 표시 (리스트 위에 오버레이) */}
         {isLoadingFeeds && (
-          <div className="flex items-center justify-center py-8 flex-shrink-0">
-            <div className="w-8 h-8 border-4 border-gray-300 border-t-[#C93831] rounded-full animate-spin"></div>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <div className="w-8 h-8 border-4 border-gray-300 border-t-[#C93831] rounded-full animate-spin shadow-lg"></div>
           </div>
         )}
       </div>

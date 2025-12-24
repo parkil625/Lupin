@@ -1038,11 +1038,12 @@ export default function FeedView({
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        // [수정] threshold를 0.1로 낮춰서 살짝만 보여도 로딩되게 변경
         if (entries[0].isIntersecting && hasMoreFeeds && !isLoadingFeeds) {
           loadMoreFeeds();
         }
       },
-      { threshold: 1.0 }
+      { threshold: 0.1 }
     );
 
     if (observerTarget.current) {

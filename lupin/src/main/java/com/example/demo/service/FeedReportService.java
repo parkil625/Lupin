@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@lombok.extern.slf4j.Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -76,14 +77,24 @@ public class FeedReportService {
     private void checkAndApplyPenalty(Feed feed) {
         long likeCount = feedLikeRepository.countByFeed(feed);
         long reportCount = feedReportRepository.countByFeed(feed);
+        
+        // [디버깅] 현재 카운트 확인
+        log.info(">>> [신고 디버깅] Feed ID: {}, 좋아요 수: {}, 신고 수: {}", feed.getId(), likeCount, reportCount);
 
-        if (userPenaltyService.shouldApplyPenalty(likeCount, reportCount)) {
-            // 작성자 정보가 필요하므로 여기서 초기화될 수 있음
+        boolean shouldPenalty = userPenaltyService.shouldApplyPenalty(likeCount, reportCount);
+        log.info(">>> [신고 디버깅] 패널티 적용 대상인가? {}", shouldPenalty);
+
+        if (shouldPenalty) {
             User writer = feed.getWriter();
-            if (!userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)) {
+            boolean hasActivePenalty = userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED);
+            log.info(">>> [신고 디버깅] 작성자(ID:{})가 이미 패널티 중인가? {}", writer.getId(), hasActivePenalty);
+
+            if (!hasActivePenalty) {
+                log.info(">>> [신고 디버깅] 패널티 부여 및 피드 삭제 시작");
                 userPenaltyService.addPenalty(writer, PenaltyType.FEED);
                 deleteFeedByReport(feed);
                 eventPublisher.publishEvent(NotificationEvent.feedDeleted(writer.getId()));
+                log.info(">>> [신고 디버깅] 처리 완료");
             }
         }
     }
@@ -115,11 +126,6 @@ public class FeedReportService {
             notificationRepository.deleteByRefIdInAndType(allCommentIds, NotificationType.COMMENT_LIKE);
         }
 
-        // 2. 연관 데이터 삭제
-        feedLikeRepository.deleteByFeed(feed);
-        feedImageRepository.deleteByFeed(feed);
-        feedReportRepository.deleteByFeed(feed); // 이미지 삭제 전 신고 먼저 삭제
-
         // 3. [핵심] 영속성 컨텍스트 초기화 (삭제 충돌 방지)
         entityManager.flush();
         entityManager.clear();
@@ -128,9 +134,6 @@ public class FeedReportService {
         Feed targetFeed = feedRepository.findById(Long.parseLong(feedIdStr))
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
         
-        // [중요] 삭제 전 이미지 컬렉션을 비워서 Cascade 충돌 방지
-        targetFeed.getImages().clear();
-        feedRepository.saveAndFlush(targetFeed);
 
         feedRepository.delete(targetFeed);
     }

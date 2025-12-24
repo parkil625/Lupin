@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 피드 트랜잭션 서비스
@@ -59,8 +61,9 @@ public class FeedTransactionService {
         Feed savedFeed = feedRepository.save(feed);
         savedFeed.updateThumbnail(startImageKey);
 
-        // 이미지 저장
-        addImages(savedFeed, startImageKey, endImageKey, otherImageKeys);
+        // 이미지 저장 (시간 정보 포함)
+        addImages(savedFeed, startImageKey, endImageKey, otherImageKeys, 
+                startTimeOpt.orElse(null), endTimeOpt.orElse(null));
 
         // 포인트 부여 [수정됨: addPoints -> earnPoints]
         if (workoutResult.score() > 0) {
@@ -85,20 +88,32 @@ public class FeedTransactionService {
         long oldPoints = feed.getPoints();
         feed.update(content, activity);
 
-        // 점수 계산 (WorkoutScoreService에 위임)
-        WorkoutScoreService.WorkoutResult workoutResult =
-                workoutScoreService.validateAndCalculate(activity, startTimeOpt, endTimeOpt, LocalDate.now());
+        // 1. 기존 이미지들의 시간 정보 백업 (Key -> Time)
+        Map<String, LocalDateTime> oldTimeMap = feed.getImages().stream()
+                .filter(img -> img.getCapturedAt() != null)
+                .collect(Collectors.toMap(FeedImage::getS3Key, FeedImage::getCapturedAt, (a, b) -> a));
 
-        if (!workoutResult.valid() && (startTimeOpt.isPresent() || endTimeOpt.isPresent())) {
+        // 2. 시간 결정: 새 추출 값이 있으면 사용, 없으면(실패/미첨부) 기존 DB 값 사용
+        LocalDateTime resolvedStartTime = startTimeOpt.orElse(oldTimeMap.get(startImageKey));
+        LocalDateTime resolvedEndTime = endTimeOpt.orElse(oldTimeMap.get(endImageKey));
+
+        // 3. 점수 계산 (WorkoutScoreService에 위임)
+        WorkoutScoreService.WorkoutResult workoutResult =
+                workoutScoreService.validateAndCalculate(activity, 
+                        Optional.ofNullable(resolvedStartTime), 
+                        Optional.ofNullable(resolvedEndTime), 
+                        LocalDate.now());
+
+        if (!workoutResult.valid() && (resolvedStartTime != null || resolvedEndTime != null)) {
             log.warn("Feed update - Workout time validation failed - score set to 0");
         }
 
         feed.updateScore((long) workoutResult.score(), workoutResult.calories());
         feed.updateThumbnail(startImageKey);
 
-        // 기존 이미지 삭제 후 새 이미지 추가
+        // 4. 기존 이미지 삭제 후 새 이미지 추가 (시간 정보 유지)
         feed.getImages().clear();
-        addImages(feed, startImageKey, endImageKey, otherImageKeys);
+        addImages(feed, startImageKey, endImageKey, otherImageKeys, resolvedStartTime, resolvedEndTime);
 
         // 포인트 조정 (PointService에 위임)
         pointService.adjustFeedPoints(user, oldPoints, workoutResult.score());
@@ -109,13 +124,15 @@ public class FeedTransactionService {
         return feed;
     }
 
-    private void addImages(Feed feed, String startImageKey, String endImageKey, List<String> otherImageKeys) {
+    private void addImages(Feed feed, String startImageKey, String endImageKey, List<String> otherImageKeys,
+                           LocalDateTime startTime, LocalDateTime endTime) {
         int sortOrder = 0;
 
         FeedImage startImg = FeedImage.builder()
                 .feed(feed)
                 .s3Key(startImageKey)
                 .imgType(ImageType.START)
+                .capturedAt(startTime)
                 .sortOrder(sortOrder++)
                 .build();
         feed.getImages().add(startImg);
@@ -124,6 +141,7 @@ public class FeedTransactionService {
                 .feed(feed)
                 .s3Key(endImageKey)
                 .imgType(ImageType.END)
+                .capturedAt(endTime)
                 .sortOrder(sortOrder++)
                 .build();
         feed.getImages().add(endImg);

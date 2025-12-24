@@ -161,8 +161,8 @@ class FeedReportServiceTest {
     }
 
     @Test
-    @DisplayName("신고 수가 임계값에 도달하면 피드 작성자에게 패널티가 부여된다")
-    void reportFeedAppliesPenaltyWhenThresholdReachedTest() {
+    @DisplayName("신고 수가 임계값에 도달하면 피드가 삭제되지만, 연관 데이터(좋아요, 신고내역 등)는 DB에 보존된다")
+    void reportFeed_SoftDelete_PreservesRelations() {
         // given
         Long feedId = 1L;
         long likeCount = 1L;
@@ -170,23 +170,30 @@ class FeedReportServiceTest {
 
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
-        
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed)); // 삭제 로직용
+
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
-        
+        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(i -> i.getArgument(0));
+
         given(feedLikeRepository.countByFeed(feed)).willReturn(likeCount);
         given(feedReportRepository.countByFeed(feed)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);
         given(userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)).willReturn(false);
-        
-        // 삭제 로직에서 사용하는 findById
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
+
+        // 댓글 관련 Mocking (NullPointer 방지)
+        given(commentRepository.findByFeed(feed)).willReturn(java.util.Collections.emptyList());
 
         // when
         feedReportService.toggleReport(reporter, feedId);
 
         // then
-        verify(userPenaltyService).addPenalty(writer, PenaltyType.FEED);
+        verify(userPenaltyService).addPenalty(writer, PenaltyType.FEED); // 패널티 부여 확인
+        verify(feedRepository).delete(feed); // 피드 삭제(Soft Delete) 확인
+
+        // [핵심] 연관 데이터는 절대 삭제되지 않아야 함
+        verify(feedLikeRepository, never()).deleteByFeed(feed);
+        verify(feedReportRepository, never()).deleteByFeed(feed);
+        verify(feedImageRepository, never()).deleteByFeed(feed);
     }
 
     @Test

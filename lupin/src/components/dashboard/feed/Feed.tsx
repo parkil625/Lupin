@@ -6,13 +6,7 @@
  * - FeedV2 디자인 적용
  */
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  ComponentType,
-} from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import SearchInput from "@/components/molecules/SearchInput";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
@@ -1044,11 +1038,12 @@ export default function FeedView({
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        // [수정] threshold를 0.1로 낮춰서 살짝만 보여도 로딩되게 변경
         if (entries[0].isIntersecting && hasMoreFeeds && !isLoadingFeeds) {
           loadMoreFeeds();
         }
       },
-      { threshold: 1.0 }
+      { threshold: 0.1 }
     );
 
     if (observerTarget.current) {

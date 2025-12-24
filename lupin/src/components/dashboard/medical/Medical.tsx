@@ -656,7 +656,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           <div className="w-96 flex flex-col gap-4">
             {/* 예약 내역 - 고정 높이 350px */}
             <Card className="backdrop-blur-2xl bg-white/60 border border-gray-200 shadow-xl h-[350px] flex flex-col overflow-hidden">
-              <div className="p-4 flex-shrink-0">
+              <div className="p-4 pb-2 flex-shrink-0">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
                     <Clock className="w-5 h-5 text-[#C93831]" />
@@ -676,7 +676,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                   </Select>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 pb-4">
+              <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0">
                 <div className="space-y-2">
                   {appointments
                     .filter((apt) => {
@@ -741,7 +741,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                           }`}
                         >
                           <div className="flex items-start justify-between mb-1">
-                            <div>
+                            <div className="flex-1 min-w-0">
                               <div className="font-bold text-gray-900 text-sm">
                                 {apt.doctorName} 의사
                               </div>
@@ -751,7 +751,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             </div>
                             <Badge
                               style={{ backgroundColor: config.color }}
-                              className="text-white font-bold border-0 text-xs"
+                              className="text-white font-bold border-0 text-xs px-3 py-1 whitespace-nowrap flex-shrink-0 ml-2"
                             >
                               {config.label}
                             </Badge>
@@ -1074,7 +1074,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                               className="p-4 bg-white/80 rounded-xl"
                             >
                               <div className="flex items-start justify-between mb-3">
-                                <div>
+                                <div className="flex-1 min-w-0">
                                   <h3 className="font-bold text-gray-900 text-sm mb-1">
                                     {apt.doctorName} 의사
                                   </h3>
@@ -1084,7 +1084,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 </div>
                                 <Badge
                                   style={{ backgroundColor: config.color }}
-                                  className="text-white font-bold border-0 text-xs"
+                                  className="text-white font-bold border-0 text-xs px-3 py-1 whitespace-nowrap flex-shrink-0 ml-2"
                                 >
                                   {config.label}
                                 </Badge>

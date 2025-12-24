@@ -32,7 +32,6 @@ import {
   Unlink,
   ChevronDown,
   Link as LinkIcon,
-  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,

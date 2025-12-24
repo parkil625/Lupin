@@ -2,7 +2,8 @@
  * API 모듈 통합 export
  */
 export * from "./authApi";
-export { feedApi, type FeedResponse, type PagedFeedResponse } from "./feedApi";
+// [수정] PagedFeedResponse -> FeedSliceResponse 로 변경
+export { feedApi, type FeedResponse, type FeedSliceResponse } from "./feedApi";
 export { commentApi } from "./commentApi";
 export { userApi } from "./userApi";
 export { notificationApi } from "./notificationApi";

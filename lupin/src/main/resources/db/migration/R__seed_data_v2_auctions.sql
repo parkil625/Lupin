@@ -1,13 +1,17 @@
 -- ============================================
--- Auction Schema Migration & Seed Data
--- Description:
---   1. 기존 테이블(구버전)을 삭제하고 신규 구조(Auction, AuctionItem 분리)로 재생성
---   2. 데이터 초기화 및 더미 데이터 입력
+-- 1. [필수] 꼬여있는 기존 테이블을 먼저 확실히 지웁니다.
+-- ============================================
+SET FOREIGN_KEY_CHECKS = 0; -- 외래키 에러 방지
+DROP TABLE IF EXISTS auction_bids;
+DROP TABLE IF EXISTS auction_items;
+DROP TABLE IF EXISTS auctions;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================
+-- 2. 여기서부터는 작성하신 코드와 동일합니다 (새 구조로 생성)
 -- ============================================
 
-
--- (1) 경매 정보 테이블 (물품 정보 제외)
-CREATE TABLE auctions (
+CREATE TABLE auctions ( -- IF NOT EXISTS 제거함 (위에서 지웠으니 무조건 생성)
                           auction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
                           current_price BIGINT NOT NULL DEFAULT 0,
                           start_time DATETIME NOT NULL,
@@ -25,7 +29,6 @@ CREATE TABLE auctions (
                           INDEX idx_auction_end_time (regular_end_time)
 );
 
--- (2) 경매 물품 테이블 (새로 추가된 테이블)
 CREATE TABLE auction_items (
                                id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                item_name VARCHAR(200) NOT NULL,
@@ -33,11 +36,9 @@ CREATE TABLE auction_items (
                                item_image VARCHAR(500),
                                auction_id BIGINT,
 
-    -- auction_id와 연결 (외래키 역할)
                                INDEX idx_auction_item_auction (auction_id)
 );
 
--- (3) 입찰 내역 테이블
 CREATE TABLE auction_bids (
                               id BIGINT AUTO_INCREMENT PRIMARY KEY,
                               auction_id BIGINT NOT NULL,
@@ -52,11 +53,10 @@ CREATE TABLE auction_bids (
                               INDEX idx_bid_time (bid_time)
 );
 
-
 -- 3. 데이터 입력 시작
 
 -- --------------------------------------------
--- 1. [진행 중] 아이패드 프로 12.9
+-- 1. [진행 중] 아이패드 프로 12.9 (2분 뒤 종료 테스트용)
 -- --------------------------------------------
 INSERT INTO auctions (
     current_price,
@@ -75,7 +75,7 @@ INSERT INTO auctions (
              30,
              'ACTIVE',
              0,
-             null
+             NULL -- 진행 중에는 아직 낙찰자가 없으므로 NULL이 맞습니다 (user01 제거)
          );
 
 SET @active_auction_id = LAST_INSERT_ID();

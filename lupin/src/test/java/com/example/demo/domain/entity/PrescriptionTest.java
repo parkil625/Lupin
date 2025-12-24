@@ -11,94 +11,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PrescriptionTest {
 
     @Test
-    @DisplayName("약품을 추가하면 medicines 리스트에 포함된다")
-    void addMedicineTest() {
+    @DisplayName("처방전 생성 시 medications 필드에 약물 정보를 저장할 수 있다")
+    void createPrescriptionWithMedicationsTest() {
         // given
+        String medications = "타이레놀 500mg (1정, 1일 3회)\n콧물약 (1포, 1일 2회)";
+
+        // when
         Prescription prescription = Prescription.builder()
                 .patient(User.builder().id(1L).build())
                 .doctor(User.builder().id(21L).build())
                 .date(LocalDate.now())
                 .diagnosis("감기")
+                .medications(medications)
                 .build();
-
-        PrescriptionMed medicine = PrescriptionMed.builder()
-                .medicineName("타이레놀 500mg")
-                .dosage("1정")
-                .frequency("1일 3회")
-                .build();
-
-        // when
-        prescription.addMedicine(medicine);
 
         // then
-        assertThat(prescription.getMedicines()).hasSize(1);
-        assertThat(prescription.getMedicines()).contains(medicine);
-        assertThat(medicine.getPrescription()).isEqualTo(prescription);
-    }
-
-    @Test
-    @DisplayName("약품을 제거하면 medicines 리스트에서 사라진다")
-    void removeMedicineTest() {
-        // given
-        Prescription prescription = Prescription.builder()
-                .patient(User.builder().id(1L).build())
-                .doctor(User.builder().id(21L).build())
-                .date(LocalDate.now())
-                .diagnosis("감기")
-                .build();
-
-        PrescriptionMed medicine = PrescriptionMed.builder()
-                .medicineName("타이레놀 500mg")
-                .dosage("1정")
-                .frequency("1일 3회")
-                .build();
-
-        prescription.addMedicine(medicine);
-
-        // when
-        prescription.removeMedicine(medicine);
-
-        // then
-        assertThat(prescription.getMedicines()).isEmpty();
-    }
-
-    @Test
-    @DisplayName("여러 약품을 추가할 수 있다")
-    void addMultipleMedicinesTest() {
-        // given
-        Prescription prescription = Prescription.builder()
-                .patient(User.builder().id(1L).build())
-                .doctor(User.builder().id(21L).build())
-                .date(LocalDate.now())
-                .diagnosis("감기")
-                .build();
-
-        PrescriptionMed medicine1 = PrescriptionMed.builder()
-                .medicineName("타이레놀 500mg")
-                .dosage("1정")
-                .frequency("1일 3회")
-                .build();
-
-        PrescriptionMed medicine2 = PrescriptionMed.builder()
-                .medicineName("콧물약")
-                .dosage("1포")
-                .frequency("1일 2회")
-                .build();
-
-        PrescriptionMed medicine3 = PrescriptionMed.builder()
-                .medicineName("기침약")
-                .dosage("1정")
-                .frequency("1일 3회")
-                .build();
-
-        // when
-        prescription.addMedicine(medicine1);
-        prescription.addMedicine(medicine2);
-        prescription.addMedicine(medicine3);
-
-        // then
-        assertThat(prescription.getMedicines()).hasSize(3);
-        assertThat(prescription.getMedicines()).containsExactly(medicine1, medicine2, medicine3);
+        assertThat(prescription.getMedications()).isEqualTo(medications);
+        assertThat(prescription.getMedications()).contains("타이레놀 500mg");
+        assertThat(prescription.getMedications()).contains("콧물약");
     }
 
     @Test
@@ -110,6 +40,7 @@ class PrescriptionTest {
                 .doctor(User.builder().id(21L).build())
                 .date(LocalDate.now())
                 .diagnosis("감기")
+                .medications("타이레놀 500mg (1정, 1일 3회)")
                 .build();
 
         // when
@@ -120,43 +51,58 @@ class PrescriptionTest {
     }
 
     @Test
-    @DisplayName("처방전 생성 시 medicines는 빈 리스트다")
-    void defaultMedicinesIsEmptyListTest() {
+    @DisplayName("처방전 생성 시 medications는 null일 수 있다")
+    void medicationsCanBeNullTest() {
         // given & when
         Prescription prescription = Prescription.builder()
                 .patient(User.builder().id(1L).build())
                 .doctor(User.builder().id(21L).build())
                 .date(LocalDate.now())
-                .diagnosis("감기")
+                .diagnosis("경과 관찰")
+                .medications(null)
                 .build();
 
         // then
-        assertThat(prescription.getMedicines()).isNotNull();
-        assertThat(prescription.getMedicines()).isEmpty();
+        assertThat(prescription.getMedications()).isNull();
     }
 
     @Test
-    @DisplayName("약품 추가 시 양방향 연관관계가 설정된다")
-    void bidirectionalRelationshipTest() {
+    @DisplayName("처방전 생성 시 medications는 빈 문자열일 수 있다")
+    void medicationsCanBeEmptyStringTest() {
+        // given & when
+        Prescription prescription = Prescription.builder()
+                .patient(User.builder().id(1L).build())
+                .doctor(User.builder().id(21L).build())
+                .date(LocalDate.now())
+                .diagnosis("경과 관찰")
+                .medications("")
+                .build();
+
+        // then
+        assertThat(prescription.getMedications()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("여러 약품을 줄바꿈으로 구분하여 저장할 수 있다")
+    void multipleMedicinesWithNewlineTest() {
         // given
+        String medications = "타이레놀 500mg (1정, 1일 3회)\n콧물약 (1포, 1일 2회)\n기침약 (1정, 1일 3회)";
+
+        // when
         Prescription prescription = Prescription.builder()
                 .patient(User.builder().id(1L).build())
                 .doctor(User.builder().id(21L).build())
                 .date(LocalDate.now())
                 .diagnosis("감기")
+                .medications(medications)
                 .build();
-
-        PrescriptionMed medicine = PrescriptionMed.builder()
-                .medicineName("타이레놀 500mg")
-                .dosage("1정")
-                .frequency("1일 3회")
-                .build();
-
-        // when
-        prescription.addMedicine(medicine);
 
         // then
-        assertThat(medicine.getPrescription()).isEqualTo(prescription);
-        assertThat(prescription.getMedicines()).contains(medicine);
+        assertThat(prescription.getMedications()).isEqualTo(medications);
+        String[] medicineArray = prescription.getMedications().split("\n");
+        assertThat(medicineArray).hasSize(3);
+        assertThat(medicineArray[0]).isEqualTo("타이레놀 500mg (1정, 1일 3회)");
+        assertThat(medicineArray[1]).isEqualTo("콧물약 (1포, 1일 2회)");
+        assertThat(medicineArray[2]).isEqualTo("기침약 (1정, 1일 3회)");
     }
 }

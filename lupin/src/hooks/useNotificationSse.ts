@@ -25,7 +25,7 @@ export const useNotificationSse = ({
     onNotificationReceivedRef.current = onNotificationReceived;
   }, [onNotificationReceived]);
 
-  const connect = useCallback(() => {
+  const connectInternal = useCallback(() => {
     if (!enabled) return;
 
     // 기존 연결 정리
@@ -49,7 +49,7 @@ export const useNotificationSse = ({
     const eventSource = new EventSource(sseUrl);
     eventSourceRef.current = eventSource;
 
-    const handleReconnect = () => {
+    const scheduleReconnect = () => {
       // 재연결 대기 시간: Exponential backoff
       const baseDelay = 5000; // 5초
       const maxDelay = 30000; // 최대 30초
@@ -60,7 +60,7 @@ export const useNotificationSse = ({
 
       // 재연결 시도 (로그 없이)
       reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
+        connectInternal();
       }, delay);
     };
 
@@ -103,7 +103,7 @@ export const useNotificationSse = ({
         }
       }
 
-      handleReconnect();
+      scheduleReconnect();
     };
   }, [enabled]);
 
@@ -121,15 +121,15 @@ export const useNotificationSse = ({
   }, []);
 
   useEffect(() => {
-    connect();
+    connectInternal();
 
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, [connectInternal, disconnect]);
 
   return {
-    reconnect: connect,
+    reconnect: connectInternal,
     disconnect,
   };
 };

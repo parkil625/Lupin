@@ -1116,7 +1116,7 @@ export default function FeedView({
   }, [feedContainerRef]);
 
   return (
-    <div ref={containerRef} className="h-full flex flex-col p-4 gap-4 relative">
+    <div className="h-full flex flex-col p-4 gap-4 relative">
       {/* 검색바 */}
       <div className="mx-auto max-w-2xl w-full flex-shrink-0 z-10">
         <SearchInput
@@ -1128,7 +1128,10 @@ export default function FeedView({
       </div>
 
       {/* 피드 리스트 컨테이너 */}
-      <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide space-y-4 pb-4 snap-y snap-mandatory relative">
+      <div
+        ref={containerRef}
+        className="flex-1 w-full h-full overflow-y-auto scrollbar-hide space-y-4 pb-4 snap-y snap-mandatory relative"
+      >
         {filteredFeeds.map((feed, index) => (
           <div
             key={feed.id}

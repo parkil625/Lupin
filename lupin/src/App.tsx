@@ -57,8 +57,8 @@ export default function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
+    <BrowserRouter>
+      <ErrorBoundary>
         {/* 🚀 [최적화 3] Suspense로 Lazy 컴포넌트 로딩 대기 처리 */}
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -105,7 +105,7 @@ export default function App() {
           </Routes>
         </Suspense>
         <Toaster />
-      </BrowserRouter>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </BrowserRouter>
   );
 }

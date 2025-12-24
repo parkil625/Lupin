@@ -305,7 +305,7 @@ CREATE TABLE prescriptions (
     INDEX idx_prescription_date (date DESC)
 );
 
--- 18. Medicine (약품)
+-- 18. Medicines (약품)
 CREATE TABLE medicines (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,

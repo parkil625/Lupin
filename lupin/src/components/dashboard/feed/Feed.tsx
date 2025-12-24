@@ -38,7 +38,7 @@ import { ComponentType } from "react";
 // @ts-expect-error: 타입 정의 불일치 문제 무시
 import { FixedSizeList } from "react-window";
 
-import UserHoverCard from "@/components/molecules/UserHoverCard";
+import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 // [해결 2] 린트 에러 무시: any 사용 금지 규칙을 이 줄에서만 끕니다.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -31,21 +31,15 @@ import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
-import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
-import * as ReactWindow from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
+import { ComponentType } from "react";
+// [핵심] 1. 원래대로 중괄호 {}를 써서 가져옵니다.
+import { FixedSizeList as FixedSizeListImpl } from "react-window";
+import UserHoverCard from "@/components/molecules/UserHoverCard";
 
-interface ReactWindowModule {
-  FixedSizeList: React.ElementType;
-  default?: {
-    FixedSizeList: React.ElementType;
-  };
-}
-
-// [수정] 모듈 로딩 방식의 호환성 처리 (Named Export vs Default Export)
-const List = ((ReactWindow as unknown as ReactWindowModule).FixedSizeList ||
-  (ReactWindow as unknown as ReactWindowModule).default
-    ?.FixedSizeList) as React.ElementType;
+// [핵심] 2. 가져온 'FixedSizeListImpl'을 강제로 타입 변환해서 'List' 변수에 담습니다.
+// 이렇게 하면 "JSX 요소가 아닙니다" 에러와 "import 에러"를 동시에 잡을 수 있어요.
+const List = FixedSizeListImpl as unknown as ComponentType<any>;
 
 // [수정] any 대신 명확한 인터페이스 사용
 interface FeedData {

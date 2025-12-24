@@ -6,7 +6,7 @@
  * - FeedV2 디자인 적용
  */
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, ComponentType } from "react";
 import SearchInput from "@/components/molecules/SearchInput";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
@@ -25,14 +25,12 @@ import {
   Flame,
   Clock,
   Zap,
-  Loader2,
 } from "lucide-react";
 import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { ComponentType } from "react";
 
 // [해결 1] TS 에러 무시: react-window의 타입 정의가 꼬여있어서 발생하는 "FixedSizeList 없음" 에러를 잡습니다.
 // @ts-expect-error: 타입 정의 불일치 문제 무시

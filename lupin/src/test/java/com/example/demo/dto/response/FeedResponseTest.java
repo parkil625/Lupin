@@ -9,8 +9,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,7 +42,7 @@ class FeedResponseTest {
         ReflectionTestUtils.setField(feed, "id", 1L);
 
         // 이미지 Set 초기화 (빈 Set으로 설정하여 NPE 방지)
-        ReflectionTestUtils.setField(feed, "images", new HashSet<FeedImage>());
+        ReflectionTestUtils.setField(feed, "images", new ArrayList<FeedImage>());
 
         // when
         FeedResponse response = FeedResponse.from(feed, 10, 5);
@@ -75,7 +75,7 @@ class FeedResponseTest {
                 .calories(500)
                 .build();
         ReflectionTestUtils.setField(feed, "id", 1L);
-        ReflectionTestUtils.setField(feed, "images", new HashSet<FeedImage>());
+        ReflectionTestUtils.setField(feed, "images", new ArrayList<FeedImage>());
 
         // when
         FeedResponse response = FeedResponse.from(feed, 10, 5);
@@ -99,7 +99,7 @@ class FeedResponseTest {
                 .build();
         ReflectionTestUtils.setField(writer, "id", 42L);
 
-        Set<FeedImage> images = new HashSet<>();
+        List<FeedImage> images = new ArrayList<>();
         FeedImage image1 = FeedImage.builder()
                 .s3Key("images/start.jpg")
                 .imgType(ImageType.START)

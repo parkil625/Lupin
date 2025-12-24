@@ -25,7 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -102,7 +102,7 @@ class FeedReportServiceTest {
                 .build();
         ReflectionTestUtils.setField(feed, "id", 1L);
         // 이미지 Set 초기화 (NullPointer 방지)
-        ReflectionTestUtils.setField(feed, "images", new HashSet<>());
+        ReflectionTestUtils.setField(feed, "images", new ArrayList<>());
 
         // [중요] any() 대신 anyLong() 또는 eq() 사용으로 매칭 정확도 향상
         given(userRepository.findById(anyLong())).willReturn(Optional.of(reporter));

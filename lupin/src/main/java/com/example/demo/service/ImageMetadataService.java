@@ -15,9 +15,9 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.Map;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -25,25 +25,25 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ImageMetadataService {
 
     private final S3Template s3Template;
+    private final StringRedisTemplate redisTemplate; // Redis 추가
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
 
-    // EXIF 캐시 (업로드 시 추출 -> 피드 생성 시 사용)
-    private final Map<String, Optional<LocalDateTime>> exifCache = new ConcurrentHashMap<>();
-
     /**
-     * 바이트 배열에서 EXIF 추출 후 캐시에 저장 (업로드 시 호출)
-     * @param imageBytes 원본 이미지 바이트
-     * @param fileName 캐시 키로 사용할 파일명 (UUID 포함)
+     * 바이트 배열에서 EXIF 추출 후 Redis에 임시 저장 (업로드 시 호출)
      */
     public Optional<LocalDateTime> extractAndCache(byte[] imageBytes, String fileName) {
         try {
             Optional<LocalDateTime> result = extractFromStream(new ByteArrayInputStream(imageBytes));
-            // 파일명에서 경로 제거하고 파일명만 추출
-            String cacheKey = fileName.contains("/") ? fileName.substring(fileName.lastIndexOf('/') + 1) : fileName;
-            exifCache.put(cacheKey, result);
-            log.debug("EXIF cached for {}: {}", cacheKey, result.orElse(null));
+            
+            if (result.isPresent()) {
+                String cacheKey = fileName.contains("/") ? fileName.substring(fileName.lastIndexOf('/') + 1) : fileName;
+                // [임시 저장] Redis에 24시간 동안 보관 (작성 취소하면 자동 만료됨)
+                redisTemplate.opsForValue().set("img:meta:" + cacheKey, result.get().toString(), 24, TimeUnit.HOURS);
+                log.info("EXIF saved to Redis (Temp) for {}: {}", cacheKey, result.get());
+            }
+            
             return result;
         } catch (Exception e) {
             log.warn("Failed to extract EXIF for caching: {}", e.getMessage());
@@ -75,20 +75,20 @@ public class ImageMetadataService {
     }
 
     /**
-     * S3 이미지에서 촬영 시간 추출 (캐시 우선 확인)
+     * 이미지 촬영 시간 조회 (피드 저장 시 호출 - Redis 우선 확인)
      */
     public Optional<LocalDateTime> extractPhotoDateTime(String s3KeyOrUrl) {
-        // URL인 경우 파일명만 추출
         String s3Key = S3UrlUtils.extractFilename(s3KeyOrUrl);
 
-        // 1. 캐시 확인 (업로드 시 이미 추출된 경우)
-        if (exifCache.containsKey(s3Key)) {
-            Optional<LocalDateTime> cached = exifCache.remove(s3Key); // 사용 후 제거
-            log.debug("EXIF cache hit for {}: {}", s3Key, cached.orElse(null));
-            return cached;
+        // 1. Redis(임시 저장소) 확인
+        String cachedTime = redisTemplate.opsForValue().get("img:meta:" + s3Key);
+        if (cachedTime != null) {
+            log.info("EXIF Redis hit for {}: {}", s3Key, cachedTime);
+            // 저장 완료 후에는 Redis에서 지워도 되지만, 24시간 뒤 자동 삭제되니 둬도 무방함
+            return Optional.of(LocalDateTime.parse(cachedTime));
         }
 
-        // 2. 캐시 미스 - S3에서 다운로드하여 추출
+        // 2. Redis 미스 - S3에서 다운로드하여 추출 (WebP 변환된 경우 실패 확률 높음)
         log.info("EXIF cache miss, downloading from S3: {}", s3Key);
         try {
             var s3Resource = s3Template.download(bucket, s3Key);

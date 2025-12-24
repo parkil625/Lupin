@@ -1,5 +1,5 @@
-import apiClient from './client';
-import { getS3Url } from '@/lib/utils';
+import apiClient from "./client";
+import { getS3Url } from "@/lib/utils";
 
 // Feed 응답 타입 (백엔드 API 응답과 일치)
 export interface FeedResponse {
@@ -21,11 +21,12 @@ export interface FeedResponse {
   isLiked?: boolean;
 }
 
-// 페이지네이션 응답 타입
+// 페이지네이션 응답 타입 (Slice)
 export interface PagedFeedResponse {
   content: FeedResponse[];
-  totalPages: number;
-  totalElements: number;
+  hasNext: boolean;
+  page: number;
+  size: number;
 }
 
 // Feed 응답에서 images를 S3 URL로 변환
@@ -34,7 +35,9 @@ const transformFeedImages = (feed: FeedResponse | null) => {
   return {
     ...feed,
     images: (feed.images || []).map(getS3Url),
-    writerAvatar: feed.writerAvatar ? getS3Url(feed.writerAvatar) : feed.writerAvatar,
+    writerAvatar: feed.writerAvatar
+      ? getS3Url(feed.writerAvatar)
+      : feed.writerAvatar,
   };
 };
 
@@ -48,24 +51,34 @@ const transformPagedFeeds = (response: PagedFeedResponse | null) => {
 };
 
 export const feedApi = {
-  getAllFeeds: async (page = 0, size = 10, _excludeUserId?: number, _excludeFeedId?: number) => {
+  getAllFeeds: async (
+    page = 0,
+    size = 10,
+    _excludeUserId?: number,
+    _excludeFeedId?: number
+  ) => {
     try {
       // 백엔드는 인증된 사용자 기준으로 자동으로 본인 피드를 제외함
-      const params = new URLSearchParams({ page: String(page), size: String(size) });
+      const params = new URLSearchParams({
+        page: String(page),
+        size: String(size),
+      });
       const response = await apiClient.get(`/feeds?${params}`);
       return transformPagedFeeds(response.data);
     } catch {
-      return { content: [], totalPages: 0, totalElements: 0 };
+      return { content: [], hasNext: false, page: 0, size: 10 };
     }
   },
 
   getFeedsByUserId: async (_userId: number, page = 0, size = 10) => {
     try {
       // 현재 로그인한 사용자의 피드를 가져옴 (백엔드는 JWT 토큰에서 사용자 식별)
-      const response = await apiClient.get(`/feeds/my?page=${page}&size=${size}`);
+      const response = await apiClient.get(
+        `/feeds/my?page=${page}&size=${size}`
+      );
       return transformPagedFeeds(response.data);
     } catch {
-      return { content: [], totalPages: 0, totalElements: 0 };
+      return { content: [], hasNext: false, page: 0, size: 10 };
     }
   },
 
@@ -85,17 +98,20 @@ export const feedApi = {
     endImage: string;
     otherImages?: string[];
   }): Promise<FeedResponse> => {
-    const response = await apiClient.post('/feeds', data);
+    const response = await apiClient.post("/feeds", data);
     return transformFeedImages(response.data) as FeedResponse;
   },
 
-  updateFeed: async (feedId: number, data: {
-    activity: string;
-    content: string;
-    startImage?: string;
-    endImage?: string;
-    otherImages?: string[];
-  }) => {
+  updateFeed: async (
+    feedId: number,
+    data: {
+      activity: string;
+      content: string;
+      startImage?: string;
+      endImage?: string;
+      otherImages?: string[];
+    }
+  ) => {
     const response = await apiClient.put(`/feeds/${feedId}`, data);
     return response.data;
   },
@@ -118,14 +134,16 @@ export const feedApi = {
   canPostToday: async (_userId?: number) => {
     try {
       // 백엔드는 JWT 토큰에서 사용자 식별
-      const response = await apiClient.get('/feeds/can-post-today');
+      const response = await apiClient.get("/feeds/can-post-today");
       return response.data;
     } catch {
       return true;
     }
   },
 
-  getFeedLikeById: async (feedLikeId: number): Promise<{ feedId: number } | null> => {
+  getFeedLikeById: async (
+    feedLikeId: number
+  ): Promise<{ feedId: number } | null> => {
     try {
       const response = await apiClient.get(`/feeds/likes/${feedLikeId}`);
       return response.data;

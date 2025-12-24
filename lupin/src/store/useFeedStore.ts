@@ -7,10 +7,10 @@
  * - 페이지네이션 상태
  * - 피드 CRUD 액션
  */
-import { create } from 'zustand';
-import { Feed } from '@/types/dashboard.types';
-import { feedApi, FeedResponse } from '@/api';
-import { getRelativeTime } from '@/lib/utils';
+import { create } from "zustand";
+import { Feed } from "@/types/dashboard.types";
+import { feedApi, FeedResponse } from "@/api";
+import { getRelativeTime } from "@/lib/utils";
 
 // BackendFeed 타입 (FeedResponse와 동일)
 type BackendFeed = FeedResponse;
@@ -40,13 +40,21 @@ interface FeedState {
   setAllFeeds: (feeds: Feed[]) => void;
   setSelectedFeed: (feed: Feed | null) => void;
   setEditingFeed: (feed: Feed | null) => void;
-  setPivotFeed: (feedId: number | null, feed: Feed | null, targetCommentId?: number | null) => void;
+  setPivotFeed: (
+    feedId: number | null,
+    feed: Feed | null,
+    targetCommentId?: number | null
+  ) => void;
   setTargetCommentIdForFeed: (commentId: number | null) => void;
   triggerRefresh: () => void;
 
   // 피드 로드 액션
   loadMyFeeds: () => Promise<void>;
-  loadFeeds: (page: number, reset?: boolean, excludeFeedId?: number) => Promise<void>;
+  loadFeeds: (
+    page: number,
+    reset?: boolean,
+    excludeFeedId?: number
+  ) => Promise<void>;
   loadMoreFeeds: () => void;
 
   // 피드 CRUD 액션
@@ -103,25 +111,30 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   setAllFeeds: (feeds) => set({ allFeeds: feeds }),
   setSelectedFeed: (feed) => set({ selectedFeed: feed }),
   setEditingFeed: (feed) => set({ editingFeed: feed }),
-  setPivotFeed: (feedId, feed, targetCommentId = null) => set({
-    pivotFeedId: feedId,
-    pivotFeed: feed,
-    targetCommentIdForFeed: targetCommentId
-  }),
-  setTargetCommentIdForFeed: (commentId) => set({ targetCommentIdForFeed: commentId }),
-  triggerRefresh: () => set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),
+  setPivotFeed: (feedId, feed, targetCommentId = null) =>
+    set({
+      pivotFeedId: feedId,
+      pivotFeed: feed,
+      targetCommentIdForFeed: targetCommentId,
+    }),
+  setTargetCommentIdForFeed: (commentId) =>
+    set({ targetCommentIdForFeed: commentId }),
+  triggerRefresh: () =>
+    set((state) => ({ refreshTrigger: state.refreshTrigger + 1 })),
 
   // 내 피드 로드
   loadMyFeeds: async () => {
     try {
-      const currentUserId = parseInt(localStorage.getItem('userId') || '0');
+      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
       const response = await feedApi.getFeedsByUserId(currentUserId, 0, 100);
       if (!response) return;
-      const feeds = (response.content || []).filter((f): f is FeedResponse => f !== null);
+      const feeds = (response.content || []).filter(
+        (f): f is FeedResponse => f !== null
+      );
       const mappedFeeds = feeds.map(mapBackendFeed);
       set({ myFeeds: mappedFeeds });
     } catch (error) {
-      console.error('내 피드 로드 실패:', error);
+      console.error("내 피드 로드 실패:", error);
     }
   },
 
@@ -132,28 +145,38 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     set({ isLoadingFeeds: true });
     try {
-      const pageSize = 10;
-      const currentUserId = parseInt(localStorage.getItem('userId') || '0');
-      const response = await feedApi.getAllFeeds(page, pageSize, currentUserId, excludeFeedId);
+      // [수정] 한 번에 5개씩 불러오도록 변경
+      const pageSize = 5;
+      const currentUserId = parseInt(localStorage.getItem("userId") || "0");
+      const response = await feedApi.getAllFeeds(
+        page,
+        pageSize,
+        currentUserId,
+        excludeFeedId
+      );
       if (!response) return;
-      const feeds = (response.content || []).filter((f): f is FeedResponse => f !== null);
+      const feeds = (response.content || []).filter(
+        (f): f is FeedResponse => f !== null
+      );
       const mappedFeeds = feeds.map(mapBackendFeed);
 
       if (reset) {
         set({ allFeeds: mappedFeeds.sort((a: Feed, b: Feed) => b.id - a.id) });
       } else {
         set((state) => ({
-          allFeeds: [...state.allFeeds, ...mappedFeeds].sort((a, b) => b.id - a.id)
+          allFeeds: [...state.allFeeds, ...mappedFeeds].sort(
+            (a, b) => b.id - a.id
+          ),
         }));
       }
 
-      const totalPages = response.totalPages || 1;
+      // [수정] 백엔드의 hasNext 값을 직접 사용하여 정확하게 다음 페이지 여부 판단
       set({
-        hasMoreFeeds: page < totalPages - 1,
+        hasMoreFeeds: response.hasNext,
         feedPage: page,
       });
     } catch (error) {
-      console.error('피드 데이터 로드 실패:', error);
+      console.error("피드 데이터 로드 실패:", error);
     } finally {
       set({ isLoadingFeeds: false });
     }
@@ -162,6 +185,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   // 추가 피드 로드
   loadMoreFeeds: () => {
     const { hasMoreFeeds, isLoadingFeeds, feedPage, loadFeeds } = get();
+    // 로딩 중이 아니고 더 불러올 피드가 있을 때만 실행
     if (hasMoreFeeds && !isLoadingFeeds) {
       loadFeeds(feedPage + 1);
     }
@@ -206,12 +230,20 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     set((state) => ({
       allFeeds: state.allFeeds.map((feed) =>
         feed.id === feedId
-          ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1, isLiked: liked }
+          ? {
+              ...feed,
+              likes: liked ? feed.likes + 1 : feed.likes - 1,
+              isLiked: liked,
+            }
           : feed
       ),
       myFeeds: state.myFeeds.map((feed) =>
         feed.id === feedId
-          ? { ...feed, likes: liked ? feed.likes + 1 : feed.likes - 1, isLiked: liked }
+          ? {
+              ...feed,
+              likes: liked ? feed.likes + 1 : feed.likes - 1,
+              isLiked: liked,
+            }
           : feed
       ),
     }));
@@ -219,7 +251,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
   // 내 피드들의 아바타 업데이트 (프로필 사진 변경 시 호출)
   updateMyFeedsAvatar: (newAvatarUrl) => {
-    const currentUserId = parseInt(localStorage.getItem('userId') || '0');
+    const currentUserId = parseInt(localStorage.getItem("userId") || "0");
     set((state) => ({
       myFeeds: state.myFeeds.map((feed) => ({
         ...feed,
@@ -232,9 +264,10 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           : feed
       ),
       // 선택된 피드가 내 피드면 업데이트
-      selectedFeed: state.selectedFeed && state.selectedFeed.writerId === currentUserId
-        ? { ...state.selectedFeed, writerAvatar: newAvatarUrl || undefined }
-        : state.selectedFeed,
+      selectedFeed:
+        state.selectedFeed && state.selectedFeed.writerId === currentUserId
+          ? { ...state.selectedFeed, writerAvatar: newAvatarUrl || undefined }
+          : state.selectedFeed,
     }));
   },
 }));

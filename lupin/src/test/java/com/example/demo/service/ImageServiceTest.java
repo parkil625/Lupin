@@ -20,7 +20,9 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ImageService 테스트")
@@ -50,6 +52,9 @@ class ImageServiceTest {
                 new ImagePolicyProperties.ThumbnailPolicy(100, 100, 60)
         );
         imageService = new ImageService(fileStorage, imageProcessor, imageMetadataService, imagePolicy, applicationContext);
+
+        // 비동기 메서드 호출 시 자기 자신을 참조(Proxy)하기 위해 getBean을 호출하는 경우를 대비
+        lenient().when(applicationContext.getBean(ImageService.class)).thenReturn(imageService);
     }
 
     @Test

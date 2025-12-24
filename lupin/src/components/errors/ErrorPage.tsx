@@ -1,10 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home, RefreshCw } from "lucide-react";
 
 export default function ErrorPage() {
-  const navigate = useNavigate();
-
   return (
     // ✅ 전체 화면을 꽉 채우는 컨테이너
     <div className="relative w-full h-screen overflow-hidden flex flex-col items-center justify-center text-center">

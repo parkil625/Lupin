@@ -34,8 +34,11 @@ import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 import * as ReactWindow from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 
+// [수정] 런타임 호환성 확보: default 내부에 모듈이 있을 경우를 대비해 방어적으로 로드
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const List = (ReactWindow as any).FixedSizeList;
+const List =
+  (ReactWindow as any).FixedSizeList ||
+  (ReactWindow as any).default?.FixedSizeList;
 
 // any 제거를 위한 데이터 타입 정의
 interface FeedData {

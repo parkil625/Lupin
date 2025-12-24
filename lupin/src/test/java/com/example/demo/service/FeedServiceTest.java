@@ -495,7 +495,7 @@ class FeedServiceTest {
         given(feedTransactionService.updateFeed(
                 eq(writer), eq(feedId), eq(newContent), eq(newActivity),
                 eq("new-start.jpg"), eq("new-end.jpg"), eq(List.of()),
-                any(), any()))
+                any(), any(), eq(true)))
                 .willReturn(updatedFeed);
 
         // when
@@ -509,7 +509,7 @@ class FeedServiceTest {
         verify(feedTransactionService).updateFeed(
                 eq(writer), eq(feedId), eq(newContent), eq(newActivity),
                 eq("new-start.jpg"), eq("new-end.jpg"), eq(List.of()),
-                any(), any());
+                any(), any(), eq(true));
     }
 
     @Test

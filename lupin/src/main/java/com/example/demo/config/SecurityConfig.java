@@ -36,7 +36,8 @@ public class SecurityConfig {
     // URL 상수 정의
     private static final String[] PUBLIC_URLS = {
             "/",
-            "/api/health"
+            "/api/health",
+            "/error"
     };
 
     private static final String[] AUTH_URLS = {

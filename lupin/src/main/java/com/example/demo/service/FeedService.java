@@ -106,17 +106,6 @@ public class FeedService {
         return updateFeedContentOnly(user, feedId, content, activity);
     }
 
-    /**
-     * 피드 수정 통합 메서드 (이미지 키가 null이면 내용만 수정)
-     */
-    public Feed updateFeed(User user, Long feedId, String content, String activity,
-                           String startImageKey, String endImageKey, List<String> otherImageKeys) {
-        if (startImageKey != null && endImageKey != null) {
-            return updateFeedWithImages(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys);
-        }
-        return updateFeedContentOnly(user, feedId, content, activity);
-    }
-
     @Transactional
     private Feed updateFeedContentOnly(User user, Long feedId, String content, String activity) {
         Feed feed = feedRepository.findByIdWithWriterAndImages(feedId)
@@ -129,20 +118,17 @@ public class FeedService {
 
     @Transactional
     public Feed updateFeed(User user, Long feedId, String content, String activity, List<String> s3Keys) {
-        return updateFeed(user, feedId, content, activity, FeedImageUploadResult.fromList(s3Keys));
-    }
-
-    /**
-     * 피드 수정 (타입 안전한 이미지 파라미터)
-     */
-    public Feed updateFeed(User user, Long feedId, String content, String activity, FeedImageUploadResult images) {
-        return updateFeed(user, feedId, content, activity, images.startImageKey(), images.endImageKey(), images.otherImageKeys());
+        // [수정] 중간 오버로딩 메서드를 거치지 않고, 직접 변환하여 최종 메서드 호출 (컴파일 에러 방지)
+        FeedImageUploadResult images = FeedImageUploadResult.fromList(s3Keys);
+        return updateFeed(user, feedId, content, activity, 
+                images.startImageKey(), images.endImageKey(), images.otherImageKeys());
     }
 
     /**
      * 피드 수정 (Parameter Object 패턴)
      */
     public Feed updateFeed(FeedUpdateCommand command) {
+        // [수정] imagesChanged 값을 전달하며 통합 메서드 호출
         return updateFeed(
                 command.user(),
                 command.feedId(),
@@ -150,25 +136,57 @@ public class FeedService {
                 command.activity(),
                 command.startImageKey(),
                 command.endImageKey(),
-                command.otherImageKeys()
+                command.otherImageKeys(),
+                command.imagesChanged() // Command에서 가져온 값 전달
         );
     }
 
     /**
-     * 피드 수정 - 이미지 포함 (S3 I/O를 트랜잭션 외부에서 수행)
+     * 피드 수정 통합 메서드 (이미지 키가 null이면 내용만 수정)
+     * [수정] boolean imagesChanged 파라미터 추가
+     */
+    public Feed updateFeed(User user, Long feedId, String content, String activity,
+                           String startImageKey, String endImageKey, List<String> otherImageKeys,
+                           boolean imagesChanged) {
+        if (startImageKey != null && endImageKey != null) {
+            return updateFeedWithImages(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, imagesChanged);
+        }
+        return updateFeedContentOnly(user, feedId, content, activity);
+    }
+
+    // 하위 호환용 오버로드 (기존 코드나 테스트 코드용 - 이미지가 전달되면 변경된 것으로 간주)
+    public Feed updateFeed(User user, Long feedId, String content, String activity,
+                           String startImageKey, String endImageKey, List<String> otherImageKeys) {
+        return updateFeed(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, true);
+    }
+
+    /**
+     * 피드 수정 - 이미지 포함
      */
     private Feed updateFeedWithImages(User user, Long feedId, String content, String activity,
-                                      String startImageKey, String endImageKey, List<String> otherImageKeys) {
-        // [트랜잭션 외부] S3에서 EXIF 시간 추출 (네트워크 I/O)
-        Optional<LocalDateTime> startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
-        Optional<LocalDateTime> endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
+                                    String startImageKey, String endImageKey, List<String> otherImageKeys,
+                                    boolean imagesChanged) { // [추가]
 
-        log.info("Feed update - EXIF extraction completed: startImage={}, endImage={}",
-                startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
-                endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
+        Optional<LocalDateTime> startTimeOpt = Optional.empty();
+        Optional<LocalDateTime> endTimeOpt = Optional.empty();
+
+        // [수정] 이미지가 변경되었을 때만 S3 메타데이터 추출 시도
+        if (imagesChanged) {
+            startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
+            endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
+
+            log.info("Feed update - EXIF extraction completed: startImage={}, endImage={}",
+                    startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
+                    endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
+        }
 
         // [트랜잭션 내부] 별도 서비스로 분리하여 트랜잭션 적용
-        return feedTransactionService.updateFeed(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);
+        return feedTransactionService.updateFeed(
+            user, feedId, content, activity, 
+            startImageKey, endImageKey, otherImageKeys, 
+            startTimeOpt, endTimeOpt, 
+            imagesChanged // [추가]
+        );
     }
 
     /**

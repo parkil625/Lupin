@@ -85,42 +85,76 @@ public class FeedTransactionService {
 
         feed.validateOwner(user);
 
+        // [변경 감지] 기존 데이터 백업
+        String oldActivity = feed.getActivity();
         long oldPoints = feed.getPoints();
-        feed.update(content, activity);
+        
+        // 기존 시작/끝 이미지 키 찾기 (순서나 타입 기반)
+        String oldStartKey = feed.getImages().stream()
+                .filter(img -> img.getImgType() == ImageType.START)
+                .map(FeedImage::getS3Key).findFirst().orElse("");
+        String oldEndKey = feed.getImages().stream()
+                .filter(img -> img.getImgType() == ImageType.END)
+                .map(FeedImage::getS3Key).findFirst().orElse("");
 
         // 1. 기존 이미지들의 시간 정보 백업 (Key -> Time)
         Map<String, LocalDateTime> oldTimeMap = feed.getImages().stream()
                 .filter(img -> img.getCapturedAt() != null)
                 .collect(Collectors.toMap(FeedImage::getS3Key, FeedImage::getCapturedAt, (a, b) -> a));
 
-        // 2. 시간 결정: 새 추출 값이 있으면 사용, 없으면(실패/미첨부) 기존 DB 값 사용
+        // 정보 업데이트 (활동 내용 반영)
+        feed.update(content, activity);
+
+        // 2. 시간 결정: 새 추출 값이 있으면 사용, 없으면(기존 유지) 기존 DB 값 사용
         LocalDateTime resolvedStartTime = startTimeOpt.orElse(oldTimeMap.get(startImageKey));
         LocalDateTime resolvedEndTime = endTimeOpt.orElse(oldTimeMap.get(endImageKey));
 
-        // 3. 점수 계산 (WorkoutScoreService에 위임)
-        WorkoutScoreService.WorkoutResult workoutResult =
-                workoutScoreService.validateAndCalculate(activity, 
-                        Optional.ofNullable(resolvedStartTime), 
-                        Optional.ofNullable(resolvedEndTime), 
-                        feed.getCreatedAt().toLocalDate());
-
-        if (!workoutResult.valid() && (resolvedStartTime != null || resolvedEndTime != null)) {
-            log.warn("Feed update - Workout time validation failed - score set to 0");
+        // 시간 정보 유실 방지 (수정 시 이미지는 그대로인데 시간이 null이 되는 경우 방지)
+        if (resolvedStartTime == null || resolvedEndTime == null) {
+            log.error("Feed update failed: Time metadata lost. startKey={}, endKey={}", startImageKey, endImageKey);
+            throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED); // 적절한 에러 코드로 대체 가능
         }
 
-        feed.updateScore((long) workoutResult.score(), workoutResult.calories());
+        // 3. 포인트/점수 재계산 여부 판단
+        // 로직: 이미지가 하나라도 바뀌었거나, 운동 종류(Activity)가 바뀌었을 때만 재계산
+        boolean isImageChanged = !startImageKey.equals(oldStartKey) || !endImageKey.equals(oldEndKey);
+        boolean isActivityChanged = !activity.equals(oldActivity);
+
+        if (isImageChanged || isActivityChanged) {
+            log.info("Recalculating score for feed {}. ImageChanged={}, ActivityChanged={}", feedId, isImageChanged, isActivityChanged);
+            
+            // 점수 계산 (WorkoutScoreService에 위임)
+            WorkoutScoreService.WorkoutResult workoutResult =
+                    workoutScoreService.validateAndCalculate(activity, 
+                            Optional.ofNullable(resolvedStartTime), 
+                            Optional.ofNullable(resolvedEndTime), 
+                            feed.getCreatedAt().toLocalDate());
+
+            if (!workoutResult.valid()) {
+                log.warn("Feed update - Workout time validation failed. Activity={}, Start={}, End={}", 
+                        activity, resolvedStartTime, resolvedEndTime);
+                // 시간이 있는데 계산 실패라면(예: 시간이 역전됨) 에러 처리 or 0점 처리 (정책에 따라 결정)
+                // 여기서는 0점으로 덮어씌워지지 않도록 방어하려면 예외를 던지는 게 낫습니다.
+            }
+
+            // 피드 점수 업데이트
+            feed.updateScore((long) workoutResult.score(), workoutResult.calories());
+            
+            // 포인트 조정 (PointService에 위임) - 기존 포인트와 비교하여 차액만큼 처리
+            pointService.adjustFeedPoints(user, oldPoints, workoutResult.score());
+        } else {
+            log.info("Skipping score calculation for feed {}. No changes in images or activity.", feedId);
+            // 포인트 변동 없음 (adjustFeedPoints 호출 안 함)
+        }
+
         feed.updateThumbnail(startImageKey);
 
-        // 4. 기존 이미지 삭제 후 새 이미지 추가 (시간 정보 유지)
+        // 4. 이미지 정보 갱신 (시간 정보 유지)
+        // 재계산을 안 했더라도 resolvedTime(기존 시간)을 다시 넣어줘야 DB에 유지됨
         feed.getImages().clear();
         addImages(feed, startImageKey, endImageKey, otherImageKeys, resolvedStartTime, resolvedEndTime);
 
-        // 포인트 조정 (PointService에 위임)
-        pointService.adjustFeedPoints(user, oldPoints, workoutResult.score());
-
         feedRepository.flush();
-        feed.getImages().size();
-
         return feed;
     }
 

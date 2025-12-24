@@ -27,6 +27,9 @@ public class FeedImage {
     @Column(name = "img_type", nullable = false, length = 10)
     private ImageType imgType;
 
+    @Column(name = "captured_at")
+    private java.time.LocalDateTime capturedAt;
+
     @Column(name = "sort_order", nullable = false)
     @Builder.Default
     private Integer sortOrder = 0;

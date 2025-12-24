@@ -244,7 +244,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           type: "진료 상담",
         });
         setIsChatEnded(false);
-        setMessages([]); // 새 채팅방 열 때 이전 메시지 초기화
+        // 메시지는 useEffect에서 roomId 변경 시 자동으로 로드됨
       } catch (error) {
         console.error("채팅 가능 여부 확인 실패:", error);
         toast.error("채팅 시작 중 오류가 발생했습니다.");
@@ -277,7 +277,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       if (activeAppointment?.id === appointmentId) {
         setActiveAppointment(null);
         setIsChatEnded(true);
-        setMessages([]); // 메시지 초기화
+        // 메시지는 유지 (취소된 예약의 채팅 기록도 서버에 남음)
       }
     } catch (error) {
       console.error("예약 취소 실패:", error);
@@ -441,10 +441,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         // 1. 동기적으로 alert를 가장 먼저 표시 (블로킹)
         alert("진료가 종료되었습니다.\n예약 목록으로 이동합니다.");
 
-        // 2. alert를 닫은 후 상태 초기화
+        // 2. alert를 닫은 후 상태 초기화 (메시지는 유지 - 서버에서 관리)
         setActiveAppointment(null);
         setIsChatEnded(true);
-        setMessages([]);
         setViewState("LIST");
 
         // 3. 백그라운드에서 데이터 새로고침
@@ -613,7 +612,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
             type: "진료 상담",
           });
           setIsChatEnded(false);
-          setMessages([]);
+          // 메시지는 useEffect에서 roomId 변경 시 자동으로 로드됨
         } else {
           toast.error("해당 예약을 찾을 수 없습니다.");
         }
@@ -639,10 +638,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       const customEvent = event as CustomEvent<{ doctorName: string }>;
       const doctorName = customEvent.detail?.doctorName || "담당 의사";
 
-      // 채팅 상태 초기화
+      // 채팅 상태 초기화 (메시지는 유지)
       setActiveAppointment(null);
       setIsChatEnded(true);
-      setMessages([]);
       setViewState("LIST");
 
       // 예약 목록 및 처방전 새로고침
@@ -898,11 +896,26 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         <div className="text-xs text-gray-600">온라인</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-xs font-bold text-green-700">
-                        진료 중
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 px-3 py-1 bg-green-100 rounded-full">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs font-bold text-green-700">
+                          진료 중
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          // 채팅 화면만 닫고, 메시지는 유지 (다시 열면 이어서 채팅 가능)
+                          setActiveAppointment(null);
+                          setIsChatEnded(false);
+                          setViewState("LIST");
+                        }}
+                        className="rounded-full hover:bg-gray-200"
+                      >
+                        <XCircle className="w-5 h-5 text-gray-600" />
+                      </Button>
                     </div>
                   </div>
 

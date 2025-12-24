@@ -21,8 +21,8 @@ export interface FeedResponse {
   isLiked?: boolean;
 }
 
-// 페이지네이션 응답 타입 (Slice)
-export interface PagedFeedResponse {
+// [수정] 페이지네이션(Slice) 응답 타입 - 백엔드 SliceResponse와 일치시킴
+export interface FeedSliceResponse {
   content: FeedResponse[];
   hasNext: boolean;
   page: number;
@@ -41,8 +41,8 @@ const transformFeedImages = (feed: FeedResponse | null) => {
   };
 };
 
-// 페이지네이션 응답에서 모든 피드의 images를 변환
-const transformPagedFeeds = (response: PagedFeedResponse | null) => {
+// [수정] Slice 응답 변환 함수
+const transformSliceFeeds = (response: FeedSliceResponse | null) => {
   if (!response || !response.content) return response;
   return {
     ...response,
@@ -64,20 +64,21 @@ export const feedApi = {
         size: String(size),
       });
       const response = await apiClient.get(`/feeds?${params}`);
-      return transformPagedFeeds(response.data);
+      return transformSliceFeeds(response.data);
     } catch {
+      // [수정] 에러 시 빈 Slice 반환
       return { content: [], hasNext: false, page: 0, size: 10 };
     }
   },
 
   getFeedsByUserId: async (_userId: number, page = 0, size = 10) => {
     try {
-      // 현재 로그인한 사용자의 피드를 가져옴 (백엔드는 JWT 토큰에서 사용자 식별)
       const response = await apiClient.get(
         `/feeds/my?page=${page}&size=${size}`
       );
-      return transformPagedFeeds(response.data);
+      return transformSliceFeeds(response.data);
     } catch {
+      // [수정] 에러 시 빈 Slice 반환
       return { content: [], hasNext: false, page: 0, size: 10 };
     }
   },

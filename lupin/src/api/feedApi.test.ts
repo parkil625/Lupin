@@ -24,7 +24,9 @@ describe("feedApi", () => {
     it("should call GET /feeds with pagination params", async () => {
       const mockResponse = {
         data: {
-          content: [{ id: 1, images: ["img1.jpg"], writerAvatar: "avatar.jpg" }],
+          content: [
+            { id: 1, images: ["img1.jpg"], writerAvatar: "avatar.jpg" },
+          ],
           totalPages: 1,
           totalElements: 1,
         },
@@ -34,7 +36,9 @@ describe("feedApi", () => {
       const result = await feedApi.getAllFeeds(0, 10);
 
       expect(apiClient.get).toHaveBeenCalledWith("/feeds?page=0&size=10");
-      expect(result?.content?.[0]?.images?.[0]).toBe("https://s3.example.com/img1.jpg");
+      expect(result?.content?.[0]?.images?.[0]).toBe(
+        "https://s3.example.com/img1.jpg"
+      );
     });
 
     it("should return empty content on error", async () => {
@@ -42,7 +46,13 @@ describe("feedApi", () => {
 
       const result = await feedApi.getAllFeeds();
 
-      expect(result).toEqual({ content: [], totalPages: 0, totalElements: 0 });
+      // [수정] Slice 구조에 맞는 에러 반환값 검증
+      expect(result).toEqual({
+        content: [],
+        hasNext: false,
+        page: 0,
+        size: 10,
+      });
     });
   });
 
@@ -96,7 +106,12 @@ describe("feedApi", () => {
 
   describe("createFeed", () => {
     it("should call POST /feeds", async () => {
-      const feedData = { activity: "running", content: "test", startImage: "start.jpg", endImage: "end.jpg" };
+      const feedData = {
+        activity: "running",
+        content: "test",
+        startImage: "start.jpg",
+        endImage: "end.jpg",
+      };
       const mockResponse = { data: { id: 1, ...feedData } };
       vi.mocked(apiClient.post).mockResolvedValue(mockResponse);
 
@@ -109,7 +124,14 @@ describe("feedApi", () => {
     it("should throw on error", async () => {
       vi.mocked(apiClient.post).mockRejectedValue(new Error("Create failed"));
 
-      await expect(feedApi.createFeed({ activity: "", content: "", startImage: "", endImage: "" })).rejects.toThrow();
+      await expect(
+        feedApi.createFeed({
+          activity: "",
+          content: "",
+          startImage: "",
+          endImage: "",
+        })
+      ).rejects.toThrow();
     });
   });
 

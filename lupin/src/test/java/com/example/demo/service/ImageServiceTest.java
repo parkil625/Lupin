@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.component.ImageProcessor;
 import com.example.demo.config.ImagePolicyProperties;
 import com.example.demo.infrastructure.FileStorage;
+import org.springframework.context.ApplicationContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,9 @@ class ImageServiceTest {
     @Mock
     private ImageMetadataService imageMetadataService;
 
+    @Mock
+    private ApplicationContext applicationContext;
+
     private ImagePolicyProperties imagePolicy;
 
     private ImageService imageService;
@@ -45,7 +49,7 @@ class ImageServiceTest {
                 new ImagePolicyProperties.ThumbnailPolicy(300, 400, 50),
                 new ImagePolicyProperties.ThumbnailPolicy(100, 100, 60)
         );
-        imageService = new ImageService(fileStorage, imageProcessor, imageMetadataService, imagePolicy);
+        imageService = new ImageService(fileStorage, imageProcessor, imageMetadataService, imagePolicy, applicationContext);
     }
 
     @Test

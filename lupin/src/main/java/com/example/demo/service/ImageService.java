@@ -50,22 +50,25 @@ public class ImageService {
         byte[] originalBytes = file.getBytes();
         String uuid = UUID.randomUUID().toString();
 
-        var original = imagePolicy.original();
-        // 1. WebP 변환 (ImageProcessor에 위임)
-        byte[] processedBytes = imageProcessor.convertToWebp(
-                originalBytes, original.maxWidth(), original.maxHeight(), original.quality());
-        log.info("Image converted: {} -> {} bytes", file.getOriginalFilename(), processedBytes.length);
-
-        // 2. 파일명 생성 및 업로드 (FileStorage에 위임)
+        // 1. 파일명 생성 (Redis 키 생성을 위해 먼저 수행)
         String fileName = buildFileName(prefix, uuid, EXTENSION_WEBP);
-        fileStorage.upload(fileName, processedBytes, CONTENT_TYPE_WEBP);
 
-        // 3. 피드 이미지인 경우 EXIF 추출 및 캐싱
+        // 2. [순서 변경] WebP 변환 전, 원본에서 시간 추출하여 Redis에 임시 저장
+        // (작성 취소 시 자동 만료되므로 안전함)
         if ("feed".equals(prefix)) {
             imageMetadataService.extractAndCache(originalBytes, fileName);
         }
 
-        // 4. 썸네일 비동기 생성 (feed, profiles 폴더)
+        var original = imagePolicy.original();
+        // 3. WebP 변환 (ImageProcessor에 위임)
+        byte[] processedBytes = imageProcessor.convertToWebp(
+                originalBytes, original.maxWidth(), original.maxHeight(), original.quality());
+        log.info("Image converted: {} -> {} bytes", file.getOriginalFilename(), processedBytes.length);
+
+        // 4. 업로드 (FileStorage에 위임)
+        fileStorage.upload(fileName, processedBytes, CONTENT_TYPE_WEBP);
+
+        // 5. 썸네일 비동기 생성 (feed, profiles 폴더)
         if ("feed".equals(prefix) || "profiles".equals(prefix)) {
             // Self-invocation 문제 해결을 위해 프록시 빈을 통해 호출
             applicationContext.getBean(ImageService.class).generateThumbnailAsync(originalBytes, prefix, uuid);

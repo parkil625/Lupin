@@ -287,28 +287,31 @@ CREATE TABLE prescriptions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     patient_id BIGINT NOT NULL,
     doctor_id BIGINT NOT NULL,
-    name VARCHAR(255),
+    appointment_id BIGINT,
+
     diagnosis TEXT,
     instructions TEXT,
+
     date DATE NOT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
     
     FOREIGN KEY (patient_id) REFERENCES users(id),
     FOREIGN KEY (doctor_id) REFERENCES users(id),
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id),
+    
     INDEX idx_prescription_patient (patient_id),
     INDEX idx_prescription_doctor (doctor_id),
     INDEX idx_prescription_date (date DESC)
 );
 
--- 18. PrescriptionMed (처방 약품)
-CREATE TABLE prescription_meds (
+-- 18. Medicine (약품)
+CREATE TABLE medicines (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    prescription_id BIGINT NOT NULL,
-    medicine_name VARCHAR(255) NOT NULL,
-    dosage VARCHAR(100),
-    frequency VARCHAR(255),
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    precautions TEXT,
     
-    FOREIGN KEY (prescription_id) REFERENCES prescriptions(id),
-    INDEX idx_prescription_med_prescription (prescription_id)
+    INDEX idx_medicine_name (name)
 );

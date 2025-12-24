@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+// List, ArrayList 임포트 제거
 
 @Entity
 @Table(name = "prescriptions", indexes = {
@@ -35,9 +34,9 @@ public class Prescription {
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
 
-    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<PrescriptionMed> medicines = new ArrayList<>();
+    // 복잡한 연관관계 테이블 제거 -> 단순 텍스트로 저장
+    @Column(columnDefinition = "TEXT")
+    private String medications; 
 
     @Column(columnDefinition = "TEXT")
     private String diagnosis;
@@ -45,14 +44,7 @@ public class Prescription {
     @Column(name = "date", nullable = false)
     private LocalDate date;
 
-    public void addMedicine(PrescriptionMed medicine) {
-        medicines.add(medicine);
-        medicine.setPrescription(this);
-    }
-
-    public void removeMedicine(PrescriptionMed medicine) {
-        medicines.remove(medicine);
-    }
+    // 생성일, 수정일 등은 필요하다면 BaseEntity 상속 또는 별도 추가
 
     public void updateDiagnosis(String diagnosis) {
         this.diagnosis = diagnosis;

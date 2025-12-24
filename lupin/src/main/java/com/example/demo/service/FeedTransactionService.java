@@ -83,6 +83,11 @@ public class FeedTransactionService {
         Feed feed = feedRepository.findByIdWithWriter(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
+        // [추가] 들어온 키값에서 도메인(https://...)을 떼고 순수 경로만 남기는 전처리
+        // 예: https://버킷.s3.../folder/img.jpg -> folder/img.jpg
+        startImageKey = extractKey(startImageKey);
+        endImageKey = extractKey(endImageKey);
+
         feed.validateOwner(user);
 
         // [변경 감지] 기존 데이터 백업
@@ -191,5 +196,21 @@ public class FeedTransactionService {
                 feed.getImages().add(otherImg);
             }
         }
+    }
+
+    // URL에서 순수 S3 Key만 추출하는 도우미 메서드
+    private String extractKey(String urlOrKey) {
+        if (urlOrKey == null) return null;
+        if (urlOrKey.startsWith("http")) {
+            // "com/" 뒷부분을 잘라내는 단순 파싱 예시 (실제 URL 구조에 맞춰 조정 필요)
+            // 혹은 "/"로 split해서 뒤쪽 경로만 합치는 방식 등
+            int index = urlOrKey.indexOf(".com/");
+            if (index != -1) {
+                return urlOrKey.substring(index + 5); // ".com/" 길이만큼 뒤로
+            }
+            // 만약 도메인이 다르다면 "amazonaws.com/" 등을 기준으로 자를 수도 있습니다.
+            // 가장 확실한 건 DB에 저장되는 형태와 동일하게 만드는 것입니다.
+        }
+        return urlOrKey;
     }
 }

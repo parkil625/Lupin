@@ -25,6 +25,7 @@ import {
   Flame,
   Clock,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
@@ -34,13 +35,19 @@ import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 import * as ReactWindow from "react-window";
 import AutoSizer from "react-virtualized-auto-sizer";
 
-// [수정] 런타임 호환성 확보: default 내부에 모듈이 있을 경우를 대비해 방어적으로 로드
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const List =
-  (ReactWindow as any).FixedSizeList ||
-  (ReactWindow as any).default?.FixedSizeList;
+interface ReactWindowModule {
+  FixedSizeList: React.ElementType;
+  default?: {
+    FixedSizeList: React.ElementType;
+  };
+}
 
-// any 제거를 위한 데이터 타입 정의
+// [수정] 모듈 로딩 방식의 호환성 처리 (Named Export vs Default Export)
+const List = ((ReactWindow as unknown as ReactWindowModule).FixedSizeList ||
+  (ReactWindow as unknown as ReactWindowModule).default
+    ?.FixedSizeList) as React.ElementType;
+
+// [수정] any 대신 명확한 인터페이스 사용
 interface FeedData {
   feeds: Feed[];
   getFeedImageIndex: (feedId: number) => number;
@@ -54,7 +61,6 @@ interface FeedData {
   targetCommentIdForFeed?: number | null;
 }
 
-// [수정] react-window 행 컴포넌트 Props 정의
 interface ListChildComponentProps {
   index: number;
   style: React.CSSProperties;
@@ -1233,7 +1239,8 @@ export default function FeedView({
         {/* 로딩 표시 (리스트 위에 오버레이) */}
         {isLoadingFeeds && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-            <div className="w-8 h-8 border-4 border-gray-300 border-t-[#C93831] rounded-full animate-spin shadow-lg"></div>
+            {/* [수정] Loader2 컴포넌트 사용 */}
+            <Loader2 className="w-8 h-8 text-[#C93831] animate-spin shadow-lg" />
           </div>
         )}
       </div>

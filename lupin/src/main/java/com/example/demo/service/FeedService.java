@@ -128,7 +128,7 @@ public class FeedService {
      * 피드 수정 (Parameter Object 패턴)
      */
     public Feed updateFeed(FeedUpdateCommand command) {
-        // [수정] imagesChanged 값을 전달하며 통합 메서드 호출
+        // [수정] imagesChanged 및 시간 값을 전달하며 통합 메서드 호출
         return updateFeed(
                 command.user(),
                 command.feedId(),
@@ -137,7 +137,9 @@ public class FeedService {
                 command.startImageKey(),
                 command.endImageKey(),
                 command.otherImageKeys(),
-                command.imagesChanged() // Command에서 가져온 값 전달
+                command.imagesChanged(),
+                command.startAt(), // [추가]
+                command.endAt()    // [추가]
         );
     }
 
@@ -147,45 +149,45 @@ public class FeedService {
      */
     public Feed updateFeed(User user, Long feedId, String content, String activity,
                            String startImageKey, String endImageKey, List<String> otherImageKeys,
-                           boolean imagesChanged) {
+                           boolean imagesChanged, LocalDateTime startAt, LocalDateTime endAt) {
         if (startImageKey != null && endImageKey != null) {
-            return updateFeedWithImages(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, imagesChanged);
+            return updateFeedWithImages(user, feedId, content, activity,
+                    startImageKey, endImageKey, otherImageKeys, imagesChanged, startAt, endAt);
         }
         return updateFeedContentOnly(user, feedId, content, activity);
     }
 
-    // 하위 호환용 오버로드 (기존 코드나 테스트 코드용 - 이미지가 전달되면 변경된 것으로 간주)
+    // 하위 호환용 (테스트 등)
     public Feed updateFeed(User user, Long feedId, String content, String activity,
                            String startImageKey, String endImageKey, List<String> otherImageKeys) {
-        return updateFeed(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, true);
+        return updateFeed(user, feedId, content, activity, startImageKey, endImageKey, otherImageKeys, true, null, null);
     }
 
-    /**
-     * 피드 수정 - 이미지 포함
-     */
     private Feed updateFeedWithImages(User user, Long feedId, String content, String activity,
-                                    String startImageKey, String endImageKey, List<String> otherImageKeys,
-                                    boolean imagesChanged) { // [추가]
+                                      String startImageKey, String endImageKey, List<String> otherImageKeys,
+                                      boolean imagesChanged, LocalDateTime startAt, LocalDateTime endAt) {
 
         Optional<LocalDateTime> startTimeOpt = Optional.empty();
         Optional<LocalDateTime> endTimeOpt = Optional.empty();
 
-        // [수정] 이미지가 변경되었을 때만 S3 메타데이터 추출 시도
         if (imagesChanged) {
-            startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
-            endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
-
-            log.info("Feed update - EXIF extraction completed: startImage={}, endImage={}",
-                    startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
-                    endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
+            // [핵심] 프론트에서 넘어온 시간이 있으면 최우선 사용 (압축본 S3 추출 안 함)
+            if (startAt != null && endAt != null) {
+                startTimeOpt = Optional.of(startAt);
+                endTimeOpt = Optional.of(endAt);
+                log.info("Using provided time from frontend: {} ~ {}", startAt, endAt);
+            } else {
+                // 프론트 시간이 없으면 기존 방식대로 S3 추출 시도
+                startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
+                endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
+            }
         }
 
-        // [트랜잭션 내부] 별도 서비스로 분리하여 트랜잭션 적용
         return feedTransactionService.updateFeed(
-            user, feedId, content, activity, 
-            startImageKey, endImageKey, otherImageKeys, 
-            startTimeOpt, endTimeOpt, 
-            imagesChanged // [추가]
+                user, feedId, content, activity,
+                startImageKey, endImageKey, otherImageKeys,
+                startTimeOpt, endTimeOpt,
+                imagesChanged
         );
     }
 

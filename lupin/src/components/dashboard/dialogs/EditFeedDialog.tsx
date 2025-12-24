@@ -54,7 +54,9 @@ interface EditFeedDialogProps {
     content: string,
     workoutType: string,
     startImage: string | null,
-    endImage: string | null
+    endImage: string | null,
+    startAt?: string | null,
+    endAt?: string | null
   ) => void;
 }
 
@@ -278,8 +280,23 @@ export default function EditFeedDialog({
       Boolean
     ) as string[];
 
+    // [수정] EXIF 시간 정보 전송 (이미지 변경 시에만)
+    const startAtIso =
+      imagesChanged && startExifTime ? startExifTime.toISOString() : null;
+    const endAtIso =
+      imagesChanged && endExifTime ? endExifTime.toISOString() : null;
+
     // plain text로 저장
-    onSave(feed.id, images, content, workoutType, startImage, endImage);
+    onSave(
+      feed.id,
+      images,
+      content,
+      workoutType,
+      startImage,
+      endImage,
+      startAtIso,
+      endAtIso
+    );
     // 저장 완료 후 상태 초기화
     initialDataRef.current = null;
     onOpenChange(false);

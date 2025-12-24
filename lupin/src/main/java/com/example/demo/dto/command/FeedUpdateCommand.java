@@ -3,6 +3,7 @@ package com.example.demo.dto.command;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.FeedRequest;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -16,7 +17,9 @@ public record FeedUpdateCommand(
         String startImageKey,
         String endImageKey,
         List<String> otherImageKeys,
-        boolean imagesChanged // [추가]
+        boolean imagesChanged,
+        LocalDateTime startAt, // [추가]
+        LocalDateTime endAt    // [추가]
 ) {
     public static FeedUpdateCommand of(User user, Long feedId, FeedRequest request) {
         return new FeedUpdateCommand(
@@ -27,7 +30,9 @@ public record FeedUpdateCommand(
                 request.getStartImageKey(),
                 request.getEndImageKey(),
                 request.getOtherImageKeys(),
-                request.isImagesChanged() // [추가] Request에서 값 꺼내기
+                request.isImagesChanged(),
+                request.getStartAt(), // [추가]
+                request.getEndAt()    // [추가]
         );
     }
 

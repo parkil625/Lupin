@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,17 +32,23 @@ public class FeedRequest {
     private List<String> images = new ArrayList<>();
 
     // [추가] 이미지 변경 여부 플래그
-    private boolean imagesChanged; 
+    private boolean imagesChanged;
+
+    // [추가] 프론트에서 전달받는 EXIF 시간
+    private LocalDateTime startAt;
+    private LocalDateTime endAt;
 
     @Builder
-    public FeedRequest(String activity, String content, String startImage, String endImage, List<String> otherImages, List<String> images, boolean imagesChanged) {
+    public FeedRequest(String activity, String content, String startImage, String endImage, List<String> otherImages, List<String> images, boolean imagesChanged, LocalDateTime startAt, LocalDateTime endAt) {
         this.activity = activity;
         this.content = content;
         this.startImage = startImage;
         this.endImage = endImage;
         this.otherImages = otherImages != null ? otherImages : new ArrayList<>();
         this.images = images != null ? images : new ArrayList<>();
-        this.imagesChanged = imagesChanged; // [추가]
+        this.imagesChanged = imagesChanged;
+        this.startAt = startAt;
+        this.endAt = endAt;
     }
 
     /**

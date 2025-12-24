@@ -1,7 +1,6 @@
 package com.example.demo.repository;
 
 import com.example.demo.domain.entity.Prescription;
-import com.example.demo.domain.entity.PrescriptionMed;
 import com.example.demo.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +30,7 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
                 .patient(patient)
                 .date(prescribedDate)
                 .diagnosis("감기")
+                .medications("타이레놀 500mg (1정, 1일 3회)")
                 .build();
 
         // when
@@ -42,6 +42,7 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(saved.getPatient()).isEqualTo(patient);
         assertThat(saved.getDate()).isEqualTo(prescribedDate);
         assertThat(saved.getDiagnosis()).isEqualTo("감기");
+        assertThat(saved.getMedications()).isEqualTo("타이레놀 500mg (1정, 1일 3회)");
     }
 
     @Test
@@ -51,39 +52,25 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         User doctor = createAndSaveUser("doctor2", "Dr. Park");
         User patient = createAndSaveUser("patient2", "Patient Kim");
         LocalDate prescribedDate = LocalDate.of(2025, 12, 1);
+        String medications = "아스피린 (100mg, 하루 1회)\n혈압약 (50mg, 하루 2회)";
 
         Prescription prescription = Prescription.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .date(prescribedDate)
                 .diagnosis("고혈압")
+                .medications(medications)
                 .build();
-
-        PrescriptionMed med1 = PrescriptionMed.builder()
-                .medicineName("아스피린")
-                .dosage("100mg")
-                .frequency("하루 1회")
-                .build();
-
-        PrescriptionMed med2 = PrescriptionMed.builder()
-                .medicineName("혈압약")
-                .dosage("50mg")
-                .frequency("하루 2회")
-                .build();
-
-        prescription.addMedicine(med1);
-        prescription.addMedicine(med2);
 
         // when
         Prescription saved = prescriptionRepository.save(prescription);
 
         // then
         assertThat(saved.getId()).isNotNull();
-        assertThat(saved.getMedicines()).hasSize(2);
-        assertThat(saved.getMedicines().get(0).getMedicineName()).isEqualTo("아스피린");
-        assertThat(saved.getMedicines().get(0).getDosage()).isEqualTo("100mg");
-        assertThat(saved.getMedicines().get(0).getFrequency()).isEqualTo("하루 1회");
-        assertThat(saved.getMedicines().get(1).getMedicineName()).isEqualTo("혈압약");
+        assertThat(saved.getMedications()).contains("아스피린");
+        assertThat(saved.getMedications()).contains("혈압약");
+        assertThat(saved.getMedications()).contains("100mg");
+        assertThat(saved.getMedications()).contains("50mg");
     }
 
     @Test
@@ -215,28 +202,15 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         // given
         User doctor = createAndSaveUser("doctor6", "Dr. Yoon");
         User patient = createAndSaveUser("patient7", "Patient Shin");
+        String medications = "메트포르민 (500mg, 하루 2회)\n인슐린 (10unit, 하루 1회)";
 
         Prescription prescription = Prescription.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .date(LocalDate.of(2025, 12, 1))
                 .diagnosis("당뇨")
+                .medications(medications)
                 .build();
-
-        PrescriptionMed med1 = PrescriptionMed.builder()
-                .medicineName("메트포르민")
-                .dosage("500mg")
-                .frequency("하루 2회")
-                .build();
-
-        PrescriptionMed med2 = PrescriptionMed.builder()
-                .medicineName("인슐린")
-                .dosage("10unit")
-                .frequency("하루 1회")
-                .build();
-
-        prescription.addMedicine(med1);
-        prescription.addMedicine(med2);
 
         Prescription saved = prescriptionRepository.save(prescription);
         Long prescriptionId = saved.getId();
@@ -250,9 +224,8 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(found.getDoctor()).isEqualTo(doctor);
         assertThat(found.getPatient()).isEqualTo(patient);
         assertThat(found.getDiagnosis()).isEqualTo("당뇨");
-        assertThat(found.getMedicines()).hasSize(2);
-        assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("메트포르민");
-        assertThat(found.getMedicines().get(1).getMedicineName()).isEqualTo("인슐린");
+        assertThat(found.getMedications()).contains("메트포르민");
+        assertThat(found.getMedications()).contains("인슐린");
     }
 
     @Test
@@ -333,124 +306,4 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(found.getDiagnosis()).isEqualTo("독감");
     }
 
-    @Test
-    @DisplayName("처방전 약물 추가")
-    void shouldAddMedicineToPrescription() {
-        // given
-        User doctor = createAndSaveUser("doctor9", "Dr. Lim");
-        User patient = createAndSaveUser("patient10", "Patient Jang");
-
-        Prescription prescription = Prescription.builder()
-                .doctor(doctor)
-                .patient(patient)
-                .date(LocalDate.of(2025, 12, 1))
-                .diagnosis("고혈압")
-                .build();
-
-        PrescriptionMed med1 = PrescriptionMed.builder()
-                .medicineName("혈압약")
-                .dosage("50mg")
-                .frequency("하루 1회")
-                .build();
-
-        prescription.addMedicine(med1);
-        Prescription saved = prescriptionRepository.save(prescription);
-
-        // when
-        PrescriptionMed med2 = PrescriptionMed.builder()
-                .medicineName("이뇨제")
-                .dosage("25mg")
-                .frequency("하루 1회")
-                .build();
-
-        saved.addMedicine(med2);
-        prescriptionRepository.save(saved);
-
-        // then
-        Prescription found = prescriptionRepository.findById(saved.getId())
-                .orElseThrow(() -> new AssertionError("처방전을 찾을 수 없습니다"));
-        assertThat(found.getMedicines()).hasSize(2);
-        assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("혈압약");
-        assertThat(found.getMedicines().get(1).getMedicineName()).isEqualTo("이뇨제");
-    }
-
-    @Test
-    @DisplayName("처방전 약물 삭제")
-    void shouldRemoveMedicineFromPrescription() {
-        // given
-        User doctor = createAndSaveUser("doctor10", "Dr. Kang");
-        User patient = createAndSaveUser("patient11", "Patient Hwang");
-
-        Prescription prescription = Prescription.builder()
-                .doctor(doctor)
-                .patient(patient)
-                .date(LocalDate.of(2025, 12, 1))
-                .diagnosis("당뇨")
-                .build();
-
-        PrescriptionMed med1 = PrescriptionMed.builder()
-                .medicineName("메트포르민")
-                .dosage("500mg")
-                .frequency("하루 2회")
-                .build();
-
-        PrescriptionMed med2 = PrescriptionMed.builder()
-                .medicineName("인슐린")
-                .dosage("10unit")
-                .frequency("하루 1회")
-                .build();
-
-        prescription.addMedicine(med1);
-        prescription.addMedicine(med2);
-        Prescription saved = prescriptionRepository.save(prescription);
-
-        // when
-        saved.removeMedicine(med1);
-        prescriptionRepository.save(saved);
-
-        // then
-        Prescription found = prescriptionRepository.findById(saved.getId())
-                .orElseThrow(() -> new AssertionError("처방전을 찾을 수 없습니다"));
-        assertThat(found.getMedicines()).hasSize(1);
-        assertThat(found.getMedicines().get(0).getMedicineName()).isEqualTo("인슐린");
-    }
-
-    @Test
-    @DisplayName("처방전 삭제 시 약물 정보도 함께 삭제")
-    void shouldDeletePrescriptionWithMedicines() {
-        // given
-        User doctor = createAndSaveUser("doctor11", "Dr. Hong");
-        User patient = createAndSaveUser("patient12", "Patient Nam");
-
-        Prescription prescription = Prescription.builder()
-                .doctor(doctor)
-                .patient(patient)
-                .date(LocalDate.of(2025, 12, 1))
-                .diagnosis("감기")
-                .build();
-
-        PrescriptionMed med1 = PrescriptionMed.builder()
-                .medicineName("타이레놀")
-                .dosage("500mg")
-                .frequency("하루 3회")
-                .build();
-
-        PrescriptionMed med2 = PrescriptionMed.builder()
-                .medicineName("기침약")
-                .dosage("200mg")
-                .frequency("하루 2회")
-                .build();
-
-        prescription.addMedicine(med1);
-        prescription.addMedicine(med2);
-
-        Prescription saved = prescriptionRepository.save(prescription);
-        Long prescriptionId = saved.getId();
-
-        // when
-        prescriptionRepository.deleteById(prescriptionId);
-
-        // then
-        assertThat(prescriptionRepository.findById(prescriptionId)).isEmpty();
-    }
 }

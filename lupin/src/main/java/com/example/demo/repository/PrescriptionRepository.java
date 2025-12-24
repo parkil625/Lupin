@@ -13,22 +13,18 @@ import java.util.Optional;
 @Repository
 public interface PrescriptionRepository extends JpaRepository<Prescription, Long> {
 
-    @Query("SELECT DISTINCT p FROM Prescription p " +
+    @Query("SELECT p FROM Prescription p " +
            "LEFT JOIN FETCH p.patient " +
            "LEFT JOIN FETCH p.doctor " +
            "LEFT JOIN FETCH p.appointment " +
-           "LEFT JOIN FETCH p.medicines m " +
-           "LEFT JOIN FETCH m.medicine " +
            "WHERE p.patient.id = :patientId " +
            "ORDER BY p.date DESC")
     List<Prescription> findByPatientIdOrderByDateDesc(@Param("patientId") Long patientId);
 
-    @Query("SELECT DISTINCT p FROM Prescription p " +
+    @Query("SELECT p FROM Prescription p " +
            "LEFT JOIN FETCH p.patient " +
            "LEFT JOIN FETCH p.doctor " +
            "LEFT JOIN FETCH p.appointment " +
-           "LEFT JOIN FETCH p.medicines m " +
-           "LEFT JOIN FETCH m.medicine " +
            "WHERE p.doctor.id = :doctorId " +
            "ORDER BY p.date DESC")
     List<Prescription> findByDoctorIdOrderByDateDesc(@Param("doctorId") Long doctorId);

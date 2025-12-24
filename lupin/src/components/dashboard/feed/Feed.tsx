@@ -1032,41 +1032,49 @@ export default function FeedView({
   isLoadingFeeds,
 }: FeedViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const observerTarget = useRef<HTMLDivElement>(null); // 무한 스크롤 감지용 타겟
+  const observerTarget = useRef<HTMLDivElement>(null);
 
-  // [기능 추가] Intersection Observer로 스크롤 끝 감지
+  // [기능 수정] Intersection Observer 로직 강화
   useEffect(() => {
+    // 로딩 중이거나 더 가져올 게 없으면 관찰하지 않음
+    if (!hasMoreFeeds || isLoadingFeeds) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        // [수정] threshold를 0.1로 낮춰서 살짝만 보여도 로딩되게 변경
-        if (entries[0].isIntersecting && hasMoreFeeds && !isLoadingFeeds) {
+        if (entries[0].isIntersecting) {
           loadMoreFeeds();
         }
       },
-      { threshold: 0.1 }
+      {
+        threshold: 0.1,
+        // [중요] 뷰포트가 아닌 '스크롤 컨테이너'를 기준으로 감지
+        root: containerRef.current,
+        // [중요] 바닥에 닿기 50px 전부터 미리 로딩 시도
+        rootMargin: "0px 0px 50px 0px",
+      }
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      if (currentTarget) observer.disconnect();
+    };
   }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds]);
 
-  // 스토어에서 targetCommentIdForFeed와 pivotFeedId 읽기
+  // 스토어 관련 로직 (기존 유지)
   const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } =
     useFeedStore();
 
-  // targetCommentIdForFeed 사용 후 정리 (컴포넌트 언마운트 또는 다른 페이지로 이동 시)
   useEffect(() => {
     return () => {
-      if (targetCommentIdForFeed) {
-        setTargetCommentIdForFeed(null);
-      }
+      if (targetCommentIdForFeed) setTargetCommentIdForFeed(null);
     };
   }, [targetCommentIdForFeed, setTargetCommentIdForFeed]);
 
-  // [최적화] LCP 이미지 Preload - 첫 번째 피드 이미지
+  // 이미지 프리로드 (기존 유지)
   useEffect(() => {
     if (allFeeds.length > 0 && allFeeds[0].images?.[0]) {
       const link = document.createElement("link");
@@ -1078,13 +1086,12 @@ export default function FeedView({
     }
   }, [allFeeds]);
 
-  // 검색 자동완성 목록 (메모이제이션)
+  // 검색 로직 (기존 유지)
   const authorSuggestions = useMemo(
     () => [...new Set(allFeeds.map((feed) => feed.author || feed.writerName))],
     [allFeeds]
   );
 
-  // 필터링된 피드
   const filteredFeeds = useMemo(() => {
     if (!searchQuery.trim()) return allFeeds;
     return allFeeds.filter((feed) => {
@@ -1093,7 +1100,7 @@ export default function FeedView({
     });
   }, [allFeeds, searchQuery]);
 
-  // 특정 피드로 스크롤 (DOM ID 검색)
+  // 스크롤 이동 로직 (기존 유지)
   useEffect(() => {
     if (scrollToFeedId) {
       const element = document.getElementById(`feed-${scrollToFeedId}`);
@@ -1124,12 +1131,13 @@ export default function FeedView({
         />
       </div>
 
-      {/* 피드 리스트 - 일반 매핑 + 무한 스크롤 */}
+      {/* 피드 리스트 */}
       <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide space-y-4 pb-4 snap-y snap-mandatory">
         {filteredFeeds.map((feed, index) => (
           <div
             key={feed.id}
             id={`feed-${feed.id}`}
+            // snap-start: 스크롤이 이 요소에 딱 멈춤
             className="w-full h-full min-h-[500px] snap-start snap-always"
           >
             <FeedItem
@@ -1157,13 +1165,19 @@ export default function FeedView({
           </div>
         ))}
 
-        {/* [중요] Loader2를 여기에 꼭 넣어주세요. 없으면 에러가 나고 스크롤도 안 됩니다. */}
+        {/* [핵심 수정] Loader 영역
+           1. snap-start 추가: 이제 스크롤이 튕기지 않고 로더 위치에 '안착'합니다.
+           2. min-h-[100px]: 높이가 너무 작으면 스냅이 안 걸릴 수 있어 높이를 확보합니다.
+        */}
         <div
           ref={observerTarget}
-          className="h-4 w-full flex justify-center py-4"
+          className="w-full min-h-[100px] flex justify-center items-center py-4 snap-start scroll-mt-4"
         >
-          {isLoadingFeeds && (
+          {isLoadingFeeds ? (
             <Loader2 className="w-8 h-8 text-[#C93831] animate-spin" />
+          ) : (
+            // 로딩 중 아닐 때: 더 불러올 피드가 있다면 투명한 박스를 둬서 스크롤이 걸리게 함
+            hasMoreFeeds && <div className="w-8 h-8" />
           )}
         </div>
       </div>

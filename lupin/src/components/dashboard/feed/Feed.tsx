@@ -1157,8 +1157,11 @@ export default function FeedView({
           </div>
         ))}
 
-        {/* 무한 스크롤 감지용 투명 타겟 */}
-        <div ref={observerTarget} className="h-4 w-full flex justify-center">
+        {/* [중요] Loader2를 여기에 꼭 넣어주세요. 없으면 에러가 나고 스크롤도 안 됩니다. */}
+        <div
+          ref={observerTarget}
+          className="h-4 w-full flex justify-center py-4"
+        >
           {isLoadingFeeds && (
             <Loader2 className="w-8 h-8 text-[#C93831] animate-spin" />
           )}

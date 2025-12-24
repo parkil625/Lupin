@@ -37,37 +37,7 @@ import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
-import AutoSizer from "react-virtualized-auto-sizer";
-
-// [해결 1] TS 에러 무시: react-window의 타입 정의가 꼬여있어서 발생하는 "FixedSizeList 없음" 에러를 잡습니다.
-// @ts-expect-error: 타입 정의 불일치 문제 무시
-import { FixedSizeList } from "react-window";
-
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
-
-// [해결 2] 린트 에러 무시: any 사용 금지 규칙을 이 줄에서만 끕니다.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const List = FixedSizeList as unknown as ComponentType<any>;
-
-// [수정] any 대신 명확한 인터페이스 사용
-interface FeedData {
-  feeds: Feed[];
-  getFeedImageIndex: (feedId: number) => number;
-  setFeedImageIndex: (
-    feedId: number,
-    updater: number | ((prev: number) => number)
-  ) => void;
-  hasLiked: (feedId: number) => boolean;
-  handleLike: (feedId: number) => void;
-  pivotFeedId?: number | null;
-  targetCommentIdForFeed?: number | null;
-}
-
-interface ListChildComponentProps {
-  index: number;
-  style: React.CSSProperties;
-  data: FeedData;
-}
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -1048,55 +1018,6 @@ const FeedItem = React.memo(function FeedItem({
 });
 
 /**
- * 윈도윙을 위한 개별 행 컴포넌트 (Memoization 적용)
- */
-const FeedRow = React.memo(
-  ({ index, style, data }: ListChildComponentProps) => {
-    const {
-      feeds,
-      getFeedImageIndex,
-      setFeedImageIndex,
-      hasLiked,
-      handleLike,
-      pivotFeedId,
-      targetCommentIdForFeed,
-    } = data;
-    const feed = feeds[index];
-
-    return (
-      <div style={style} className="snap-start snap-always">
-        {/* gap-4(16px)를 표현하기 위해 높이에서 16px를 뺀 만큼만 채움 */}
-        <div className="w-full h-[calc(100%-16px)]">
-          <FeedItem
-            feed={feed}
-            currentImageIndex={getFeedImageIndex(feed.id)}
-            liked={hasLiked(feed.id)}
-            onPrevImage={() =>
-              setFeedImageIndex(feed.id, (prev: number) =>
-                Math.max(0, prev - 1)
-              )
-            }
-            onNextImage={() =>
-              setFeedImageIndex(feed.id, (prev: number) =>
-                Math.min(feed.images.length - 1, prev + 1)
-              )
-            }
-            onLike={() => handleLike(feed.id)}
-            isPriority={index === 0}
-            targetCommentId={
-              index === 0 && pivotFeedId && feed.id === pivotFeedId
-                ? targetCommentIdForFeed
-                : null
-            }
-          />
-        </div>
-      </div>
-    );
-  }
-);
-FeedRow.displayName = "FeedRow"; // [수정] 이 줄을 추가하면 에러가 사라집니다!
-
-/**
  * 피드 페이지 메인 컴포넌트
  */
 export default function FeedView({
@@ -1117,9 +1038,25 @@ export default function FeedView({
   isLoadingFeeds,
 }: FeedViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const observerTarget = useRef<HTMLDivElement>(null); // 무한 스크롤 감지용 타겟
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const listRef = useRef<any>(null);
+  // [기능 추가] Intersection Observer로 스크롤 끝 감지
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreFeeds && !isLoadingFeeds) {
+          loadMoreFeeds();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds]);
 
   // 스토어에서 targetCommentIdForFeed와 pivotFeedId 읽기
   const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } =
@@ -1161,12 +1098,12 @@ export default function FeedView({
     });
   }, [allFeeds, searchQuery]);
 
-  // 특정 피드로 스크롤 (윈도윙 적용)
+  // 특정 피드로 스크롤 (DOM ID 검색)
   useEffect(() => {
-    if (scrollToFeedId && listRef.current) {
-      const index = filteredFeeds.findIndex((f) => f.id === scrollToFeedId);
-      if (index !== -1) {
-        listRef.current.scrollToItem(index, "start");
+    if (scrollToFeedId) {
+      const element = document.getElementById(`feed-${scrollToFeedId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
         setScrollToFeedId(null);
       }
     }
@@ -1192,60 +1129,45 @@ export default function FeedView({
         />
       </div>
 
-      {/* 피드 리스트 - 윈도윙 적용 */}
-      <div className="flex-1 w-full h-full relative">
-        <AutoSizer>
-          {({ height, width }) => {
-            // FeedRow에 전달할 데이터 객체
-            const itemData: FeedData = {
-              feeds: filteredFeeds,
-              getFeedImageIndex,
-              setFeedImageIndex,
-              hasLiked,
-              handleLike,
-              pivotFeedId,
-              targetCommentIdForFeed,
-            };
-
-            return (
-              <List
-                ref={listRef}
-                height={height}
-                width={width}
-                itemCount={filteredFeeds.length}
-                // [중요] gap-4(16px)를 위해 itemSize를 높이+16으로 설정
-                itemSize={height + 16}
-                itemData={itemData}
-                className="snap-y snap-mandatory scrollbar-hide"
-                onItemsRendered={({
-                  visibleStopIndex,
-                }: {
-                  visibleStopIndex: number;
-                }) => {
-                  // 마지막 아이템이 보이면 추가 로드
-                  if (
-                    visibleStopIndex >= filteredFeeds.length - 1 &&
-                    hasMoreFeeds &&
-                    !isLoadingFeeds
-                  ) {
-                    loadMoreFeeds();
-                  }
-                }}
-              >
-                {FeedRow}
-              </List>
-            );
-          }}
-        </AutoSizer>
-
-        {/* 로딩 표시 (리스트 위에 오버레이) */}
-        {isLoadingFeeds && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-            <Loader2 className="w-8 h-8 text-[#C93831] animate-spin shadow-lg" />
-            {/* [수정] Loader2 컴포넌트 사용 */}
-            <Loader2 className="w-8 h-8 text-[#C93831] animate-spin shadow-lg" />
+      {/* 피드 리스트 - 일반 매핑 + 무한 스크롤 */}
+      <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide space-y-4 pb-4 snap-y snap-mandatory">
+        {filteredFeeds.map((feed, index) => (
+          <div
+            key={feed.id}
+            id={`feed-${feed.id}`}
+            className="w-full h-full min-h-[500px] snap-start snap-always"
+          >
+            <FeedItem
+              feed={feed}
+              currentImageIndex={getFeedImageIndex(feed.id)}
+              liked={hasLiked(feed.id)}
+              onPrevImage={() =>
+                setFeedImageIndex(feed.id, (prev: number) =>
+                  Math.max(0, prev - 1)
+                )
+              }
+              onNextImage={() =>
+                setFeedImageIndex(feed.id, (prev: number) =>
+                  Math.min(feed.images.length - 1, prev + 1)
+                )
+              }
+              onLike={() => handleLike(feed.id)}
+              isPriority={index === 0}
+              targetCommentId={
+                index === 0 && pivotFeedId && feed.id === pivotFeedId
+                  ? targetCommentIdForFeed
+                  : null
+              }
+            />
           </div>
-        )}
+        ))}
+
+        {/* 무한 스크롤 감지용 투명 타겟 */}
+        <div ref={observerTarget} className="h-4 w-full flex justify-center">
+          {isLoadingFeeds && (
+            <Loader2 className="w-8 h-8 text-[#C93831] animate-spin" />
+          )}
+        </div>
       </div>
     </div>
   );

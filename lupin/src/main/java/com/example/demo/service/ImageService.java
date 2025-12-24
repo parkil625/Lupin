@@ -5,6 +5,7 @@ import com.example.demo.config.ImagePolicyProperties;
 import com.example.demo.infrastructure.FileStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext; // 추가
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +32,7 @@ public class ImageService {
     private final ImageProcessor imageProcessor;
     private final ImageMetadataService imageMetadataService;
     private final ImagePolicyProperties imagePolicy;
+    private final ApplicationContext applicationContext; // 추가
 
     public String uploadImage(MultipartFile file) throws IOException {
         return uploadImage(file, null);
@@ -65,7 +67,8 @@ public class ImageService {
 
         // 4. 썸네일 비동기 생성 (feed, profiles 폴더)
         if ("feed".equals(prefix) || "profiles".equals(prefix)) {
-            generateThumbnailAsync(originalBytes, prefix, uuid);
+            // Self-invocation 문제 해결을 위해 프록시 빈을 통해 호출
+            applicationContext.getBean(ImageService.class).generateThumbnailAsync(originalBytes, prefix, uuid);
         }
 
         return fileStorage.getPublicUrl(fileName);

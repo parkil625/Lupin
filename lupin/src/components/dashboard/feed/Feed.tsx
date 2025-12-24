@@ -25,7 +25,6 @@ import {
   Flame,
   Clock,
   Zap,
-  Loader2,
 } from "lucide-react";
 import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";
@@ -1034,7 +1033,7 @@ export default function FeedView({
   const containerRef = useRef<HTMLDivElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  // [기능 수정] Intersection Observer 로직 강화
+  // [핵심] 무한 스크롤 트리거 (미리 로딩)
   useEffect(() => {
     // 로딩 중이거나 더 가져올 게 없으면 관찰하지 않음
     if (!hasMoreFeeds || isLoadingFeeds) return;
@@ -1046,25 +1045,25 @@ export default function FeedView({
         }
       },
       {
-        threshold: 0.1,
-        // [중요] 뷰포트가 아닌 '스크롤 컨테이너'를 기준으로 감지
+        threshold: 0,
         root: containerRef.current,
-        // [중요] 바닥에 닿기 50px 전부터 미리 로딩 시도
-        rootMargin: "0px 0px 50px 0px",
+        // [중요] 바닥에 닿기 300px 전부터 미리 로딩을 시도합니다.
+        // 스크롤이 튕기기 전에 데이터를 가져와서 자연스럽게 이어지게 합니다.
+        rootMargin: "0px 0px 300px 0px",
       }
     );
 
-    const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
+    const target = observerTarget.current;
+    if (target) {
+      observer.observe(target);
     }
 
     return () => {
-      if (currentTarget) observer.disconnect();
+      if (target) observer.disconnect();
     };
   }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds]);
 
-  // 스토어 관련 로직 (기존 유지)
+  // 스토어, 이미지 프리로드, 검색 등 기존 로직 유지
   const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } =
     useFeedStore();
 
@@ -1074,7 +1073,6 @@ export default function FeedView({
     };
   }, [targetCommentIdForFeed, setTargetCommentIdForFeed]);
 
-  // 이미지 프리로드 (기존 유지)
   useEffect(() => {
     if (allFeeds.length > 0 && allFeeds[0].images?.[0]) {
       const link = document.createElement("link");
@@ -1086,7 +1084,6 @@ export default function FeedView({
     }
   }, [allFeeds]);
 
-  // 검색 로직 (기존 유지)
   const authorSuggestions = useMemo(
     () => [...new Set(allFeeds.map((feed) => feed.author || feed.writerName))],
     [allFeeds]
@@ -1100,7 +1097,6 @@ export default function FeedView({
     });
   }, [allFeeds, searchQuery]);
 
-  // 스크롤 이동 로직 (기존 유지)
   useEffect(() => {
     if (scrollToFeedId) {
       const element = document.getElementById(`feed-${scrollToFeedId}`);
@@ -1120,9 +1116,9 @@ export default function FeedView({
   }, [feedContainerRef]);
 
   return (
-    <div ref={containerRef} className="h-full flex flex-col p-4 gap-4">
+    <div ref={containerRef} className="h-full flex flex-col p-4 gap-4 relative">
       {/* 검색바 */}
-      <div className="mx-auto max-w-2xl w-full flex-shrink-0">
+      <div className="mx-auto max-w-2xl w-full flex-shrink-0 z-10">
         <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
@@ -1131,13 +1127,13 @@ export default function FeedView({
         />
       </div>
 
-      {/* 피드 리스트 */}
-      <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide space-y-4 pb-4 snap-y snap-mandatory">
+      {/* 피드 리스트 컨테이너 */}
+      <div className="flex-1 w-full h-full overflow-y-auto scrollbar-hide space-y-4 pb-4 snap-y snap-mandatory relative">
         {filteredFeeds.map((feed, index) => (
           <div
             key={feed.id}
             id={`feed-${feed.id}`}
-            // snap-start: 스크롤이 이 요소에 딱 멈춤
+            // snap-start는 피드 아이템에만 유지 -> 스냅 느낌 살림
             className="w-full h-full min-h-[500px] snap-start snap-always"
           >
             <FeedItem
@@ -1165,22 +1161,29 @@ export default function FeedView({
           </div>
         ))}
 
-        {/* [핵심 수정] Loader 영역
-           1. snap-start 추가: 이제 스크롤이 튕기지 않고 로더 위치에 '안착'합니다.
-           2. min-h-[100px]: 높이가 너무 작으면 스냅이 안 걸릴 수 있어 높이를 확보합니다.
+        {/* [핵심 1] 투명 트리거 (Sentinel)
+            - snap-start가 없습니다! -> 스크롤이 여기 멈추지 않고 튕겨 올라갑니다 (Bounce).
+            - 하지만 IntersectionObserver가 얘를 감시해서 미리 데이터를 불러옵니다.
         */}
-        <div
-          ref={observerTarget}
-          className="w-full min-h-[100px] flex justify-center items-center py-4 snap-start scroll-mt-4"
-        >
-          {isLoadingFeeds ? (
-            <Loader2 className="w-8 h-8 text-[#C93831] animate-spin" />
-          ) : (
-            // 로딩 중 아닐 때: 더 불러올 피드가 있다면 투명한 박스를 둬서 스크롤이 걸리게 함
-            hasMoreFeeds && <div className="w-8 h-8" />
-          )}
-        </div>
+        <div ref={observerTarget} className="h-4 w-full" />
       </div>
+
+      {/* [핵심 2] 플로팅 로더 (Floating Loader)
+          - 리스트 바닥에 박혀있는 게 아니라 화면 하단에 둥둥 떠 있습니다.
+          - 스크롤이 튕겨 올라가서 바닥이 안 보여도 "로딩 중"임을 확실히 알 수 있습니다.
+          - Loader2 컴포넌트 대신 순수 CSS로 구현하여 에러를 없앴습니다.
+      */}
+      {isLoadingFeeds && (
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <div className="bg-white/90 backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.15)] rounded-full py-2 px-4 flex items-center gap-2 border border-gray-100">
+            {/* 순수 CSS 스피너 (에러 없음) */}
+            <div className="w-4 h-4 border-2 border-gray-200 border-t-[#C93831] rounded-full animate-spin" />
+            <span className="text-xs font-bold text-gray-700">
+              더 불러오는 중...
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

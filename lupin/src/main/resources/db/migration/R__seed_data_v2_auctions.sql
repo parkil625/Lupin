@@ -175,7 +175,7 @@ INSERT INTO auctions (
              30,
              'ENDED',
              15,
-             (SELECT id FROM users WHERE user_id = 'user01' LIMIT 1),
+             202,
     100
     );
 
@@ -210,7 +210,7 @@ INSERT INTO auctions (
              30,
              'ENDED',
              23,
-             (SELECT id FROM users WHERE user_id = 'user02' LIMIT 1),
+             201,
     200
     );
 

@@ -145,10 +145,14 @@ public class FeedTransactionService {
 
         feed.updateThumbnail(cleanStartKey);
 
-        // 3. 이미지 정보 갱신
-        feed.getImages().clear();
-        addImages(feed, cleanStartKey, cleanEndKey, otherImageKeys, resolvedStartTime, resolvedEndTime);
-
+        // 3. 이미지 정보 갱신 (이미지가 변경된 경우에만 수행)
+        if (imagesChanged) {
+            feed.updateThumbnail(cleanStartKey);
+            feed.getImages().clear();
+            addImages(feed, cleanStartKey, cleanEndKey, otherImageKeys, resolvedStartTime, resolvedEndTime);
+        }
+        // 이미지가 변경되지 않았다면 기존 DB에 있는 이미지와 시간을 그대로 유지합니다.
+        
         feedRepository.flush();
         return feed;
     }

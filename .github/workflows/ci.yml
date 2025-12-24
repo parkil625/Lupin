@@ -86,13 +86,13 @@ jobs:
         run: npm ci
 
       - name: Type check
-        run: npm run typecheck || true
+        run: npm run typecheck
 
       - name: Lint
-        run: npm run lint || true
+        run: npm run lint
 
       - name: Run tests
-        run: npm test -- --run --coverage || true
+        run: npm test -- --run --coverage
 
       - name: Upload coverage to Codecov
         if: always()

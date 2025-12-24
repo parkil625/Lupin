@@ -6,7 +6,13 @@
  * - FeedV2 디자인 적용
  */
 
-import { useState, useEffect, useRef, useMemo, ComponentType } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  ComponentType,
+} from "react";
 import SearchInput from "@/components/molecules/SearchInput";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
@@ -25,6 +31,7 @@ import {
   Flame,
   Clock,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { commentApi, reportApi, getCdnUrl } from "@/api";
 import { toast } from "sonner";

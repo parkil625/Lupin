@@ -65,7 +65,6 @@ public class SecurityConfig {
             "/api/users/sync-points",
             "/api/notifications/subscribe",
             "/api/auction/stream/**",
-            "/api/prescriptions/medicines/**"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;

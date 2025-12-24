@@ -83,6 +83,7 @@ public class PrescriptionController {
 
     @Operation(summary = "약품 검색", description = "약품명으로 검색합니다.")
     @GetMapping("/medicines/search")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<List<MedicineResponse>> searchMedicines(@RequestParam String query) {
         List<MedicineResponse> medicines = medicineRepository
                 .findByNameContainingIgnoreCaseAndIsActiveTrue(query)
@@ -94,6 +95,7 @@ public class PrescriptionController {
 
     @Operation(summary = "전체 약품 목록 조회", description = "활성화된 모든 약품을 조회합니다.")
     @GetMapping("/medicines")
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<List<MedicineResponse>> getAllMedicines() {
         List<MedicineResponse> medicines = medicineRepository
                 .findByIsActiveTrueOrderByNameAsc()

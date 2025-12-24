@@ -86,8 +86,11 @@ public class FeedTransactionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
         feed.validateOwner(user);
 
-        // [수정] 안전하게 기존 시간 찾기 (URL 포함관계 확인)
-        // 기존 맵 방식은 URL 불일치 시 null 반환 위험이 있어 findCapturedAtSafe 사용
+        // 1. URL 정규화 (변수 복구)
+        String cleanStartKey = extractKey(startImageKey);
+        String cleanEndKey = extractKey(endImageKey);
+
+        // 2. 기존 이미지 시간 안전하게 찾기
         LocalDateTime existingStartTime = findCapturedAtSafe(feed, startImageKey);
         LocalDateTime existingEndTime = findCapturedAtSafe(feed, endImageKey);
 
@@ -104,41 +107,39 @@ public class FeedTransactionService {
 
         if (shouldRecalculate) {
             if (imagesChanged) {
-                // 이미지 변경 시: 프론트/S3에서 추출한 새 시간 사용
+                // A. 이미지가 바뀌었으면 -> 프론트/S3에서 추출한 새 시간
                 resolvedStartTime = startTimeOpt.orElse(null);
                 resolvedEndTime = endTimeOpt.orElse(null);
             } else {
-                // 운동만 변경 시: 기존 DB 시간 유지
+                // B. 이미지는 그대로, 운동만 바뀐 경우 -> 기존 DB 시간
                 resolvedStartTime = existingStartTime;
                 resolvedEndTime = existingEndTime;
             }
 
-            // 시간 정보가 없으면 계산 불가 (기존 유지 or 에러)
-            // 여기서는 운동 종류를 바꿨는데 시간이 없으면 0점이 될 수 있으므로 방어 로직 필요
             if (resolvedStartTime != null && resolvedEndTime != null) {
                 WorkoutScoreService.WorkoutResult workoutResult =
-                        workoutScoreService.validateAndCalculate(activity, 
-                                Optional.of(resolvedStartTime), 
-                                Optional.of(resolvedEndTime), 
+                        workoutScoreService.validateAndCalculate(activity,
+                                Optional.of(resolvedStartTime),
+                                Optional.of(resolvedEndTime),
                                 feed.getCreatedAt().toLocalDate());
 
                 if (workoutResult.valid()) {
                     feed.updateScore((long) workoutResult.score(), workoutResult.calories());
                     pointService.adjustFeedPoints(user, oldPoints, workoutResult.score());
+                } else {
+                    // [수정] 0.0(double) -> 0(int) 타입 수정
+                    feed.updateScore(0L, 0);
+                    pointService.adjustFeedPoints(user, oldPoints, 0L);
                 }
             } else {
-                log.warn("Feed update score skipped: Time metadata missing. imagesChanged={}, activityChanged={}", imagesChanged, activityChanged);
-                // 이미지가 변경되었는데 시간이 없으면 에러 처리가 나을 수 있음
-                if (imagesChanged) {
-                    throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED);
-                }
-                // 운동만 바꿨는데 시간이 없으면? 기존 점수 유지할지 0점 만들지 정책 결정 필요.
-                // 현재는 기존 점수 유지 (updateScore 호출 안함)
+                // [수정] 0.0(double) -> 0(int) 타입 수정
+                feed.updateScore(0L, 0);
+                pointService.adjustFeedPoints(user, oldPoints, 0L);
             }
         } else {
-            // 변경사항 없음 -> 시간 정보 복구 (DB 유지를 위해)
-            resolvedStartTime = oldTimeMap.get(cleanStartKey);
-            resolvedEndTime = oldTimeMap.get(cleanEndKey);
+            // 변경사항 없음: 기존 시간 유지
+            resolvedStartTime = existingStartTime;
+            resolvedEndTime = existingEndTime;
         }
 
         feed.updateThumbnail(cleanStartKey);

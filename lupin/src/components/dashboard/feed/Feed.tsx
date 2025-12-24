@@ -1241,6 +1241,7 @@ export default function FeedView({
         {/* 로딩 표시 (리스트 위에 오버레이) */}
         {isLoadingFeeds && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <Loader2 className="w-8 h-8 text-[#C93831] animate-spin shadow-lg" />
             {/* [수정] Loader2 컴포넌트 사용 */}
             <Loader2 className="w-8 h-8 text-[#C93831] animate-spin shadow-lg" />
           </div>

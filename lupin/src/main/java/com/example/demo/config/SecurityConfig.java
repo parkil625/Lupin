@@ -64,7 +64,8 @@ public class SecurityConfig {
             "/api/users/*/ranking-context",
             "/api/users/sync-points",
             "/api/notifications/subscribe",
-            "/api/auction/stream/**"
+            "/api/auction/stream/**",
+            "/api/prescriptions/medicines/**"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;

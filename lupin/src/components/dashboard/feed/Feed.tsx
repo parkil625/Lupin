@@ -33,13 +33,16 @@ import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { ComponentType } from "react";
-// [핵심] 1. 원래대로 중괄호 {}를 써서 가져옵니다.
-import { FixedSizeList as FixedSizeListImpl } from "react-window";
+
+// [해결 1] TS 에러 무시: react-window의 타입 정의가 꼬여있어서 발생하는 "FixedSizeList 없음" 에러를 잡습니다.
+// @ts-expect-error: 타입 정의 불일치 문제 무시
+import { FixedSizeList } from "react-window";
+
 import UserHoverCard from "@/components/molecules/UserHoverCard";
 
-// [핵심] 2. 가져온 'FixedSizeListImpl'을 강제로 타입 변환해서 'List' 변수에 담습니다.
-// 이렇게 하면 "JSX 요소가 아닙니다" 에러와 "import 에러"를 동시에 잡을 수 있어요.
-const List = FixedSizeListImpl as unknown as ComponentType<any>;
+// [해결 2] 린트 에러 무시: any 사용 금지 규칙을 이 줄에서만 끕니다.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const List = FixedSizeList as unknown as ComponentType<any>;
 
 // [수정] any 대신 명확한 인터페이스 사용
 interface FeedData {

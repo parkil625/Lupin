@@ -438,16 +438,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       if (message.type === "CONSULTATION_END") {
         const doctorName = message.doctorName || "담당 의사";
 
-        // 1. 즉시 상태 초기화 (UI를 먼저 변경)
+        // 1. 동기적으로 alert를 가장 먼저 표시 (블로킹)
+        alert("진료가 종료되었습니다.\n예약 목록으로 이동합니다.");
+
+        // 2. alert를 닫은 후 상태 초기화
         setActiveAppointment(null);
         setIsChatEnded(true);
         setMessages([]);
         setViewState("LIST");
-
-        // 2. 동기적으로 alert 표시 (상태 변경 직후)
-        setTimeout(() => {
-          alert("진료가 종료되었습니다.\n예약 목록으로 이동합니다.");
-        }, 0);
 
         // 3. 백그라운드에서 데이터 새로고침
         try {

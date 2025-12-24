@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -25,7 +25,9 @@ export function parseBlockNoteContent(content: string): string {
           }
           if (Array.isArray(block.content)) {
             return block.content
-              .map((item: string | { text?: string }) => (typeof item === "string" ? item : item.text || ""))
+              .map((item: string | { text?: string }) =>
+                typeof item === "string" ? item : item.text || ""
+              )
               .join("");
           }
           return "";
@@ -75,3 +77,12 @@ export function getRelativeTime(date: Date | string): string {
   if (diffMonths < 12) return `${diffMonths}개월 전`;
   return `${diffYears}년 전`;
 }
+
+export const getCdnUrl = (path?: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+
+  return `https://cdn.lupin-care.com/${cleanPath}`;
+};

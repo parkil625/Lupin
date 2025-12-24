@@ -7,7 +7,6 @@ interface UseWebSocketProps {
   roomId: string;
   userId: number;
   onMessageReceived: (message: ChatMessageResponse) => void;
-  // 🔧 제거: onReadNotification (REST API로만 처리)
 }
 
 export const useWebSocket = ({
@@ -44,10 +43,13 @@ export const useWebSocket = ({
     // 배포 환경이면 '현재 접속한 도메인(lupin-care 등)' 뒤에 /ws를 붙여서 연결
     const socketUrl = isLocal
       ? "http://localhost:8081/ws"
-      : `${window.location.origin}/ws`;
+      : "https://api.lupin-care.com/ws";
 
     const client = new Client({
-      webSocketFactory: () => new SockJS(socketUrl),
+      webSocketFactory: () =>
+        new SockJS(socketUrl, null, {
+          transports: ["websocket"],
+        }),
       debug: () => {
         // 프로덕션 환경에서는 debug 로그 비활성화
       },

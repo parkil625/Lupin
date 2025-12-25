@@ -99,7 +99,18 @@ export default function FeedDetailDialogHome({
   }>({});
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [feedReported, setFeedReported] = useState(false);
+  // [수정] 초기값을 feed의 isReported로 설정
+  const [feedReported, setFeedReported] = useState(feed?.isReported || false);
+  // [추가] 이전 피드 ID를 추적하기 위한 State (props 변경 감지용)
+  const [prevFeedId, setPrevFeedId] = useState(feed?.id);
+
+  // [수정] useEffect 제거 및 Render-Time Update 패턴 적용
+  // 피드가 바뀌었을 때 렌더링 도중 즉시 상태를 동기화하여 불필요한 리렌더링과 경고를 방지합니다.
+  if (feed?.id !== prevFeedId) {
+    setPrevFeedId(feed?.id);
+    setFeedReported(feed?.isReported || false);
+  }
+
   const [commentReported, setCommentReported] = useState<{
     [key: number]: boolean;
   }>({});

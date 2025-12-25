@@ -38,7 +38,7 @@ VALUES
     (106, '산부인과',   'DOC-2024-106', 10, '010-6666-6666', '1983-09-09', '여성', '서울시 용산구', NOW());
 
 -- 4. medicines (약, 효능, 주의 사항)
-INSERT INTO medicines (code, name, description, precautions) VALUES
+INSERT IGNORE INTO medicines (code, name, description, precautions) VALUES
 -- [신경정신과: 우울증, 불안, 불면증]
 ('M001', '렉사프로정 10mg', 'SSRI 계열 우울증 및 불안장애 치료제', '갑작스러운 중단 금기, 초기 구역질 주의'),
 ('M002', '자나팜정 0.25mg', '불안장애, 공황장애, 우울증에 수반하는 불안', '졸음 유발 가능, 알코올 병용 금지, 운전 주의'),

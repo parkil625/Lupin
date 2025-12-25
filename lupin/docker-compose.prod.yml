@@ -17,7 +17,7 @@ services:
 
   # Spring Boot 앱
   app:
-    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
+    image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
     env_file: .env
     container_name: lupin-app
     expose:

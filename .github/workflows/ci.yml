@@ -213,6 +213,7 @@ jobs:
             # 2. .env 파일 생성 (환경변수 주입)
             echo "ECR_REGISTRY=${{ secrets.ECR_REGISTRY }}" > .env
             echo "ECR_REPOSITORY=${{ env.ECR_REPOSITORY }}" >> .env
+            echo "IMAGE_TAG=${{ github.sha }}" >> .env
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
             echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
             echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
@@ -224,12 +225,13 @@ jobs:
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
 
             # 3. Docker Compose 실행
-            # (구버전 호환을 위해 docker-compose로 변경 + sudo 추가)
+            # (태그가 바뀌었으므로 pull 받으면 무조건 새 버전입니다)
             sudo docker-compose -f docker-compose.prod.yml pull
             sudo docker-compose -f docker-compose.prod.yml down
             sudo docker-compose -f docker-compose.prod.yml up -d
 
-            docker system prune -af
+            # (디스크 꽉 참 방지: 안 쓰는 구버전 이미지 삭제)
+            sudo docker system prune -af
 
       - name: Deployment result
         if: always()

@@ -28,8 +28,9 @@ class UserPenaltyRepositoryTest extends BaseRepositoryTest {
                 .build());
 
         // when
-        boolean exists = userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(
-                user, PenaltyType.FEED, LocalDateTime.now().minusDays(3));
+        // [수정] user -> user.getId()
+        boolean exists = userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(
+                user.getId(), PenaltyType.FEED, LocalDateTime.now().minusDays(3));
 
         // then
         assertThat(exists).isTrue();
@@ -47,8 +48,8 @@ class UserPenaltyRepositoryTest extends BaseRepositoryTest {
                 .build());
 
         // when
-        boolean exists = userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(
-                user, PenaltyType.FEED, LocalDateTime.now().minusDays(3));
+        boolean exists = userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(
+                user.getId(), PenaltyType.FEED, LocalDateTime.now().minusDays(3));
 
         // then
         assertThat(exists).isFalse();
@@ -66,8 +67,8 @@ class UserPenaltyRepositoryTest extends BaseRepositoryTest {
                 .build());
 
         // when
-        boolean exists = userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(
-                user, PenaltyType.FEED, LocalDateTime.now().minusDays(3));
+        boolean exists = userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(
+                user.getId(), PenaltyType.FEED, LocalDateTime.now().minusDays(3));
 
         // then
         assertThat(exists).isFalse();

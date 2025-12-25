@@ -95,8 +95,8 @@ class CommentServiceTest {
                 .content(content)
                 .build();
 
-        // 패널티 확인 Mock 추가
-        given(userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(any(), any(), any()))
+        // [수정] 패널티 확인 Mock 추가
+        given(userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(any(), any(), any()))
                 .willReturn(false);
 
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));

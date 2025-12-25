@@ -49,6 +49,7 @@
     "react-hot-toast": "^2.6.0",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^7.9.6",
+    "react-virtuoso": "^4.17.0",
     "recharts": "^2.15.2",
     "sockjs-client": "^1.6.1",
     "sonner": "^2.0.3",

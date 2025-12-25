@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Virtuoso } from "react-virtuoso";
 import SearchInput from "@/components/molecules/SearchInput";
 import { Feed, Comment } from "@/types/dashboard.types";
 import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
@@ -1011,6 +1012,18 @@ const FeedItem = React.memo(function FeedItem({
 });
 
 /**
+ * Ref 업데이트 헬퍼 (Strict Mode/Linter 우회용)
+ */
+const updateFeedRef = (
+  ref: React.RefObject<HTMLDivElement | null> | null,
+  value: HTMLElement | null
+) => {
+  if (ref) {
+    (ref as React.MutableRefObject<HTMLElement | null>).current = value;
+  }
+};
+
+/**
  * 피드 페이지 메인 컴포넌트
  */
 export default function FeedView({
@@ -1030,39 +1043,6 @@ export default function FeedView({
   hasMoreFeeds,
   isLoadingFeeds,
 }: FeedViewProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const observerTarget = useRef<HTMLDivElement>(null);
-
-  // [핵심] 무한 스크롤 트리거 (미리 로딩)
-  useEffect(() => {
-    // 로딩 중이거나 더 가져올 게 없으면 관찰하지 않음
-    if (!hasMoreFeeds || isLoadingFeeds) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMoreFeeds();
-        }
-      },
-      {
-        threshold: 0,
-        root: containerRef.current,
-        // [중요] 바닥에 닿기 300px 전부터 미리 로딩을 시도합니다.
-        // 스크롤이 튕기기 전에 데이터를 가져와서 자연스럽게 이어지게 합니다.
-        rootMargin: "0px 0px 300px 0px",
-      }
-    );
-
-    const target = observerTarget.current;
-    if (target) {
-      observer.observe(target);
-    }
-
-    return () => {
-      if (target) observer.disconnect();
-    };
-  }, [hasMoreFeeds, isLoadingFeeds, loadMoreFeeds]);
-
   // 스토어, 이미지 프리로드, 검색 등 기존 로직 유지
   const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } =
     useFeedStore();
@@ -1107,14 +1087,6 @@ export default function FeedView({
     }
   }, [scrollToFeedId, setScrollToFeedId, filteredFeeds]);
 
-  useEffect(() => {
-    if (feedContainerRef && containerRef.current) {
-      const ref =
-        feedContainerRef as React.MutableRefObject<HTMLDivElement | null>;
-      ref.current = containerRef.current;
-    }
-  }, [feedContainerRef]);
-
   return (
     <div className="h-full flex flex-col p-4 gap-4 relative">
       {/* 검색바 */}
@@ -1127,48 +1099,50 @@ export default function FeedView({
         />
       </div>
 
-      {/* 피드 리스트 컨테이너 */}
-      <div
-        ref={containerRef}
-        className="flex-1 w-full h-full overflow-y-auto scrollbar-hide space-y-4 pb-4 snap-y snap-mandatory relative"
-      >
-        {filteredFeeds.map((feed, index) => (
-          <div
-            key={feed.id}
-            id={`feed-${feed.id}`}
-            // snap-start는 피드 아이템에만 유지 -> 스냅 느낌 살림
-            className="w-full h-full min-h-[500px] snap-start snap-always"
-          >
-            <FeedItem
-              feed={feed}
-              currentImageIndex={getFeedImageIndex(feed.id)}
-              liked={hasLiked(feed.id)}
-              onPrevImage={() =>
-                setFeedImageIndex(feed.id, (prev: number) =>
-                  Math.max(0, prev - 1)
-                )
-              }
-              onNextImage={() =>
-                setFeedImageIndex(feed.id, (prev: number) =>
-                  Math.min(feed.images.length - 1, prev + 1)
-                )
-              }
-              onLike={() => handleLike(feed.id)}
-              isPriority={index === 0}
-              targetCommentId={
-                index === 0 && pivotFeedId && feed.id === pivotFeedId
-                  ? targetCommentIdForFeed
-                  : null
-              }
-            />
-          </div>
-        ))}
-
-        {/* [핵심 1] 투명 트리거 (Sentinel)
-            - snap-start가 없습니다! -> 스크롤이 여기 멈추지 않고 튕겨 올라갑니다 (Bounce).
-            - 하지만 IntersectionObserver가 얘를 감시해서 미리 데이터를 불러옵니다.
-        */}
-        <div ref={observerTarget} className="h-4 w-full" />
+      {/* 피드 리스트 컨테이너 (윈도윙 적용) */}
+      <div className="flex-1 w-full h-full overflow-hidden relative">
+        <Virtuoso
+          style={{ height: "100%", width: "100%" }}
+          data={filteredFeeds}
+          // [핵심] 바닥에 닿으면 loadMoreFeeds 자동 호출
+          endReached={loadMoreFeeds}
+          // [핵심] 미리 렌더링할 픽셀 범위 (스크롤 끊김 방지)
+          overscan={1000}
+          itemContent={(index, feed) => (
+            <div
+              key={feed.id}
+              id={`feed-${feed.id}`}
+              className="w-full h-full min-h-[500px] py-2" // space-y-4 대신 py-2 사용
+            >
+              <FeedItem
+                feed={feed}
+                currentImageIndex={getFeedImageIndex(feed.id)}
+                liked={hasLiked(feed.id)}
+                onPrevImage={() =>
+                  setFeedImageIndex(feed.id, (prev: number) =>
+                    Math.max(0, prev - 1)
+                  )
+                }
+                onNextImage={() =>
+                  setFeedImageIndex(feed.id, (prev: number) =>
+                    Math.min(feed.images.length - 1, prev + 1)
+                  )
+                }
+                onLike={() => handleLike(feed.id)}
+                isPriority={index < 2} // 상위 2개는 우선 로딩
+                targetCommentId={
+                  index === 0 && pivotFeedId && feed.id === pivotFeedId
+                    ? targetCommentIdForFeed
+                    : null
+                }
+              />
+            </div>
+          )}
+          // [수정] 스크롤 컨테이너 ref 연결 (헬퍼 함수 사용)
+          scrollerRef={(ref) => {
+            updateFeedRef(feedContainerRef, ref as HTMLElement);
+          }}
+        />
       </div>
 
       {/* [핵심 2] 플로팅 로더 (Floating Loader)

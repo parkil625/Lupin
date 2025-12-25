@@ -42,6 +42,9 @@ public class Feed {
     @OrderBy("sortOrder ASC")
     private List<FeedImage> images = new ArrayList<>();
 
+    @OneToMany(mappedBy = "feed", cascade = CascadeType.REMOVE)
+    private List<FeedReport> feedReports = new ArrayList<>();
+
     @Column(nullable = false, length = 50)
     private String activity;
 

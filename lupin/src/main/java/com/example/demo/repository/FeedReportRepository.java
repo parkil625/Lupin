@@ -32,4 +32,8 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
 
     @Query("SELECT COUNT(fr) > 0 FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
     boolean existsByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
+
+    // [성능 최적화] 여러 피드에 대해 내가 신고한 피드 ID 목록 조회 (Batch Fetch)
+    @Query("SELECT fr.feed.id FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id IN :feedIds")
+    java.util.List<Long> findReportedFeedIdsByReporterId(@Param("reporterId") Long reporterId, @Param("feedIds") java.util.List<Long> feedIds);
 }

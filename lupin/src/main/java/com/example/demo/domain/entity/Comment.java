@@ -44,6 +44,15 @@ public class Comment {
     @Builder.Default
     private List<Comment> replies = new ArrayList<>();
 
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.REMOVE)
+    @Builder.Default
+    private List<CommentReport> commentReports = new ArrayList<>();
+
+    // [수정] 좋아요 수 (반정규화) - Builder.Default 추가
+    @Column(name = "like_count", nullable = false)
+    @Builder.Default
+    private int likeCount = 0;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 

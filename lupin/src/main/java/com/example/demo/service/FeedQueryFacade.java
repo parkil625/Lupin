@@ -91,14 +91,34 @@ public class FeedQueryFacade {
      */
     private SliceResponse<FeedResponse> toSliceResponse(Slice<Feed> feeds, User user, int page, int size) {
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
+        
+        // [성능 최적화] N+1 방지: ID 목록 추출 후 한 번의 쿼리로 조회
+        java.util.Set<Long> likedFeedIds = java.util.Collections.emptySet();
+        java.util.Set<Long> reportedFeedIds = java.util.Collections.emptySet();
+
+        if (user != null && !feeds.isEmpty()) {
+            List<Long> feedIds = feeds.getContent().stream().map(Feed::getId).toList();
+            // 좋아요 목록 Batch 조회 (repository에 해당 메서드가 없다면 추가 필요, 유사하게 구현)
+            // likedFeedIds = new java.util.HashSet<>(feedLikeRepository.findLikedFeedIdsByUserId(user.getId(), feedIds)); 
+            // 위 메서드가 없다면 기존처럼 루프 돌거나 repository 추가 필요. 여기선 reported만 최적화 예시
+            
+            // 신고 목록 Batch 조회
+            reportedFeedIds = new java.util.HashSet<>(feedReportRepository.findReportedFeedIdsByReporterId(user.getId(), feedIds));
+        }
+
+        final java.util.Set<Long> finalReportedFeedIds = reportedFeedIds;
+
         List<FeedResponse> content = feeds.getContent().stream()
                 .map(feed -> {
                     boolean isLiked = false;
-                    boolean isReported = false;
+                    // 좋아요는 기존 로직 유지 (필요 시 위와 같이 최적화 권장)
                     if (user != null) {
                         isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feed.getId());
-                        isReported = feedReportRepository.existsByReporterIdAndFeedId(user.getId(), feed.getId());
                     }
+                    
+                    // 신고 여부는 메모리(Set)에서 O(1)로 확인
+                    boolean isReported = finalReportedFeedIds.contains(feed.getId());
+
                     return FeedResponse.from(feed, isLiked, isReported, activeDaysMap.getOrDefault(feed.getWriter().getId(), 0));
                 })
                 .toList();

@@ -901,7 +901,7 @@ const FeedItem = React.memo(function FeedItem({
   return (
     <div
       // [수정] 피드 높이 미세 조정 (216px -> 196px)
-      className={`h-[calc(100vh-196px)] md:h-[85vh] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
+      className={`h-[calc(100vh-180px)] md:h-[85vh] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">

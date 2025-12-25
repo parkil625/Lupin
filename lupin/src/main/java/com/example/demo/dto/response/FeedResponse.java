@@ -55,6 +55,30 @@ public class FeedResponse {
     }
 
     /**
+     * [권장] viewerId를 통해 신고 여부를 DB(엔티티 관계)에서 직접 확인하여 정확한 상태 반환
+     */
+    public static FeedResponse from(Feed feed, Long viewerId) {
+        boolean isReported = false;
+        if (viewerId != null && feed.getFeedReports() != null) {
+            isReported = feed.getFeedReports().stream()
+                    .anyMatch(report -> report.getReporter().getId().equals(viewerId));
+        }
+        return from(feed, false, isReported, null);
+    }
+
+    /**
+     * [권장] viewerId를 통해 좋아요 및 신고 여부를 모두 확인
+     */
+    public static FeedResponse from(Feed feed, Long viewerId, boolean isLiked) {
+        boolean isReported = false;
+        if (viewerId != null && feed.getFeedReports() != null) {
+            isReported = feed.getFeedReports().stream()
+                    .anyMatch(report -> report.getReporter().getId().equals(viewerId));
+        }
+        return from(feed, isLiked, isReported, null);
+    }
+
+    /**
      * [최적화] Feed 엔티티의 반정규화 필드 사용 + activeDays + isReported 포함
      */
     public static FeedResponse from(Feed feed, boolean isLiked, boolean isReported, Integer activeDays) {
@@ -84,6 +108,7 @@ public class FeedResponse {
 
     /**
      * @deprecated 반정규화 필드 사용으로 대체 - from(Feed, boolean) 사용 권장
+     * (테스트 호환성을 위해 유지)
      */
     @Deprecated
     public static FeedResponse from(Feed feed, long likeCount, long commentCount) {
@@ -104,6 +129,7 @@ public class FeedResponse {
                 .likes(likeCount)
                 .comments(commentCount)
                 .isLiked(false)
+                .isReported(false)
                 .createdAt(feed.getCreatedAt())
                 .updatedAt(feed.getUpdatedAt())
                 .build();
@@ -131,6 +157,7 @@ public class FeedResponse {
                 .likes(likeCount)
                 .comments(commentCount)
                 .isLiked(isLiked)
+                .isReported(false)
                 .createdAt(feed.getCreatedAt())
                 .updatedAt(feed.getUpdatedAt())
                 .build();

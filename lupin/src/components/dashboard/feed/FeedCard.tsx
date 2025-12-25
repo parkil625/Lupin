@@ -52,9 +52,13 @@ export function FeedCard({
   onImageIndexChange,
   onLike,
 }: FeedCardProps) {
-  // 추가할 코드
   const [showComments, setShowComments] = useState(false);
-  const [isReported, setIsReported] = useState(feed.isReported || false); // DB 상태로 초기화
+  const [isReported, setIsReported] = useState(feed.isReported || false);
+
+  // [상태 동기화] 서버에서 가져온 feed 정보가 바뀌면(새로고침 등) 상태 강제 업데이트
+  React.useEffect(() => {
+    setIsReported(feed.isReported || false);
+  }, [feed.isReported]);
 
   // [신고 핸들러] 신고 상태 토글
   const handleReport = async () => {

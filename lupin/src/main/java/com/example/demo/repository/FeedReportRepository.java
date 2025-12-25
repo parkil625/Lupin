@@ -29,4 +29,7 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
 
     // [추가] 객체 대신 ID로 카운트 조회 (Proxy 문제 해결용)
     long countByFeedId(Long feedId);
+
+    @Query("SELECT COUNT(fr) > 0 FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
+    boolean existsByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
 }

@@ -26,6 +26,8 @@ public class FeedQueryFacade {
 
     private final FeedService feedService;
     private final FeedMapper feedMapper;
+    private final com.example.demo.repository.FeedLikeRepository feedLikeRepository;
+    private final com.example.demo.repository.FeedReportRepository feedReportRepository;
 
     /**
      * 홈 피드 목록 조회 (조립 로직 포함)
@@ -90,7 +92,15 @@ public class FeedQueryFacade {
     private SliceResponse<FeedResponse> toSliceResponse(Slice<Feed> feeds, User user, int page, int size) {
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
         List<FeedResponse> content = feeds.getContent().stream()
-                .map(feed -> feedMapper.toResponse(feed, user, activeDaysMap))
+                .map(feed -> {
+                    boolean isLiked = false;
+                    boolean isReported = false;
+                    if (user != null) {
+                        isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feed.getId());
+                        isReported = feedReportRepository.existsByReporterIdAndFeedId(user.getId(), feed.getId());
+                    }
+                    return FeedResponse.from(feed, isLiked, isReported, activeDaysMap.getOrDefault(feed.getWriter().getId(), 0));
+                })
                 .toList();
         return SliceResponse.of(content, feeds.hasNext(), page, size);
     }

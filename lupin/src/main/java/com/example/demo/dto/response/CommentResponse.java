@@ -25,6 +25,8 @@ public class CommentResponse {
     private LocalDateTime updatedAt;
 
     public static CommentResponse from(Comment comment) {
+        private Boolean isReported;
+
         return CommentResponse.builder()
                 .id(comment.getId())
                 .feedId(comment.getFeed().getId())
@@ -36,20 +38,25 @@ public class CommentResponse {
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
-                .likeCount(0L)
-                .isLiked(false)
-                .build();
+            .likeCount(0L)
+            .isLiked(false)
+            .isReported(false)
+            .build();
     }
 
     public static CommentResponse from(Comment comment, long likeCount, boolean isLiked) {
-        return from(comment, likeCount, isLiked, null);
+        return from(comment, likeCount, isLiked, false, null);
     }
 
-    public static CommentResponse from(Comment comment, long likeCount, boolean isLiked, Integer activeDays) {
+    public static CommentResponse from(Comment comment, long likeCount, boolean isLiked, boolean isReported) {
+        return from(comment, likeCount, isLiked, isReported, null);
+    }
+
+    public static CommentResponse from(Comment comment, long likeCount, boolean isLiked, boolean isReported, Integer activeDays) {
         return CommentResponse.builder()
-                .id(comment.getId())
-                .feedId(comment.getFeed().getId())
-                .content(comment.getContent())
+            .id(comment.getId())
+            .feedId(comment.getFeed().getId())
+            .content(comment.getContent())
                 .writerName(comment.getWriter().getName())
                 .writerAvatar(comment.getWriter().getAvatar())
                 .writerDepartment(comment.getWriter().getDepartment())
@@ -58,8 +65,9 @@ public class CommentResponse {
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
-                .likeCount(likeCount)
-                .isLiked(isLiked)
-                .build();
+            .likeCount(likeCount)
+            .isLiked(isLiked)
+            .isReported(isReported)
+            .build();
     }
 }

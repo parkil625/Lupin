@@ -34,6 +34,7 @@ public class CommentReadService {
 
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final com.example.demo.repository.CommentReportRepository commentReportRepository;
     private final FeedRepository feedRepository;
 
     /**
@@ -100,16 +101,26 @@ public class CommentReadService {
 
         List<Long> commentIds = comments.stream().map(Comment::getId).toList();
         Map<Long, Long> likeCounts = getLikeCountMap(commentIds);
-        Set<Long> likedIds = currentUser != null
-                ? getLikedCommentIds(currentUser.getId(), commentIds)
-                : Collections.emptySet();
+
+        Set<Long> likedIds = Collections.emptySet();
+        Set<Long> reportedIds = Collections.emptySet();
+
+        if (currentUser != null) {
+            likedIds = getLikedCommentIds(currentUser.getId(), commentIds);
+            reportedIds = getReportedCommentIds(currentUser.getId(), commentIds);
+        }
+
         Map<Long, Integer> activeDaysMap = getActiveDaysMap(comments);
+
+        final Set<Long> finalLikedIds = likedIds;
+        final Set<Long> finalReportedIds = reportedIds;
 
         return comments.stream()
                 .map(comment -> CommentResponse.from(
                         comment,
                         likeCounts.getOrDefault(comment.getId(), 0L),
-                        likedIds.contains(comment.getId()),
+                        finalLikedIds.contains(comment.getId()),
+                        finalReportedIds.contains(comment.getId()),
                         activeDaysMap.getOrDefault(comment.getWriter().getId(), 0)
                 ))
                 .toList();
@@ -137,6 +148,13 @@ public class CommentReadService {
             return Collections.emptySet();
         }
         return Set.copyOf(commentLikeRepository.findLikedCommentIdsByUserId(userId, commentIds));
+    }
+
+    private Set<Long> getReportedCommentIds(Long userId, List<Long> commentIds) {
+        if (commentIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return Set.copyOf(commentReportRepository.findReportedCommentIdsByReporterId(userId, commentIds));
     }
 
     /**

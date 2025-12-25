@@ -75,8 +75,9 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
         const response = await commentApi.getCommentsByFeedId(feedId, 0, 100);
         const commentList = response.content || response;
 
-        // 좋아요 정보 초기화
+        // 좋아요 및 신고 정보 초기화
         const likesMap: Record<number, { liked: boolean; count: number }> = {};
+        const reportedMap: Record<number, boolean> = {};
 
         const commentsWithReplies = await Promise.all(
           commentList.map(
@@ -88,12 +89,17 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
               createdAt?: string;
               likeCount?: number;
               isLiked?: boolean;
+              isReported?: boolean;
             }) => {
               // 댓글 좋아요 정보 저장
               likesMap[comment.id] = {
                 liked: comment.isLiked || false,
                 count: comment.likeCount || 0,
               };
+              // 댓글 신고 정보 저장
+              if (comment.isReported) {
+                reportedMap[comment.id] = true;
+              }
 
               try {
                 const replies = await commentApi.getRepliesByCommentId(
@@ -108,6 +114,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                     createdAt?: string;
                     likeCount?: number;
                     isLiked?: boolean;
+                    isReported?: boolean; // [수정] 필드 추가
                   }) => {
                     // 답글 좋아요 정보 저장
                     if (reply.id) {
@@ -115,6 +122,10 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                         liked: reply.isLiked || false,
                         count: reply.likeCount || 0,
                       };
+                      // 답글 신고 정보 저장
+                      if (reply.isReported) {
+                        reportedMap[reply.id] = true;
+                      }
                     }
                     return {
                       ...reply,
@@ -154,6 +165,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
         );
 
         setCommentLikes(likesMap);
+        setCommentReported(reportedMap); // 신고 상태 초기화
         setComments(commentsWithReplies);
       } catch (error) {
         console.error("댓글 로드 실패:", error);

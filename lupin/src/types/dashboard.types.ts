@@ -42,6 +42,7 @@ export interface Comment {
   isDeleted?: boolean;
   likeCount?: number;
   isLiked?: boolean;
+  isReported?: boolean;
   updatedAt?: string;
 }
 

@@ -30,4 +30,7 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
     @Modifying
     @Query("DELETE FROM CommentReport cr WHERE cr.comment.feed.id = :feedId")
     void deleteByFeedId(@Param("feedId") Long feedId);
+
+    @Query("SELECT cr.comment.id FROM CommentReport cr WHERE cr.reporter.id = :reporterId AND cr.comment.id IN :commentIds")
+    java.util.List<Long> findReportedCommentIdsByReporterId(@Param("reporterId") Long reporterId, @Param("commentIds") java.util.List<Long> commentIds);
 }

@@ -55,20 +55,24 @@ export function FeedCard({
 }: FeedCardProps) {
   // 추가할 코드
   const [showComments, setShowComments] = useState(false);
-  const { deleteFeed } = useFeedStore(); // 스토어에서 삭제 액션 가져오기
+  const [isReported, setIsReported] = useState(feed.isReported || false); // DB 상태로 초기화
+  const { deleteFeed } = useFeedStore();
 
-  // [신고 핸들러] 신고 성공 시 목록에서 즉시 제거 (Optimistic Update)
+  // [신고 핸들러] 신고 상태 토글
   const handleReport = async () => {
-    if (!confirm("정말 이 게시글을 신고하시겠습니까?")) return;
+    const action = isReported ? "신고를 취소" : "이 게시글을 신고";
+    if (!confirm(`정말 ${action}하시겠습니까?`)) return;
 
     try {
       // 1. 서버에 신고 요청
       await reportApi.reportFeed(feed.id);
 
-      // 2. [핵심] 성공했다면, 화면 목록에서 즉시 삭제! (새로고침 불필요)
-      deleteFeed(feed.id);
+      // 2. 상태 토글 (UI 업데이트)
+      setIsReported(!isReported);
 
-      toast.success("신고가 접수되어 게시글이 숨김 처리되었습니다.");
+      toast.success(
+        isReported ? "신고가 취소되었습니다." : "신고가 접수되었습니다."
+      );
     } catch (error) {
       console.error(error);
       toast.error("신고 처리에 실패했습니다.");
@@ -186,10 +190,16 @@ export function FeedCard({
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem
                     onClick={handleReport}
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer gap-2"
+                    className={`${
+                      isReported
+                        ? "text-gray-500 bg-gray-100"
+                        : "text-red-600 focus:text-red-600 focus:bg-red-50"
+                    } cursor-pointer gap-2`}
                   >
-                    <Siren className="w-4 h-4" />
-                    <span>신고하기</span>
+                    <Siren
+                      className={`w-4 h-4 ${isReported ? "fill-gray-500" : ""}`}
+                    />
+                    <span>{isReported ? "신고 취소" : "신고하기"}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

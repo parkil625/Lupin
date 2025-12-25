@@ -13,20 +13,12 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class UserPenaltyService {
-
-    private final UserPenaltyRepository userPenaltyRepository;
-    private final PenaltyProperties penaltyProperties;
-
-    @Transactional
+@Transactional
     public UserPenalty addPenalty(User user, PenaltyType penaltyType) {
         UserPenalty penalty = UserPenalty.builder()
                 .user(user)
                 .penaltyType(penaltyType)
                 .build();
-        // 유저 상태를 BANNED로 변경
-        user.ban();
 
         return userPenaltyRepository.save(penalty);
     }

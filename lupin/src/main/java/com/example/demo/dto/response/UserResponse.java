@@ -20,13 +20,19 @@ public class UserResponse {
     private String avatar;
     private String department;
     private Long currentPoints;
-    private String status; // [추가] 유저 상태 (ACTIVE, BANNED)
+    private String status;
+    private boolean hasFeedPenalty; // [추가] 피드 작성 제한 여부
 
     public static UserResponse from(User user) {
-        return from(user, 0L);
+        return from(user, 0L, false);
     }
 
     public static UserResponse from(User user, Long currentPoints) {
+        return from(user, currentPoints, false);
+    }
+
+    // [수정] hasFeedPenalty를 포함한 오버로딩 메서드 추가
+    public static UserResponse from(User user, Long currentPoints, boolean hasFeedPenalty) {
         return UserResponse.builder()
                 .id(user.getId())
                 .userId(user.getUserId())
@@ -39,6 +45,7 @@ public class UserResponse {
                 .department(user.getDepartment())
                 .currentPoints(currentPoints)
                 .status(user.getStatus().name())
+                .hasFeedPenalty(hasFeedPenalty) // [추가] 값 설정
                 .build();
     }
 }

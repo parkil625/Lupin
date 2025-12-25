@@ -112,6 +112,16 @@ interface HomeProps {
   onNotificationClick?: () => void;
 }
 
+interface UserApiResponse {
+  id: number;
+  userId: string;
+  name: string;
+  realName?: string;
+  currentPoints: number;
+  status: string;
+  hasFeedPenalty: boolean; // 핵심 필드
+}
+
 interface UserStats {
   points: number;
   rank: number;
@@ -120,6 +130,7 @@ interface UserStats {
   isTop100: boolean;
   name: string;
   isBanned: boolean;
+  hasFeedPenalty: boolean;
 }
 
 // ============================================================================
@@ -270,15 +281,17 @@ function useHomeData(myFeeds: Feed[], refreshTrigger: number | undefined) {
       try {
         const userId = parseInt(localStorage.getItem("userId") || "1");
 
-        // [최적화 3] Promise.all로 병렬 요청 - 워터폴 제거
-        // 기존: 순차 요청으로 3초 → 개선: 병렬 요청으로 1초 (가장 느린 요청 기준)
-        const [userData, rankingContext, postStatus] = await Promise.all([
+        // [최적화 3] Promise.all로 병렬 요청
+        const [rawUserData, rankingContext, postStatus] = await Promise.all([
           userApi.getUserById(userId),
           userApi.getUserRankingContext(userId),
           feedApi.canPostToday(userId),
         ]);
 
         if (!isMounted) return;
+
+        // [수정] 타입 단언(Type Assertion)을 사용하여 'any' 에러 해결
+        const userData = rawUserData as UserApiResponse;
 
         const myRanking = rankingContext.find(
           (r: { id: number; rank?: number }) => r.id === userId
@@ -293,7 +306,9 @@ function useHomeData(myFeeds: Feed[], refreshTrigger: number | undefined) {
           isTop100: rank <= 100,
           name:
             userData.realName || localStorage.getItem("userName") || "사용자",
-          isBanned: userData.status === "BANNED", // [추가] 상태 확인
+          isBanned: userData.status === "BANNED",
+          // [수정] 이제 userData.hasFeedPenalty를 안전하게 사용할 수 있습니다.
+          hasFeedPenalty: userData.hasFeedPenalty === true,
         });
         setCanPost(postStatus);
       } catch (e) {
@@ -542,14 +557,18 @@ export default function Home({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  {/* [수정] 정지 상태(isBanned)도 체크하여 버튼 비활성화 */}
+                  {/* [수정] isBanned 또는 hasFeedPenalty가 있으면 버튼 비활성화 */}
                   <button
                     onClick={
-                      canPost && !stats?.isBanned ? onCreateClick : undefined
+                      canPost && !stats?.isBanned && !stats?.hasFeedPenalty
+                        ? onCreateClick
+                        : undefined
                     }
-                    disabled={!canPost || stats?.isBanned}
+                    disabled={
+                      !canPost || stats?.isBanned || stats?.hasFeedPenalty
+                    }
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-bold ${
-                      canPost && !stats?.isBanned
+                      canPost && !stats?.isBanned && !stats?.hasFeedPenalty
                         ? "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg cursor-pointer"
                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
@@ -559,9 +578,9 @@ export default function Home({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={8}>
-                  {/* [수정] 정지 상태일 때의 안내 메시지 추가 */}
+                  {/* [수정] isBanned 또는 hasFeedPenalty일 때 안내 메시지 표시 */}
                   <p>
-                    {stats?.isBanned
+                    {stats?.isBanned || stats?.hasFeedPenalty
                       ? "패널티로 인해 피드 작성이 제한되었습니다."
                       : canPost
                       ? "피드 작성"

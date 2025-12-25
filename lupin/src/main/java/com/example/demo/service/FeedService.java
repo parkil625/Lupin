@@ -9,6 +9,8 @@ import com.example.demo.dto.command.FeedUpdateCommand;
 import com.example.demo.exception.BusinessException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.FeedRepository;
+import com.example.demo.repository.UserPenaltyRepository; // [추가]
+import com.example.demo.domain.enums.PenaltyType; // [추가]
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +36,7 @@ public class FeedService {
     private final ImageMetadataService imageMetadataService;
     private final FeedTransactionService feedTransactionService;
     private final FeedDeleteFacade feedDeleteFacade;
+    private final UserPenaltyRepository userPenaltyRepository; // [추가] Repository 주입
 
     public Slice<Feed> getHomeFeeds(User user, int page, int size) {
         // @BatchSize(100)로 images 지연 로딩 최적화 (N+1 방지)
@@ -82,6 +85,12 @@ public class FeedService {
      * 피드 생성 (S3 I/O를 트랜잭션 외부에서 수행)
      */
     public Feed createFeed(User writer, String activity, String content, String startImageKey, String endImageKey, List<String> otherImageKeys) {
+        // [수정] 피드 작성 금지 패널티 확인 (최근 3일 이내 기록 존재 여부)
+        LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
+        if (userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(writer, PenaltyType.FEED, threeDaysAgo)) {
+             throw new BusinessException(ErrorCode.FEED_CREATION_RESTRICTED);
+        }
+
         if (startImageKey == null || endImageKey == null) {
             throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED);
         }

@@ -14,6 +14,8 @@ import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.domain.enums.NotificationType;
+import com.example.demo.repository.UserPenaltyRepository; // [추가]
+import com.example.demo.domain.enums.PenaltyType; // [추가]
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -39,9 +41,16 @@ public class CommentService {
     private final FeedRepository feedRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserPenaltyRepository userPenaltyRepository; // [추가] Repository 주입
 
     @Transactional
     public Comment createComment(User writer, Long feedId, String content) {
+        // [수정] 댓글 작성 금지 패널티 확인 (3일)
+        LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
+        if (userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(writer, PenaltyType.COMMENT, threeDaysAgo)) {
+             throw new BusinessException(ErrorCode.COMMENT_CREATION_RESTRICTED);
+        }
+
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 
@@ -154,6 +163,12 @@ public class CommentService {
 
     @Transactional
     public Comment createReply(User writer, Long feedId, Long parentId, String content) {
+        // [수정] 대댓글 작성 금지 패널티 확인 (3일) - 댓글 금지와 동일하게 처리
+        LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
+        if (userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(writer, PenaltyType.COMMENT, threeDaysAgo)) {
+             throw new BusinessException(ErrorCode.COMMENT_CREATION_RESTRICTED);
+        }
+
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
 

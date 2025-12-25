@@ -827,7 +827,8 @@ const FeedItem = React.memo(function FeedItem({
 
   return (
     <div
-      className={`h-full max-h-[calc(100vh-130px)] md:max-h-full w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
+      // [수정] FeedDetailDialogHome과 동일한 높이 적용 (모바일: calc(100vh-130px), 데스크톱: 95vh)
+      className={`h-[calc(100vh-130px)] md:h-[95vh] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
@@ -1113,9 +1114,8 @@ export default function FeedView({
             <div
               key={feed.id}
               id={`feed-${feed.id}`}
-              // [수정] 높이를 화면에 꽉 차게(h-full) 강제하고, 스냅 위치(snap-start) 지정
-              // min-h-[500px]와 py-2를 제거하여 불필요한 여백/크기 없앰
-              className="w-full h-full snap-start snap-always flex items-center justify-center"
+              // [수정] py-4를 추가하여 피드 사이에 간격(Gap) 생성
+              className="w-full h-full snap-start snap-always flex items-center justify-center py-4"
             >
               <FeedItem
                 feed={feed}

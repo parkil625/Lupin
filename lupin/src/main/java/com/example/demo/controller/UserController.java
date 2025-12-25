@@ -34,9 +34,10 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getMe(@CurrentUser User user) {
         long points = pointService.getTotalPoints(user);
-        // [수정] 피드 패널티 여부 조회하여 전달
+        // [수정] 피드 및 댓글 패널티 여부 조회하여 전달
         boolean hasFeedPenalty = userPenaltyService.hasActivePenalty(user, PenaltyType.FEED);
-        return ResponseEntity.ok(UserResponse.from(user, points, hasFeedPenalty));
+        boolean hasCommentPenalty = userPenaltyService.hasActivePenalty(user, PenaltyType.COMMENT);
+        return ResponseEntity.ok(UserResponse.from(user, points, hasFeedPenalty, hasCommentPenalty));
     }
 
     @GetMapping("/ranking")
@@ -65,9 +66,10 @@ public class UserController {
     public ResponseEntity<UserResponse> getUserInfo(@PathVariable Long userId) {
         User user = userService.getUserInfo(userId);
         long points = pointService.getTotalPoints(user);
-        // [수정] 피드 패널티 여부 조회하여 전달
+        // [수정] 피드 및 댓글 패널티 여부 조회하여 전달
         boolean hasFeedPenalty = userPenaltyService.hasActivePenalty(user, PenaltyType.FEED);
-        return ResponseEntity.ok(UserResponse.from(user, points, hasFeedPenalty));
+        boolean hasCommentPenalty = userPenaltyService.hasActivePenalty(user, PenaltyType.COMMENT);
+        return ResponseEntity.ok(UserResponse.from(user, points, hasFeedPenalty, hasCommentPenalty));
     }
 
     @PutMapping("/{userId}")

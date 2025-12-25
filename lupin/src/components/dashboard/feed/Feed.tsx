@@ -27,7 +27,13 @@ import {
   Clock,
   Zap,
 } from "lucide-react";
-import { commentApi, reportApi, getCdnUrl } from "@/api";
+import { commentApi, reportApi, userApi, getCdnUrl } from "@/api";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
@@ -87,9 +93,24 @@ function CommentPanel({
   const commentRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentText, setEditCommentText] = useState("");
+  const [hasCommentPenalty, setHasCommentPenalty] = useState(false);
 
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
+
+  useEffect(() => {
+    const checkPenalty = async () => {
+      try {
+        const userData = await userApi.getUserById(currentUserId);
+        if (userData && userData.hasCommentPenalty) {
+          setHasCommentPenalty(true);
+        }
+      } catch (error) {
+        console.error("사용자 정보 로드 실패:", error);
+      }
+    };
+    checkPenalty();
+  }, [currentUserId]);
 
   // 아바타 URL 생성 헬퍼 (CDN 사용)
   const getAvatarUrl = (avatarUrl?: string): string => {
@@ -736,13 +757,20 @@ function CommentPanel({
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="댓글을 입력하세요..."
+              placeholder={
+                hasCommentPenalty
+                  ? "댓글 작성이 제한되었습니다."
+                  : "댓글을 입력하세요..."
+              }
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendComment()}
-              className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
+              onKeyDown={(e) =>
+                !hasCommentPenalty && e.key === "Enter" && handleSendComment()
+              }
+              disabled={hasCommentPenalty}
+              className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            {commentText && (
+            {commentText && !hasCommentPenalty && (
               <button
                 onClick={() => setCommentText("")}
                 className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
@@ -752,14 +780,31 @@ function CommentPanel({
               </button>
             )}
           </div>
-          <button
-            onClick={handleSendComment}
-            disabled={!commentText.trim()}
-            className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
-            aria-label="댓글 전송"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="inline-block">
+                  <button
+                    onClick={handleSendComment}
+                    disabled={hasCommentPenalty || !commentText.trim()}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-shadow flex-shrink-0 cursor-pointer ${
+                      hasCommentPenalty
+                        ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                        : "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                    aria-label="댓글 전송"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </TooltipTrigger>
+              {hasCommentPenalty && (
+                <TooltipContent side="top">
+                  <p>신고 누적으로 인해 댓글 작성이 3일간 제한되었습니다.</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </div>

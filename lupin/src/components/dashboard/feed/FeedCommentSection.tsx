@@ -12,7 +12,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Heart, Send, ArrowUpDown, X, Flag } from "lucide-react";
 import { Comment } from "@/types/dashboard.types";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
-import { commentApi, reportApi, getCdnUrl } from "@/api";
+import { commentApi, reportApi, userApi, getCdnUrl } from "@/api";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getRelativeTime } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -25,11 +31,18 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
   const [commentText, setCommentText] = useState("");
   const [replyText, setReplyText] = useState("");
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [collapsedComments, setCollapsedComments] = useState<Set<number>>(new Set());
-  const [commentLikes, setCommentLikes] = useState<Record<number, { liked: boolean; count: number }>>({});
-  const [commentReported, setCommentReported] = useState<Record<number, boolean>>({});
+  const [collapsedComments, setCollapsedComments] = useState<Set<number>>(
+    new Set()
+  );
+  const [commentLikes, setCommentLikes] = useState<
+    Record<number, { liked: boolean; count: number }>
+  >({});
+  const [commentReported, setCommentReported] = useState<
+    Record<number, boolean>
+  >({});
   const [sortOrder, setSortOrder] = useState<"latest" | "popular">("latest");
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [hasCommentPenalty, setHasCommentPenalty] = useState(false);
 
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
@@ -39,6 +52,21 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
     if (!avatarUrl) return undefined;
     return getCdnUrl(avatarUrl);
   };
+
+  // 사용자 패널티 조회
+  useEffect(() => {
+    const checkPenalty = async () => {
+      try {
+        const userData = await userApi.getUserById(currentUserId);
+        if (userData && userData.hasCommentPenalty) {
+          setHasCommentPenalty(true);
+        }
+      } catch (error) {
+        console.error("사용자 정보 로드 실패:", error);
+      }
+    };
+    checkPenalty();
+  }, [currentUserId]);
 
   // 댓글 로드
   useEffect(() => {
@@ -51,50 +79,78 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
         const likesMap: Record<number, { liked: boolean; count: number }> = {};
 
         const commentsWithReplies = await Promise.all(
-          commentList.map(async (comment: { id: number; writerName?: string; writerAvatar?: string; writerDepartment?: string; createdAt?: string; likeCount?: number; isLiked?: boolean }) => {
-            // 댓글 좋아요 정보 저장
-            likesMap[comment.id] = {
-              liked: comment.isLiked || false,
-              count: comment.likeCount || 0,
-            };
+          commentList.map(
+            async (comment: {
+              id: number;
+              writerName?: string;
+              writerAvatar?: string;
+              writerDepartment?: string;
+              createdAt?: string;
+              likeCount?: number;
+              isLiked?: boolean;
+            }) => {
+              // 댓글 좋아요 정보 저장
+              likesMap[comment.id] = {
+                liked: comment.isLiked || false,
+                count: comment.likeCount || 0,
+              };
 
-            try {
-              const replies = await commentApi.getRepliesByCommentId(comment.id);
-              const formattedReplies = (replies || []).map((reply: { id?: number; writerName?: string; writerAvatar?: string; writerDepartment?: string; createdAt?: string; likeCount?: number; isLiked?: boolean }) => {
-                // 답글 좋아요 정보 저장
-                if (reply.id) {
-                  likesMap[reply.id] = {
-                    liked: reply.isLiked || false,
-                    count: reply.likeCount || 0,
-                  };
-                }
+              try {
+                const replies = await commentApi.getRepliesByCommentId(
+                  comment.id
+                );
+                const formattedReplies = (replies || []).map(
+                  (reply: {
+                    id?: number;
+                    writerName?: string;
+                    writerAvatar?: string;
+                    writerDepartment?: string;
+                    createdAt?: string;
+                    likeCount?: number;
+                    isLiked?: boolean;
+                  }) => {
+                    // 답글 좋아요 정보 저장
+                    if (reply.id) {
+                      likesMap[reply.id] = {
+                        liked: reply.isLiked || false,
+                        count: reply.likeCount || 0,
+                      };
+                    }
+                    return {
+                      ...reply,
+                      author: reply.writerName,
+                      avatar: getAvatarUrl(reply.writerAvatar),
+                      department: reply.writerDepartment,
+                      time: getRelativeTime(
+                        reply.createdAt || new Date().toISOString()
+                      ),
+                    };
+                  }
+                );
                 return {
-                  ...reply,
-                  author: reply.writerName,
-                  avatar: getAvatarUrl(reply.writerAvatar),
-                  department: reply.writerDepartment,
-                  time: getRelativeTime(reply.createdAt || new Date().toISOString()),
+                  ...comment,
+                  author: comment.writerName,
+                  avatar: getAvatarUrl(comment.writerAvatar),
+                  department: comment.writerDepartment,
+                  time: getRelativeTime(
+                    comment.createdAt || new Date().toISOString()
+                  ),
+                  replies: formattedReplies,
                 };
-              });
-              return {
-                ...comment,
-                author: comment.writerName,
-                avatar: getAvatarUrl(comment.writerAvatar),
-                department: comment.writerDepartment,
-                time: getRelativeTime(comment.createdAt || new Date().toISOString()),
-                replies: formattedReplies,
-              };
-            } catch {
-              return {
-                ...comment,
-                author: comment.writerName,
-                avatar: getAvatarUrl(comment.writerAvatar),
-                department: comment.writerDepartment,
-                time: getRelativeTime(comment.createdAt || new Date().toISOString()),
-                replies: [],
-              };
+              } catch {
+                return {
+                  ...comment,
+                  author: comment.writerName,
+                  avatar: getAvatarUrl(comment.writerAvatar),
+                  department: comment.writerDepartment,
+                  time: getRelativeTime(
+                    comment.createdAt || new Date().toISOString()
+                  ),
+                  replies: [],
+                };
+              }
             }
-          })
+          )
         );
 
         setCommentLikes(likesMap);
@@ -240,8 +296,15 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
   const handleReportComment = async (commentId: number) => {
     try {
       await reportApi.reportComment(commentId);
-      setCommentReported((prev) => ({ ...prev, [commentId]: !prev[commentId] }));
-      toast.success(commentReported[commentId] ? "신고가 취소되었습니다." : "신고가 접수되었습니다.");
+      setCommentReported((prev) => ({
+        ...prev,
+        [commentId]: !prev[commentId],
+      }));
+      toast.success(
+        commentReported[commentId]
+          ? "신고가 취소되었습니다."
+          : "신고가 접수되었습니다."
+      );
     } catch {
       toast.error("신고에 실패했습니다.");
     }
@@ -270,7 +333,9 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                   setShowSortMenu(false);
                 }}
                 className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
-                  sortOrder === "latest" ? "bg-white/15 font-semibold text-[#C93831]" : "text-gray-900"
+                  sortOrder === "latest"
+                    ? "bg-white/15 font-semibold text-[#C93831]"
+                    : "text-gray-900"
                 }`}
               >
                 최신순
@@ -281,7 +346,9 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                   setShowSortMenu(false);
                 }}
                 className={`w-full px-4 py-2 text-left text-sm hover:bg-white/20 transition-colors ${
-                  sortOrder === "popular" ? "bg-white/15 font-semibold text-[#C93831]" : "text-gray-900"
+                  sortOrder === "popular"
+                    ? "bg-white/15 font-semibold text-[#C93831]"
+                    : "text-gray-900"
                 }`}
               >
                 인기순
@@ -330,13 +397,20 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="댓글을 입력하세요..."
+              placeholder={
+                hasCommentPenalty
+                  ? "댓글 작성이 제한되었습니다."
+                  : "댓글을 입력하세요..."
+              }
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
-              className="w-full py-2 pr-8 text-sm bg-transparent border-0 border-b-2 border-gray-300 outline-none focus:border-[#C93831] transition-colors"
+              onKeyPress={(e) =>
+                !hasCommentPenalty && e.key === "Enter" && handleSendComment()
+              }
+              disabled={hasCommentPenalty}
+              className="w-full py-2 pr-8 text-sm bg-transparent border-0 border-b-2 border-gray-300 outline-none focus:border-[#C93831] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            {commentText && (
+            {commentText && !hasCommentPenalty && (
               <button
                 onClick={() => setCommentText("")}
                 className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
@@ -345,13 +419,30 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
               </button>
             )}
           </div>
-          <button
-            onClick={handleSendComment}
-            disabled={!commentText.trim()}
-            className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="inline-block">
+                  <button
+                    onClick={handleSendComment}
+                    disabled={hasCommentPenalty || !commentText.trim()}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-shadow flex-shrink-0 ${
+                      hasCommentPenalty
+                        ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                        : "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </TooltipTrigger>
+              {hasCommentPenalty && (
+                <TooltipContent side="top">
+                  <p>신고 누적으로 인해 댓글 작성이 3일간 제한되었습니다.</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </div>
@@ -410,10 +501,14 @@ function CommentItem({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-sm text-gray-900">{comment.author}</span>
+            <span className="font-bold text-sm text-gray-900">
+              {comment.author}
+            </span>
             <span className="text-xs text-gray-900">{comment.time}</span>
           </div>
-          <p className="text-sm text-gray-900 break-words mb-2">{comment.content}</p>
+          <p className="text-sm text-gray-900 break-words mb-2">
+            {comment.content}
+          </p>
 
           <div className="flex items-center gap-4 mb-2">
             <button
@@ -421,10 +516,16 @@ function CommentItem({
               className="flex items-center gap-1 hover:opacity-70 transition-opacity"
             >
               <Heart
-                className={`w-4 h-4 ${likeInfo.liked ? "fill-[#C93831] text-[#C93831]" : "text-gray-600"}`}
+                className={`w-4 h-4 ${
+                  likeInfo.liked
+                    ? "fill-[#C93831] text-[#C93831]"
+                    : "text-gray-600"
+                }`}
               />
               {likeInfo.count > 0 && (
-                <span className="text-xs text-gray-600 font-semibold">{likeInfo.count}</span>
+                <span className="text-xs text-gray-600 font-semibold">
+                  {likeInfo.count}
+                </span>
               )}
             </button>
             {depth === 0 && (
@@ -441,7 +542,11 @@ function CommentItem({
                 className="flex items-center gap-1 hover:opacity-70 transition-opacity"
               >
                 <Flag
-                  className={`w-4 h-4 ${commentReported[comment.id] ? "fill-[#C93831] text-[#C93831]" : "text-gray-600"}`}
+                  className={`w-4 h-4 ${
+                    commentReported[comment.id]
+                      ? "fill-[#C93831] text-[#C93831]"
+                      : "text-gray-600"
+                  }`}
                 />
               </button>
             )}

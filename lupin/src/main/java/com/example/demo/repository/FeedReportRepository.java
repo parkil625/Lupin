@@ -14,6 +14,8 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
 
     long countByFeed(Feed feed);
 
+    long countByFeedId(Long feedId);
+
     boolean existsByReporterAndFeed(User reporter, Feed feed);
 
     void deleteByReporterAndFeed(User reporter, Feed feed);

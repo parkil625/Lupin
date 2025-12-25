@@ -75,8 +75,8 @@ public class FeedReportService {
     }
 
     private void checkAndApplyPenalty(Feed feed) {
-        long likeCount = feedLikeRepository.countByFeed(feed);
-        long reportCount = feedReportRepository.countByFeed(feed);
+        long likeCount = feedLikeRepository.countByFeedId(feed.getId());
+        long reportCount = feedReportRepository.countByFeedId(feed.getId());
         
         // [디버깅] 현재 카운트 확인
         log.info(">>> [신고 디버깅] Feed ID: {}, 좋아요 수: {}, 신고 수: {}", feed.getId(), likeCount, reportCount);

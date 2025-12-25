@@ -24,5 +24,5 @@ public class PenaltyProperties {
      * 패널티 적용 임계값 배수
      * (신고 수 >= 좋아요 수 * multiplier) 일 때 패널티 적용
      */
-    private int thresholdMultiplier = 5;
+    private int thresholdMultiplier = 2;
 }

@@ -20,6 +20,7 @@ public class UserResponse {
     private String avatar;
     private String department;
     private Long currentPoints;
+    private String status; // [추가] 유저 상태 (ACTIVE, BANNED)
 
     public static UserResponse from(User user) {
         return from(user, 0L);
@@ -37,6 +38,7 @@ public class UserResponse {
                 .avatar(user.getAvatar())
                 .department(user.getDepartment())
                 .currentPoints(currentPoints)
+                .status(user.getStatus().name())
                 .build();
     }
 }

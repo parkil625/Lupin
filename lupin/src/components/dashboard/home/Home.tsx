@@ -52,13 +52,13 @@ function getOptimizedImageUrl(
   url: string,
   width: number,
   quality = 80,
-  format: 'webp' | 'auto' = 'auto'
+  format: "webp" | "auto" = "auto"
 ): string {
   if (!url) return url;
 
   // Cloudinary URL 감지 및 변환
-  if (url.includes('cloudinary.com')) {
-    const parts = url.split('/upload/');
+  if (url.includes("cloudinary.com")) {
+    const parts = url.split("/upload/");
     if (parts.length === 2) {
       const transformations = `w_${width},q_${quality},f_${format},c_fill`;
       return `${parts[0]}/upload/${transformations}/${parts[1]}`;
@@ -66,14 +66,14 @@ function getOptimizedImageUrl(
   }
 
   // CloudFront URL 감지 및 쿼리 파라미터 추가
-  if (url.includes('cloudfront.net') || url.includes('cdn.')) {
-    const separator = url.includes('?') ? '&' : '?';
+  if (url.includes("cloudfront.net") || url.includes("cdn.")) {
+    const separator = url.includes("?") ? "&" : "?";
     return `${url}${separator}w=${width}&q=${quality}&f=${format}`;
   }
 
   // S3 URL 감지 및 쿼리 파라미터 추가 (Lambda@Edge 설정 시)
-  if (url.includes('s3.amazonaws.com') || url.includes('s3-')) {
-    const separator = url.includes('?') ? '&' : '?';
+  if (url.includes("s3.amazonaws.com") || url.includes("s3-")) {
+    const separator = url.includes("?") ? "&" : "?";
     return `${url}${separator}w=${width}&q=${quality}&f=${format}`;
   }
 
@@ -101,7 +101,10 @@ interface HomeProps {
   profileImage: string | null;
   myFeeds: Feed[];
   setSelectedFeed: (feed: Feed) => void;
-  setFeedImageIndex: (feedId: number, updater: number | ((prev: number) => number)) => void;
+  setFeedImageIndex: (
+    feedId: number,
+    updater: number | ((prev: number) => number)
+  ) => void;
   setShowFeedDetailInHome: (show: boolean) => void;
   onCreateClick: () => void;
   refreshTrigger?: number;
@@ -116,6 +119,7 @@ interface UserStats {
   isTop10: boolean;
   isTop100: boolean;
   name: string;
+  isBanned: boolean;
 }
 
 // ============================================================================
@@ -132,88 +136,92 @@ interface UserStats {
  * - srcset: 디바이스 해상도에 맞는 이미지 제공 (1x, 2x, 3x)
  * - blur placeholder: 로딩 전 UX 개선
  */
-const FeedItem = memo(({
-  feed,
-  index,
-  onFeedClick,
-}: {
-  feed: Feed;
-  index: number;
-  onFeedClick: (feedId: number) => void;
-}) => {
-  // 상위 4개 이미지는 즉시 로딩 (모바일 2x2 그리드 기준)
-  const isPriority = index < 4;
+const FeedItem = memo(
+  ({
+    feed,
+    index,
+    onFeedClick,
+  }: {
+    feed: Feed;
+    index: number;
+    onFeedClick: (feedId: number) => void;
+  }) => {
+    // 상위 4개 이미지는 즉시 로딩 (모바일 2x2 그리드 기준)
+    const isPriority = index < 4;
 
-  // [최적화 6] 썸네일 URL 사용 (300x400, 50% 품질)
-  const originalUrl = feed.images?.[0];
-  const imageUrl = originalUrl ? getThumbnailUrl(originalUrl) : undefined;
+    // [최적화 6] 썸네일 URL 사용 (300x400, 50% 품질)
+    const originalUrl = feed.images?.[0];
+    const imageUrl = originalUrl ? getThumbnailUrl(originalUrl) : undefined;
 
-  return (
-    <div
-      className="cursor-pointer group"
-      onClick={() => onFeedClick(feed.id)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onFeedClick(feed.id)}
-      aria-label={`${feed.activity} 피드, 포인트 ${feed.points}점`}
-      // [최적화 5] content-visibility로 화면 밖 요소 렌더링 생략
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 400px' }}
-    >
-      {/* aspect-ratio로 CLS 방지 */}
-      <div className="aspect-[3/4] w-full">
-        <Card className="h-full w-full overflow-hidden rounded-none bg-white border-0 hover:opacity-90 transition-all relative">
-          <div className="w-full h-full bg-white">
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={feed.activity}
-                width="300"
-                height="400"
-                // [최적화 6] Blur Placeholder로 로딩 UX 개선
-                style={{
-                  backgroundImage: `url("${BLUR_DATA_URL}")`,
-                  backgroundSize: 'cover',
-                }}
-                // [최적화 4] 이미지 로딩 전략
-                loading={isPriority ? "eager" : "lazy"}
-                decoding="async"
-                fetchPriority={isPriority ? "high" : "auto"}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                <div className="text-center p-4">
-                  <Sparkles className="w-12 h-12 mx-auto text-gray-400 mb-2" aria-hidden="true" />
-                  <p className="text-sm font-bold text-gray-600">
-                    {feed.activity}
-                  </p>
+    return (
+      <div
+        className="cursor-pointer group"
+        onClick={() => onFeedClick(feed.id)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && onFeedClick(feed.id)}
+        aria-label={`${feed.activity} 피드, 포인트 ${feed.points}점`}
+        // [최적화 5] content-visibility로 화면 밖 요소 렌더링 생략
+        style={{ contentVisibility: "auto", containIntrinsicSize: "1px 400px" }}
+      >
+        {/* aspect-ratio로 CLS 방지 */}
+        <div className="aspect-[3/4] w-full">
+          <Card className="h-full w-full overflow-hidden rounded-none bg-white border-0 hover:opacity-90 transition-all relative">
+            <div className="w-full h-full bg-white">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={feed.activity}
+                  width="300"
+                  height="400"
+                  // [최적화 6] Blur Placeholder로 로딩 UX 개선
+                  style={{
+                    backgroundImage: `url("${BLUR_DATA_URL}")`,
+                    backgroundSize: "cover",
+                  }}
+                  // [최적화 4] 이미지 로딩 전략
+                  loading={isPriority ? "eager" : "lazy"}
+                  decoding="async"
+                  fetchPriority={isPriority ? "high" : "auto"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                  <div className="text-center p-4">
+                    <Sparkles
+                      className="w-12 h-12 mx-auto text-gray-400 mb-2"
+                      aria-hidden="true"
+                    />
+                    <p className="text-sm font-bold text-gray-600">
+                      {feed.activity}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hover Overlay - CSS로 처리하여 JS 부하 없음 */}
+            <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+              <div className="text-center text-white space-y-2">
+                <div className="flex items-center justify-center gap-4">
+                  {(feed.points ?? 0) > 0 && (
+                    <span className="flex items-center gap-1 font-bold text-base">
+                      <Coins className="w-5 h-5" />+{feed.points}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 font-bold text-base">
+                    <MessageCircle className="w-5 h-5" />
+                    {feed.comments}
+                  </span>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Hover Overlay - CSS로 처리하여 JS 부하 없음 */}
-          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-            <div className="text-center text-white space-y-2">
-              <div className="flex items-center justify-center gap-4">
-                {(feed.points ?? 0) > 0 && (
-                  <span className="flex items-center gap-1 font-bold text-base">
-                    <Coins className="w-5 h-5" />
-                    +{feed.points}
-                  </span>
-                )}
-                <span className="flex items-center gap-1 font-bold text-base">
-                  <MessageCircle className="w-5 h-5" />
-                  {feed.comments}
-                </span>
-              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 FeedItem.displayName = "FeedItem";
 
 // ============================================================================
@@ -239,7 +247,7 @@ function useHomeData(myFeeds: Feed[], refreshTrigger: number | undefined) {
 
     // Set을 사용하여 O(1) 조회 성능 확보
     const uniqueDates = new Set(
-      myFeeds.map(f => new Date(f.createdAt || f.time || "").toDateString())
+      myFeeds.map((f) => new Date(f.createdAt || f.time || "").toDateString())
     );
 
     const today = new Date();
@@ -272,7 +280,9 @@ function useHomeData(myFeeds: Feed[], refreshTrigger: number | undefined) {
 
         if (!isMounted) return;
 
-        const myRanking = rankingContext.find((r: { id: number; rank?: number }) => r.id === userId);
+        const myRanking = rankingContext.find(
+          (r: { id: number; rank?: number }) => r.id === userId
+        );
         const rank = myRanking?.rank || 999;
 
         setStats({
@@ -281,7 +291,9 @@ function useHomeData(myFeeds: Feed[], refreshTrigger: number | undefined) {
           has7DayStreak,
           isTop10: rank <= 10,
           isTop100: rank <= 100,
-          name: userData.realName || localStorage.getItem("userName") || "사용자",
+          name:
+            userData.realName || localStorage.getItem("userName") || "사용자",
+          isBanned: userData.status === "BANNED", // [추가] 상태 확인
         });
         setCanPost(postStatus);
       } catch (e) {
@@ -292,7 +304,9 @@ function useHomeData(myFeeds: Feed[], refreshTrigger: number | undefined) {
     };
 
     fetchData();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [refreshTrigger, has7DayStreak]);
 
   return { stats, canPost, loading };
@@ -321,12 +335,12 @@ export default function Home({
     const feedsToPreload = myFeeds.slice(0, 2);
     const links: HTMLLinkElement[] = [];
 
-    feedsToPreload.forEach(feed => {
+    feedsToPreload.forEach((feed) => {
       const imageUrl = feed.images?.[0];
       if (imageUrl) {
-        const link = document.createElement('link');
-        link.rel = 'preload';
-        link.as = 'image';
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "image";
         link.href = getThumbnailUrl(imageUrl);
         document.head.appendChild(link);
         links.push(link);
@@ -334,20 +348,23 @@ export default function Home({
     });
 
     return () => {
-      links.forEach(link => link.remove());
+      links.forEach((link) => link.remove());
     };
   }, [myFeeds]);
 
   // [최적화 1] useCallback으로 핸들러 참조 고정 - 메모이제이션 완성
   // 이전 문제: onClick={() => ...}가 매번 새로운 함수를 생성하여 FeedItem의 memo가 무력화됨
   // 해결: 핸들러를 useCallback으로 감싸고, feedId만 인자로 받아 처리
-  const handleFeedClick = useCallback((feedId: number) => {
-    const feed = myFeeds.find(f => f.id === feedId);
-    if (!feed) return;
-    setSelectedFeed(feed);
-    setFeedImageIndex(feedId, 0);
-    setShowFeedDetailInHome(true);
-  }, [myFeeds, setSelectedFeed, setFeedImageIndex, setShowFeedDetailInHome]);
+  const handleFeedClick = useCallback(
+    (feedId: number) => {
+      const feed = myFeeds.find((f) => f.id === feedId);
+      if (!feed) return;
+      setSelectedFeed(feed);
+      setFeedImageIndex(feedId, 0);
+      setShowFeedDetailInHome(true);
+    },
+    [myFeeds, setSelectedFeed, setFeedImageIndex, setShowFeedDetailInHome]
+  );
 
   return (
     <div className="h-full overflow-auto p-4 md:p-8 relative scroll-smooth">
@@ -356,7 +373,11 @@ export default function Home({
         <button
           onClick={onNotificationClick}
           className="md:hidden fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-white/80 backdrop-blur-xl shadow-lg flex items-center justify-center hover:bg-white transition-colors"
-          aria-label={unreadNotificationCount > 0 ? `${unreadNotificationCount}개의 읽지 않은 알림` : "알림 확인"}
+          aria-label={
+            unreadNotificationCount > 0
+              ? `${unreadNotificationCount}개의 읽지 않은 알림`
+              : "알림 확인"
+          }
         >
           <Bell className="w-5 h-5 text-gray-700" />
           {unreadNotificationCount > 0 && (
@@ -373,19 +394,37 @@ export default function Home({
             <div className="w-[110px] h-[110px]">
               <Avatar className="w-full h-full border-4 border-white shadow-xl bg-gray-100">
                 {loading ? (
-                  <div className="w-full h-full animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                  <div
+                    className="w-full h-full animate-pulse"
+                    style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
+                  />
                 ) : profileImage ? (
                   <img
-                    src={getOptimizedImageUrl(profileImage, 220, 85, 'webp')}
-                    srcSet={`${getOptimizedImageUrl(profileImage, 110, 85, 'webp')} 1x,
-                             ${getOptimizedImageUrl(profileImage, 220, 85, 'webp')} 2x,
-                             ${getOptimizedImageUrl(profileImage, 330, 85, 'webp')} 3x`}
-                    alt={`${stats?.name || '사용자'} 프로필`}
+                    src={getOptimizedImageUrl(profileImage, 220, 85, "webp")}
+                    srcSet={`${getOptimizedImageUrl(
+                      profileImage,
+                      110,
+                      85,
+                      "webp"
+                    )} 1x,
+                             ${getOptimizedImageUrl(
+                               profileImage,
+                               220,
+                               85,
+                               "webp"
+                             )} 2x,
+                             ${getOptimizedImageUrl(
+                               profileImage,
+                               330,
+                               85,
+                               "webp"
+                             )} 3x`}
+                    alt={`${stats?.name || "사용자"} 프로필`}
                     width="110"
                     height="110"
                     style={{
                       backgroundImage: `url("${BLUR_DATA_URL}")`,
-                      backgroundSize: 'cover',
+                      backgroundSize: "cover",
                     }}
                     loading="eager"
                     decoding="async"
@@ -404,7 +443,10 @@ export default function Home({
               {/* Name - 고정 높이로 CLS 방지 */}
               <div className="h-10 flex items-center justify-center mb-3 md:mb-4">
                 {loading ? (
-                  <div className="h-9 w-24 rounded-lg animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                  <div
+                    className="h-9 w-24 rounded-lg animate-pulse"
+                    style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
+                  />
                 ) : (
                   <h1 className="text-xl md:text-3xl font-black text-gray-900">
                     {stats?.name}
@@ -415,23 +457,32 @@ export default function Home({
               {/* Stats - 고정 높이로 CLS 방지 */}
               <div className="h-6 flex items-center justify-center mb-3 md:mb-4">
                 {loading ? (
-                  <div className="h-5 w-56 rounded-lg animate-pulse mx-auto" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                  <div
+                    className="h-5 w-56 rounded-lg animate-pulse mx-auto"
+                    style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
+                  />
                 ) : (
                   <div className="flex justify-center gap-4 md:gap-8">
                     <div>
-                      <span className="text-sm text-gray-600 font-bold">피드 </span>
+                      <span className="text-sm text-gray-600 font-bold">
+                        피드{" "}
+                      </span>
                       <span className="text-sm font-black text-[#C93831]">
                         {myFeeds.length}
                       </span>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600 font-bold">포인트 </span>
+                      <span className="text-sm text-gray-600 font-bold">
+                        포인트{" "}
+                      </span>
                       <span className="text-sm font-black text-[#C93831]">
                         {stats?.points.toLocaleString()}
                       </span>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600 font-bold">순위 </span>
+                      <span className="text-sm text-gray-600 font-bold">
+                        순위{" "}
+                      </span>
                       <span className="text-sm font-black text-[#C93831]">
                         #{stats?.rank || "-"}
                       </span>
@@ -444,8 +495,14 @@ export default function Home({
               <div className="h-7 flex justify-center gap-2 flex-wrap">
                 {loading ? (
                   <>
-                    <div className="h-6 w-20 rounded-full animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
-                    <div className="h-6 w-16 rounded-full animate-pulse" style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }} />
+                    <div
+                      className="h-6 w-20 rounded-full animate-pulse"
+                      style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
+                    />
+                    <div
+                      className="h-6 w-16 rounded-full animate-pulse"
+                      style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
+                    />
                   </>
                 ) : (
                   <>
@@ -460,11 +517,13 @@ export default function Home({
                         <Award className="w-3 h-3 mr-1" />
                         TOP 10
                       </Badge>
-                    ) : stats?.isTop100 && (
-                      <Badge className="bg-purple-700 text-white px-3 py-1.5 font-bold border-0 text-xs">
-                        <Award className="w-3 h-3 mr-1" />
-                        TOP 100
-                      </Badge>
+                    ) : (
+                      stats?.isTop100 && (
+                        <Badge className="bg-purple-700 text-white px-3 py-1.5 font-bold border-0 text-xs">
+                          <Award className="w-3 h-3 mr-1" />
+                          TOP 100
+                        </Badge>
+                      )
                     )}
                   </>
                 )}
@@ -477,15 +536,20 @@ export default function Home({
         <div>
           {/* Posts Header */}
           <div className="flex items-center justify-between mb-4 md:mb-6 px-4 md:px-8">
-            <h2 className="text-xl md:text-2xl font-black text-gray-900">피드</h2>
+            <h2 className="text-xl md:text-2xl font-black text-gray-900">
+              피드
+            </h2>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
+                  {/* [수정] 정지 상태(isBanned)도 체크하여 버튼 비활성화 */}
                   <button
-                    onClick={canPost ? onCreateClick : undefined}
-                    disabled={!canPost}
+                    onClick={
+                      canPost && !stats?.isBanned ? onCreateClick : undefined
+                    }
+                    disabled={!canPost || stats?.isBanned}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-bold ${
-                      canPost
+                      canPost && !stats?.isBanned
                         ? "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg cursor-pointer"
                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
@@ -495,8 +559,11 @@ export default function Home({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" sideOffset={8}>
+                  {/* [수정] 정지 상태일 때의 안내 메시지 추가 */}
                   <p>
-                    {canPost
+                    {stats?.isBanned
+                      ? "패널티로 인해 피드 작성이 제한되었습니다."
+                      : canPost
                       ? "피드 작성"
                       : "하루에 한 번만 피드를 작성할 수 있습니다."}
                   </p>

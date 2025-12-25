@@ -11,5 +11,6 @@ import java.time.LocalDateTime;
 @Repository
 public interface UserPenaltyRepository extends JpaRepository<UserPenalty, Long> {
 
-    boolean existsByUserAndPenaltyTypeAndCreatedAtAfter(User user, PenaltyType penaltyType, LocalDateTime since);
+    // [수정] 객체 대신 ID로 조회하여 정확도 향상
+    boolean existsByUserIdAndPenaltyTypeAndCreatedAtAfter(Long userId, PenaltyType penaltyType, LocalDateTime since);
 }

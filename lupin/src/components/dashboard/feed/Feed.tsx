@@ -1114,8 +1114,8 @@ export default function FeedView({
             <div
               key={feed.id}
               id={`feed-${feed.id}`}
-              // [수정] py-4를 추가하여 피드 사이에 간격(Gap) 생성
-              className="w-full h-full snap-start snap-always flex items-center justify-center py-4"
+              // [수정] h-full, items-center, py-4 제거 -> pb-4만 남겨서 하단 여백 확보 및 상단 정렬
+              className="w-full snap-start snap-always flex justify-center pb-4"
             >
               <FeedItem
                 feed={feed}

@@ -56,7 +56,7 @@ public class FeedQueryFacade {
 
         if (user != null) {
             isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feedId);
-            // [수정] 리스트 쿼리 대신 ID 기반 exists 메서드로 명확하게 조회
+            // [수정] Native Query 기반 exists 메서드로 정확하게 조회
             isReported = feedReportRepository.existsByReporterIdAndFeedId(user.getId(), feedId);
         }
 
@@ -104,18 +104,13 @@ public class FeedQueryFacade {
     private SliceResponse<FeedResponse> toSliceResponse(Slice<Feed> feeds, User user, int page, int size) {
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
         
-        // [성능 최적화] N+1 방지: ID 목록 추출 후 한 번의 쿼리로 조회
-        java.util.Set<Long> likedFeedIds = java.util.Collections.emptySet();
-        java.util.Set<Long> reportedFeedIds = java.util.Collections.emptySet();
+        java.util.Set<Long> reportedFeedIds = new java.util.HashSet<>();
 
         if (user != null && !feeds.isEmpty()) {
             List<Long> feedIds = feeds.getContent().stream().map(Feed::getId).toList();
-            // 좋아요 목록 Batch 조회 (repository에 해당 메서드가 없다면 추가 필요, 유사하게 구현)
-            // likedFeedIds = new java.util.HashSet<>(feedLikeRepository.findLikedFeedIdsByUserId(user.getId(), feedIds)); 
-            // 위 메서드가 없다면 기존처럼 루프 돌거나 repository 추가 필요. 여기선 reported만 최적화 예시
-            
-            // 신고 목록 Batch 조회
-            reportedFeedIds = new java.util.HashSet<>(feedReportRepository.findReportedFeedIdsByReporterId(user.getId(), feedIds));
+            // [수정] Native Query 기반 배치 메서드로 정확하게 ID 목록 조회 (목록 화면 오류 해결)
+            List<Long> reportedIds = feedReportRepository.findReportedFeedIdsByReporterId(user.getId(), feedIds);
+            reportedFeedIds.addAll(reportedIds);
         }
 
         final java.util.Set<Long> finalReportedFeedIds = reportedFeedIds;

@@ -1,12 +1,8 @@
 package com.example.demo.event;
 
-import com.example.demo.repository.CommentLikeRepository;
-import com.example.demo.repository.CommentReportRepository;
-import com.example.demo.repository.CommentRepository;
-import com.example.demo.repository.FeedLikeRepository;
-import com.example.demo.repository.FeedReportRepository;
-import com.example.demo.repository.NotificationRepository;
 import com.example.demo.domain.enums.NotificationType;
+import com.example.demo.repository.*;
+import com.example.demo.service.ImageService;
 import com.example.demo.service.LikeCountCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,12 +27,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FeedDeletedEventListener {
 
+    // [추가] 누락되었던 리포지토리 의존성 주입
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final CommentReportRepository commentReportRepository;
     private final FeedLikeRepository feedLikeRepository;
     private final FeedReportRepository feedReportRepository;
     private final NotificationRepository notificationRepository;
+    
+    private final ImageService imageService;
     private final LikeCountCacheService likeCountCacheService;
 
     /**
@@ -46,20 +45,25 @@ public class FeedDeletedEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleFeedDeletedEvent(FeedDeletedEvent event) {
-        Long feedId = event.feedId();
+        Long feedId = event.feedId(); // [수정] Record 접근자 사용
         log.debug("Processing feed deletion cleanup: feedId={}", feedId);
 
         try {
-            // 1. 알림 삭제 (피드 관련)
+            // 1. S3 이미지 삭제 (event에 imageUrls가 있어야 함)
+            if (event.imageUrls() != null && !event.imageUrls().isEmpty()) {
+                imageService.deleteImages(event.imageUrls());
+            }
+
+            // 2. 알림 삭제
             cleanupNotifications(event);
 
-            // 2. 댓글 관련 데이터 삭제
+            // 3. 댓글 관련 데이터 삭제
             cleanupComments(feedId);
 
-            // 3. 피드 좋아요/신고 삭제
+            // 4. 피드 좋아요/신고 삭제
             cleanupFeedLikesAndReports(feedId);
 
-            // 4. Redis 캐시 정리 (트랜잭션 외부 작업)
+            // 5. Redis 캐시 정리 (트랜잭션 외부 작업)
             cleanupCache(feedId);
 
             log.info("Feed deletion cleanup completed: feedId={}", feedId);
@@ -111,6 +115,7 @@ public class FeedDeletedEventListener {
 
     private void cleanupCache(Long feedId) {
         try {
+            // [수정] 메서드 이름 일치시킴 (deleteFeedLikeCount -> deleteLikeCount)
             likeCountCacheService.deleteLikeCount(feedId);
         } catch (Exception e) {
             log.warn("Failed to cleanup Redis cache: feedId={}", feedId, e);

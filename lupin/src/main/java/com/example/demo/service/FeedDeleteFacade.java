@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.config.properties.FeedProperties;
 import com.example.demo.domain.entity.Feed;
+import com.example.demo.domain.entity.FeedImage; // [추가]
 import com.example.demo.domain.entity.User;
 import com.example.demo.event.FeedDeletedEvent;
 import com.example.demo.exception.BusinessException;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections; // [추가]
 import java.util.List;
 import java.util.Objects;
 
@@ -54,11 +56,17 @@ public class FeedDeleteFacade {
         List<Long> allCommentIds = commentRepository.findCommentIdsByFeed(feed);
         Long writerId = feed.getWriter().getId();
 
+        // [추가] 삭제 전 이미지 S3 Key 수집
+        List<String> imageUrls = feed.getImages() != null 
+                ? feed.getImages().stream().map(FeedImage::getS3Key).toList() 
+                : Collections.emptyList();
+
         // Soft Delete (실제 삭제는 이벤트 리스너에서 처리)
         feedRepository.delete(feed);
 
         // 트랜잭션 커밋 후 각 도메인별 리스너가 자신의 데이터 정리
-        eventPublisher.publishEvent(FeedDeletedEvent.of(feedId, writerId, parentCommentIds, allCommentIds));
+        // [수정] imageUrls 파라미터 추가
+        eventPublisher.publishEvent(FeedDeletedEvent.of(feedId, writerId, parentCommentIds, allCommentIds, imageUrls));
 
         log.info("Feed deleted: feedId={}, userId={}", feedId, user.getId());
     }

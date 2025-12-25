@@ -27,18 +27,18 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
     @Query("DELETE FROM FeedReport fr WHERE fr.feed.id = :feedId")
     void deleteByFeedId(@Param("feedId") Long feedId);
 
-    // [추가] 객체 대신 ID로 카운트 조회 (Proxy 문제 해결용)
-    long countByFeedId(Long feedId);
-
-    @Query("SELECT COUNT(fr) > 0 FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
+    // [수정] Native Query로 변경하여 객체 매핑 문제 원천 차단 (테이블명 feed_reports 확인)
+    @Query(value = "SELECT COUNT(*) > 0 FROM feed_reports WHERE reporter_id = :reporterId AND feed_id = :feedId", nativeQuery = true)
     boolean existsByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
 
-    // [성능 최적화] 여러 피드에 대해 내가 신고한 피드 ID 목록 조회 (Batch Fetch)
-    @Query("SELECT fr.feed.id FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id IN :feedIds")
+    // [수정] 목록 조회용 Native Query
+    @Query(value = "SELECT feed_id FROM feed_reports WHERE reporter_id = :reporterId AND feed_id IN :feedIds", nativeQuery = true)
     java.util.List<Long> findReportedFeedIdsByReporterId(@Param("reporterId") Long reporterId, @Param("feedIds") java.util.List<Long> feedIds);
 
-    // [추가] 프록시 객체 비교 문제를 해결하기 위한 ID 기반 삭제 메서드
+    // [수정] 삭제도 Native Query로 확실하게 처리
     @Modifying
-    @Query("DELETE FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
+    @Query(value = "DELETE FROM feed_reports WHERE reporter_id = :reporterId AND feed_id = :feedId", nativeQuery = true)
     void deleteByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
+
+    long countByFeedId(Long feedId);
 }

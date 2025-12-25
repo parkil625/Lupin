@@ -2,6 +2,7 @@ package com.example.demo.dto.response;
 
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedImage;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -29,9 +30,14 @@ public class FeedResponse {
     private Long likes;
     private Long comments;
     private Boolean isLiked;
-    private Boolean isReported;
+    // [삭제] private Boolean isReported;  <-- 기존 중복 필드 삭제
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // [핵심] JSON 필드명을 "isReported"로 고정
+    @JsonProperty("isReported")
+    private boolean isReported;
 
     /**
      * [최적화] Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음
@@ -40,23 +46,14 @@ public class FeedResponse {
         return from(feed, false);
     }
 
-    /**
-     * [최적화] Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음
-     */
     public static FeedResponse from(Feed feed, boolean isLiked) {
         return from(feed, isLiked, false, null);
     }
 
-    /**
-     * [최적화] Feed 엔티티의 반정규화 필드 사용 + activeDays 포함
-     */
     public static FeedResponse from(Feed feed, boolean isLiked, Integer activeDays) {
         return from(feed, isLiked, false, activeDays);
     }
 
-    /**
-     * [권장] viewerId를 통해 신고 여부를 DB(엔티티 관계)에서 직접 확인하여 정확한 상태 반환
-     */
     public static FeedResponse from(Feed feed, Long viewerId) {
         boolean isReported = false;
         if (viewerId != null && feed.getFeedReports() != null) {
@@ -66,9 +63,6 @@ public class FeedResponse {
         return from(feed, false, isReported, null);
     }
 
-    /**
-     * [권장] viewerId를 통해 좋아요 및 신고 여부를 모두 확인
-     */
     public static FeedResponse from(Feed feed, Long viewerId, boolean isLiked) {
         boolean isReported = false;
         if (viewerId != null && feed.getFeedReports() != null) {
@@ -78,9 +72,6 @@ public class FeedResponse {
         return from(feed, isLiked, isReported, null);
     }
 
-    /**
-     * [최적화] Feed 엔티티의 반정규화 필드 사용 + activeDays + isReported 포함
-     */
     public static FeedResponse from(Feed feed, boolean isLiked, boolean isReported, Integer activeDays) {
         return FeedResponse.builder()
                 .id(feed.getId())
@@ -106,10 +97,6 @@ public class FeedResponse {
                 .build();
     }
 
-    /**
-     * @deprecated 반정규화 필드 사용으로 대체 - from(Feed, boolean) 사용 권장
-     * (테스트 호환성을 위해 유지)
-     */
     @Deprecated
     public static FeedResponse from(Feed feed, long likeCount, long commentCount) {
         return FeedResponse.builder()
@@ -135,9 +122,6 @@ public class FeedResponse {
                 .build();
     }
 
-    /**
-     * @deprecated 반정규화 필드 사용으로 대체 - from(Feed, boolean) 사용 권장
-     */
     @Deprecated
     public static FeedResponse from(Feed feed, long likeCount, long commentCount, boolean isLiked) {
         return FeedResponse.builder()

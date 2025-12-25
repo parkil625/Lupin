@@ -19,13 +19,11 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
 
     void deleteByReporterAndComment(User reporter, Comment comment);
 
-    // [추가] ID 기반 존재 확인
-    @Query("SELECT COUNT(cr) > 0 FROM CommentReport cr WHERE cr.reporter.id = :reporterId AND cr.comment.id = :commentId")
+    @Query(value = "SELECT COUNT(*) > 0 FROM comment_reports WHERE reporter_id = :reporterId AND comment_id = :commentId", nativeQuery = true)
     boolean existsByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
 
-    // [추가] ID 기반 삭제
     @Modifying
-    @Query("DELETE FROM CommentReport cr WHERE cr.reporter.id = :reporterId AND cr.comment.id = :commentId")
+    @Query(value = "DELETE FROM comment_reports WHERE reporter_id = :reporterId AND comment_id = :commentId", nativeQuery = true)
     void deleteByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
 
     void deleteByComment(Comment comment);
@@ -40,6 +38,6 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
     @Query("DELETE FROM CommentReport cr WHERE cr.comment.feed.id = :feedId")
     void deleteByFeedId(@Param("feedId") Long feedId);
 
-    @Query("SELECT cr.comment.id FROM CommentReport cr WHERE cr.reporter.id = :reporterId AND cr.comment.id IN :commentIds")
+    @Query(value = "SELECT comment_id FROM comment_reports WHERE reporter_id = :reporterId AND comment_id IN :commentIds", nativeQuery = true)
     java.util.List<Long> findReportedCommentIdsByReporterId(@Param("reporterId") Long reporterId, @Param("commentIds") java.util.List<Long> commentIds);
 }

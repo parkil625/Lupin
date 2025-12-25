@@ -23,10 +23,9 @@ public class CommentResponse {
     private Long likeCount;
     private Boolean isLiked;
     private LocalDateTime updatedAt;
+    private Boolean isReported;
 
     public static CommentResponse from(Comment comment) {
-        private Boolean isReported;
-
         return CommentResponse.builder()
                 .id(comment.getId())
                 .feedId(comment.getFeed().getId())

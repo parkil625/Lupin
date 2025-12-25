@@ -244,6 +244,10 @@ public class CommentService {
         Set<Long> likedIds = currentUser != null
                 ? getLikedCommentIds(currentUser.getId(), commentIds)
                 : Collections.emptySet();
+        // [추가] 신고 여부 조회
+        Set<Long> reportedIds = currentUser != null
+                ? getReportedCommentIds(currentUser.getId(), commentIds)
+                : Collections.emptySet();
         Map<Long, Integer> activeDaysMap = getActiveDaysMap(comments);
 
         return comments.stream()
@@ -251,9 +255,20 @@ public class CommentService {
                         comment,
                         likeCounts.getOrDefault(comment.getId(), 0L),
                         likedIds.contains(comment.getId()),
+                        reportedIds.contains(comment.getId()), // [추가] 신고 여부 전달
                         activeDaysMap.getOrDefault(comment.getWriter().getId(), 0)
                 ))
                 .toList();
+    }
+
+    /**
+     * [추가] 사용자가 신고한 댓글 ID 조회
+     */
+    private Set<Long> getReportedCommentIds(Long userId, List<Long> commentIds) {
+        if (commentIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return Set.copyOf(commentReportRepository.findReportedCommentIdsByReporterId(userId, commentIds));
     }
 
     /**

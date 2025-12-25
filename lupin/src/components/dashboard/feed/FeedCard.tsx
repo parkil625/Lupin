@@ -56,7 +56,6 @@ export function FeedCard({
   // 추가할 코드
   const [showComments, setShowComments] = useState(false);
   const [isReported, setIsReported] = useState(feed.isReported || false); // DB 상태로 초기화
-  const { deleteFeed } = useFeedStore();
 
   // [신고 핸들러] 신고 상태 토글
   const handleReport = async () => {

@@ -56,8 +56,8 @@ public class FeedQueryFacade {
 
         if (user != null) {
             isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feedId);
-            // 기존에 존재하는 배치 조회 메서드를 활용하여 신고 여부 확인 (리스트로 감싸서 호출)
-            isReported = !feedReportRepository.findReportedFeedIdsByReporterId(user.getId(), List.of(feedId)).isEmpty();
+            // [수정] 리스트 쿼리 대신 ID 기반 exists 메서드로 명확하게 조회
+            isReported = feedReportRepository.existsByReporterIdAndFeedId(user.getId(), feedId);
         }
 
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(List.of(feed));

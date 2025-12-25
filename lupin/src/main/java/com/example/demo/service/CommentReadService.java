@@ -188,7 +188,20 @@ public class CommentReadService {
      */
     public CommentResponse getCommentResponse(Long commentId, User user) {
         Comment comment = getComment(commentId);
-        // 기존 리스트 조립 로직을 재사용하여 상태(좋아요, 신고, 활동일)를 일관되게 주입
-        return assembleCommentResponses(List.of(comment), user).get(0);
+        
+        long likeCount = commentLikeRepository.countByComment(comment);
+        boolean isLiked = false;
+        boolean isReported = false;
+        
+        if (user != null) {
+            // 좋아요는 기존 리스트 메서드 활용
+            isLiked = !commentLikeRepository.findLikedCommentIdsByUserId(user.getId(), List.of(commentId)).isEmpty();
+            // [수정] 신고 여부는 ID 기반 exists 메서드로 명확하게 확인
+            isReported = commentReportRepository.existsByReporterIdAndCommentId(user.getId(), commentId);
+        }
+        
+        Map<Long, Integer> activeDaysMap = getActiveDaysMap(List.of(comment));
+
+        return CommentResponse.from(comment, likeCount, isLiked, isReported, activeDaysMap.getOrDefault(comment.getWriter().getId(), 0));
     }
 }

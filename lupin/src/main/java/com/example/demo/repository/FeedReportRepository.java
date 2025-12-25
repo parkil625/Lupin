@@ -36,4 +36,9 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
     // [성능 최적화] 여러 피드에 대해 내가 신고한 피드 ID 목록 조회 (Batch Fetch)
     @Query("SELECT fr.feed.id FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id IN :feedIds")
     java.util.List<Long> findReportedFeedIdsByReporterId(@Param("reporterId") Long reporterId, @Param("feedIds") java.util.List<Long> feedIds);
+
+    // [추가] 프록시 객체 비교 문제를 해결하기 위한 ID 기반 삭제 메서드
+    @Modifying
+    @Query("DELETE FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
+    void deleteByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
 }

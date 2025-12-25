@@ -31,7 +31,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -116,14 +115,17 @@ class FeedReportServiceTest {
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
         
-        given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        // [수정] ID 기반 existsMocking
+        given(feedReportRepository.existsByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(false);
+        // [수정] saveAndFlush -> save 변경
+        given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         feedReportService.toggleReport(reporter, feedId);
 
         // then
-        verify(feedReportRepository).saveAndFlush(any(FeedReport.class));
+        // [수정] saveAndFlush -> save 검증
+        verify(feedReportRepository).save(any(FeedReport.class));
     }
 
     @Test
@@ -132,17 +134,18 @@ class FeedReportServiceTest {
         // given
         Long feedId = 1L;
         given(feedRepository.existsById(feedId)).willReturn(true);
-        given(feedRepository.getReferenceById(feedId)).willReturn(feed);
+        // existsById가 true일 경우 getReferenceById 호출 안 될 수도 있지만(삭제 로직 상), 안전하게 유지
         
-        given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(true);
+        // [수정] ID 기반 exists Mocking
+        given(feedReportRepository.existsByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(true);
 
         // when
         feedReportService.toggleReport(reporter, feedId);
 
         // then
-        verify(feedReportRepository).deleteByReporterAndFeed(reporter, feed);
+        // [수정] ID 기반 delete 검증
+        verify(feedReportRepository).deleteByReporterIdAndFeedId(reporter.getId(), feedId);
         verify(feedReportRepository, never()).save(any(FeedReport.class));
-        verify(feedReportRepository, never()).saveAndFlush(any(FeedReport.class));
     }
 
     @Test
@@ -172,8 +175,10 @@ class FeedReportServiceTest {
         // [중요] 피드 삭제 로직에서 findById가 필요함 (이 테스트에서만 사용)
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
 
-        given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(i -> i.getArgument(0));
+        // [수정] ID 기반 Mocking
+        given(feedReportRepository.existsByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(false);
+        // [수정] save Mocking
+        given(feedReportRepository.save(any(FeedReport.class))).willAnswer(i -> i.getArgument(0));
 
         given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);
         given(feedReportRepository.countByFeedId(feedId)).willReturn(reportCount);
@@ -207,8 +212,10 @@ class FeedReportServiceTest {
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
         
-        given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        // [수정] ID 기반 Mocking
+        given(feedReportRepository.existsByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(false);
+        // [수정] save Mocking
+        given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
         given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);
         given(feedReportRepository.countByFeedId(feedId)).willReturn(reportCount);
@@ -234,8 +241,10 @@ class FeedReportServiceTest {
         // [중요] 중복 패널티라도 피드 삭제 로직은 실행되므로 findById 필요
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
         
-        given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
-        given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        // [수정] ID 기반 Mocking
+        given(feedReportRepository.existsByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(false);
+        // [수정] save Mocking
+        given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
         given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);
         given(feedReportRepository.countByFeedId(feedId)).willReturn(reportCount);

@@ -33,12 +33,18 @@ public class CommentReportService {
 
     @Transactional
     public void toggleReport(User reporter, Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COMMENT_NOT_FOUND));
+        // 엔티티 조회 전 ID로 존재 여부 확인 (성능 최적화 및 안전성)
+        if (!commentRepository.existsById(commentId)) {
+            throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
+        }
 
-        if (commentReportRepository.existsByReporterAndComment(reporter, comment)) {
-            commentReportRepository.deleteByReporterAndComment(reporter, comment);
+        // [수정] ID 기반 메서드로 토글 로직 수행
+        if (commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)) {
+            commentReportRepository.deleteByReporterIdAndCommentId(reporter.getId(), commentId);
         } else {
+            // 생성 시에만 엔티티 조회
+            Comment comment = commentRepository.getReferenceById(commentId);
+
             CommentReport commentReport = CommentReport.builder()
                     .reporter(reporter)
                     .comment(comment)

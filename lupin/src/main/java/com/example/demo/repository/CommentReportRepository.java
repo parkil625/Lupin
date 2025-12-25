@@ -19,6 +19,15 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
 
     void deleteByReporterAndComment(User reporter, Comment comment);
 
+    // [추가] ID 기반 존재 확인
+    @Query("SELECT COUNT(cr) > 0 FROM CommentReport cr WHERE cr.reporter.id = :reporterId AND cr.comment.id = :commentId")
+    boolean existsByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
+
+    // [추가] ID 기반 삭제
+    @Modifying
+    @Query("DELETE FROM CommentReport cr WHERE cr.reporter.id = :reporterId AND cr.comment.id = :commentId")
+    void deleteByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
+
     void deleteByComment(Comment comment);
 
     // [피드 삭제] 피드의 모든 댓글 신고 일괄 삭제

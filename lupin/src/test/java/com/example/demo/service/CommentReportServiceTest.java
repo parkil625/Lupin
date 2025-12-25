@@ -68,6 +68,7 @@ class CommentReportServiceTest {
                 .name("신고자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(reporter, "id", 100L); // [수정] ID 세팅
 
         writer = User.builder()
                 .userId("writer")
@@ -75,6 +76,7 @@ class CommentReportServiceTest {
                 .name("작성자")
                 .role(Role.MEMBER)
                 .build();
+        ReflectionTestUtils.setField(writer, "id", 200L); // [수정] ID 세팅
 
         feed = Feed.builder()
                 .writer(writer)
@@ -95,8 +97,12 @@ class CommentReportServiceTest {
     void reportCommentTest() {
         // given
         Long commentId = 1L;
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentReportRepository.existsByReporterAndComment(reporter, comment)).willReturn(false);
+        // [수정] existsById와 getReferenceById Mocking
+        given(commentRepository.existsById(commentId)).willReturn(true);
+        given(commentRepository.getReferenceById(commentId)).willReturn(comment);
+        
+        // [수정] ID 기반 exists 조회 Mocking
+        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(false);
         given(commentReportRepository.save(any(CommentReport.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -111,14 +117,16 @@ class CommentReportServiceTest {
     void cancelReportTest() {
         // given
         Long commentId = 1L;
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentReportRepository.existsByReporterAndComment(reporter, comment)).willReturn(true);
+        given(commentRepository.existsById(commentId)).willReturn(true);
+        // [수정] ID 기반 조회 Mocking
+        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(true);
 
         // when
         commentReportService.toggleReport(reporter, commentId);
 
         // then
-        verify(commentReportRepository).deleteByReporterAndComment(reporter, comment);
+        // [수정] ID 기반 삭제 메서드 검증
+        verify(commentReportRepository).deleteByReporterIdAndCommentId(reporter.getId(), commentId);
         verify(commentReportRepository, never()).save(any(CommentReport.class));
     }
 
@@ -127,7 +135,8 @@ class CommentReportServiceTest {
     void reportCommentNotFoundTest() {
         // given
         Long commentId = 999L;
-        given(commentRepository.findById(commentId)).willReturn(Optional.empty());
+        // [수정] existsById가 false 반환
+        given(commentRepository.existsById(commentId)).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> commentReportService.toggleReport(reporter, commentId))
@@ -143,9 +152,12 @@ class CommentReportServiceTest {
         long likeCount = 1L;
         long reportCount = 5L;
 
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentReportRepository.existsByReporterAndComment(reporter, comment)).willReturn(false);
+        given(commentRepository.existsById(commentId)).willReturn(true);
+        given(commentRepository.getReferenceById(commentId)).willReturn(comment);
+        
+        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(false);
         given(commentReportRepository.save(any(CommentReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        
         given(commentLikeRepository.countByComment(comment)).willReturn(likeCount);
         given(commentReportRepository.countByComment(comment)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);
@@ -166,9 +178,12 @@ class CommentReportServiceTest {
         long likeCount = 10L;
         long reportCount = 2L;
 
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentReportRepository.existsByReporterAndComment(reporter, comment)).willReturn(false);
+        given(commentRepository.existsById(commentId)).willReturn(true);
+        given(commentRepository.getReferenceById(commentId)).willReturn(comment);
+        
+        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(false);
         given(commentReportRepository.save(any(CommentReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        
         given(commentLikeRepository.countByComment(comment)).willReturn(likeCount);
         given(commentReportRepository.countByComment(comment)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(false);
@@ -188,9 +203,12 @@ class CommentReportServiceTest {
         long likeCount = 1L;
         long reportCount = 5L;
 
-        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
-        given(commentReportRepository.existsByReporterAndComment(reporter, comment)).willReturn(false);
+        given(commentRepository.existsById(commentId)).willReturn(true);
+        given(commentRepository.getReferenceById(commentId)).willReturn(comment);
+        
+        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(false);
         given(commentReportRepository.save(any(CommentReport.class))).willAnswer(invocation -> invocation.getArgument(0));
+        
         given(commentLikeRepository.countByComment(comment)).willReturn(likeCount);
         given(commentReportRepository.countByComment(comment)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);

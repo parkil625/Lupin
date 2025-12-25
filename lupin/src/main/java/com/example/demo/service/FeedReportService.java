@@ -53,23 +53,21 @@ public class FeedReportService {
             throw new BusinessException(ErrorCode.FEED_NOT_FOUND);
         }
 
-        // 3. [핵심] Feed를 '프록시(Proxy)'로 조회
-        // findById 대신 getReferenceById를 사용하여 불필요한 연관관계(이미지 등) 로딩을 방지합니다.
-        Feed feedProxy = feedRepository.getReferenceById(feedId);
-
-        if (feedReportRepository.existsByReporterAndFeed(managedReporter, feedProxy)) {
-            feedReportRepository.deleteByReporterAndFeed(managedReporter, feedProxy);
+        // 3. [수정] 프록시 비교 대신 ID 기반 메서드로 명확하게 존재 여부 확인 및 삭제
+        if (feedReportRepository.existsByReporterIdAndFeedId(managedReporter.getId(), feedId)) {
+            feedReportRepository.deleteByReporterIdAndFeedId(managedReporter.getId(), feedId);
         } else {
-            // 4. 프록시 객체를 사용하여 신고 생성 (DB 에러 방지)
+            // insert 시에는 연관관계 설정을 위해 프록시 사용 (단, 비교에는 사용하지 않음)
+            Feed feedProxy = feedRepository.getReferenceById(feedId);
+            
             FeedReport feedReport = FeedReport.builder()
                     .reporter(managedReporter)
                     .feed(feedProxy)
                     .build();
             
-            // 5. 즉시 DB 반영 (트랜잭션 커밋 시점의 충돌 방지)
-            feedReportRepository.saveAndFlush(feedReport);
+            feedReportRepository.save(feedReport); // saveAndFlush 불필요
 
-            // 6. 패널티 체크 (여기서는 실제 엔티티가 필요할 수 있으므로 다시 조회하거나 프록시 사용)
+            // 패널티 체크
             checkAndApplyPenalty(feedProxy);
         }
     }

@@ -148,7 +148,8 @@ class FeedControllerTest {
     @DisplayName("GET /api/feeds/{feedId} - 피드 상세 조회 성공")
     void getFeedDetail_Success() throws Exception {
         // given
-        given(feedQueryFacade.getFeedDetail(1L)).willReturn(testFeedResponse);
+        // [수정] Facade 메서드 변경에 맞춰 any(User.class) 추가
+        given(feedQueryFacade.getFeedDetail(any(User.class), eq(1L))).willReturn(testFeedResponse);
 
         // when & then
         mockMvc.perform(get("/api/feeds/1"))

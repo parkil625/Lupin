@@ -244,7 +244,7 @@ export function FeedCard({
           </div>
 
           {/* 피드 내용 */}
-          <div className="p-6 space-y-3 flex-1 overflow-auto bg-transparent">
+          <div className="p-6 pb-11 space-y-3 flex-1 overflow-auto bg-transparent">
             <FeedBadges feed={feed} />
             <FeedContentDisplay content={feed.content} />
           </div>

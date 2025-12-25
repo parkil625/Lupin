@@ -14,7 +14,7 @@ public interface UserPenaltyRepository extends JpaRepository<UserPenalty, Long> 
 
     // [수정] 스프링 데이터 JPA의 쿼리 메소드 기능을 사용하여 자동 생성 (가장 안전한 방법)
     boolean existsByUserIdAndPenaltyTypeAndCreatedAtAfter(
-            @Param("userId") Long userId, 
-            @Param("penaltyType") PenaltyType penaltyType, 
-            @Param("since") LocalDateTime since);
+            Long userId, 
+            PenaltyType penaltyType, 
+            LocalDateTime since);
 }

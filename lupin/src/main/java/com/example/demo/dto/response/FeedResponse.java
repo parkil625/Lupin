@@ -29,6 +29,7 @@ public class FeedResponse {
     private Long likes;
     private Long comments;
     private Boolean isLiked;
+    private Boolean isReported;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -43,13 +44,20 @@ public class FeedResponse {
      * [최적화] Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음
      */
     public static FeedResponse from(Feed feed, boolean isLiked) {
-        return from(feed, isLiked, null);
+        return from(feed, isLiked, false, null);
     }
 
     /**
      * [최적화] Feed 엔티티의 반정규화 필드 사용 + activeDays 포함
      */
     public static FeedResponse from(Feed feed, boolean isLiked, Integer activeDays) {
+        return from(feed, isLiked, false, activeDays);
+    }
+
+    /**
+     * [최적화] Feed 엔티티의 반정규화 필드 사용 + activeDays + isReported 포함
+     */
+    public static FeedResponse from(Feed feed, boolean isLiked, boolean isReported, Integer activeDays) {
         return FeedResponse.builder()
                 .id(feed.getId())
                 .activity(feed.getActivity())
@@ -68,6 +76,7 @@ public class FeedResponse {
                 .likes((long) feed.getLikeCount())
                 .comments((long) feed.getCommentCount())
                 .isLiked(isLiked)
+                .isReported(isReported)
                 .createdAt(feed.getCreatedAt())
                 .updatedAt(feed.getUpdatedAt())
                 .build();

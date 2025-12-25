@@ -20,6 +20,7 @@ export interface Feed {
   createdAt: string;
   updatedAt?: string;
   isLiked?: boolean;
+  isReported?: boolean; // [추가] 서버에서 오는 신고 여부
   // 프론트엔드 전용 (API 응답에서 계산)
   time?: string;
   author?: string; // writerName alias (하위호환)

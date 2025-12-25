@@ -14,8 +14,6 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
 
     long countByFeed(Feed feed);
 
-    long countByFeedId(Long feedId);
-
     boolean existsByReporterAndFeed(User reporter, Feed feed);
 
     void deleteByReporterAndFeed(User reporter, Feed feed);
@@ -28,4 +26,7 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
     @Modifying
     @Query("DELETE FROM FeedReport fr WHERE fr.feed.id = :feedId")
     void deleteByFeedId(@Param("feedId") Long feedId);
+
+    // [추가] 객체 대신 ID로 카운트 조회 (Proxy 문제 해결용)
+    long countByFeedId(Long feedId);
 }

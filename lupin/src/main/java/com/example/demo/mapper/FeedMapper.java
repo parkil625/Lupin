@@ -3,6 +3,7 @@ package com.example.demo.mapper;
 import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.response.FeedResponse;
+import com.example.demo.repository.FeedReportRepository;
 import com.example.demo.service.FeedLikeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class FeedMapper {
 
     private final FeedLikeService feedLikeService;
+    private final FeedReportRepository feedReportRepository;
 
     /**
      * Feed 엔티티를 FeedResponse로 변환 (기본)
@@ -30,7 +32,8 @@ public class FeedMapper {
      */
     public FeedResponse toResponse(Feed feed, User currentUser) {
         boolean isLiked = currentUser != null && feedLikeService.isLiked(currentUser.getId(), feed.getId());
-        return FeedResponse.from(feed, isLiked);
+        boolean isReported = currentUser != null && feedReportRepository.existsByReporterAndFeed(currentUser, feed);
+        return FeedResponse.from(feed, isLiked, isReported, null);
     }
 
     /**
@@ -38,7 +41,8 @@ public class FeedMapper {
      */
     public FeedResponse toResponse(Feed feed, User currentUser, Map<Long, Integer> activeDaysMap) {
         boolean isLiked = currentUser != null && feedLikeService.isLiked(currentUser.getId(), feed.getId());
+        boolean isReported = currentUser != null && feedReportRepository.existsByReporterAndFeed(currentUser, feed);
         Integer activeDays = activeDaysMap.getOrDefault(feed.getWriter().getId(), 0);
-        return FeedResponse.from(feed, isLiked, activeDays);
+        return FeedResponse.from(feed, isLiked, isReported, activeDays);
     }
 }

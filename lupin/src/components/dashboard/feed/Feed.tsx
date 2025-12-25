@@ -626,11 +626,18 @@ function CommentPanel({
               <div className="mb-3">
                 <input
                   type="text"
-                  placeholder="답글을 입력하세요..."
+                  placeholder={
+                    hasCommentPenalty
+                      ? "댓글 작성이 제한되었습니다."
+                      : "답글을 입력하세요..."
+                  }
                   value={replyCommentText}
                   onChange={(e) => setReplyCommentText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendReply()}
-                  className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none"
+                  onKeyDown={(e) =>
+                    !hasCommentPenalty && e.key === "Enter" && handleSendReply()
+                  }
+                  disabled={hasCommentPenalty}
+                  className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   autoFocus
                 />
                 <div className="flex gap-2 mt-2">
@@ -643,13 +650,34 @@ function CommentPanel({
                   >
                     취소
                   </button>
-                  <button
-                    onClick={handleSendReply}
-                    disabled={!replyCommentText.trim()}
-                    className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer"
-                  >
-                    답글
-                  </button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="inline-block">
+                          <button
+                            onClick={handleSendReply}
+                            disabled={
+                              hasCommentPenalty || !replyCommentText.trim()
+                            }
+                            className={`px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                              hasCommentPenalty
+                                ? "bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+                                : "text-[#C93831] hover:text-[#B02F28] cursor-pointer"
+                            }`}
+                          >
+                            답글
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      {hasCommentPenalty && (
+                        <TooltipContent side="top">
+                          <p>
+                            신고 누적으로 인해 댓글 작성이 3일간 제한되었습니다.
+                          </p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             )}

@@ -97,8 +97,7 @@ public class CommentService {
 
         comment.validateOwner(user);
 
-        // 댓글 카운트 감소 (원자적 업데이트로 동시성 문제 해결)
-        feedRepository.decrementCommentCount(comment.getFeed().getId());
+        // [수정] 단순 감소(decrement) 로직 제거 - 마지막에 동기화(sync)로 처리
 
         // COMMENT_LIKE 알림 삭제 (refId = commentId)
         notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
@@ -115,6 +114,11 @@ public class CommentService {
         }
 
         commentRepository.delete(comment);
+
+        // [핵심] 삭제 후 실제 DB에 남은 댓글 수(deleted_at 없는 것만)를 세어서 피드 정보에 덮어씌움
+        // @SQLRestriction 덕분에 countByFeed는 삭제된 댓글을 자동으로 제외하고 셉니다.
+        long realCount = commentRepository.countByFeed(comment.getFeed());
+        feedRepository.updateCommentCount(comment.getFeed().getId(), (int) realCount);
     }
 
     /**
@@ -135,11 +139,7 @@ public class CommentService {
         // [최적화] 대댓글들의 좋아요 일괄 삭제 (N개 쿼리 → 1개 쿼리)
         commentLikeRepository.deleteByCommentIn(replies);
 
-        // 대댓글 카운트 벌크 감소 후 일괄 삭제 (N번 쿼리 → 1번 쿼리로 최적화)
-        Long feedId = parentComment.getFeed().getId();
-        if (!replies.isEmpty()) {
-            feedRepository.decrementCommentCountBy(feedId, replies.size());
-        }
+        // [수정] 단순 감소 로직 제거 (상위 메서드에서 일괄 동기화)
         commentRepository.deleteAll(replies);
     }
 

@@ -384,6 +384,7 @@ export function FeedCommentSection({ feedId }: FeedCommentSectionProps) {
                   commentReported={commentReported}
                   onReportComment={handleReportComment}
                   currentUserName={currentUserName}
+                  hasCommentPenalty={hasCommentPenalty}
                 />
               ))
             )}
@@ -465,6 +466,7 @@ interface CommentItemProps {
   commentReported: Record<number, boolean>;
   onReportComment: (id: number) => void;
   currentUserName: string;
+  hasCommentPenalty: boolean; // [추가]
 }
 
 function CommentItem({
@@ -482,6 +484,7 @@ function CommentItem({
   commentReported,
   onReportComment,
   currentUserName,
+  hasCommentPenalty, // [추가]
 }: CommentItemProps) {
   const isReply = depth > 0;
   const hasReplies = comment.replies && comment.replies.length > 0;
@@ -556,11 +559,18 @@ function CommentItem({
             <div className="mb-3">
               <input
                 type="text"
-                placeholder="답글을 입력하세요..."
+                placeholder={
+                  hasCommentPenalty
+                    ? "댓글 작성이 제한되었습니다."
+                    : "답글을 입력하세요..."
+                }
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && onSendReply()}
-                className="w-full py-2 text-sm bg-transparent border-0 border-b-2 border-gray-300 outline-none focus:border-[#C93831] transition-colors"
+                onKeyPress={(e) =>
+                  !hasCommentPenalty && e.key === "Enter" && onSendReply()
+                }
+                disabled={hasCommentPenalty}
+                className="w-full py-2 text-sm bg-transparent border-0 border-b-2 border-gray-300 outline-none focus:border-[#C93831] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 autoFocus
               />
               <div className="flex gap-2 mt-2">
@@ -569,17 +579,36 @@ function CommentItem({
                     setReplyingTo(null);
                     setReplyText("");
                   }}
-                  className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900"
+                  className="px-3 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 cursor-pointer"
                 >
                   취소
                 </button>
-                <button
-                  onClick={onSendReply}
-                  disabled={!replyText.trim()}
-                  className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  답글
-                </button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="inline-block">
+                        <button
+                          onClick={onSendReply}
+                          disabled={hasCommentPenalty || !replyText.trim()}
+                          className={`px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                            hasCommentPenalty
+                              ? "bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+                              : "text-[#C93831] hover:text-[#B02F28] cursor-pointer"
+                          }`}
+                        >
+                          답글
+                        </button>
+                      </div>
+                    </TooltipTrigger>
+                    {hasCommentPenalty && (
+                      <TooltipContent side="top">
+                        <p>
+                          신고 누적으로 인해 댓글 작성이 3일간 제한되었습니다.
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           )}
@@ -614,6 +643,7 @@ function CommentItem({
               commentReported={commentReported}
               onReportComment={onReportComment}
               currentUserName={currentUserName}
+              hasCommentPenalty={hasCommentPenalty} // [추가]
             />
           ))}
         </div>

@@ -74,4 +74,10 @@ public interface FeedRepository extends JpaRepository<Feed, Long>, FeedRepositor
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Feed f SET f.likeCount = :count WHERE f.id = :feedId")
     void updateLikeCount(@Param("feedId") Long feedId, @Param("count") int count);
+
+    // [데이터 정합성] 댓글 카운트 강제 동기화 (삭제 시 유령 카운트 방지)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Feed f SET f.commentCount = :count WHERE f.id = :feedId")
+    void updateCommentCount(@Param("feedId") Long feedId, @Param("count") int count);
 }
+    

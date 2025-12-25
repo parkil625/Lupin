@@ -47,7 +47,8 @@ public class CommentService {
     public Comment createComment(User writer, Long feedId, String content) {
         // [수정] 댓글 작성 금지 패널티 확인 (3일)
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-        if (userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(writer, PenaltyType.COMMENT, threeDaysAgo)) {
+        // [수정] User 객체 대신 ID로 조회
+        if (userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(writer.getId(), PenaltyType.COMMENT, threeDaysAgo)) {
              throw new BusinessException(ErrorCode.COMMENT_CREATION_RESTRICTED);
         }
 
@@ -165,7 +166,8 @@ public class CommentService {
     public Comment createReply(User writer, Long feedId, Long parentId, String content) {
         // [수정] 대댓글 작성 금지 패널티 확인 (3일) - 댓글 금지와 동일하게 처리
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-        if (userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(writer, PenaltyType.COMMENT, threeDaysAgo)) {
+        // [수정] User 객체 대신 ID로 조회
+        if (userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(writer.getId(), PenaltyType.COMMENT, threeDaysAgo)) {
              throw new BusinessException(ErrorCode.COMMENT_CREATION_RESTRICTED);
         }
 

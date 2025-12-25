@@ -46,6 +46,8 @@ class UserPenaltyServiceTest {
                 .name("테스트유저")
                 .role(Role.MEMBER)
                 .build();
+        // [수정] ID 설정 (서비스에서 getId()를 호출하므로 필수)
+        org.springframework.test.util.ReflectionTestUtils.setField(user, "id", 1L);
 
         // PenaltyProperties mock 설정 (lenient - 모든 테스트에서 사용되지 않아도 에러 발생 안함)
         lenient().when(penaltyProperties.getDurationDays()).thenReturn(3);
@@ -74,8 +76,9 @@ class UserPenaltyServiceTest {
     void hasActivePenaltyTrueTest() {
         // given
         PenaltyType penaltyType = PenaltyType.FEED;
-        given(userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(
-                eq(user), eq(penaltyType), any(LocalDateTime.class)))
+        // [수정] existsByUserId... 로 변경하고 eq(user.getId()) 사용
+        given(userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(
+                eq(user.getId()), eq(penaltyType), any(LocalDateTime.class)))
                 .willReturn(true);
 
         // when
@@ -90,8 +93,9 @@ class UserPenaltyServiceTest {
     void hasActivePenaltyFalseTest() {
         // given
         PenaltyType penaltyType = PenaltyType.COMMENT;
-        given(userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(
-                eq(user), eq(penaltyType), any(LocalDateTime.class)))
+        // [수정] existsByUserId... 로 변경하고 eq(user.getId()) 사용
+        given(userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(
+                eq(user.getId()), eq(penaltyType), any(LocalDateTime.class)))
                 .willReturn(false);
 
         // when

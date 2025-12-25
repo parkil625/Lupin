@@ -214,8 +214,8 @@ class FeedServiceTest {
                 .build();
         ReflectionTestUtils.setField(createdFeed, "id", 1L);
 
-        // 패널티 확인 Mock 추가
-        given(userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(any(), any(), any()))
+        // [수정] 패널티 확인 Mock 추가 (메서드명 및 파라미터 변경 반영)
+        given(userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(any(), any(), any()))
                 .willReturn(false);
 
         given(imageMetadataService.extractPhotoDateTime("start.jpg"))

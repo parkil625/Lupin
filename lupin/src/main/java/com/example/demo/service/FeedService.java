@@ -87,7 +87,8 @@ public class FeedService {
     public Feed createFeed(User writer, String activity, String content, String startImageKey, String endImageKey, List<String> otherImageKeys) {
         // [수정] 피드 작성 금지 패널티 확인 (최근 3일 이내 기록 존재 여부)
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-        if (userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(writer, PenaltyType.FEED, threeDaysAgo)) {
+        // [수정] User 객체 대신 ID로 조회
+        if (userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(writer.getId(), PenaltyType.FEED, threeDaysAgo)) {
              throw new BusinessException(ErrorCode.FEED_CREATION_RESTRICTED);
         }
 

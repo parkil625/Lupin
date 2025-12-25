@@ -56,8 +56,8 @@ public class FeedQueryFacade {
 
         if (user != null) {
             isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feedId);
-            // [수정] Native Query 기반 exists 메서드로 정확하게 조회
-            isReported = feedReportRepository.existsByReporterIdAndFeedId(user.getId(), feedId);
+            
+            isReported = feedReportRepository.countByReporterIdAndFeedId(user.getId(), feedId) > 0;
         }
 
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(List.of(feed));

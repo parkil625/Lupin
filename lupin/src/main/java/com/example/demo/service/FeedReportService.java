@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Slf4j // [추가] 로그 사용을 위해 필수
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -52,7 +52,7 @@ public class FeedReportService {
             throw new BusinessException(ErrorCode.FEED_NOT_FOUND);
         }
 
-        if (feedReportRepository.existsByReporterIdAndFeedId(managedReporter.getId(), feedId)) {
+        if (feedReportRepository.countByReporterIdAndFeedId(managedReporter.getId(), feedId) > 0) {
             feedReportRepository.deleteByReporterIdAndFeedId(managedReporter.getId(), feedId);
         } else {
             Feed feedProxy = feedRepository.getReferenceById(feedId);

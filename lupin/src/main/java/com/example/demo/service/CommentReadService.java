@@ -195,8 +195,8 @@ public class CommentReadService {
         
         if (user != null) {
             isLiked = !commentLikeRepository.findLikedCommentIdsByUserId(user.getId(), List.of(commentId)).isEmpty();
-            // [수정] Native Query exists 메서드 사용
-            isReported = commentReportRepository.existsByReporterIdAndCommentId(user.getId(), commentId);
+            // [수정] count > 0 사용
+            isReported = commentReportRepository.countByReporterIdAndCommentId(user.getId(), commentId) > 0;
         }
         
         Map<Long, Integer> activeDaysMap = getActiveDaysMap(List.of(comment));

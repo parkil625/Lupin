@@ -19,8 +19,9 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
 
     void deleteByReporterAndComment(User reporter, Comment comment);
 
-    @Query(value = "SELECT COUNT(*) > 0 FROM comment_reports WHERE reporter_id = :reporterId AND comment_id = :commentId", nativeQuery = true)
-    boolean existsByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
+    // [수정] Long 반환, count 쿼리
+    @Query(value = "SELECT COUNT(*) FROM comment_reports WHERE reporter_id = :reporterId AND comment_id = :commentId", nativeQuery = true)
+    Long countByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
 
     @Modifying
     @Query(value = "DELETE FROM comment_reports WHERE reporter_id = :reporterId AND comment_id = :commentId", nativeQuery = true)
@@ -28,12 +29,10 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
 
     void deleteByComment(Comment comment);
 
-    // [피드 삭제] 피드의 모든 댓글 신고 일괄 삭제
     @Modifying
     @Query("DELETE FROM CommentReport cr WHERE cr.comment.feed = :feed")
     void deleteByFeed(@Param("feed") Feed feed);
 
-    // [이벤트 기반 삭제] feedId로 삭제 (Soft Delete 후에도 사용 가능)
     @Modifying
     @Query("DELETE FROM CommentReport cr WHERE cr.comment.feed.id = :feedId")
     void deleteByFeedId(@Param("feedId") Long feedId);

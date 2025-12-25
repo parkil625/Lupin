@@ -33,16 +33,14 @@ public class CommentReportService {
 
     @Transactional
     public void toggleReport(User reporter, Long commentId) {
-        // 엔티티 조회 전 ID로 존재 여부 확인 (성능 최적화 및 안전성)
         if (!commentRepository.existsById(commentId)) {
             throw new BusinessException(ErrorCode.COMMENT_NOT_FOUND);
         }
 
-        // [수정] ID 기반 메서드로 토글 로직 수행
-        if (commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)) {
+        // [수정] count > 0 체크
+        if (commentReportRepository.countByReporterIdAndCommentId(reporter.getId(), commentId) > 0) {
             commentReportRepository.deleteByReporterIdAndCommentId(reporter.getId(), commentId);
         } else {
-            // 생성 시에만 엔티티 조회
             Comment comment = commentRepository.getReferenceById(commentId);
 
             CommentReport commentReport = CommentReport.builder()
@@ -55,6 +53,7 @@ public class CommentReportService {
         }
     }
 
+    // ... 나머지 메서드(checkAndApplyPenalty, deleteCommentByReport) 유지 ...
     private void checkAndApplyPenalty(Comment comment) {
         long likeCount = commentLikeRepository.countByComment(comment);
         long reportCount = commentReportRepository.countByComment(comment);
@@ -70,7 +69,6 @@ public class CommentReportService {
     }
 
     private void deleteCommentByReport(Comment comment) {
-        // COMMENT_LIKE 알림 삭제 (refId = CommentLike ID)
         List<String> commentLikeIds = commentLikeRepository.findByComment(comment).stream()
                 .map(cl -> String.valueOf(cl.getId()))
                 .toList();
@@ -78,7 +76,6 @@ public class CommentReportService {
             notificationRepository.deleteByRefIdInAndType(commentLikeIds, NotificationType.COMMENT_LIKE);
         }
 
-        // REPLY 알림 삭제 (refId = Reply Comment ID)
         List<String> replyIds = commentRepository.findByParentOrderByIdAsc(comment).stream()
                 .map(r -> String.valueOf(r.getId()))
                 .toList();

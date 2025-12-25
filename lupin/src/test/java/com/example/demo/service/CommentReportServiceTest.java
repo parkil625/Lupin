@@ -13,14 +13,14 @@ import com.example.demo.repository.CommentReportRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 
@@ -68,7 +68,7 @@ class CommentReportServiceTest {
                 .name("신고자")
                 .role(Role.MEMBER)
                 .build();
-        ReflectionTestUtils.setField(reporter, "id", 100L); // [수정] ID 세팅
+        ReflectionTestUtils.setField(reporter, "id", 100L);
 
         writer = User.builder()
                 .userId("writer")
@@ -76,7 +76,7 @@ class CommentReportServiceTest {
                 .name("작성자")
                 .role(Role.MEMBER)
                 .build();
-        ReflectionTestUtils.setField(writer, "id", 200L); // [수정] ID 세팅
+        ReflectionTestUtils.setField(writer, "id", 200L);
 
         feed = Feed.builder()
                 .writer(writer)
@@ -97,12 +97,11 @@ class CommentReportServiceTest {
     void reportCommentTest() {
         // given
         Long commentId = 1L;
-        // [수정] existsById와 getReferenceById Mocking
         given(commentRepository.existsById(commentId)).willReturn(true);
         given(commentRepository.getReferenceById(commentId)).willReturn(comment);
         
-        // [수정] ID 기반 exists 조회 Mocking
-        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(false);
+        // [수정] countBy 호출, 리턴값 0L (없음)
+        given(commentReportRepository.countByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(0L);
         given(commentReportRepository.save(any(CommentReport.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -118,14 +117,13 @@ class CommentReportServiceTest {
         // given
         Long commentId = 1L;
         given(commentRepository.existsById(commentId)).willReturn(true);
-        // [수정] ID 기반 조회 Mocking
-        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(true);
+        // [수정] countBy 호출, 리턴값 1L (있음)
+        given(commentReportRepository.countByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(1L);
 
         // when
         commentReportService.toggleReport(reporter, commentId);
 
         // then
-        // [수정] ID 기반 삭제 메서드 검증
         verify(commentReportRepository).deleteByReporterIdAndCommentId(reporter.getId(), commentId);
         verify(commentReportRepository, never()).save(any(CommentReport.class));
     }
@@ -135,7 +133,6 @@ class CommentReportServiceTest {
     void reportCommentNotFoundTest() {
         // given
         Long commentId = 999L;
-        // [수정] existsById가 false 반환
         given(commentRepository.existsById(commentId)).willReturn(false);
 
         // when & then
@@ -155,7 +152,8 @@ class CommentReportServiceTest {
         given(commentRepository.existsById(commentId)).willReturn(true);
         given(commentRepository.getReferenceById(commentId)).willReturn(comment);
         
-        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(false);
+        // [수정] 0L
+        given(commentReportRepository.countByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(0L);
         given(commentReportRepository.save(any(CommentReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
         given(commentLikeRepository.countByComment(comment)).willReturn(likeCount);
@@ -181,7 +179,8 @@ class CommentReportServiceTest {
         given(commentRepository.existsById(commentId)).willReturn(true);
         given(commentRepository.getReferenceById(commentId)).willReturn(comment);
         
-        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(false);
+        // [수정] 0L
+        given(commentReportRepository.countByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(0L);
         given(commentReportRepository.save(any(CommentReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
         given(commentLikeRepository.countByComment(comment)).willReturn(likeCount);
@@ -206,7 +205,8 @@ class CommentReportServiceTest {
         given(commentRepository.existsById(commentId)).willReturn(true);
         given(commentRepository.getReferenceById(commentId)).willReturn(comment);
         
-        given(commentReportRepository.existsByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(false);
+        // [수정] 0L
+        given(commentReportRepository.countByReporterIdAndCommentId(reporter.getId(), commentId)).willReturn(0L);
         given(commentReportRepository.save(any(CommentReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
         given(commentLikeRepository.countByComment(comment)).willReturn(likeCount);

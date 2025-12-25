@@ -1040,7 +1040,6 @@ export default function FeedView({
   scrollToFeedId,
   setScrollToFeedId,
   loadMoreFeeds,
-  hasMoreFeeds,
   isLoadingFeeds,
 }: FeedViewProps) {
   // 스토어, 이미지 프리로드, 검색 등 기존 로직 유지

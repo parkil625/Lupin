@@ -827,8 +827,9 @@ const FeedItem = React.memo(function FeedItem({
 
   return (
     <div
-      // [수정] FeedDetailDialogHome과 동일한 높이 적용 (모바일: calc(100vh-130px), 데스크톱: 95vh)
-      className={`h-[calc(100vh-130px)] md:h-[95vh] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
+      // [수정] 패딩(py-4 = 32px) 공간만큼 높이를 뺌 -> calc(100vh - 130px - 32px) = calc(100vh - 162px)
+      // 데스크톱도 동일하게 비율 조정 (95vh -> 90vh 등) 하거나 유지
+      className={`h-[calc(100vh-162px)] md:h-[90vh] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
@@ -1114,8 +1115,9 @@ export default function FeedView({
             <div
               key={feed.id}
               id={`feed-${feed.id}`}
-              // [수정] h-full, items-center, py-4 제거 -> pb-4만 남겨서 하단 여백 확보 및 상단 정렬
-              className="w-full snap-start snap-always flex justify-center pb-4"
+              // [수정] 높이 100%, 상하 패딩(py-4) 복구, 수직 중앙 정렬(items-center) 복구
+              // 이제 FeedItem 높이가 줄었으므로 화면 안에 쏙 들어옵니다.
+              className="h-full w-full snap-start snap-always flex items-center justify-center py-4"
             >
               <FeedItem
                 feed={feed}

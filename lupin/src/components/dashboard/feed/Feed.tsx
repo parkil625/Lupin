@@ -1101,6 +1101,8 @@ export default function FeedView({
       {/* 피드 리스트 컨테이너 (윈도윙 적용) */}
       <div className="flex-1 w-full h-full overflow-hidden relative">
         <Virtuoso
+          // [수정] 스크롤바 숨김 & 스냅 기능 복구
+          className="scrollbar-hide snap-y snap-mandatory"
           style={{ height: "100%", width: "100%" }}
           data={filteredFeeds}
           // [핵심] 바닥에 닿으면 loadMoreFeeds 자동 호출
@@ -1111,7 +1113,9 @@ export default function FeedView({
             <div
               key={feed.id}
               id={`feed-${feed.id}`}
-              className="w-full h-full min-h-[500px] py-2" // space-y-4 대신 py-2 사용
+              // [수정] 높이를 화면에 꽉 차게(h-full) 강제하고, 스냅 위치(snap-start) 지정
+              // min-h-[500px]와 py-2를 제거하여 불필요한 여백/크기 없앰
+              className="w-full h-full snap-start snap-always flex items-center justify-center"
             >
               <FeedItem
                 feed={feed}

@@ -55,8 +55,11 @@ public class FeedController {
     }
 
     @GetMapping("/{feedId}")
-    public ResponseEntity<FeedResponse> getFeedDetail(@PathVariable Long feedId) {
-        return ResponseEntity.ok(feedQueryFacade.getFeedDetail(feedId));
+    public ResponseEntity<FeedResponse> getFeedDetail(
+            @CurrentUser User user,
+            @PathVariable Long feedId
+    ) {
+        return ResponseEntity.ok(feedQueryFacade.getFeedDetail(user, feedId));
     }
 
     @GetMapping

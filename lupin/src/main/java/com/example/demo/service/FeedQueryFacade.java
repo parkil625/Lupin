@@ -46,11 +46,23 @@ public class FeedQueryFacade {
     }
 
     /**
-     * 피드 상세 조회
+     * 피드 상세 조회 (상태 조립 포함)
      */
-    public FeedResponse getFeedDetail(Long feedId) {
+    public FeedResponse getFeedDetail(User user, Long feedId) {
         Feed feed = feedService.getFeedDetail(feedId);
-        return feedMapper.toResponse(feed);
+
+        boolean isLiked = false;
+        boolean isReported = false;
+
+        if (user != null) {
+            isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feedId);
+            // 기존에 존재하는 배치 조회 메서드를 활용하여 신고 여부 확인 (리스트로 감싸서 호출)
+            isReported = !feedReportRepository.findReportedFeedIdsByReporterId(user.getId(), List.of(feedId)).isEmpty();
+        }
+
+        Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(List.of(feed));
+
+        return FeedResponse.from(feed, isLiked, isReported, activeDaysMap.getOrDefault(feed.getWriter().getId(), 0));
     }
 
     /**

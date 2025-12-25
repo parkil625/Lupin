@@ -182,4 +182,13 @@ public class CommentReadService {
         }
         return activeDaysMap;
     }
+
+    /**
+     * 댓글 단건 조회 (좋아요, 신고, 활동일 정보 포함)
+     */
+    public CommentResponse getCommentResponse(Long commentId, User user) {
+        Comment comment = getComment(commentId);
+        // 기존 리스트 조립 로직을 재사용하여 상태(좋아요, 신고, 활동일)를 일관되게 주입
+        return assembleCommentResponses(List.of(comment), user).get(0);
+    }
 }

@@ -78,9 +78,11 @@ public class CommentController {
     }
 
     @GetMapping("/comments/{commentId}")
-    public ResponseEntity<CommentResponse> getComment(@PathVariable Long commentId) {
-        Comment comment = commentReadService.getComment(commentId);
-        return ResponseEntity.ok(CommentResponse.from(comment));
+    public ResponseEntity<CommentResponse> getComment(
+            @CurrentUser User user,
+            @PathVariable Long commentId
+    ) {
+        return ResponseEntity.ok(commentReadService.getCommentResponse(commentId, user));
     }
 
     @PostMapping("/comments/{commentId}/replies")

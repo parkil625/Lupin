@@ -175,8 +175,8 @@ class FeedReportServiceTest {
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
         given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(i -> i.getArgument(0));
 
-        given(feedLikeRepository.countByFeed(feed)).willReturn(likeCount);
-        given(feedReportRepository.countByFeed(feed)).willReturn(reportCount);
+        given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);
+        given(feedReportRepository.countByFeedId(feedId)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);
         given(userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)).willReturn(false);
 
@@ -210,8 +210,8 @@ class FeedReportServiceTest {
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
         given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
-        given(feedLikeRepository.countByFeed(feed)).willReturn(likeCount);
-        given(feedReportRepository.countByFeed(feed)).willReturn(reportCount);
+        given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);
+        given(feedReportRepository.countByFeedId(feedId)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(false);
 
         // when
@@ -237,8 +237,8 @@ class FeedReportServiceTest {
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
         given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
-        given(feedLikeRepository.countByFeed(feed)).willReturn(likeCount);
-        given(feedReportRepository.countByFeed(feed)).willReturn(reportCount);
+        given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);
+        given(feedReportRepository.countByFeedId(feedId)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);
         given(userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)).willReturn(true); // 이미 패널티 활성 상태
 

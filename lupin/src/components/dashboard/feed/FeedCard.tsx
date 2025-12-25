@@ -22,7 +22,6 @@ import { Feed } from "@/types/dashboard.types";
 import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { useImageBrightness } from "@/hooks";
 import { getCdnUrl, reportApi } from "@/api"; // reportApi 추가 확인 필요
-import { useFeedStore } from "@/store/useFeedStore";
 import {
   DropdownMenu,
   DropdownMenuContent,

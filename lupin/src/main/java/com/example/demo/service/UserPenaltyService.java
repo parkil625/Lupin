@@ -30,7 +30,7 @@ public class UserPenaltyService {
 
     public boolean hasActivePenalty(User user, PenaltyType penaltyType) {
         LocalDateTime since = LocalDateTime.now().minusDays(penaltyProperties.getDurationDays());
-        // [수정] User 객체 대신 UserId로 조회
+        // [수정] User 객체 대신 ID로 조회
         return userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(user.getId(), penaltyType, since);
     }
 

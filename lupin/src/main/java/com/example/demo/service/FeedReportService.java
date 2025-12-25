@@ -89,13 +89,17 @@ public class FeedReportService {
             boolean hasActivePenalty = userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED);
             log.info(">>> [신고 디버깅] 작성자(ID:{})가 이미 패널티 중인가? {}", writer.getId(), hasActivePenalty);
 
+            // [수정] 이미 정지된 유저라도 피드는 삭제되어야 함
             if (!hasActivePenalty) {
-                log.info(">>> [신고 디버깅] 패널티 부여 및 피드 삭제 시작");
+                log.info(">>> [신고 디버깅] 신규 패널티 부여");
                 userPenaltyService.addPenalty(writer, PenaltyType.FEED);
-                deleteFeedByReport(feed);
-                eventPublisher.publishEvent(NotificationEvent.feedDeleted(writer.getId()));
-                log.info(">>> [신고 디버깅] 처리 완료");
             }
+
+            // 피드 삭제는 패널티 여부와 상관없이 조건 충족 시 무조건 실행
+            log.info(">>> [신고 디버깅] 피드 삭제 시작");
+            deleteFeedByReport(feed);
+            eventPublisher.publishEvent(NotificationEvent.feedDeleted(writer.getId()));
+            log.info(">>> [신고 디버깅] 처리 완료");
         }
     }
 

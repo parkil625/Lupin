@@ -10,6 +10,10 @@ public enum ErrorCode {
     // Auth
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     USER_BANNED(HttpStatus.FORBIDDEN, "정지된 계정입니다."),
+    // [추가] 기능 제한 에러 코드
+    FEED_CREATION_RESTRICTED(HttpStatus.FORBIDDEN, "피드 작성 금지 패널티가 적용 중입니다."),
+    COMMENT_CREATION_RESTRICTED(HttpStatus.FORBIDDEN, "댓글 작성 금지 패널티가 적용 중입니다."),
+    
     INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),

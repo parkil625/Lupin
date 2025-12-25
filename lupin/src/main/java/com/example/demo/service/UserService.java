@@ -29,7 +29,8 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PointLogRepository pointLogRepository;
+    private final PointService pointService;
+    private final UserPenaltyRepository userPenaltyRepository; // [추가]
     private final FeedRepository feedRepository;
     private final CommentRepository commentRepository;
 

@@ -155,7 +155,9 @@ class CommentControllerTest {
     @DisplayName("GET /api/comments/{commentId} - 댓글 단건 조회 성공")
     void getComment_Success() throws Exception {
         // given - CQRS: CommentReadService 사용
-        given(commentReadService.getComment(1L)).willReturn(testComment);
+        CommentResponse response = CommentResponse.from(testComment);
+        // [수정] 컨트롤러 변경에 맞춰 getCommentResponse 메서드를 모킹
+        given(commentReadService.getCommentResponse(eq(1L), any(User.class))).willReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/comments/1"))

@@ -101,11 +101,10 @@ class FeedReportServiceTest {
                 .content("피드 내용")
                 .build();
         ReflectionTestUtils.setField(feed, "id", 1L);
-        // 이미지 Set 초기화 (NullPointer 방지)
         ReflectionTestUtils.setField(feed, "images", new ArrayList<>());
 
-        // [중요] any() 대신 anyLong() 또는 eq() 사용으로 매칭 정확도 향상
-        given(userRepository.findById(anyLong())).willReturn(Optional.of(reporter));
+        // [핵심] lenient()를 사용하여 불필요한 스텁 경고 방지 (모든 테스트에서 공통 사용됨)
+        org.mockito.Mockito.lenient().when(userRepository.findById(anyLong())).thenReturn(Optional.of(reporter));
     }
 
     @Test
@@ -170,7 +169,8 @@ class FeedReportServiceTest {
 
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
-        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed)); // 삭제 로직용
+        // [중요] 피드 삭제 로직에서 findById가 필요함 (이 테스트에서만 사용)
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
 
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
         given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(i -> i.getArgument(0));
@@ -180,7 +180,7 @@ class FeedReportServiceTest {
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);
         given(userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)).willReturn(false);
 
-        // 댓글 관련 Mocking (NullPointer 방지)
+        // 댓글 관련 Mocking
         given(commentRepository.findByFeed(feed)).willReturn(java.util.Collections.emptyList());
 
         // when
@@ -190,7 +190,7 @@ class FeedReportServiceTest {
         verify(userPenaltyService).addPenalty(writer, PenaltyType.FEED); // 패널티 부여 확인
         verify(feedRepository).delete(feed); // 피드 삭제(Soft Delete) 확인
 
-        // [핵심] 연관 데이터는 절대 삭제되지 않아야 함
+        // [핵심] 연관 데이터는 절대 삭제되지 않아야 함 (User Status Banned 로직 없음 확인)
         verify(feedLikeRepository, never()).deleteByFeed(feed);
         verify(feedReportRepository, never()).deleteByFeed(feed);
         verify(feedImageRepository, never()).deleteByFeed(feed);
@@ -231,6 +231,8 @@ class FeedReportServiceTest {
 
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
+        // [중요] 중복 패널티라도 피드 삭제 로직은 실행되므로 findById 필요
+        given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
         
         given(feedReportRepository.existsByReporterAndFeed(reporter, feed)).willReturn(false);
         given(feedReportRepository.saveAndFlush(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
@@ -238,12 +240,18 @@ class FeedReportServiceTest {
         given(feedLikeRepository.countByFeed(feed)).willReturn(likeCount);
         given(feedReportRepository.countByFeed(feed)).willReturn(reportCount);
         given(userPenaltyService.shouldApplyPenalty(likeCount, reportCount)).willReturn(true);
-        given(userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)).willReturn(true);
+        given(userPenaltyService.hasActivePenalty(writer, PenaltyType.FEED)).willReturn(true); // 이미 패널티 활성 상태
+
+        // 댓글 관련 Mocking
+        given(commentRepository.findByFeed(feed)).willReturn(java.util.Collections.emptyList());
 
         // when
         feedReportService.toggleReport(reporter, feedId);
 
         // then
+        // [핵심] addPenalty가 호출되지 않았음을 검증 (상태 변경 없음 확인)
         verify(userPenaltyService, never()).addPenalty(any(User.class), any(PenaltyType.class));
+        // 하지만 피드는 삭제되어야 함
+        verify(feedRepository).delete(feed);
     }
 }

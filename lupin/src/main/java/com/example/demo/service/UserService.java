@@ -10,6 +10,7 @@ import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import com.example.demo.repository.PointLogRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.UserPenaltyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -30,9 +31,10 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PointService pointService;
-    private final UserPenaltyRepository userPenaltyRepository; // [추가]
+    private final UserPenaltyRepository userPenaltyRepository;
     private final FeedRepository feedRepository;
     private final CommentRepository commentRepository;
+    private final PointLogRepository pointLogRepository;
 
     public User getUserInfo(Long userId) {
         return userRepository.findById(userId)

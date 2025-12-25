@@ -14,6 +14,11 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Transactional
+public class UserPenaltyService {
+
+    private final UserPenaltyRepository userPenaltyRepository;
+    private final PenaltyProperties penaltyProperties;
+
     public UserPenalty addPenalty(User user, PenaltyType penaltyType) {
         UserPenalty penalty = UserPenalty.builder()
                 .user(user)

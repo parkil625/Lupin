@@ -51,6 +51,12 @@ class CommentServiceTest {
     @Mock
     private CommentLikeRepository commentLikeRepository;
 
+    @Mock
+    private com.example.demo.repository.CommentReportRepository commentReportRepository;
+
+    @Mock
+    private com.example.demo.repository.UserPenaltyRepository userPenaltyRepository;
+
     @InjectMocks
     private CommentService commentService;
 
@@ -88,6 +94,10 @@ class CommentServiceTest {
                 .feed(feed)
                 .content(content)
                 .build();
+
+        // 패널티 확인 Mock 추가
+        given(userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(any(), any(), any()))
+                .willReturn(false);
 
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
         given(commentRepository.save(any(Comment.class))).willReturn(savedComment);

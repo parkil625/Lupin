@@ -43,6 +43,9 @@ class FeedServiceTest {
     @Mock
     private FeedDeleteFacade feedDeleteFacade;
 
+    @Mock
+    private com.example.demo.repository.UserPenaltyRepository userPenaltyRepository;
+
     @InjectMocks
     private FeedService feedService;
 
@@ -210,6 +213,10 @@ class FeedServiceTest {
                 .calories(600)
                 .build();
         ReflectionTestUtils.setField(createdFeed, "id", 1L);
+
+        // 패널티 확인 Mock 추가
+        given(userPenaltyRepository.existsByUserAndPenaltyTypeAndCreatedAtAfter(any(), any(), any()))
+                .willReturn(false);
 
         given(imageMetadataService.extractPhotoDateTime("start.jpg"))
                 .willReturn(Optional.of(startTime));

@@ -37,13 +37,33 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@lombok.extern.slf4j.Slf4j // [추가] 로그 사용을 위한 어노테이션
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
     public List<Notification> getNotifications(User user) {
+        // [디버깅] 알림 조회 시작 로그
+        log.info(">>> [NotificationService] Fetching notifications for UserID: {}", user.getId());
+        long startTime = System.currentTimeMillis();
+
         // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
-        return notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
+        // Repository에서 JOIN FETCH로 user 정보를 함께 가져옵니다.
+        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
+        
+        long duration = System.currentTimeMillis() - startTime;
+        log.info("<<< [NotificationService] Fetched {} notifications in {}ms", notifications.size(), duration);
+
+        // [디버깅] 조회된 알림의 데이터 무결성 샘플링 확인 (첫 번째 알림 기준)
+        if (!notifications.isEmpty()) {
+            Notification first = notifications.get(0);
+            log.debug("    Sample Notification - ID: {}, Type: {}, IsRead: {}, RefId: {}", 
+                    first.getId(), first.getType(), first.getIsRead(), first.getRefId());
+        } else {
+            log.info("    No notifications found for UserID: {}", user.getId());
+        }
+
+        return notifications;
     }
 
     @Transactional

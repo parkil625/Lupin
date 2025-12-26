@@ -38,6 +38,8 @@ public class Feed {
     @JoinColumn(name = "writer_id", nullable = false)
     private User writer;
 
+    // [N+1 해결] @BatchSize 적용하여 이미지 컬렉션 조회 시 IN 쿼리로 최적화 (100개씩 묶음 조회)
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "feed", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
     private List<FeedImage> images = new ArrayList<>();

@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.hibernate.annotations.BatchSize; // [추가] BatchSize 임포트
 
 @Entity
 @Table(name = "comments")
@@ -40,6 +41,8 @@ public class Comment {
     @JoinColumn(name = "parent_id")
     private Comment parent;
 
+    // [N+1 해결] 대댓글 조회 최적화 - 부모 댓글 로딩 시 자식 댓글들을 배치로 조회
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "parent")
     @Builder.Default
     private List<Comment> replies = new ArrayList<>();

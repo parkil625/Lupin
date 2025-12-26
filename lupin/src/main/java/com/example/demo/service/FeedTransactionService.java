@@ -106,18 +106,17 @@ public class FeedTransactionService {
         LocalDateTime resolvedEndTime = null;
 
         if (shouldRecalculate) {
-            if (imagesChanged) {
-                // A. 이미지가 바뀌었으면 -> 프론트/S3에서 추출한 새 시간
-                // [수정] 이미지가 변경되었다면, 기존 시간(existingStartTime)을 절대 사용하면 안 됩니다.
-                // 새 이미지에 시간 정보가 없으면(null) 0점으로 처리되어야 하므로 null을 할당합니다.
-                resolvedStartTime = startTimeOpt.orElse(null);
-                resolvedEndTime = endTimeOpt.orElse(null);
-            } else {
-                // B. 이미지는 그대로, 운동만 바뀐 경우 -> 기존 DB 시간
-                resolvedStartTime = existingStartTime;
-                resolvedEndTime = existingEndTime;
-            }
+            // 1. [Data Phase] 시간 데이터 확정 (점수와 무관하게 개별 사진의 시간 결정)
+            // 기존 이미지가 유지되었다면(existing != null) DB 시간을 우선 사용 -> 기존 데이터 보존
+            // 이미지가 변경되었다면(existing == null) 새 메타데이터(opt) 사용 -> 없으면 null
+            resolvedStartTime = (existingStartTime != null) ? existingStartTime : startTimeOpt.orElse(null);
+            resolvedEndTime = (existingEndTime != null) ? existingEndTime : endTimeOpt.orElse(null);
 
+            log.info(">>> [Time Resolved] Start: {} (DB: {}, New: {}), End: {} (DB: {}, New: {})",
+                    resolvedStartTime, existingStartTime, startTimeOpt.orElse(null),
+                    resolvedEndTime, existingEndTime, endTimeOpt.orElse(null));
+
+            // 2. [Score Phase] 점수 계산 트리거 (두 시간이 모두 유효해야만 계산 시도)
             if (resolvedStartTime != null && resolvedEndTime != null) {
                 WorkoutScoreService.WorkoutResult workoutResult =
                         workoutScoreService.validateAndCalculate(activity,
@@ -126,15 +125,19 @@ public class FeedTransactionService {
                                 feed.getCreatedAt().toLocalDate());
 
                 if (workoutResult.valid()) {
+                    // 조건 충족: 점수/칼로리 업데이트
+                    log.info(">>> [Score Update] Valid workout. Score: {}, Calories: {}", workoutResult.score(), workoutResult.calories());
                     feed.updateScore((long) workoutResult.score(), workoutResult.calories());
                     pointService.adjustFeedPoints(user, oldPoints, workoutResult.score());
                 } else {
-                    // [수정] 0.0(double) -> 0(int) 타입 수정
+                    // 조건 미충족 (시간 역전, 오차 범위 초과 등): 0점 처리 (데이터는 저장됨)
+                    log.warn(">>> [Score Reset] Invalid range/order. Setting score to 0.");
                     feed.updateScore(0L, 0);
                     pointService.adjustFeedPoints(user, oldPoints, 0L);
                 }
             } else {
-                // [수정] 0.0(double) -> 0(int) 타입 수정
+                // 시간 정보 부족 (하나라도 null): 0점 처리 (데이터는 null인 상태로 저장됨)
+                log.warn(">>> [Score Reset] Missing time info. Start: {}, End: {}", resolvedStartTime, resolvedEndTime);
                 feed.updateScore(0L, 0);
                 pointService.adjustFeedPoints(user, oldPoints, 0L);
             }

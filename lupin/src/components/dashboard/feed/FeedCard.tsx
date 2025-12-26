@@ -28,7 +28,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
 import { FeedCommentSection } from "./FeedCommentSection";
 

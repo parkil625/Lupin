@@ -110,8 +110,16 @@ public class FeedQueryFacade {
 
         if (user != null && !feeds.isEmpty()) {
             List<Long> feedIds = feeds.getContent().stream().map(Feed::getId).toList();
-            // [수정] Native Query 기반 배치 메서드로 정확하게 ID 목록 조회 (목록 화면 오류 해결)
+            
+            // [디버그 로그 1] 현재 페이지의 피드 ID 목록 확인
+            log.info(">>> [FeedFacade] User ID: {}, 조회 대상 Feed IDs: {}", user.getId(), feedIds);
+
+            // [수정] JPQL 기반 배치 메서드로 정확하게 ID 목록 조회
             List<Long> reportedIds = feedReportRepository.findReportedFeedIdsByReporterId(user.getId(), feedIds);
+            
+            // [디버그 로그 2] DB에서 찾아낸 신고된 피드 ID 목록 확인
+            log.info(">>> [FeedFacade] DB에서 발견된 신고된 Feed IDs: {}", reportedIds);
+
             reportedFeedIds.addAll(reportedIds);
         }
 
@@ -120,13 +128,16 @@ public class FeedQueryFacade {
         List<FeedResponse> content = feeds.getContent().stream()
                 .map(feed -> {
                     boolean isLiked = false;
-                    // 좋아요는 기존 로직 유지 (필요 시 위와 같이 최적화 권장)
                     if (user != null) {
                         isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feed.getId());
                     }
                     
-                    // 신고 여부는 메모리(Set)에서 O(1)로 확인
                     boolean isReported = finalReportedFeedIds.contains(feed.getId());
+                    
+                    // [디버그 로그 3] 최종 DTO 생성 직전 상태 확인 (신고된 건만 로그 출력)
+                    if (isReported) {
+                         log.info(">>> [FeedFacade] Feed ID {} -> isReported=true 설정됨", feed.getId());
+                    }
 
                     return FeedResponse.from(feed, isLiked, isReported, activeDaysMap.getOrDefault(feed.getWriter().getId(), 0));
                 })

@@ -12,8 +12,11 @@ import { Feed } from "@/types/dashboard.types";
 import { feedApi, FeedResponse } from "@/api";
 import { getRelativeTime } from "@/lib/utils";
 
-// BackendFeed 타입 (FeedResponse와 동일)
-type BackendFeed = FeedResponse;
+// [수정] FeedResponse 타입에 isReported가 정의되지 않아 발생하는 에러 해결을 위해 타입 확장
+// (Intersection Type을 사용하여 타입 안전성 보장 & ESLint 통과)
+type BackendFeed = FeedResponse & {
+  isReported?: boolean;
+};
 
 interface FeedState {
   // 피드 데이터
@@ -88,6 +91,8 @@ export const mapBackendFeed = (backendFeed: BackendFeed): Feed => ({
   createdAt: backendFeed.createdAt,
   updatedAt: backendFeed.updatedAt,
   isLiked: backendFeed.isLiked || false,
+  // [수정] 서버에서 받은 신고 상태 매핑 (이 코드가 없어서 새로고침 시 풀렸던 것입니다)
+  isReported: backendFeed.isReported || false,
   time: getRelativeTime(backendFeed.createdAt),
   author: backendFeed.writerName,
 });

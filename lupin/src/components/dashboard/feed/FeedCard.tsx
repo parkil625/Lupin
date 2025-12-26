@@ -21,7 +21,7 @@ import {
 import { Feed } from "@/types/dashboard.types";
 import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { useImageBrightness } from "@/hooks";
-import { getCdnUrl, reportApi } from "@/api"; // reportApi 추가 확인 필요
+import { getCdnUrl } from "@/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,44 +43,22 @@ export interface FeedCardProps {
   onImageIndexChange: (feedId: number, index: number) => void;
   /** 좋아요 핸들러 */
   onLike: (feedId: number) => void;
+  /** 신고 여부 */
+  isReported: boolean;
+  /** 신고 핸들러 */
+  onReport: (feedId: number) => void;
 }
 
 export function FeedCard({
   feed,
   currentImageIndex,
   liked,
+  isReported,
   onImageIndexChange,
   onLike,
+  onReport,
 }: FeedCardProps) {
   const [showComments, setShowComments] = useState(false);
-  const [isReported, setIsReported] = useState(feed.isReported || false);
-
-  // [상태 동기화] 서버에서 가져온 feed 정보가 바뀌면(새로고침 등) 상태 강제 업데이트
-  React.useEffect(() => {
-    setIsReported(feed.isReported || false);
-  }, [feed.isReported]);
-
-  // [신고 핸들러] 신고 상태 토글
-  const handleReport = async () => {
-    const action = isReported ? "신고를 취소" : "이 게시글을 신고";
-    if (!confirm(`정말 ${action}하시겠습니까?`)) return;
-
-    try {
-      // 1. 서버에 신고 요청 및 결과(최신 DB 상태) 수신
-      // reportApi.reportFeed가 boolean(true/false)을 반환한다고 가정
-      const reportedState = await reportApi.reportFeed(feed.id);
-
-      // 2. 서버 데이터로 UI 동기화 (단순 반전이 아닌 실제 상태 적용)
-      setIsReported(reportedState);
-
-      toast.success(
-        reportedState ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
-      );
-    } catch (error) {
-      console.error(error);
-      toast.error("신고 처리에 실패했습니다.");
-    }
-  };
 
   // 이미지 밝기에 따른 아이콘 색상 (CDN URL 사용)
   const currentImage = feed.images?.[currentImageIndex] || feed.images?.[0];
@@ -192,7 +170,7 @@ export function FeedCard({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem
-                    onClick={handleReport}
+                    onClick={() => onReport(feed.id)}
                     className={`${
                       isReported
                         ? "text-gray-500 bg-gray-100"

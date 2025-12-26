@@ -49,6 +49,7 @@ export const useWebSocket = ({
       webSocketFactory: () =>
         new SockJS(socketUrl, null, {
           transports: ["websocket"],
+          debug: false,
         }),
       debug: () => {
         // 프로덕션 환경에서는 debug 로그 비활성화

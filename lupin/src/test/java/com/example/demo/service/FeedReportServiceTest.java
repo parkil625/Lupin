@@ -113,8 +113,8 @@ class FeedReportServiceTest {
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
         
-        // [수정] countBy 호출, 리턴값 0L
-        given(feedReportRepository.countByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(0L);
+        // [수정] countBy -> existsBy (false 반환)
+        given(feedReportRepository.existsByReporter_IdAndFeed_Id(reporter.getId(), feedId)).willReturn(false);
         given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         // when
@@ -131,14 +131,15 @@ class FeedReportServiceTest {
         Long feedId = 1L;
         given(feedRepository.existsById(feedId)).willReturn(true);
         
-        // [수정] countBy 호출, 리턴값 1L
-        given(feedReportRepository.countByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(1L);
+        // [수정] countBy -> existsBy (true 반환)
+        given(feedReportRepository.existsByReporter_IdAndFeed_Id(reporter.getId(), feedId)).willReturn(true);
 
         // when
         feedReportService.toggleReport(reporter, feedId);
 
         // then
-        verify(feedReportRepository).deleteByReporterIdAndFeedId(reporter.getId(), feedId);
+        // [수정] 메서드 이름 변경 반영 (deleteByReporterIdAndFeedId -> deleteByReporter_IdAndFeed_Id)
+        verify(feedReportRepository).deleteByReporter_IdAndFeed_Id(reporter.getId(), feedId);
         verify(feedReportRepository, never()).save(any(FeedReport.class));
     }
 
@@ -167,8 +168,8 @@ class FeedReportServiceTest {
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
 
-        // [수정] 0L
-        given(feedReportRepository.countByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(0L);
+        // [수정] countBy -> existsBy (false 반환)
+        given(feedReportRepository.existsByReporter_IdAndFeed_Id(reporter.getId(), feedId)).willReturn(false);
         given(feedReportRepository.save(any(FeedReport.class))).willAnswer(i -> i.getArgument(0));
 
         given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);
@@ -201,8 +202,8 @@ class FeedReportServiceTest {
         given(feedRepository.existsById(feedId)).willReturn(true);
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
         
-        // [수정] 0L
-        given(feedReportRepository.countByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(0L);
+        // [수정] countBy -> existsBy (false 반환)
+        given(feedReportRepository.existsByReporter_IdAndFeed_Id(reporter.getId(), feedId)).willReturn(false);
         given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
         given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);
@@ -228,8 +229,8 @@ class FeedReportServiceTest {
         given(feedRepository.getReferenceById(feedId)).willReturn(feed);
         given(feedRepository.findById(feedId)).willReturn(Optional.of(feed));
         
-        // [수정] 0L
-        given(feedReportRepository.countByReporterIdAndFeedId(reporter.getId(), feedId)).willReturn(0L);
+        // [수정] countBy -> existsBy (false 반환)
+        given(feedReportRepository.existsByReporter_IdAndFeed_Id(reporter.getId(), feedId)).willReturn(false);
         given(feedReportRepository.save(any(FeedReport.class))).willAnswer(invocation -> invocation.getArgument(0));
         
         given(feedLikeRepository.countByFeedId(feedId)).willReturn(likeCount);

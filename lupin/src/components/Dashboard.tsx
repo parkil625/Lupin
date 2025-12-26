@@ -536,7 +536,10 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       content: string,
       workoutType: string,
       startImage: string | null,
-      endImage: string | null
+      endImage: string | null,
+      // [수정] 시간 정보 받기
+      startAt?: string | null,
+      endAt?: string | null
     ) => {
       try {
         if (!startImage || !endImage) {
@@ -547,12 +550,16 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
         const otherImages = images.filter(
           (img) => img !== startImage && img !== endImage
         );
+
+        // [수정] API 호출 시 시간 정보 포함
         const response = await feedApi.createFeed({
           activity: workoutType,
           content,
           startImage,
           endImage,
           otherImages,
+          startAt: startAt || undefined,
+          endAt: endAt || undefined,
         });
         // 응답을 변환하여 스토어에 즉시 추가 (프로필 사진 즉시 표시)
         const newFeed = mapBackendFeed(response);

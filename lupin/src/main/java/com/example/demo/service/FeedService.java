@@ -64,30 +64,35 @@ public class FeedService {
      * 피드 생성 (타입 안전한 이미지 파라미터)
      */
     public Feed createFeed(User writer, String activity, String content, FeedImageUploadResult images) {
-        return createFeed(writer, activity, content, images.startImageKey(), images.endImageKey(), images.otherImageKeys());
+        // [수정] 메인 메서드가 8개 파라미터(시간 정보 포함)로 변경되었으므로 null 2개를 추가로 전달합니다.
+        return createFeed(writer, activity, content, images.startImageKey(), images.endImageKey(), images.otherImageKeys(), null, null);
     }
 
     /**
      * 피드 생성 (Parameter Object 패턴)
      */
     public Feed createFeed(FeedCreateCommand command) {
+        // [수정] 시간 정보까지 전달
         return createFeed(
                 command.writer(),
                 command.activity(),
                 command.content(),
                 command.startImageKey(),
                 command.endImageKey(),
-                command.otherImageKeys()
+                command.otherImageKeys(),
+                command.startAt(),
+                command.endAt()
         );
     }
 
     /**
      * 피드 생성 (S3 I/O를 트랜잭션 외부에서 수행)
      */
-    public Feed createFeed(User writer, String activity, String content, String startImageKey, String endImageKey, List<String> otherImageKeys) {
-        // [수정] 피드 작성 금지 패널티 확인 (최근 3일 이내 기록 존재 여부)
+    public Feed createFeed(User writer, String activity, String content, 
+                           String startImageKey, String endImageKey, List<String> otherImageKeys,
+                           LocalDateTime startAt, LocalDateTime endAt) {
+        
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
-        // [수정] User 객체 대신 ID로 조회 (확실한 조회 보장)
         if (userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(writer.getId(), PenaltyType.FEED, threeDaysAgo)) {
              throw new BusinessException(ErrorCode.FEED_CREATION_RESTRICTED);
         }
@@ -96,13 +101,20 @@ public class FeedService {
             throw new BusinessException(ErrorCode.FEED_IMAGES_REQUIRED);
         }
 
-        // [트랜잭션 외부] S3에서 EXIF 시간 추출 (네트워크 I/O)
-        Optional<LocalDateTime> startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
-        Optional<LocalDateTime> endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
+        Optional<LocalDateTime> startTimeOpt;
+        Optional<LocalDateTime> endTimeOpt;
 
-        log.info("EXIF extraction completed: startImage={}, endImage={}",
-                startTimeOpt.isPresent() ? "OK" : "NOT_FOUND",
-                endTimeOpt.isPresent() ? "OK" : "NOT_FOUND");
+        // [핵심] 프론트에서 시간이 넘어왔으면 S3 추출 생략하고 바로 사용
+        if (startAt != null && endAt != null) {
+            startTimeOpt = Optional.of(startAt);
+            endTimeOpt = Optional.of(endAt);
+            log.info("Using provided time for create: {} ~ {}", startAt, endAt);
+        } else {
+            // [트랜잭션 외부] S3에서 EXIF 시간 추출 (네트워크 I/O)
+            startTimeOpt = imageMetadataService.extractPhotoDateTime(startImageKey);
+            endTimeOpt = imageMetadataService.extractPhotoDateTime(endImageKey);
+            log.info("EXIF extraction completed from S3");
+        }
 
         // [트랜잭션 내부] 별도 서비스로 분리하여 트랜잭션 적용
         return feedTransactionService.createFeed(writer, activity, content, startImageKey, endImageKey, otherImageKeys, startTimeOpt, endTimeOpt);

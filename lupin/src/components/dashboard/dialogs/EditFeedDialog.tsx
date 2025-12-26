@@ -302,11 +302,19 @@ export default function EditFeedDialog({
       Boolean
     ) as string[];
 
+    // [헬퍼] 로컬 시간(KST 등) 그대로 문자열로 변환하는 함수
+    // toISOString()은 UTC로 바꾸기 때문에 시간이 -9시간 되는 문제를 방지함
+    const getLocalISOString = (date: Date) => {
+      const offset = date.getTimezoneOffset() * 60000;
+      return new Date(date.getTime() - offset).toISOString().slice(0, 19);
+    };
+
     // [수정] EXIF 시간 정보 전송 (이미지 변경 시에만)
+    // toISOString() 대신 로컬 시간을 그대로 보냅니다.
     const startAtIso =
-      imagesChanged && startExifTime ? startExifTime.toISOString() : null;
+      imagesChanged && startExifTime ? getLocalISOString(startExifTime) : null;
     const endAtIso =
-      imagesChanged && endExifTime ? endExifTime.toISOString() : null;
+      imagesChanged && endExifTime ? getLocalISOString(endExifTime) : null;
 
     // [디버깅 로그] 부모에게 전달할 데이터 확인
     console.log(

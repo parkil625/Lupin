@@ -49,7 +49,10 @@ interface CreateFeedDialogProps {
     content: string,
     workoutType: string,
     startImage: string | null,
-    endImage: string | null
+    endImage: string | null,
+    // [수정] 시간 정보 파라미터 추가
+    startAt?: string | null,
+    endAt?: string | null
   ) => Promise<void> | void;
 }
 
@@ -212,7 +215,27 @@ export default function CreateFeedDialog({
     try {
       setIsUploading(true); // 로딩 시작 (버튼 비활성화)
 
-      await onCreate(images, content, workoutType, startImage, endImage);
+      // [헬퍼] 로컬 시간 그대로 ISO 문자열로 변환 (타임존 왜곡 방지)
+      const getLocalISOString = (date: Date) => {
+        const offset = date.getTimezoneOffset() * 60000;
+        return new Date(date.getTime() - offset).toISOString().slice(0, 19);
+      };
+
+      const startAtIso = startExifTime
+        ? getLocalISOString(startExifTime)
+        : null;
+      const endAtIso = endExifTime ? getLocalISOString(endExifTime) : null;
+
+      // [수정] 시간 정보 전달
+      await onCreate(
+        images,
+        content,
+        workoutType,
+        startImage,
+        endImage,
+        startAtIso,
+        endAtIso
+      );
 
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       setStartImage(null);

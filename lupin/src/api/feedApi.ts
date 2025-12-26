@@ -99,6 +99,9 @@ export const feedApi = {
     startImage: string;
     endImage: string;
     otherImages?: string[];
+    // [추가] 시간 필드
+    startAt?: string;
+    endAt?: string;
   }): Promise<FeedResponse> => {
     const response = await apiClient.post("/feeds", data);
     return transformFeedImages(response.data) as FeedResponse;

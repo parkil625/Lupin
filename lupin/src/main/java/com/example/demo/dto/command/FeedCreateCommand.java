@@ -3,6 +3,7 @@ package com.example.demo.dto.command;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.request.FeedRequest;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -15,7 +16,10 @@ public record FeedCreateCommand(
         String content,
         String startImageKey,
         String endImageKey,
-        List<String> otherImageKeys
+        List<String> otherImageKeys,
+        // [추가] 시간 정보 필드
+        LocalDateTime startAt,
+        LocalDateTime endAt
 ) {
     public static FeedCreateCommand of(User writer, FeedRequest request) {
         return new FeedCreateCommand(
@@ -24,13 +28,17 @@ public record FeedCreateCommand(
                 request.getContent(),
                 request.getStartImageKey(),
                 request.getEndImageKey(),
-                request.getOtherImageKeys()
+                request.getOtherImageKeys(),
+                // [추가] Request에서 시간 정보 매핑
+                request.getStartAt(),
+                request.getEndAt()
         );
     }
 
+    // 테스트용 생성자 (시간 정보가 없을 때 null 처리)
     public static FeedCreateCommand of(User writer, String activity, String content,
                                        String startImageKey, String endImageKey, List<String> otherImageKeys) {
-        return new FeedCreateCommand(writer, activity, content, startImageKey, endImageKey, otherImageKeys);
+        return new FeedCreateCommand(writer, activity, content, startImageKey, endImageKey, otherImageKeys, null, null);
     }
 
     public boolean hasImages() {

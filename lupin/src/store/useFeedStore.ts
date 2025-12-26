@@ -74,6 +74,9 @@ interface FeedState {
   // [추가] 피드 신고 토글
   toggleReport: (feedId: number, isReported: boolean) => void;
 
+  // [추가] 댓글 수 조정 (작성 시 +1, 삭제 시 -1)
+  adjustCommentCount: (feedId: number, delta: number) => void;
+
   // 내 피드들의 아바타 업데이트 (프로필 사진 변경 시 호출)
   updateMyFeedsAvatar: (newAvatarUrl: string | null) => void;
 }
@@ -275,6 +278,29 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       selectedFeed:
         state.selectedFeed && state.selectedFeed.id === feedId
           ? { ...state.selectedFeed, isReported: isReported }
+          : state.selectedFeed,
+    }));
+  },
+
+  // [추가] 댓글 수 조정 구현
+  adjustCommentCount: (feedId, delta) => {
+    set((state) => ({
+      allFeeds: state.allFeeds.map((feed) =>
+        feed.id === feedId
+          ? { ...feed, comments: Math.max(0, feed.comments + delta) }
+          : feed
+      ),
+      myFeeds: state.myFeeds.map((feed) =>
+        feed.id === feedId
+          ? { ...feed, comments: Math.max(0, feed.comments + delta) }
+          : feed
+      ),
+      selectedFeed:
+        state.selectedFeed && state.selectedFeed.id === feedId
+          ? {
+              ...state.selectedFeed,
+              comments: Math.max(0, state.selectedFeed.comments + delta),
+            }
           : state.selectedFeed,
     }));
   },

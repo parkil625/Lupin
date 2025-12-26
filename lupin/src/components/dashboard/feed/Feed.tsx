@@ -95,6 +95,9 @@ function CommentPanel({
   const [editCommentText, setEditCommentText] = useState("");
   const [hasCommentPenalty, setHasCommentPenalty] = useState(false);
 
+  // [추가] 댓글 수 조정을 위한 Store 액션
+  const { adjustCommentCount } = useFeedStore();
+
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
 
@@ -265,7 +268,10 @@ function CommentPanel({
   const countAllComments = (commentList: Comment[]): number => {
     let count = 0;
     for (const comment of commentList) {
-      count += 1;
+      // [수정] 삭제되지 않은 댓글만 카운트
+      if (!comment.isDeleted) {
+        count += 1;
+      }
       if (comment.replies && comment.replies.length > 0) {
         count += countAllComments(comment.replies);
       }
@@ -347,6 +353,8 @@ function CommentPanel({
         };
         setComments([...comments, newComment]);
         setCommentText("");
+        // [추가] 피드 카드 댓글 수 +1
+        adjustCommentCount(feedId, 1);
       } catch (error) {
         console.error("댓글 작성 실패:", error);
         toast.error("댓글 작성에 실패했습니다.");
@@ -386,6 +394,8 @@ function CommentPanel({
         );
         setReplyCommentText("");
         setReplyingTo(null);
+        // [추가] 피드 카드 댓글 수 +1
+        adjustCommentCount(feedId, 1);
       } catch (error) {
         console.error("답글 작성 실패:", error);
         toast.error("답글 작성에 실패했습니다.");
@@ -405,6 +415,8 @@ function CommentPanel({
             replies: c.replies?.filter((r) => r.id !== commentId) || [], // 대댓글 삭제
           }));
       });
+      // [추가] 피드 카드 댓글 수 -1
+      adjustCommentCount(feedId, -1);
     } catch (error) {
       console.error("댓글 삭제 실패:", error);
       toast.error("댓글 삭제에 실패했습니다.");

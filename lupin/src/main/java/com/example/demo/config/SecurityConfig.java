@@ -66,7 +66,7 @@ public class SecurityConfig {
             "/api/notifications/subscribe",
             "/api/auction/stream/**",
             "/ws-chat/**",      // <--- [추가] WebSocket 연결 허용
-                "/api/ws-chat/**"
+            "/api/ws-chat/**"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;

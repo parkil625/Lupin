@@ -35,6 +35,9 @@ public class FeedResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // [추가] 이미지 촬영 시간 정보 (프론트엔드 수정 시 사용)
+    private List<LocalDateTime> imageCapturedAt;
+
     // [수정] boolean(기본형) -> Boolean(참조형)으로 변경
     // 이유: 기본형 boolean은 Lombok이 Getter를 isReported()로 만들어, Jackson이 "reported"로 키 이름을 잘라버림.
     // Boolean 참조형은 getIsReported()로 만들어져, JSON 키 "isReported"가 정상 유지됨. (isLiked 필드와 동일 원리)
@@ -89,6 +92,10 @@ public class FeedResponse {
                 .images(feed.getImages() != null ? feed.getImages().stream()
                         .sorted(Comparator.comparingInt(FeedImage::getSortOrder))
                         .map(FeedImage::getS3Key)
+                        .collect(Collectors.toList()) : Collections.emptyList())
+                .imageCapturedAt(feed.getImages() != null ? feed.getImages().stream()
+                        .sorted(Comparator.comparingInt(FeedImage::getSortOrder))
+                        .map(FeedImage::getCapturedAt)
                         .collect(Collectors.toList()) : Collections.emptyList())
                 .likes((long) feed.getLikeCount())
                 .comments((long) feed.getCommentCount())

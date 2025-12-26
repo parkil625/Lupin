@@ -14,6 +14,7 @@ export interface Feed {
   points: number;
   content: string;
   images: string[];
+  imageCapturedAt?: string[]; // [추가] 이미지 촬영 시간
   likes: number;
   comments: number;
   calories?: number;

@@ -143,6 +143,20 @@ export default function EditFeedDialog({
       setOtherImages(initialOtherImages);
       setWorkoutType(initialWorkoutType);
 
+      // [추가] DB에 저장된 시간 정보가 있으면 초기화 (X버튼 누르면 null됨)
+      if (feed.imageCapturedAt) {
+        if (feed.imageCapturedAt[0]) {
+          setStartExifTime(new Date(feed.imageCapturedAt[0]));
+        }
+        if (feed.imageCapturedAt[1]) {
+          setEndExifTime(new Date(feed.imageCapturedAt[1]));
+        }
+        // 기존 사진이 있으면 검증 상태를 'verified'로 가정 (또는 재검증 트리거)
+        if (feed.imageCapturedAt[0] && feed.imageCapturedAt[1]) {
+          setImagesChanged(true); // 검증 로직을 태우기 위해 true 설정
+        }
+      }
+
       // 기존 내용을 plain text로 변환
       const plainTextContent = convertBlockNoteToPlainText(feed.content || "");
       setContent(plainTextContent);
@@ -171,8 +185,14 @@ export default function EditFeedDialog({
       return;
     }
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // [수정] 검증 기준을 '오늘'이 아니라 '피드 생성일(createdAt)'로 변경
+    // 수정 시에는 과거 날짜의 운동 기록을 수정하는 것이므로, 당시 날짜 기준으로 검증해야 함
+    const baseDate = feed ? new Date(feed.createdAt) : new Date();
+    const today = new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth(),
+      baseDate.getDate()
+    );
     const toleranceHours = 6;
 
     const allowedStart = new Date(

@@ -46,10 +46,14 @@ export const useWebSocket = ({
       : "https://api.lupin-care.com/ws";
 
     const client = new Client({
-      webSocketFactory: () =>
-        new SockJS(socketUrl, null, {
+      webSocketFactory: () => {
+        const socket = new SockJS(socketUrl, null, {
           transports: ["websocket"],
-        }),
+        });
+        // SockJS 디버그 로그 비활성화
+        (socket as any).debug = () => {};
+        return socket;
+      },
       debug: () => {
         // 프로덕션 환경에서는 debug 로그 비활성화
       },

@@ -207,8 +207,15 @@ jobs:
           script: |
             cd ~/lupin
 
-            # 1. ECR 로그인
-            aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+            # 1. ECR 로그인 (디버깅 로그 및 권한 설정)
+            echo ">>> [Deploy] Setting up AWS credentials..."
+            export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            export AWS_DEFAULT_REGION=${{ env.AWS_REGION }}
+
+            echo ">>> [Deploy] Logging into ECR with sudo..."
+            # sudo 권한으로 로그인해야 root 유저의 docker config에 토큰이 저장됨
+            aws ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
 
             # 2. .env 파일 생성 (환경변수 주입)
             echo "ECR_REGISTRY=${{ secrets.ECR_REGISTRY }}" > .env
@@ -230,8 +237,11 @@ jobs:
             sudo docker-compose -f docker-compose.prod.yml down
             sudo docker-compose -f docker-compose.prod.yml up -d
 
-            # (디스크 꽉 참 방지: 안 쓰는 구버전 이미지 삭제)
-            sudo docker system prune -af
+            # (디스크 꽉 참 방지: 사용하지 않는 이미지(dangling)만 삭제)
+            # 주의: system prune -af는 중지된 컨테이너도 삭제하므로 디버깅이 불가능해짐
+            echo ">>> [Deploy] Cleaning up unused images..."
+            sudo docker image prune -f
+            echo ">>> [Deploy] Cleanup completed."
 
       - name: Deployment result
         if: always()

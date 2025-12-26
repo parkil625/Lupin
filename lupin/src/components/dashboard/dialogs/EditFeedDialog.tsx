@@ -55,6 +55,8 @@ interface EditFeedDialogProps {
     workoutType: string,
     startImage: string | null,
     endImage: string | null,
+    // [수정] imagesChanged 파라미터 추가 (순서 주의)
+    imagesChanged: boolean,
     startAt?: string | null,
     endAt?: string | null
   ) => void;
@@ -306,6 +308,11 @@ export default function EditFeedDialog({
     const endAtIso =
       imagesChanged && endExifTime ? endExifTime.toISOString() : null;
 
+    // [디버깅 로그] 부모에게 전달할 데이터 확인
+    console.log(
+      `[EditFeedDialog] 저장 시도: ID=${feed.id}, imagesChanged=${imagesChanged}`
+    );
+
     // plain text로 저장
     onSave(
       feed.id,
@@ -314,6 +321,7 @@ export default function EditFeedDialog({
       workoutType,
       startImage,
       endImage,
+      imagesChanged, // [수정] 여기가 핵심! true/false 전달
       startAtIso,
       endAtIso
     );

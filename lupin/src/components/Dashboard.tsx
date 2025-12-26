@@ -68,12 +68,7 @@ import {
   Member,
   ChatMessage,
 } from "@/types/dashboard.types";
-import {
-  feedApi,
-  notificationApi,
-  commentApi,
-  userApi,
-} from "@/api";
+import { feedApi, notificationApi, commentApi, userApi } from "@/api";
 import { useFeedStore, mapBackendFeed } from "@/store/useFeedStore";
 import { useNotificationSse } from "@/hooks/useNotificationSse";
 
@@ -472,20 +467,35 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
       content: string,
       workoutType: string,
       startImage: string | null,
-      endImage: string | null
+      endImage: string | null,
+      // [수정] 추가된 파라미터 받기
+      imagesChanged: boolean,
+      startAt?: string | null,
+      endAt?: string | null
     ) => {
       try {
+        // [디버깅 로그] 대시보드에서 받은 데이터 확인
+        console.log(
+          `[Dashboard] 피드 업데이트: ID=${feedId}, Changed=${imagesChanged}`
+        );
+
         // 타입별 필드로 전송 (배열 순서 의존 제거)
         const otherImages = images.filter(
           (img) => img !== startImage && img !== endImage
         );
+
+        // [수정] API 호출 시 추가된 정보 전달
         await feedApi.updateFeed(feedId, {
           activity: workoutType,
           content,
           startImage: startImage || undefined,
           endImage: endImage || undefined,
           otherImages,
+          imagesChanged, // 전달!
+          startAt: startAt || undefined, // 전달!
+          endAt: endAt || undefined, // 전달!
         });
+
         store.updateFeed(feedId, {
           images,
           content,

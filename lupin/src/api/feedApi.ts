@@ -112,8 +112,16 @@ export const feedApi = {
       startImage?: string;
       endImage?: string;
       otherImages?: string[];
+      // [추가] 변경 여부와 시간 정보 필드 추가
+      imagesChanged?: boolean;
+      startAt?: string;
+      endAt?: string;
     }
   ) => {
+    // [디버깅 로그] 요청 데이터 확인
+    console.log(
+      `[API] updateFeed 요청: ID=${feedId}, Changed=${data.imagesChanged}`
+    );
     const response = await apiClient.put(`/feeds/${feedId}`, data);
     return response.data;
   },

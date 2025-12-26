@@ -108,9 +108,10 @@ public class FeedTransactionService {
         if (shouldRecalculate) {
             if (imagesChanged) {
                 // A. 이미지가 바뀌었으면 -> 프론트/S3에서 추출한 새 시간
-                // 추출 실패 시, 요청된 키가 기존 이미지와 같다면 DB에 저장된 시간 사용
-                resolvedStartTime = startTimeOpt.orElse(existingStartTime);
-                resolvedEndTime = endTimeOpt.orElse(existingEndTime);
+                // [수정] 이미지가 변경되었다면, 기존 시간(existingStartTime)을 절대 사용하면 안 됩니다.
+                // 새 이미지에 시간 정보가 없으면(null) 0점으로 처리되어야 하므로 null을 할당합니다.
+                resolvedStartTime = startTimeOpt.orElse(null);
+                resolvedEndTime = endTimeOpt.orElse(null);
             } else {
                 // B. 이미지는 그대로, 운동만 바뀐 경우 -> 기존 DB 시간
                 resolvedStartTime = existingStartTime;

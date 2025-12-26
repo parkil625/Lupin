@@ -19,6 +19,7 @@ import java.util.Map;
  * 피드 조회 파사드 - 조립 로직 분리
  * Controller에서 여러 서비스를 조합하던 로직을 캡슐화
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

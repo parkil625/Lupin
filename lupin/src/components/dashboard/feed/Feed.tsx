@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
+const DEBUG_VERSION = "v1.1-HeightFix"; // 배포 반영 확인용
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -900,8 +901,8 @@ const FeedItem = React.memo(function FeedItem({
 
   return (
     <div
-      // [수정] 피드 높이 미세 조정 (216px -> 196px)
-      className={`h-[calc(100vh-140px)] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative`}
+      // [수정] calc 제거하고 h-full로 변경 (부모가 크기를 잡아줌)
+      className={`h-full w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
@@ -1160,8 +1161,13 @@ export default function FeedView({
     }
   }, [scrollToFeedId, setScrollToFeedId, filteredFeeds]);
 
+  useEffect(() => {
+    console.log(`[배포확인] 버전: ${DEBUG_VERSION}`);
+  }, []);
+
   return (
-    <div className="h-full flex flex-col p-4 gap-4 relative">
+    // [디버깅] border-red-600 추가 (배포 반영 안되면 테두리가 안보임)
+    <div className="h-full flex flex-col p-4 gap-4 relative border-[4px] border-red-600 z-50 box-border">
       {/* 검색바 */}
       <div className="mx-auto max-w-2xl w-full flex-shrink-0 z-10">
         <SearchInput
@@ -1187,9 +1193,9 @@ export default function FeedView({
             <div
               key={feed.id}
               id={`feed-${feed.id}`}
-              // [수정] 높이 100%, 상하 패딩(py-4) 복구, 수직 중앙 정렬(items-center) 복구
-              // 이제 FeedItem 높이가 줄었으므로 화면 안에 쏙 들어옵니다.
-              className="h-full w-full snap-start snap-always flex items-center justify-center py-4"
+              // [수정] snap-start -> snap-center (중앙 정렬로 잘림 방지)
+              // [수정] py-4 -> p-4 (높이 왜곡 방지)
+              className="h-full w-full snap-center snap-always flex items-center justify-center p-4"
             >
               <FeedItem
                 feed={feed}

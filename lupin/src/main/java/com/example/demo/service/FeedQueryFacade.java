@@ -22,7 +22,7 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(readOnly = false)
 @Slf4j
 public class FeedQueryFacade {
 

@@ -38,7 +38,6 @@ import { toast } from "sonner";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
-const DEBUG_VERSION = "v1.1-HeightFix"; // 배포 반영 확인용
 
 interface FeedViewProps {
   allFeeds: Feed[];
@@ -901,8 +900,8 @@ const FeedItem = React.memo(function FeedItem({
 
   return (
     <div
-      // [수정] calc 제거하고 h-full로 변경 (부모가 크기를 잡아줌)
-      className={`h-full w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
+      // [복구] 사용자 선호 디자인: h-[calc(100vh-140px)]
+      className={`h-[calc(100vh-140px)] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
@@ -1161,13 +1160,8 @@ export default function FeedView({
     }
   }, [scrollToFeedId, setScrollToFeedId, filteredFeeds]);
 
-  useEffect(() => {
-    console.log(`[배포확인] 버전: ${DEBUG_VERSION}`);
-  }, []);
-
   return (
-    // [디버깅] border-red-600 추가 (배포 반영 안되면 테두리가 안보임)
-    <div className="h-full flex flex-col p-4 gap-4 relative border-[4px] border-red-600 z-50 box-border">
+    <div className="h-full flex flex-col p-4 gap-4 relative">
       {/* 검색바 */}
       <div className="mx-auto max-w-2xl w-full flex-shrink-0 z-10">
         <SearchInput

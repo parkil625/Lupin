@@ -8,6 +8,7 @@ import com.example.demo.dto.response.FeedResponse;
 import com.example.demo.dto.response.SliceResponse;
 import com.example.demo.mapper.FeedMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +20,10 @@ import java.util.Map;
  * 피드 조회 파사드 - 조립 로직 분리
  * Controller에서 여러 서비스를 조합하던 로직을 캡슐화
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class FeedQueryFacade {
 
     private final FeedService feedService;

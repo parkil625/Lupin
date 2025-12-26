@@ -54,8 +54,8 @@ public class FeedReportService {
 
         boolean isReported;
         // 이미 신고 내역이 있으면 -> 삭제(취소) 및 false 설정
-        if (feedReportRepository.countByReporterIdAndFeedId(managedReporter.getId(), feedId) > 0) {
-            feedReportRepository.deleteByReporterIdAndFeedId(managedReporter.getId(), feedId);
+        if (feedReportRepository.existsByReporter_IdAndFeed_Id(managedReporter.getId(), feedId)) {
+            feedReportRepository.deleteByReporter_IdAndFeed_Id(managedReporter.getId(), feedId);
             isReported = false;
         } else {
             // 신고 내역이 없으면 -> 저장(신고) 및 true 설정

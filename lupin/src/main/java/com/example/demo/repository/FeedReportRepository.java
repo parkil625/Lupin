@@ -30,12 +30,11 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
     @Query("SELECT COUNT(fr) FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
     long countByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
 
-    @Query("SELECT fr.feed.id FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id IN :feedIds")
-    java.util.List<Long> findReportedFeedIdsByReporterId(@Param("reporterId") Long reporterId, @Param("feedIds") java.util.List<Long> feedIds);
+    // [핵심] 좋아요 기능 벤치마킹: ID로 존재 여부 확인 (Native Query 아님)
+    boolean existsByReporter_IdAndFeed_Id(Long reporterId, Long feedId);
 
-    @Modifying
-    @Query("DELETE FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
-    void deleteByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
+    // 삭제도 JPA 방식으로 안전하게
+    void deleteByReporter_IdAndFeed_Id(Long reporterId, Long feedId);
 
     long countByFeedId(Long feedId);
 }

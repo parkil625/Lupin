@@ -105,38 +105,20 @@ public class FeedQueryFacade {
      */
     private SliceResponse<FeedResponse> toSliceResponse(Slice<Feed> feeds, User user, int page, int size) {
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
-        
-        java.util.Set<Long> reportedFeedIds = new java.util.HashSet<>();
 
-        if (user != null && !feeds.isEmpty()) {
-            List<Long> feedIds = feeds.getContent().stream().map(Feed::getId).toList();
-            
-            // [디버그 로그 1] 현재 페이지의 피드 ID 목록 확인
-            log.info(">>> [FeedFacade] User ID: {}, 조회 대상 Feed IDs: {}", user.getId(), feedIds);
-
-            // [수정] JPQL 기반 배치 메서드로 정확하게 ID 목록 조회
-            List<Long> reportedIds = feedReportRepository.findReportedFeedIdsByReporterId(user.getId(), feedIds);
-            
-            // [디버그 로그 2] DB에서 찾아낸 신고된 피드 ID 목록 확인
-            log.info(">>> [FeedFacade] DB에서 발견된 신고된 Feed IDs: {}", reportedIds);
-
-            reportedFeedIds.addAll(reportedIds);
-        }
-
-        final java.util.Set<Long> finalReportedFeedIds = reportedFeedIds;
+        // [변경] 불확실한 배치 조회(Bulk Fetch) 제거 -> 좋아요와 동일한 Loop 방식 사용
 
         List<FeedResponse> content = feeds.getContent().stream()
                 .map(feed -> {
                     boolean isLiked = false;
+                    boolean isReported = false;
+
                     if (user != null) {
+                        // 1. 좋아요 확인 (기존 로직)
                         isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feed.getId());
-                    }
-                    
-                    boolean isReported = finalReportedFeedIds.contains(feed.getId());
-                    
-                    // [디버그 로그 3] 최종 DTO 생성 직전 상태 확인 (신고된 건만 로그 출력)
-                    if (isReported) {
-                         log.info(">>> [FeedFacade] Feed ID {} -> isReported=true 설정됨", feed.getId());
+                        
+                        // 2. 신고 확인 (좋아요 벤치마킹: 똑같은 방식으로 확인)
+                        isReported = feedReportRepository.existsByReporter_IdAndFeed_Id(user.getId(), feed.getId());
                     }
 
                     return FeedResponse.from(feed, isLiked, isReported, activeDaysMap.getOrDefault(feed.getWriter().getId(), 0));

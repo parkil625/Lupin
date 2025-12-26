@@ -106,12 +106,12 @@ public class FeedController {
     }
 
     @PostMapping("/{feedId}/report")
-    public ResponseEntity<Void> reportFeed(
+    public ResponseEntity<Boolean> reportFeed(
             @CurrentUser User user,
             @PathVariable Long feedId
     ) {
-        feedReportService.toggleReport(user, feedId);
-        return ResponseEntity.ok().build();
+        boolean isReported = feedReportService.toggleReport(user, feedId);
+        return ResponseEntity.ok(isReported);
     }
 
     @GetMapping("/likes/{feedLikeId}")

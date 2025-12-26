@@ -44,7 +44,7 @@ public class FeedReportService {
     private final EntityManager entityManager;
 
     @Transactional
-    public void toggleReport(User reporter, Long feedId) {
+    public boolean toggleReport(User reporter, Long feedId) {
         User managedReporter = userRepository.findById(reporter.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -52,9 +52,13 @@ public class FeedReportService {
             throw new BusinessException(ErrorCode.FEED_NOT_FOUND);
         }
 
+        boolean isReported;
+        // 이미 신고 내역이 있으면 -> 삭제(취소) 및 false 설정
         if (feedReportRepository.countByReporterIdAndFeedId(managedReporter.getId(), feedId) > 0) {
             feedReportRepository.deleteByReporterIdAndFeedId(managedReporter.getId(), feedId);
+            isReported = false;
         } else {
+            // 신고 내역이 없으면 -> 저장(신고) 및 true 설정
             Feed feedProxy = feedRepository.getReferenceById(feedId);
             
             FeedReport feedReport = FeedReport.builder()
@@ -63,9 +67,11 @@ public class FeedReportService {
                     .build();
             
             feedReportRepository.save(feedReport);
+            isReported = true;
 
             checkAndApplyPenalty(feedProxy);
         }
+        return isReported; // 최종 상태 반환
     }
 
     private void checkAndApplyPenalty(Feed feed) {

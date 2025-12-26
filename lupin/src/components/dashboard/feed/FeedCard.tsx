@@ -66,14 +66,15 @@ export function FeedCard({
     if (!confirm(`정말 ${action}하시겠습니까?`)) return;
 
     try {
-      // 1. 서버에 신고 요청
-      await reportApi.reportFeed(feed.id);
+      // 1. 서버에 신고 요청 및 결과(최신 DB 상태) 수신
+      // reportApi.reportFeed가 boolean(true/false)을 반환한다고 가정
+      const reportedState = await reportApi.reportFeed(feed.id);
 
-      // 2. 상태 토글 (UI 업데이트)
-      setIsReported(!isReported);
+      // 2. 서버 데이터로 UI 동기화 (단순 반전이 아닌 실제 상태 적용)
+      setIsReported(reportedState);
 
       toast.success(
-        isReported ? "신고가 취소되었습니다." : "신고가 접수되었습니다."
+        reportedState ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
       );
     } catch (error) {
       console.error(error);

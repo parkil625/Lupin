@@ -26,15 +26,15 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
     @Query("DELETE FROM FeedReport fr WHERE fr.feed.id = :feedId")
     void deleteByFeedId(@Param("feedId") Long feedId);
 
-    // [수정] 반환 타입 Long으로 변경, 쿼리 단순화 (COUNT(*) > 0 제거)
-    @Query(value = "SELECT COUNT(*) FROM feed_reports WHERE reporter_id = :reporterId AND feed_id = :feedId", nativeQuery = true)
-    Long countByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
+    // [수정] JPQL로 변경하여 Type Safe하게 조회 (새로고침 시 상태 유지 버그 해결)
+    @Query("SELECT COUNT(fr) FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
+    long countByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
 
-    @Query(value = "SELECT feed_id FROM feed_reports WHERE reporter_id = :reporterId AND feed_id IN :feedIds", nativeQuery = true)
+    @Query("SELECT fr.feed.id FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id IN :feedIds")
     java.util.List<Long> findReportedFeedIdsByReporterId(@Param("reporterId") Long reporterId, @Param("feedIds") java.util.List<Long> feedIds);
 
     @Modifying
-    @Query(value = "DELETE FROM feed_reports WHERE reporter_id = :reporterId AND feed_id = :feedId", nativeQuery = true)
+    @Query("DELETE FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id = :feedId")
     void deleteByReporterIdAndFeedId(@Param("reporterId") Long reporterId, @Param("feedId") Long feedId);
 
     long countByFeedId(Long feedId);

@@ -12,10 +12,12 @@ import { Feed } from "@/types/dashboard.types";
 import { feedApi, FeedResponse } from "@/api";
 import { getRelativeTime } from "@/lib/utils";
 
-// [수정] FeedResponse 타입에 isReported가 정의되지 않아 발생하는 에러 해결을 위해 타입 확장
-// (Intersection Type을 사용하여 타입 안전성 보장 & ESLint 통과)
+// [수정] FeedResponse 타입 확장
+// reported: 백엔드 직렬화 이슈로 키가 'reported'로 들어올 경우를 대비해 타입에 추가
+// 명시적으로 타입을 선언하여 any 사용을 제거하고 Lint 에러를 해결합니다.
 type BackendFeed = FeedResponse & {
   isReported?: boolean;
+  reported?: boolean;
 };
 
 interface FeedState {
@@ -74,40 +76,31 @@ interface FeedState {
 }
 
 // 백엔드 응답을 프론트엔드 Feed 타입으로 변환 (export하여 다른 곳에서도 사용 가능)
-export const mapBackendFeed = (backendFeed: BackendFeed): Feed => {
-  // [디버그] ID 34번(문제의 피드) 데이터가 들어올 때 실제 JSON 구조 확인
-  if (backendFeed.id === 34) {
-    console.log(">>> [Frontend] 서버에서 받은 원본 데이터:", backendFeed);
-    // 콘솔을 확인해보세요. isReported가 아니라 reported: true로 들어와 있을 확률이 높습니다.
-  }
+export const mapBackendFeed = (backendFeed: BackendFeed): Feed => ({
+  id: backendFeed.id,
+  writerId: backendFeed.writerId,
+  writerName: backendFeed.writerName,
+  writerAvatar: backendFeed.writerAvatar,
+  writerDepartment: backendFeed.writerDepartment,
+  writerActiveDays: backendFeed.writerActiveDays,
+  activity: backendFeed.activity,
+  points: backendFeed.points || 0,
+  content: backendFeed.content,
+  images: backendFeed.images || [],
+  likes: backendFeed.likes || 0,
+  comments: backendFeed.comments || 0,
+  calories: backendFeed.calories,
+  createdAt: backendFeed.createdAt,
+  updatedAt: backendFeed.updatedAt,
+  isLiked: backendFeed.isLiked || false,
 
-  return {
-    id: backendFeed.id,
-    writerId: backendFeed.writerId,
-    writerName: backendFeed.writerName,
-    writerAvatar: backendFeed.writerAvatar,
-    writerDepartment: backendFeed.writerDepartment,
-    writerActiveDays: backendFeed.writerActiveDays,
-    activity: backendFeed.activity,
-    points: backendFeed.points || 0,
-    content: backendFeed.content,
-    images: backendFeed.images || [],
-    likes: backendFeed.likes || 0,
-    comments: backendFeed.comments || 0,
-    calories: backendFeed.calories,
-    createdAt: backendFeed.createdAt,
-    updatedAt: backendFeed.updatedAt,
-    isLiked: backendFeed.isLiked || false,
+  // [해결] 타입 정의에 reported를 추가했으므로 any 없이 안전하게 접근 가능합니다.
+  // 서버가 "isReported" 또는 "reported" 중 어떤 키로 보내든 처리됩니다.
+  isReported: backendFeed.isReported || backendFeed.reported || false,
 
-    // [해결] 서버 설정에 따라 'reported' 혹은 'isReported' 둘 중 하나로 들어오므로 둘 다 체크
-    // (backendFeed as any).reported 구문을 통해 TS 에러 없이 접근
-    isReported:
-      backendFeed.isReported || (backendFeed as any).reported || false,
-
-    time: getRelativeTime(backendFeed.createdAt),
-    author: backendFeed.writerName,
-  };
-};
+  time: getRelativeTime(backendFeed.createdAt),
+  author: backendFeed.writerName,
+});
 
 export const useFeedStore = create<FeedState>((set, get) => ({
   // 초기 상태

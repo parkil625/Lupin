@@ -36,27 +36,32 @@ public class PointService {
     // 1. 포인트 획득 (피드 작성 등) -> 랭킹 반영 O
     @Transactional
     public void earnPoints(User user, long amount) {
-        user.addPoints(amount);
+        // [수정] 직접 호출 제거 (리스너 위임)
         savePointLog(user, amount, PointType.EARN);
+        
+        log.info(">>> [PointService] Earn points event published: userId={}, amount={}", user.getId(), amount);
         eventPublisher.publishEvent(PointChangedEvent.add(user.getId(), amount));
     }
 
     // 2. 포인트 회수 (피드 삭제 등) -> 랭킹 반영 O
     @Transactional
     public void deductPoints(User user, long amount) {
-        user.deductPoints(amount);
+        // [수정] 직접 호출 제거 (리스너 위임)
         savePointLog(user, -amount, PointType.DEDUCT);
+        
+        log.info(">>> [PointService] Deduct points event published: userId={}, amount={}", user.getId(), amount);
         eventPublisher.publishEvent(PointChangedEvent.deduct(user.getId(), amount));
     }
 
-    // 3. 포인트 사용 (경매 등) -> 랭킹 반영 X, 잔액 부족 시 음수(빚) 허용
+    // 3. 포인트 사용 (경매 등) -> 랭킹 반영 X
     @Transactional
     public void usePoints(User user, long amount) {
-        
-        // 그냥 차감 (User 엔티티가 음수를 허용하도록 수정되어야 함)
-        user.deductPoints(amount); 
+        // [수정] 직접 호출 제거 (리스너 위임)
+        // 참고: 잔액 부족 체크가 필요하다면 여기서 user.getTotalPoints()를 확인하고 예외를 던져야 합니다.
         
         savePointLog(user, -amount, PointType.USE);
+        
+        log.info(">>> [PointService] Use points event published: userId={}, amount={}", user.getId(), amount);
         eventPublisher.publishEvent(PointChangedEvent.deduct(user.getId(), amount));
     }
 

@@ -17,6 +17,7 @@ import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.repository.UserPenaltyRepository; // [추가]
 import com.example.demo.domain.enums.PenaltyType; // [추가]
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -140,7 +142,9 @@ public class CommentService {
         commentLikeRepository.deleteByCommentIn(replies);
 
         // [수정] 단순 감소 로직 제거 (상위 메서드에서 일괄 동기화)
-        commentRepository.deleteAll(replies);
+        // [N+1 문제 해결] deleteAll()은 각 엔티티마다 delete 쿼리를 날리므로, deleteAllInBatch()를 사용하여 단일 쿼리로 삭제
+        log.info(">>> [Comment Service] Batch deleting {} replies for parent comment ID: {}", replies.size(), parentComment.getId());
+        commentRepository.deleteAllInBatch(replies);
     }
 
     public Comment getComment(Long commentId) {

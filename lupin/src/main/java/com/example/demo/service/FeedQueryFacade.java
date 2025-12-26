@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * 피드 조회 파사드 - 조립 로직 분리
@@ -106,11 +108,31 @@ public class FeedQueryFacade {
 
     /**
      * Slice를 SliceResponse로 변환 (조립 로직)
+     * [최적화] N+1 문제 해결: 반복문 내 쿼리 제거 -> Bulk 조회 적용
      */
     private SliceResponse<FeedResponse> toSliceResponse(Slice<Feed> feeds, User user, int page, int size) {
         Map<Long, Integer> activeDaysMap = feedService.getActiveDaysMap(feeds.getContent());
 
-        // [변경] 불확실한 배치 조회(Bulk Fetch) 제거 -> 좋아요와 동일한 Loop 방식 사용
+        Set<Long> likedFeedIds = new HashSet<>();
+        Set<Long> reportedFeedIds = new HashSet<>();
+
+        // [최적화] 로그인한 유저가 있다면, 현재 페이지의 피드들에 대해 좋아요/신고 여부를 한 번에 조회
+        if (user != null && !feeds.getContent().isEmpty()) {
+            List<Long> feedIds = feeds.getContent().stream()
+                    .map(Feed::getId)
+                    .toList();
+
+            // 1. 좋아요 Bulk 조회
+            List<Long> likedList = feedLikeRepository.findFeedIdsByUserIdAndFeedIdIn(user.getId(), feedIds);
+            likedFeedIds.addAll(likedList);
+
+            // 2. 신고 Bulk 조회
+            List<Long> reportedList = feedReportRepository.findFeedIdsByReporterIdAndFeedIdIn(user.getId(), feedIds);
+            reportedFeedIds.addAll(reportedList);
+
+            log.info("=== [Feed Facade] Bulk Fetch - Feeds: {}, Liked: {}, Reported: {} ===", 
+                    feedIds.size(), likedFeedIds.size(), reportedFeedIds.size());
+        }
 
         List<FeedResponse> content = feeds.getContent().stream()
                 .map(feed -> {
@@ -118,16 +140,15 @@ public class FeedQueryFacade {
                     boolean isReported = false;
 
                     if (user != null) {
-                        // 1. 좋아요 확인 (기존 로직)
-                        isLiked = feedLikeRepository.existsByUserIdAndFeedId(user.getId(), feed.getId());
-                        
-                        // 2. 신고 확인 (좋아요 벤치마킹: 똑같은 방식으로 확인)
-                        isReported = feedReportRepository.existsByReporter_IdAndFeed_Id(user.getId(), feed.getId());
+                        // 메모리 상에서 O(1) 조회
+                        isLiked = likedFeedIds.contains(feed.getId());
+                        isReported = reportedFeedIds.contains(feed.getId());
                     }
 
                     return FeedResponse.from(feed, isLiked, isReported, activeDaysMap.getOrDefault(feed.getWriter().getId(), 0));
                 })
                 .toList();
+
         return SliceResponse.of(content, feeds.hasNext(), page, size);
     }
 }

@@ -4,6 +4,7 @@ import com.example.demo.domain.entity.Feed;
 import com.example.demo.domain.entity.FeedReport;
 import com.example.demo.domain.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -32,6 +33,10 @@ public interface FeedReportRepository extends JpaRepository<FeedReport, Long> {
 
     // [핵심] 좋아요 기능 벤치마킹: ID로 존재 여부 확인 (Native Query 아님)
     boolean existsByReporter_IdAndFeed_Id(Long reporterId, Long feedId);
+
+    // [추가] N+1 방지용 Bulk 조회: 내가 신고한 피드 ID 목록 조회
+    @Query("SELECT fr.feed.id FROM FeedReport fr WHERE fr.reporter.id = :reporterId AND fr.feed.id IN :feedIds")
+    List<Long> findFeedIdsByReporterIdAndFeedIdIn(@Param("reporterId") Long reporterId, @Param("feedIds") List<Long> feedIds);
 
     // 삭제도 JPA 방식으로 안전하게
     void deleteByReporter_IdAndFeed_Id(Long reporterId, Long feedId);

@@ -74,28 +74,40 @@ interface FeedState {
 }
 
 // 백엔드 응답을 프론트엔드 Feed 타입으로 변환 (export하여 다른 곳에서도 사용 가능)
-export const mapBackendFeed = (backendFeed: BackendFeed): Feed => ({
-  id: backendFeed.id,
-  writerId: backendFeed.writerId,
-  writerName: backendFeed.writerName,
-  writerAvatar: backendFeed.writerAvatar,
-  writerDepartment: backendFeed.writerDepartment,
-  writerActiveDays: backendFeed.writerActiveDays,
-  activity: backendFeed.activity,
-  points: backendFeed.points || 0,
-  content: backendFeed.content,
-  images: backendFeed.images || [],
-  likes: backendFeed.likes || 0,
-  comments: backendFeed.comments || 0,
-  calories: backendFeed.calories,
-  createdAt: backendFeed.createdAt,
-  updatedAt: backendFeed.updatedAt,
-  isLiked: backendFeed.isLiked || false,
-  // [수정] 서버에서 받은 신고 상태 매핑 (이 코드가 없어서 새로고침 시 풀렸던 것입니다)
-  isReported: backendFeed.isReported || false,
-  time: getRelativeTime(backendFeed.createdAt),
-  author: backendFeed.writerName,
-});
+export const mapBackendFeed = (backendFeed: BackendFeed): Feed => {
+  // [디버그] ID 34번(문제의 피드) 데이터가 들어올 때 실제 JSON 구조 확인
+  if (backendFeed.id === 34) {
+    console.log(">>> [Frontend] 서버에서 받은 원본 데이터:", backendFeed);
+    // 콘솔을 확인해보세요. isReported가 아니라 reported: true로 들어와 있을 확률이 높습니다.
+  }
+
+  return {
+    id: backendFeed.id,
+    writerId: backendFeed.writerId,
+    writerName: backendFeed.writerName,
+    writerAvatar: backendFeed.writerAvatar,
+    writerDepartment: backendFeed.writerDepartment,
+    writerActiveDays: backendFeed.writerActiveDays,
+    activity: backendFeed.activity,
+    points: backendFeed.points || 0,
+    content: backendFeed.content,
+    images: backendFeed.images || [],
+    likes: backendFeed.likes || 0,
+    comments: backendFeed.comments || 0,
+    calories: backendFeed.calories,
+    createdAt: backendFeed.createdAt,
+    updatedAt: backendFeed.updatedAt,
+    isLiked: backendFeed.isLiked || false,
+
+    // [해결] 서버 설정에 따라 'reported' 혹은 'isReported' 둘 중 하나로 들어오므로 둘 다 체크
+    // (backendFeed as any).reported 구문을 통해 TS 에러 없이 접근
+    isReported:
+      backendFeed.isReported || (backendFeed as any).reported || false,
+
+    time: getRelativeTime(backendFeed.createdAt),
+    author: backendFeed.writerName,
+  };
+};
 
 export const useFeedStore = create<FeedState>((set, get) => ({
   // 초기 상태

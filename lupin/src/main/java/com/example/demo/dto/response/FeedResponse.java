@@ -35,9 +35,11 @@ public class FeedResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // [핵심] JSON 필드명을 "isReported"로 고정
+    // [수정] boolean(기본형) -> Boolean(참조형)으로 변경
+    // 이유: 기본형 boolean은 Lombok이 Getter를 isReported()로 만들어, Jackson이 "reported"로 키 이름을 잘라버림.
+    // Boolean 참조형은 getIsReported()로 만들어져, JSON 키 "isReported"가 정상 유지됨. (isLiked 필드와 동일 원리)
     @JsonProperty("isReported")
-    private boolean isReported;
+    private Boolean isReported;
 
     /**
      * [최적화] Feed 엔티티의 반정규화 필드 사용 - DB 조회 없음

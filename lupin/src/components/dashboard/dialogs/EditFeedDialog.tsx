@@ -488,22 +488,27 @@ export default function EditFeedDialog({
                     </div>
                   </TooltipProvider>
 
-                  {imagesChanged && verificationStatus === "verified" && (
-                    <div className="flex items-center justify-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <span className="text-sm font-semibold text-green-700">
-                        운동 인증 완료!
-                      </span>
-                      <span className="text-xs text-green-600">
-                        (
-                        {Math.round(
-                          (endExifTime!.getTime() - startExifTime!.getTime()) /
-                            (1000 * 60)
-                        )}
-                        분 운동)
-                      </span>
-                    </div>
-                  )}
+                  {/* [수정] startExifTime과 endExifTime이 존재하는지 안전하게 확인 후 렌더링 */}
+                  {imagesChanged &&
+                    verificationStatus === "verified" &&
+                    startExifTime &&
+                    endExifTime && (
+                      <div className="flex items-center justify-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        <span className="text-sm font-semibold text-green-700">
+                          운동 인증 완료!
+                        </span>
+                        <span className="text-xs text-green-600">
+                          (
+                          {Math.round(
+                            (endExifTime!.getTime() -
+                              startExifTime!.getTime()) /
+                              (1000 * 60)
+                          )}
+                          분 운동)
+                        </span>
+                      </div>
+                    )}
                   {imagesChanged && verificationStatus === "invalid" && (
                     <div className="flex items-center justify-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg mb-4">
                       <AlertCircle className="w-5 h-5 text-orange-600" />
@@ -703,23 +708,27 @@ export default function EditFeedDialog({
                       </div>
                     </TooltipProvider>
 
-                    {imagesChanged && verificationStatus === "verified" && (
-                      <div className="flex items-center justify-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-semibold text-green-700">
-                          운동 인증 완료!
-                        </span>
-                        <span className="text-xs text-green-600">
-                          (
-                          {Math.round(
-                            (endExifTime!.getTime() -
-                              startExifTime!.getTime()) /
-                              (1000 * 60)
-                          )}
-                          분 운동)
-                        </span>
-                      </div>
-                    )}
+                    {/* [수정] 데스크톱 뷰도 동일하게 안전 장치 추가 */}
+                    {imagesChanged &&
+                      verificationStatus === "verified" &&
+                      startExifTime &&
+                      endExifTime && (
+                        <div className="flex items-center justify-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <span className="text-sm font-semibold text-green-700">
+                            운동 인증 완료!
+                          </span>
+                          <span className="text-xs text-green-600">
+                            (
+                            {Math.round(
+                              (endExifTime!.getTime() -
+                                startExifTime!.getTime()) /
+                                (1000 * 60)
+                            )}
+                            분 운동)
+                          </span>
+                        </div>
+                      )}
                     {imagesChanged && verificationStatus === "invalid" && (
                       <div className="flex items-center justify-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg mb-4">
                         <AlertCircle className="w-5 h-5 text-orange-600" />

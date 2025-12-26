@@ -71,6 +71,9 @@ interface FeedState {
   // 피드 좋아요
   toggleLike: (feedId: number, liked: boolean) => void;
 
+  // [추가] 피드 신고 토글
+  toggleReport: (feedId: number, isReported: boolean) => void;
+
   // 내 피드들의 아바타 업데이트 (프로필 사진 변경 시 호출)
   updateMyFeedsAvatar: (newAvatarUrl: string | null) => void;
 }
@@ -256,6 +259,23 @@ export const useFeedStore = create<FeedState>((set, get) => ({
             }
           : feed
       ),
+    }));
+  },
+
+  // [추가] 신고 토글 구현
+  toggleReport: (feedId, isReported) => {
+    set((state) => ({
+      allFeeds: state.allFeeds.map((feed) =>
+        feed.id === feedId ? { ...feed, isReported: isReported } : feed
+      ),
+      myFeeds: state.myFeeds.map((feed) =>
+        feed.id === feedId ? { ...feed, isReported: isReported } : feed
+      ),
+      // 선택된 피드(상세보기 등)가 있다면 그것도 동기화
+      selectedFeed:
+        state.selectedFeed && state.selectedFeed.id === feedId
+          ? { ...state.selectedFeed, isReported: isReported }
+          : state.selectedFeed,
     }));
   },
 

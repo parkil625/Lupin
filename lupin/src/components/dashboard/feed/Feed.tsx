@@ -847,23 +847,27 @@ const FeedItem = React.memo(function FeedItem({
   feed,
   currentImageIndex,
   liked,
+  isReported, // [추가] 부모로부터 상태 받음
   onPrevImage,
   onNextImage,
   onLike,
+  onReport, // [추가] 부모로부터 핸들러 받음
   isPriority = false,
   targetCommentId,
 }: {
   feed: Feed;
   currentImageIndex: number;
   liked: boolean;
+  isReported: boolean; // [추가]
   onPrevImage: () => void;
   onNextImage: () => void;
   onLike: () => void;
+  onReport: () => void; // [추가]
   isPriority?: boolean;
   targetCommentId?: number | null;
 }) {
   const [showComments, setShowComments] = useState(false);
-  const [isReported, setIsReported] = useState(false);
+  // [삭제] 로컬 상태 및 handleReport 함수 제거
 
   // targetCommentId가 있으면 댓글창 자동 열기
   useEffect(() => {
@@ -883,20 +887,6 @@ const FeedItem = React.memo(function FeedItem({
     : undefined;
   const iconColor = useImageBrightness(currentImageUrl);
   const iconColorClass = iconColor === "white" ? "text-white" : "text-gray-900";
-
-  const handleReport = async () => {
-    try {
-      await reportApi.reportFeed(feed.id);
-      setIsReported(!isReported);
-      toast.success(
-        isReported ? "신고가 취소되었습니다." : "신고가 접수되었습니다."
-      );
-    } catch {
-      toast.error(
-        isReported ? "신고 취소에 실패했습니다." : "신고에 실패했습니다."
-      );
-    }
-  };
 
   return (
     <div
@@ -1011,7 +1001,7 @@ const FeedItem = React.memo(function FeedItem({
             </button>
             <button
               className="flex flex-col items-center gap-1 cursor-pointer hover:scale-110 transition-transform"
-              onClick={handleReport}
+              onClick={onReport} // [수정] props로 받은 핸들러 사용
               aria-label={isReported ? "신고 취소" : "피드 신고"}
             >
               <Siren
@@ -1117,8 +1107,12 @@ export default function FeedView({
   isLoadingFeeds,
 }: FeedViewProps) {
   // 스토어, 이미지 프리로드, 검색 등 기존 로직 유지
-  const { targetCommentIdForFeed, pivotFeedId, setTargetCommentIdForFeed } =
-    useFeedStore();
+  const {
+    targetCommentIdForFeed,
+    pivotFeedId,
+    setTargetCommentIdForFeed,
+    toggleReport, // [추가] 액션 가져오기
+  } = useFeedStore();
 
   useEffect(() => {
     return () => {
@@ -1160,6 +1154,26 @@ export default function FeedView({
     }
   }, [scrollToFeedId, setScrollToFeedId, filteredFeeds]);
 
+  // [추가] 신고 핸들러 (낙관적 업데이트)
+  const handleReport = async (feedId: number, currentStatus: boolean) => {
+    // 1. UI 즉시 업데이트 (Toggle)
+    toggleReport(feedId, !currentStatus);
+
+    try {
+      // 2. API 호출
+      await reportApi.reportFeed(feedId);
+      toast.success(
+        !currentStatus ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
+      );
+    } catch (error) {
+      // 3. 실패 시 롤백
+      toggleReport(feedId, currentStatus);
+      toast.error(
+        !currentStatus ? "신고에 실패했습니다." : "신고 취소에 실패했습니다."
+      );
+    }
+  };
+
   return (
     <div className="h-full flex flex-col p-4 gap-4 relative">
       {/* 검색바 */}
@@ -1195,6 +1209,9 @@ export default function FeedView({
                 feed={feed}
                 currentImageIndex={getFeedImageIndex(feed.id)}
                 liked={hasLiked(feed.id)}
+                // [추가] Store 상태 및 핸들러 전달
+                isReported={feed.isReported || false}
+                onReport={() => handleReport(feed.id, feed.isReported || false)}
                 onPrevImage={() =>
                   setFeedImageIndex(feed.id, (prev: number) =>
                     Math.max(0, prev - 1)

@@ -6,12 +6,14 @@ import com.example.demo.domain.enums.PointType;
 import com.example.demo.event.PointChangedEvent;
 import com.example.demo.repository.PointLogRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j; // [추가] Lombok 로그 import
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.YearMonth;
 
+@Slf4j // [추가] 로그 객체(log) 자동 생성 어노테이션
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

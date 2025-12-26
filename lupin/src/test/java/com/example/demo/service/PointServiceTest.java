@@ -111,7 +111,7 @@ class PointServiceTest {
     }
 
     @Test
-    @DisplayName("포인트 획득(earnPoints) 시 EARN 타입으로 저장되고 보유 포인트가 증가한다")
+    @DisplayName("포인트 획득(earnPoints) 시 EARN 타입으로 저장되고 포인트 변경 이벤트가 발행된다")
     void earnPointsTest() {
         // given
         long amount = 100L;
@@ -120,7 +120,7 @@ class PointServiceTest {
         pointService.earnPoints(user, amount);
 
         // then
-        assertThat(user.getTotalPoints()).isEqualTo(100L);
+        // [수정] PointService는 더 이상 User를 직접 업데이트하지 않으므로 user.getTotalPoints() 검증 삭제
 
         ArgumentCaptor<PointLog> logCaptor = ArgumentCaptor.forClass(PointLog.class);
         verify(pointLogRepository).save(logCaptor.capture());
@@ -129,11 +129,12 @@ class PointServiceTest {
         assertThat(savedLog.getPoints()).isEqualTo(100L);
         assertThat(savedLog.getType()).isEqualTo(PointType.EARN); 
 
+        // 이벤트 발행 여부 검증
         verify(eventPublisher).publishEvent(any(PointChangedEvent.class));
     }
 
     @Test
-    @DisplayName("포인트 회수(deductPoints) 시 DEDUCT 타입으로 저장되고 보유 포인트가 감소한다")
+    @DisplayName("포인트 회수(deductPoints) 시 DEDUCT 타입으로 저장되고 포인트 변경 이벤트가 발행된다")
     void deductPointsTest() {
         // given
         ReflectionTestUtils.setField(user, "totalPoints", 200L); 
@@ -143,7 +144,7 @@ class PointServiceTest {
         pointService.deductPoints(user, amount);
 
         // then
-        assertThat(user.getTotalPoints()).isEqualTo(150L);
+        // [수정] PointService는 더 이상 User를 직접 업데이트하지 않으므로 user.getTotalPoints() 검증 삭제
 
         ArgumentCaptor<PointLog> logCaptor = ArgumentCaptor.forClass(PointLog.class);
         verify(pointLogRepository).save(logCaptor.capture());
@@ -151,10 +152,13 @@ class PointServiceTest {
         PointLog savedLog = logCaptor.getValue();
         assertThat(savedLog.getPoints()).isEqualTo(-50L); 
         assertThat(savedLog.getType()).isEqualTo(PointType.DEDUCT); 
+        
+        // 이벤트 발행 여부 검증 추가
+        verify(eventPublisher).publishEvent(any(PointChangedEvent.class));
     }
 
     @Test
-    @DisplayName("포인트 사용(usePoints) 시 USE 타입으로 저장되고 보유 포인트가 감소한다")
+    @DisplayName("포인트 사용(usePoints) 시 USE 타입으로 저장되고 포인트 변경 이벤트가 발행된다")
     void usePointsTest() {
         // given
         ReflectionTestUtils.setField(user, "totalPoints", 1000L);
@@ -164,7 +168,7 @@ class PointServiceTest {
         pointService.usePoints(user, amount);
 
         // then
-        assertThat(user.getTotalPoints()).isEqualTo(500L);
+        // [수정] PointService는 더 이상 User를 직접 업데이트하지 않으므로 user.getTotalPoints() 검증 삭제
 
         ArgumentCaptor<PointLog> logCaptor = ArgumentCaptor.forClass(PointLog.class);
         verify(pointLogRepository).save(logCaptor.capture());
@@ -172,5 +176,8 @@ class PointServiceTest {
         PointLog savedLog = logCaptor.getValue();
         assertThat(savedLog.getPoints()).isEqualTo(-500L);
         assertThat(savedLog.getType()).isEqualTo(PointType.USE);
+        
+        // 이벤트 발행 여부 검증 추가
+        verify(eventPublisher).publishEvent(any(PointChangedEvent.class));
     }
 }

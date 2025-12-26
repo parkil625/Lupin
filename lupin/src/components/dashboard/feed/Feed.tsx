@@ -1189,7 +1189,7 @@ export default function FeedView({
               id={`feed-${feed.id}`}
               // [수정] snap-start -> snap-center (중앙 정렬로 잘림 방지)
               // [수정] py-4 -> p-4 (높이 왜곡 방지)
-              className="h-full w-full snap-center snap-always flex items-center justify-center p-4"
+              className="h-full w-full snap-center snap-always flex items-center justify-center py-10"
             >
               <FeedItem
                 feed={feed}

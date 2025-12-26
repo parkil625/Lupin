@@ -81,6 +81,10 @@ public class FeedQueryFacade {
      */
     @Transactional
     public FeedResponse updateFeed(FeedUpdateCommand command) {
+        // [추가] 디버깅 로그: 프론트엔드에서 보낸 변경 플래그와 시간 정보 확인
+        log.info("=== [Feed Update Debug] ID: {}, Changed: {}, Start: {}, End: {} ===", 
+                command.feedId(), command.imagesChanged(), command.startAt(), command.endAt());
+
         Feed feed = feedService.updateFeed(command);
         return feedMapper.toResponse(feed);
     }

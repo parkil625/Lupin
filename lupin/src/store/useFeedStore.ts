@@ -104,6 +104,9 @@ export const mapBackendFeed = (backendFeed: BackendFeed): Feed => ({
   // 서버가 "isReported" 또는 "reported" 중 어떤 키로 보내든 처리됩니다.
   isReported: backendFeed.isReported || backendFeed.reported || false,
 
+  // [추가] DB에서 가져온 이미지 시간 정보를 상태에 매핑
+  imageCapturedAt: backendFeed.imageCapturedAt,
+
   time: getRelativeTime(backendFeed.createdAt),
   author: backendFeed.writerName,
 });

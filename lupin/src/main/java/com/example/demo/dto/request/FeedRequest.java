@@ -31,15 +31,15 @@ public class FeedRequest {
     @Deprecated
     private List<String> images = new ArrayList<>();
 
-    // [추가] 이미지 변경 여부 플래그
-    private boolean imagesChanged;
+    // [추가] 이미지 변경 여부 플래그 (기본형 boolean -> 참조형 Boolean으로 변경하여 매핑 안정성 확보)
+    private Boolean imagesChanged;
 
     // [추가] 프론트에서 전달받는 EXIF 시간
     private LocalDateTime startAt;
     private LocalDateTime endAt;
 
     @Builder
-    public FeedRequest(String activity, String content, String startImage, String endImage, List<String> otherImages, List<String> images, boolean imagesChanged, LocalDateTime startAt, LocalDateTime endAt) {
+    public FeedRequest(String activity, String content, String startImage, String endImage, List<String> otherImages, List<String> images, Boolean imagesChanged, LocalDateTime startAt, LocalDateTime endAt) {
         this.activity = activity;
         this.content = content;
         this.startImage = startImage;

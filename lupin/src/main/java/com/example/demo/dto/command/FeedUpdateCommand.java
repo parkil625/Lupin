@@ -30,9 +30,10 @@ public record FeedUpdateCommand(
                 request.getStartImageKey(),
                 request.getEndImageKey(),
                 request.getOtherImageKeys(),
-                request.isImagesChanged(),
-                request.getStartAt(), // [추가]
-                request.getEndAt()    // [추가]
+                // [수정] Boolean -> boolean 안전한 변환 (null이면 false)
+                Boolean.TRUE.equals(request.getImagesChanged()),
+                request.getStartAt(),
+                request.getEndAt()
         );
     }
 

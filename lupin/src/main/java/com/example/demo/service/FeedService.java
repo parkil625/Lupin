@@ -177,6 +177,10 @@ public class FeedService {
                                       String startImageKey, String endImageKey, List<String> otherImageKeys,
                                       boolean imagesChanged, LocalDateTime startAt, LocalDateTime endAt) {
 
+        // [추가] 디버깅 로그: 실제 로직 분기 확인
+        log.info(">>> [Feed Service] UpdateWithImages - ID: {}, ImagesChanged: {}, HasTimeInfo: {}", 
+                feedId, imagesChanged, (startAt != null && endAt != null));
+
         Optional<LocalDateTime> startTimeOpt = Optional.empty();
         Optional<LocalDateTime> endTimeOpt = Optional.empty();
 

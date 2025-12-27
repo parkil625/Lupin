@@ -27,9 +27,20 @@ public class PrescriptionResponse {
     private String medications;
 
     public static PrescriptionResponse from(Prescription prescription) {
-        // Null safety: prescription의 연관 엔티티가 null인 경우 처리
-        if (prescription.getPatient() == null || prescription.getDoctor() == null) {
-            throw new IllegalStateException("처방전에 환자 또는 의사 정보가 없습니다.");
+        // Null safety: prescription의 연관 엔티티가 null인 경우 기본값 처리
+        Long patientId = null;
+        String patientName = "알 수 없음";
+        Long doctorId = null;
+        String doctorName = "알 수 없음";
+
+        if (prescription.getPatient() != null) {
+            patientId = prescription.getPatient().getId();
+            patientName = prescription.getPatient().getName();
+        }
+
+        if (prescription.getDoctor() != null) {
+            doctorId = prescription.getDoctor().getId();
+            doctorName = prescription.getDoctor().getName();
         }
 
         String departmentName = null;
@@ -39,10 +50,10 @@ public class PrescriptionResponse {
 
         return PrescriptionResponse.builder()
                 .id(prescription.getId())
-                .patientId(prescription.getPatient().getId())
-                .patientName(prescription.getPatient().getName())
-                .doctorId(prescription.getDoctor().getId())
-                .doctorName(prescription.getDoctor().getName())
+                .patientId(patientId)
+                .patientName(patientName)
+                .doctorId(doctorId)
+                .doctorName(doctorName)
                 .departmentName(departmentName)
                 .appointmentId(prescription.getAppointment() != null ?
                         prescription.getAppointment().getId() : null)

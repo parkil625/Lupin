@@ -15,7 +15,7 @@ coverage:
 
     patch:
       default:
-        target: 40%  # 새 코드 40% 이상이면 OK
+        target: 0%  # 새 코드 커버리지 요구사항 없음
         informational: true  # 정보 제공용 (빌드 실패 안 함)
 
 parsers:

@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { Member } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
+import { prescriptionApi } from "@/api/prescriptionApi";
 
 interface MedicineQuantity {
   id: number;
@@ -298,11 +299,16 @@ export default function DoctorChatPage() {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/prescriptions/medicines/search?query=${encodeURIComponent(query)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data);
-      }
+      const data = await prescriptionApi.searchMedicines(query);
+      // API 응답의 optional 필드에 기본값 제공
+      const formattedData = data.map(medicine => ({
+        ...medicine,
+        manufacturer: medicine.manufacturer || "",
+        standardDosage: medicine.standardDosage || "",
+        unit: medicine.unit || "",
+        description: medicine.description || "",
+      }));
+      setSearchResults(formattedData);
     } catch (error) {
       console.error("약품 검색 실패:", error);
     } finally {

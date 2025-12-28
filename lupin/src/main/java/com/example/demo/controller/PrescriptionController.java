@@ -43,13 +43,13 @@ public class PrescriptionController {
 
     @Operation(summary = "환자 처방전 목록 조회", description = "환자의 모든 처방전을 조회합니다.")
     @GetMapping("/patient/{patientId}")
-    @PreAuthorize("hasRole('PATIENT') or hasRole('DOCTOR')")
+    @PreAuthorize("hasRole('MEMBER') or hasRole('DOCTOR')")
     public ResponseEntity<List<PrescriptionResponse>> getPatientPrescriptions(
             @PathVariable Long patientId,
             @CurrentUser User currentUser
     ) {
         // 환자 본인이거나 의사만 조회 가능
-        if (currentUser.getRole().name().equals("PATIENT") && !currentUser.getId().equals(patientId)) {
+        if (currentUser.getRole().name().equals("MEMBER") && !currentUser.getId().equals(patientId)) {
             return ResponseEntity.status(403).build();
         }
 

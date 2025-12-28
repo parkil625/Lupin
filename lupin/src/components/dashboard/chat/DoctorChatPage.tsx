@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { Member } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
+import { prescriptionApi } from "@/api/prescriptionApi";
 
 interface MedicineQuantity {
   id: number;
@@ -298,13 +299,11 @@ export default function DoctorChatPage() {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/prescriptions/medicines/search?query=${encodeURIComponent(query)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data);
-      }
+      const data = await prescriptionApi.searchMedicines(query);
+      setSearchResults(data);
     } catch (error) {
       console.error("약품 검색 실패:", error);
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }

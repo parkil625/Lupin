@@ -192,6 +192,7 @@ class PrescriptionControllerTest {
 
         // when & then
         mockMvc.perform(get("/api/prescriptions/{id}", prescription.getId())
+                        .with(user(patient.getUserId()).roles("MEMBER"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(prescription.getId()))
@@ -208,6 +209,7 @@ class PrescriptionControllerTest {
 
         // when & then
         mockMvc.perform(get("/api/prescriptions/{id}", 999L)
+                        .with(user(patient.getUserId()).roles("MEMBER"))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }

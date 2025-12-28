@@ -41,10 +41,10 @@ interface MedicineSearchResult {
   id: number;
   code: string;
   name: string;
-  manufacturer?: string;
-  standardDosage?: string;
-  unit?: string;
-  description?: string;
+  manufacturer: string;
+  standardDosage: string;
+  unit: string;
+  description: string;
 }
 
 // 🔧 제거: ReadNotification (REST API로만 처리)
@@ -300,10 +300,17 @@ export default function DoctorChatPage() {
     setIsSearching(true);
     try {
       const data = await prescriptionApi.searchMedicines(query);
-      setSearchResults(data);
+      // API 응답의 optional 필드에 기본값 제공
+      const formattedData = data.map(medicine => ({
+        ...medicine,
+        manufacturer: medicine.manufacturer || "",
+        standardDosage: medicine.standardDosage || "",
+        unit: medicine.unit || "",
+        description: medicine.description || "",
+      }));
+      setSearchResults(formattedData);
     } catch (error) {
       console.error("약품 검색 실패:", error);
-      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }

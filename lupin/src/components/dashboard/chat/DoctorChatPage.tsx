@@ -41,10 +41,10 @@ interface MedicineSearchResult {
   id: number;
   code: string;
   name: string;
-  manufacturer: string;
-  standardDosage: string;
-  unit: string;
-  description: string;
+  manufacturer?: string;
+  standardDosage?: string;
+  unit?: string;
+  description?: string;
 }
 
 // 🔧 제거: ReadNotification (REST API로만 처리)

@@ -1069,17 +1069,17 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                 </div>
               ) : viewState === "LIST" ? (
                 // 예약 목록 상세 화면
-                <div className="h-full overflow-y-auto flex flex-col items-center pt-8">
-                  <div className="w-[320px]">
-                    <div className="mb-6">
-                      <h2 className="text-2xl font-black text-gray-900 mb-4 text-center">
+                <div className="h-full overflow-y-auto px-6 pt-8">
+                  <div className="max-w-4xl mx-auto">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-black text-gray-900">
                         예약 목록
                       </h2>
                       <Button
                         onClick={() => setViewState("FORM")}
-                        className="w-full rounded-xl bg-[#C93831] hover:bg-[#B02F28] text-white font-bold"
+                        className="rounded-xl bg-[#C93831] hover:bg-[#B02F28] text-white font-bold px-6"
                       >
-                        새 예약 만들기
+                        예약하기
                       </Button>
                     </div>
 

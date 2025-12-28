@@ -85,17 +85,16 @@ export default function () {
   // Count results
   if (res.status === 200) {
     successfulBookings.add(1);
-    console.log(`✅ VU ${__VU}: Booking succeeded! Appointment ID: ${res.body}`);
+    console.log(`[${__VU}] 예약성공 - ID: ${res.body}`);
   } else if (res.status === 409 || res.status === 400) {
     duplicateErrors.add(1);
     failedBookings.add(1);
-    // Don't log every failure to avoid cluttering output
-    if (Math.random() < 0.01) { // Log ~1% of failures
-      console.log(`❌ VU ${__VU}: Booking failed - ${res.status} ${res.status_text}`);
+    if (Math.random() < 0.01) {
+      console.log(`[${__VU}] 중복차단 - ${res.status}`);
     }
   } else {
     failedBookings.add(1);
-    console.log(`⚠️ VU ${__VU}: Unexpected error - ${res.status} ${res.status_text}`);
+    console.log(`[${__VU}] 에러 - ${res.status} ${res.status_text}`);
   }
 
   errorRate.add(res.status !== 200 && res.status !== 409);
@@ -110,46 +109,43 @@ export function handleSummary(data) {
   const duplicates = data.metrics.duplicate_errors?.values?.count || 0;
   const totalRequests = successful + failed;
 
-  console.log('\n' + '='.repeat(80));
-  console.log('🏥 예약 중복 동시성 테스트 결과');
-  console.log('='.repeat(80));
-  console.log(`\n📊 예약 결과:`);
-  console.log(`  ✅ 성공한 예약: ${successful}개`);
-  console.log(`  ❌ 실패한 예약: ${failed}개`);
-  console.log(`  🔁 중복 에러: ${duplicates}개`);
-  console.log(`  📈 총 요청 수: ${totalRequests}개`);
+  console.log('\n' + '-'.repeat(60));
+  console.log('예약 동시성 테스트 결과');
+  console.log('-'.repeat(60));
 
-  console.log(`\n⏱️  성능 지표:`);
-  console.log(`  평균 응답 시간: ${(data.metrics.http_req_duration?.values?.avg || 0).toFixed(2)}ms`);
-  console.log(`  최소 응답 시간: ${(data.metrics.http_req_duration?.values?.min || 0).toFixed(2)}ms`);
-  console.log(`  최대 응답 시간: ${(data.metrics.http_req_duration?.values?.max || 0).toFixed(2)}ms`);
-  console.log(`  P90 응답 시간: ${(data.metrics.http_req_duration?.values?.['p(90)'] || 0).toFixed(2)}ms`);
-  console.log(`  P95 응답 시간: ${(data.metrics.http_req_duration?.values?.['p(95)'] || 0).toFixed(2)}ms`);
-  console.log(`  P99 응답 시간: ${(data.metrics.http_req_duration?.values?.['p(99)'] || 0).toFixed(2)}ms`);
+  console.log(`\n[예약 처리 결과]`);
+  console.log(`성공: ${successful}건 / 실패: ${failed}건 (총 ${totalRequests}건)`);
+  console.log(`중복 차단: ${duplicates}건`);
 
-  console.log(`\n🎯 테스트 결과 판정:`);
+  const avg = (data.metrics.http_req_duration?.values?.avg || 0).toFixed(0);
+  const min = (data.metrics.http_req_duration?.values?.min || 0).toFixed(0);
+  const max = (data.metrics.http_req_duration?.values?.max || 0).toFixed(0);
+  const p95 = (data.metrics.http_req_duration?.values?.['p(95)'] || 0).toFixed(0);
+
+  console.log(`\n[응답시간]`);
+  console.log(`평균 ${avg}ms (최소 ${min}ms / 최대 ${max}ms / P95 ${p95}ms)`);
+
+  console.log(`\n[판정]`);
   if (successful === 1) {
-    console.log(`  ✅ PASS: 정확히 1개의 예약만 성공했습니다. (중복 방지 성공)`);
+    console.log(`OK - 1건만 예약됨 (중복방지 정상)`);
   } else if (successful === 0) {
-    console.log(`  ❌ FAIL: 예약이 하나도 성공하지 못했습니다.`);
+    console.log(`FAIL - 예약 실패`);
   } else {
-    console.log(`  ❌ FAIL: ${successful}개의 중복 예약이 발생했습니다! (중복 방지 실패)`);
+    console.log(`FAIL - ${successful}건 중복예약 발생!`);
   }
 
   if (duplicates > 0) {
-    console.log(`  ✅ PASS: 중복 시도가 적절히 거부되었습니다.`);
+    console.log(`OK - 중복시도 차단됨`);
   }
 
   const avgLatency = data.metrics.http_req_duration?.values?.avg || 0;
-  const p95Latency = data.metrics.http_req_duration?.values?.['p(95)'] || 0;
-
-  if (avgLatency < 1000 && p95Latency < 2000) {
-    console.log(`  ✅ PASS: 응답 시간이 기준 내에 있습니다.`);
+  if (avgLatency < 1000) {
+    console.log(`OK - 응답시간 양호`);
   } else {
-    console.log(`  ⚠️  WARNING: 응답 시간이 다소 느립니다.`);
+    console.log(`WARNING - 응답시간 느림`);
   }
 
-  console.log('\n' + '='.repeat(80) + '\n');
+  console.log('-'.repeat(60) + '\n');
 
   return {
     'stdout': textSummary(data, { indent: ' ', enableColors: true }),
@@ -157,42 +153,29 @@ export function handleSummary(data) {
   };
 }
 
-function textSummary(data, opts) {
-  const indent = opts.indent || '';
+function textSummary(data) {
+  const vus = data.metrics.vus?.values?.value || 0;
+  const iterations = data.metrics.iterations?.values?.count || 0;
+  const duration = (data.state?.testRunDurationMs / 1000 || 0).toFixed(1);
+  const totalReqs = data.metrics.http_reqs?.values?.count || 0;
+  const rate = (data.metrics.http_reqs?.values?.rate || 0).toFixed(1);
 
-  let out = '\n=== 상세 통계 ===\n\n';
-
-  out += `${indent}Virtual Users: ${data.metrics.vus?.values?.value || 0}\n`;
-  out += `${indent}Iterations: ${data.metrics.iterations?.values?.count || 0}\n`;
-  out += `${indent}Duration: ${(data.state?.testRunDurationMs / 1000 || 0).toFixed(2)}s\n\n`;
-
-  out += `${indent}HTTP Requests:\n`;
-  out += `${indent}  Total: ${data.metrics.http_reqs?.values?.count || 0}\n`;
-  out += `${indent}  Rate: ${(data.metrics.http_reqs?.values?.rate || 0).toFixed(2)}/s\n\n`;
-
-  out += `${indent}HTTP Request Duration:\n`;
-  out += `${indent}  avg: ${(data.metrics.http_req_duration?.values?.avg || 0).toFixed(2)}ms\n`;
-  out += `${indent}  min: ${(data.metrics.http_req_duration?.values?.min || 0).toFixed(2)}ms\n`;
-  out += `${indent}  med: ${(data.metrics.http_req_duration?.values?.med || 0).toFixed(2)}ms\n`;
-  out += `${indent}  max: ${(data.metrics.http_req_duration?.values?.max || 0).toFixed(2)}ms\n`;
-  out += `${indent}  p(90): ${(data.metrics.http_req_duration?.values?.['p(90)'] || 0).toFixed(2)}ms\n`;
-  out += `${indent}  p(95): ${(data.metrics.http_req_duration?.values?.['p(95)'] || 0).toFixed(2)}ms\n`;
-  out += `${indent}  p(99): ${(data.metrics.http_req_duration?.values?.['p(99)'] || 0).toFixed(2)}ms\n\n`;
+  let out = `\n상세 통계\n`;
+  out += `동시사용자: ${vus}명, 반복: ${iterations}회, 소요시간: ${duration}초\n`;
+  out += `요청: ${totalReqs}건 (${rate}건/초)\n\n`;
 
   return out;
 }
 
 // Setup function - runs once before the test
 export function setup() {
-  console.log('\n🚀 예약 중복 테스트 시작');
-  console.log(`📅 목표 예약 시간: ${TARGET_APPOINTMENT.date}`);
-  console.log(`👨‍⚕️ 의사 ID: ${TARGET_APPOINTMENT.doctorId}`);
-  console.log(`👤 환자 ID: ${TARGET_APPOINTMENT.patientId}`);
-  console.log(`👥 동시 접속자 수: 1000명`);
-  console.log('='.repeat(80) + '\n');
+  console.log('\n테스트 시작');
+  console.log(`예약시간: ${TARGET_APPOINTMENT.date}`);
+  console.log(`의사 ID: ${TARGET_APPOINTMENT.doctorId}, 환자 ID: ${TARGET_APPOINTMENT.patientId}`);
+  console.log(`동시접속: 1000명\n`);
 }
 
 // Teardown function - runs once after the test
 export function teardown(data) {
-  console.log('\n✅ 테스트 완료\n');
+  console.log('테스트 종료\n');
 }

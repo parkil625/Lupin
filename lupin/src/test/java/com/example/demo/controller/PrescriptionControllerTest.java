@@ -10,6 +10,7 @@ import com.example.demo.dto.prescription.MedicineResponse;
 import com.example.demo.dto.prescription.PrescriptionRequest;
 import com.example.demo.dto.prescription.PrescriptionResponse;
 import com.example.demo.repository.MedicineRepository;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.PrescriptionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +59,9 @@ class PrescriptionControllerTest {
     @MockitoBean
     private MedicineRepository medicineRepository;
 
+    @MockitoBean
+    private UserRepository userRepository;
+
     private User patient;
     private User doctor;
     private Prescription prescription;
@@ -98,6 +102,18 @@ class PrescriptionControllerTest {
                 .build();
 
         prescriptionResponse = PrescriptionResponse.from(prescription);
+
+        // UserRepository Mock 설정
+        given(userRepository.findByUserId("patient01")).willReturn(Optional.of(patient));
+        given(userRepository.findByUserId("doctor01")).willReturn(Optional.of(doctor));
+        given(userRepository.findByUserId("patient02")).willReturn(Optional.of(
+                User.builder()
+                        .id(2L)
+                        .userId("patient02")
+                        .name("환자2")
+                        .role(Role.MEMBER)
+                        .build()
+        ));
     }
 
     @Test

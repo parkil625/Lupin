@@ -12,9 +12,9 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
 
     Optional<Medicine> findByCode(String code);
 
-    List<Medicine> findByNameContainingIgnoreCaseAndIsActiveTrue(String name);
+    List<Medicine> findByNameContainingIgnoreCase(String name);
 
-    List<Medicine> findByIsActiveTrueOrderByNameAsc();
+    List<Medicine> findByOrderByNameAsc();
 
     boolean existsByCode(String code);
 }

@@ -86,19 +86,19 @@ public class PrescriptionController {
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<List<MedicineResponse>> searchMedicines(@RequestParam String query) {
         List<MedicineResponse> medicines = medicineRepository
-                .findByNameContainingIgnoreCaseAndIsActiveTrue(query)
+                .findByNameContainingIgnoreCase(query)
                 .stream()
                 .map(MedicineResponse::from)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(medicines);
     }
 
-    @Operation(summary = "전체 약품 목록 조회", description = "활성화된 모든 약품을 조회합니다.")
+    @Operation(summary = "전체 약품 목록 조회", description = "모든 약품을 조회합니다.")
     @GetMapping("/medicines")
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<List<MedicineResponse>> getAllMedicines() {
         List<MedicineResponse> medicines = medicineRepository
-                .findByIsActiveTrueOrderByNameAsc()
+                .findByOrderByNameAsc()
                 .stream()
                 .map(MedicineResponse::from)
                 .collect(Collectors.toList());

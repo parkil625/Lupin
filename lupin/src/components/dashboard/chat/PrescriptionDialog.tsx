@@ -263,9 +263,6 @@ export default function PrescriptionDialog({
                                     <div className="font-bold text-sm text-gray-900">
                                       {med.name}
                                     </div>
-                                    <div className="text-xs text-gray-600 mt-1">
-                                      {med.manufacturer} · {med.standardDosage}
-                                    </div>
                                     {med.description && (
                                       <div className="text-xs text-gray-500 mt-1">
                                         {med.description}

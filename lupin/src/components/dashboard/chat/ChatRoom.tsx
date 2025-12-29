@@ -269,6 +269,11 @@ export default function ChatRoom({
         onSuccess={() => {
           // 처방전 발급 성공 시 채팅으로 알림 메시지 전송
           sendMessage("처방전을 발급했습니다. 확인해주세요.", currentUser.id);
+
+          // 처방전 목록 새로고침 이벤트 발생 (환자 Medical 페이지용)
+          window.dispatchEvent(new CustomEvent("prescription-created", {
+            detail: { patientId: targetUser.id }
+          }));
         }}
       />
     </>

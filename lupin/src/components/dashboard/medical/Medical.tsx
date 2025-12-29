@@ -580,6 +580,30 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     loadPrescriptions();
   }, [currentPatientId]);
 
+  // 처방전 발급 이벤트 처리 (처방전 목록 새로고침)
+  useEffect(() => {
+    const handlePrescriptionCreated = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ patientId: number }>;
+      const { patientId } = customEvent.detail;
+
+      // 현재 환자의 처방전인 경우에만 새로고침
+      if (patientId === currentPatientId) {
+        try {
+          const data = await prescriptionApi.getPatientPrescriptions(currentPatientId);
+          setPrescriptions(data);
+        } catch {
+          setPrescriptions([]);
+        }
+      }
+    };
+
+    window.addEventListener("prescription-created", handlePrescriptionCreated);
+
+    return () => {
+      window.removeEventListener("prescription-created", handlePrescriptionCreated);
+    };
+  }, [currentPatientId]);
+
   // 알림에서 채팅방 자동 오픈 이벤트 처리
   useEffect(() => {
     const handleOpenAppointmentChat = async (event: Event) => {

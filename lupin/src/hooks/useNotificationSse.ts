@@ -37,13 +37,14 @@ export const useNotificationSse = ({
       eventSourceRef.current.close();
     }
 
+    // [수정] 항상 최신 토큰을 가져옴 (재연결 시에도 갱신된 토큰 사용)
     const token = localStorage.getItem("accessToken");
     if (!token) {
       // 토큰 없을 때는 로그 출력하지 않음 (로그인 전 정상 상태)
       return;
     }
 
-    // SSE URL 구성
+    // SSE URL 구성 (매번 최신 토큰으로 URL 생성)
     const isLocal = window.location.hostname === "localhost";
     const baseUrl = isLocal ? "http://localhost:8081" : window.location.origin;
     const sseUrl = `${baseUrl}/api/notifications/subscribe?token=${encodeURIComponent(
@@ -133,10 +134,19 @@ export const useNotificationSse = ({
   useEffect(() => {
     connectInternal();
 
+    // [추가] 25분마다 재연결 (토큰 만료 30분 전에 갱신된 토큰으로 재연결)
+    const tokenRefreshInterval = setInterval(() => {
+      if (enabled && localStorage.getItem("accessToken")) {
+        console.log("[SSE] 토큰 갱신 주기 - SSE 재연결");
+        connectInternal();
+      }
+    }, 25 * 60 * 1000); // 25분
+
     return () => {
       disconnect();
+      clearInterval(tokenRefreshInterval);
     };
-  }, [connectInternal, disconnect]);
+  }, [connectInternal, disconnect, enabled]);
 
   return {
     reconnect: connectInternal,

@@ -161,6 +161,16 @@ public class AuctionService {
 
         // 마지막에 저장
         auctionRepository.saveAndFlush(currentAuction);
+
+        AuctionSseMessage message = AuctionSseMessage.builder()
+                .auctionId(currentAuction.getId())
+                .currentPrice(currentAuction.getCurrentPrice()) // 최종 낙찰가
+                .bidderId(currentAuction.getWinner() != null ? currentAuction.getWinner().getId() : null)
+                .totalBids(currentAuction.getTotalBids())
+                .bidderName(currentAuction.getWinner() != null ? currentAuction.getWinner().getName() : null) // 승자 이름 (있으면)
+                .build();
+
+        auctionSseService.broadcast(message);
     }
 
 

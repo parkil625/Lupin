@@ -40,10 +40,10 @@ export const useWebSocket = ({
     const isLocal = window.location.hostname === "localhost";
 
     // 로컬이면 백엔드 포트(8081)로,
-    // 배포 환경이면 '현재 접속한 도메인(lupin-care 등)' 뒤에 /ws를 붙여서 연결
+    // 배포 환경이면 '현재 접속한 도메인' 뒤에 /ws를 붙여서 연결 (CORS 회피)
     const socketUrl = isLocal
       ? "http://localhost:8081/ws"
-      : "https://api.lupin-care.com/ws";
+      : `${window.location.protocol}//${window.location.host}/ws`;
 
     const client = new Client({
       webSocketFactory: () =>

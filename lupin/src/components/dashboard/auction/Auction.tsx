@@ -261,7 +261,7 @@ try {
       alert("올바른 금액을 입력해주세요.");
       return;
     }
-    if (amount <= selectedAuction.currentPrice) {
+    if (amount <= selectedAuction.currentPrice || amount < 0) {
       alert("현재가보다 높은 금액을 입찰해주세요.");
       return;
     }

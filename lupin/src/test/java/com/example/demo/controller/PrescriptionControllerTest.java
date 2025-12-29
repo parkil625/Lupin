@@ -218,7 +218,7 @@ class PrescriptionControllerTest {
     @DisplayName("약품 검색 성공 - DOCTOR 역할")
     void searchMedicines_Success() throws Exception {
         // given
-        given(medicineRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(any()))
+        given(medicineRepository.findByNameContainingIgnoreCase(any()))
                 .willReturn(Collections.emptyList());
 
         // when & then
@@ -234,7 +234,7 @@ class PrescriptionControllerTest {
     @DisplayName("전체 약품 목록 조회 성공 - DOCTOR 역할")
     void getAllMedicines_Success() throws Exception {
         // given
-        given(medicineRepository.findByIsActiveTrueOrderByNameAsc())
+        given(medicineRepository.findByOrderByNameAsc())
                 .willReturn(Collections.emptyList());
 
         // when & then

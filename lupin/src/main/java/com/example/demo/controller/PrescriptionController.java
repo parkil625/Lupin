@@ -98,7 +98,7 @@ public class PrescriptionController {
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<List<MedicineResponse>> getAllMedicines() {
         List<MedicineResponse> medicines = medicineRepository
-                .findAllByOrderByNameAsc()
+                .findByOrderByNameAsc()
                 .stream()
                 .map(MedicineResponse::from)
                 .collect(Collectors.toList());

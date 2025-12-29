@@ -42,10 +42,6 @@ export default function Auction() {
 
         const eventSource = new EventSource(sseUrl);
 
-        eventSource.onopen = () => {
-            console.log("경매 SSE 연결 성공!");
-        };
-
         eventSource.addEventListener("refresh", (e: MessageEvent) => {
             try {
                 const data = JSON.parse(e.data);

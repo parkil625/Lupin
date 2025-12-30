@@ -458,6 +458,16 @@ export default function DoctorChatPage() {
                                   {formatChatTime(room.lastMessageTime)}
                                 </div>
                               </div>
+                              {room.appointmentTime && (
+                                <div className="text-xs text-[#C93831] font-semibold mb-1">
+                                  📅 {new Date(room.appointmentTime).toLocaleString("ko-KR", {
+                                    month: "long",
+                                    day: "numeric",
+                                    hour: "numeric",
+                                    minute: "2-digit"
+                                  })} 예약
+                                </div>
+                              )}
                               <div className="flex items-center justify-between">
                                 <div className="text-xs text-gray-600 truncate flex-1">
                                   {room.lastMessage || "메시지를 시작하세요"}

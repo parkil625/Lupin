@@ -77,12 +77,14 @@ public class ChatController {
                         room.put("patientName", appointment.getPatient().getName());
                         room.put("doctorId", appointment.getDoctor().getId());
                         room.put("status", appointment.getStatus().toString());
+                        room.put("appointmentTime", appointment.getDate().toString());
                     } catch (Exception e) {
                         log.error("채팅방 {}에 대한 예약 정보를 찾을 수 없습니다. 에러: {}", roomId, e.getMessage(), e);
                         room.put("patientId", 0);
                         room.put("patientName", "알 수 없음");
                         room.put("doctorId", userId);
                         room.put("status", "UNKNOWN");
+                        room.put("appointmentTime", "");
                     }
 
                     // 마지막 메시지

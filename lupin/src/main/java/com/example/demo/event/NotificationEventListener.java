@@ -55,17 +55,48 @@ public class NotificationEventListener {
                 return;
             }
 
-            // Factory 패턴으로 알림 생성 로직 위임
-            Notification notification = notificationFactory.create(event, targetUser);
-            Notification saved = notificationRepository.save(notification);
+            // [수정] 알림 중복 방지 및 뭉치기 전략 적용
+            Notification savedNotification;
+
+            // 1. FEED_LIKE(좋아요) 타입인 경우 덮어쓰기/뭉치기 시도
+            if ("FEED_LIKE".equals(event.getType().name())) {
+                java.util.Optional<Notification> existingOpt = notificationRepository
+                        .findTopByUserIdAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
+                                targetUser.getId(),
+                                event.getType(),
+                                event.getRefId()
+                        );
+
+                if (existingOpt.isPresent()) {
+                    Notification existing = existingOpt.get();
+                    log.info("[Notification] 기존 알림 발견 (ID: {}). 덮어쓰기 수행.", existing.getId());
+
+                    // 새 이벤트 내용으로 갱신 (Factory가 생성한 임시 객체에서 정보 추출)
+                    Notification tempNew = notificationFactory.create(event, targetUser);
+                    
+                    // 기존 알림 업데이트: 타이틀, 프로필이미지, 시간(Now)
+                    existing.updateForAggregation(tempNew.getTitle(), tempNew.getActorProfileImage());
+                    
+                    savedNotification = notificationRepository.save(existing);
+                } else {
+                    // 기존 알림 없으면 신규 생성
+                    log.info("[Notification] 기존 알림 없음. 신규 생성.");
+                    savedNotification = notificationRepository.save(notificationFactory.create(event, targetUser));
+                }
+            } 
+            // 2. 그 외 타입(댓글, 시스템 알림 등)은 항상 신규 생성
+            else {
+                savedNotification = notificationRepository.save(notificationFactory.create(event, targetUser));
+            }
 
             // SSE로 실시간 알림 전송
             notificationSseService.sendNotification(
                     event.getTargetUserId(),
-                    NotificationResponse.from(saved)
+                    NotificationResponse.from(savedNotification)
             );
 
-            log.debug("Notification sent: type={}, target={}", event.getType(), event.getTargetUserId());
+            log.debug("Notification sent: type={}, target={}, id={}", 
+                    event.getType(), event.getTargetUserId(), savedNotification.getId());
 
         } catch (Exception e) {
             log.error("Failed to process notification event: {}", event, e);

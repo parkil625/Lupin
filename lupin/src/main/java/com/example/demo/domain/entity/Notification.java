@@ -52,4 +52,16 @@ public class Notification {
     public void markAsRead() {
         this.isRead = true;
     }
+
+    // [추가] 알림 뭉치기/갱신을 위한 비즈니스 메서드
+    public void updateForAggregation(String title, String actorProfileImage) {
+        this.title = title;
+        this.actorProfileImage = actorProfileImage;
+        this.createdAt = LocalDateTime.now(); // 시간을 현재로 갱신하여 최상단으로 끌어올림
+    }
+
+    // [추가] 시간만 갱신 (단순 덮어쓰기용)
+    public void refreshCreatedAt() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

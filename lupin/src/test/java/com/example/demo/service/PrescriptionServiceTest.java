@@ -205,7 +205,7 @@ class PrescriptionServiceTest {
                 .diagnosis(diagnosis)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
         given(userRepository.findById(doctorId))
                 .willReturn(Optional.of(doctor));
@@ -215,13 +215,13 @@ class PrescriptionServiceTest {
                 .willReturn(newPrescription);
 
         // when
-        Prescription result = prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis);
+        var result = prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis);
 
         // then
         assertThat(result).isNotNull();
         assertThat(result.getDiagnosis()).isEqualTo(diagnosis);
-        assertThat(result.getDoctor()).isEqualTo(doctor);
-        assertThat(result.getPatient()).isEqualTo(patient);
+        assertThat(result.getDoctorName()).isEqualTo(doctor.getName());
+        assertThat(result.getPatientName()).isEqualTo(patient.getName());
     }
 
     @Test
@@ -249,7 +249,7 @@ class PrescriptionServiceTest {
                 .diagnosis(diagnosis)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
         given(userRepository.findById(doctorId))
                 .willReturn(Optional.of(doctor));
@@ -259,11 +259,11 @@ class PrescriptionServiceTest {
                 .willReturn(savedPrescription);
 
         // when
-        Prescription result = prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis);
+        var result = prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis);
 
         // then
-        assertThat(result.getAppointment()).isNotNull();
-        assertThat(result.getAppointment().getId()).isEqualTo(appointmentId);
+        assertThat(result.getAppointmentId()).isNotNull();
+        assertThat(result.getAppointmentId()).isEqualTo(appointmentId);
     }
 
     @Test
@@ -291,7 +291,7 @@ class PrescriptionServiceTest {
                 .diagnosis(diagnosis)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
         given(userRepository.findById(doctorId))
                 .willReturn(Optional.of(doctor));
@@ -332,7 +332,7 @@ class PrescriptionServiceTest {
                 .diagnosis("기존 진단")
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(completedAppointment));
         given(prescriptionRepository.findByAppointmentId(appointmentId))
                 .willReturn(Optional.of(existingPrescription));
@@ -360,7 +360,7 @@ class PrescriptionServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // when & then
@@ -387,7 +387,7 @@ class PrescriptionServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // when & then
@@ -413,7 +413,7 @@ class PrescriptionServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // when & then
@@ -439,7 +439,7 @@ class PrescriptionServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // when & then

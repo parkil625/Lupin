@@ -71,24 +71,41 @@ export const useNotificationSse = ({
     };
 
     eventSource.addEventListener("connect", () => {
+      console.log("[SSE] 연결 성공 (Event: connect)");
       isConnectedRef.current = true;
-      reconnectAttemptsRef.current = 0; // 연결 성공 시 재시도 카운터 리셋
+      reconnectAttemptsRef.current = 0;
       lastConnectTimeRef.current = Date.now();
     });
 
-    // Heartbeat 이벤트 (연결 유지용, 로그 생략)
+    // Heartbeat 이벤트
     eventSource.addEventListener("heartbeat", () => {
-      // 연결 유지용 heartbeat - 별도 처리 불필요
+      console.log("[SSE] Heartbeat 수신");
     });
 
+    // [핵심] 기본 메시지(message) 이벤트 수신 추가
+    eventSource.onmessage = (event) => {
+      try {
+        // Heartbeat나 연결 메시지인 경우 무시
+        if (event.data === "connected" || event.data.includes("heartbeat")) {
+          return;
+        }
+
+        const notification: Notification = JSON.parse(event.data);
+        console.log("[SSE] 기본 메시지 수신 (onmessage):", notification);
+        onNotificationReceivedRef.current(notification);
+      } catch (error) {
+        console.error("[SSE] 기본 메시지 파싱 에러:", error, event.data);
+      }
+    };
+
+    // [핵심] notification 이벤트 수신 (백엔드에서 event: notification으로 보낼 경우)
     eventSource.addEventListener("notification", (event) => {
       try {
         const notification: Notification = JSON.parse(event.data);
-        // 알림 수신 시에만 로그 출력 (중요한 이벤트)
-        console.log("[SSE] 알림 수신:", notification);
+        console.log("[SSE] Named Event(notification) 수신:", notification);
         onNotificationReceivedRef.current(notification);
       } catch (error) {
-        console.error("[SSE] 알림 파싱 에러:", error);
+        console.error("[SSE] Notification 이벤트 파싱 에러:", error);
       }
     });
 

@@ -139,7 +139,19 @@ function useDashboardLogic(
   // SSE Setup
   useNotificationSse({
     onNotificationReceived: useCallback((n: Notification) => {
-      setNotifications((prev) => [n, ...prev]);
+      console.log("[Dashboard] 새 알림 화면 반영 시도:", n);
+
+      setNotifications((prev) => {
+        // 이미 존재하는 알림인지 ID로 확인 (중복 방지)
+        const exists = prev.some((existing) => existing.id === n.id);
+        if (exists) {
+          console.log("[Dashboard] 중복된 알림이라 추가하지 않음:", n.id);
+          return prev;
+        }
+        // 새 알림을 배열 맨 앞에 추가
+        return [n, ...prev];
+      });
+
       toast.info(n.title, { description: n.content });
     }, []),
   });

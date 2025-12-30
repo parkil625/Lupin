@@ -168,6 +168,32 @@ export default function DoctorChatPage() {
     loadChatRooms();
   }, [loadChatRooms]);
 
+  // 1분마다 채팅방 목록을 갱신하여 5분 전 입장 가능한 방을 자동으로 표시
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadChatRooms();
+    }, 60000); // 1분마다 갱신
+
+    return () => clearInterval(interval);
+  }, [loadChatRooms]);
+
+  // 예약 시간 5분 전부터 입장 가능한지 확인하는 함수
+  const canEnterChatRoom = (appointmentTime?: string, status?: string) => {
+    // 이미 진료 중이면 무조건 입장 가능
+    if (status === "IN_PROGRESS") return true;
+
+    // 예약 예정 상태인 경우, 예약 시간 5분 전부터 입장 가능
+    if (status === "SCHEDULED" && appointmentTime) {
+      const appointmentDate = new Date(appointmentTime);
+      const now = new Date();
+      const fiveMinutesBefore = new Date(appointmentDate.getTime() - 5 * 60 * 1000);
+
+      return now >= fiveMinutesBefore;
+    }
+
+    return false;
+  };
+
   // 알림 클릭 시 채팅창 자동 오픈 (5분 전 알림)
   useEffect(() => {
     const handleOpenChat = async (event: Event) => {
@@ -180,8 +206,8 @@ export default function DoctorChatPage() {
       // 채팅방 목록에서 해당 채팅방 찾기
       const chatRoom = chatRooms.find((room) => room.roomId === roomId);
 
-      if (chatRoom && chatRoom.status === "IN_PROGRESS") {
-        // IN_PROGRESS 상태인 경우에만 채팅창 오픈
+      if (chatRoom && canEnterChatRoom(chatRoom.appointmentTime, chatRoom.status)) {
+        // 입장 가능한 경우 채팅창 오픈
         setActiveRoomId(roomId);
         setSelectedChatMember({
           id: chatRoom.patientId,
@@ -372,14 +398,9 @@ export default function DoctorChatPage() {
       const appointmentId = parseInt(activeRoomId.replace("appointment_", ""));
 
       // 3. API 요청 데이터 구성
-      // 주의: 우측 패널 UI에는 약품별 '용량/빈도/일수' 입력란이 없으므로,
-      // API 통신을 위해 기본값 또는 전역 지침(instructions)을 매핑합니다.
       const medicinePayload = selectedMedicines.map((med) => ({
         medicineId: med.id,
         medicineName: med.name,
-        dosage: "3정",
-        frequency: "1일 3회",
-        durationDays: 3,
         instructions: instructions || "",
       }));
 
@@ -438,14 +459,14 @@ export default function DoctorChatPage() {
               </h3>
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
-                  {chatRooms.filter((room) => room.status === "IN_PROGRESS")
+                  {chatRooms.filter((room) => room.status === "IN_PROGRESS" || room.status === "SCHEDULED")
                     .length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
-                      진료 중인 환자가 없습니다
+                      예약된 채팅방이 없습니다
                     </div>
                   ) : (
                     chatRooms
-                      .filter((room) => room.status === "IN_PROGRESS")
+                      .filter((room) => room.status === "IN_PROGRESS" || room.status === "SCHEDULED")
                       .map((room) => {
                         const isMyNameInList = room.patientName === "김민준";
                         const displayName = isMyNameInList
@@ -455,10 +476,16 @@ export default function DoctorChatPage() {
                         // activeRoomId로 선택 여부 판단
                         const isSelected = activeRoomId === room.roomId;
 
+                        // 입장 가능 여부 확인
+                        const canEnter = canEnterChatRoom(room.appointmentTime, room.status);
+
                         return (
                           <div
                             key={room.roomId}
                             onClick={() => {
+                              // 입장 불가능하면 클릭 무시
+                              if (!canEnter) return;
+
                               // 이미 선택된 채팅방이면 아무 작업도 하지 않음
                               if (isSelected) return;
 
@@ -481,10 +508,12 @@ export default function DoctorChatPage() {
                               setSelectedChatMember(newMember);
                               setMessages([]);
                             }}
-                            className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
-                              isSelected
-                                ? "bg-blue-50 border-blue-300"
-                                : "bg-white/80 border-gray-200"
+                            className={`p-3 rounded-xl border transition-all ${
+                              !canEnter
+                                ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
+                                : isSelected
+                                ? "bg-blue-50 border-blue-300 cursor-pointer hover:shadow-lg"
+                                : "bg-white/80 border-gray-200 cursor-pointer hover:shadow-lg"
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">
@@ -503,17 +532,23 @@ export default function DoctorChatPage() {
                                   </div>
                                 </div>
                                 {room.appointmentTime && (
-                                  <div className="text-xs text-[#C93831] font-semibold mb-1">
-                                    📅{" "}
-                                    {new Date(
-                                      room.appointmentTime
-                                    ).toLocaleString("ko-KR", {
-                                      month: "long",
-                                      day: "numeric",
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                    })}{" "}
-                                    예약
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="text-xs text-[#C93831] font-semibold">
+                                      📅{" "}
+                                      {new Date(
+                                        room.appointmentTime
+                                      ).toLocaleString("ko-KR", {
+                                        month: "long",
+                                        day: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                      })}
+                                    </div>
+                                    {!canEnter && (
+                                      <Badge className="bg-yellow-500 text-white font-bold border-0 text-xs">
+                                        예약 중
+                                      </Badge>
+                                    )}
                                   </div>
                                 )}
                                 <div className="flex items-center justify-between">

@@ -154,8 +154,9 @@ public class CommentReadService {
         if (commentIds.isEmpty()) {
             return Collections.emptySet();
         }
-        // [수정] Native Query 결과 사용
-        return new java.util.HashSet<>(commentReportRepository.findReportedCommentIdsByReporterId(userId, commentIds));
+        // [벤치마킹] FeedQueryFacade와 동일한 로직 구조 (JPQL Bulk 결과 사용)
+        java.util.List<Long> reportedList = commentReportRepository.findCommentIdsByReporterIdAndCommentIdIn(userId, commentIds);
+        return new java.util.HashSet<>(reportedList);
     }
 
     /**

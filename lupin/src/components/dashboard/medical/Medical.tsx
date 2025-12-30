@@ -545,40 +545,51 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   // [처방전] 상태 및 로직
   // -------------------------------------------------------------------------
 
-  // 예약 목록 및 처방전 로드
+  // 예약 목록 로드 함수
+  const loadAppointments = useCallback(async () => {
+    try {
+      const data = await appointmentApi.getPatientAppointments(
+        currentPatientId
+      );
+      setAppointments(data);
+
+      // 예약이 있으면 LIST 뷰를 우선 표시 (초기 로드 시에만)
+      if (data.length > 0 && viewState === "FORM") {
+        setViewState("LIST");
+      }
+    } catch (error) {
+      console.error("예약 목록 로드 실패:", error);
+      toast.error("예약 목록을 불러오는데 실패했습니다.");
+    }
+  }, [currentPatientId, viewState]);
+
+  // 처방전 로드 함수
+  const loadPrescriptions = useCallback(async () => {
+    try {
+      const data = await prescriptionApi.getPatientPrescriptions(
+        currentPatientId
+      );
+      setPrescriptions(data);
+    } catch {
+      // 에러 발생 시 빈 배열로 설정 (500 에러 무시)
+      setPrescriptions([]);
+    }
+  }, [currentPatientId]);
+
+  // 초기 예약 목록 및 처방전 로드 + 1분마다 예약 목록 자동 갱신
   useEffect(() => {
-    const loadAppointments = async () => {
-      try {
-        const data = await appointmentApi.getPatientAppointments(
-          currentPatientId
-        );
-        setAppointments(data);
-
-        // 예약이 있으면 LIST 뷰를 우선 표시
-        if (data.length > 0) {
-          setViewState("LIST");
-        }
-      } catch (error) {
-        console.error("예약 목록 로드 실패:", error);
-        toast.error("예약 목록을 불러오는데 실패했습니다.");
-      }
-    };
-
-    const loadPrescriptions = async () => {
-      try {
-        const data = await prescriptionApi.getPatientPrescriptions(
-          currentPatientId
-        );
-        setPrescriptions(data);
-      } catch {
-        // 에러 발생 시 빈 배열로 설정 (500 에러 무시)
-        setPrescriptions([]);
-      }
-    };
-
+    // 초기 로드
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAppointments();
     loadPrescriptions();
-  }, [currentPatientId]);
+
+    // 1분마다 예약 목록 갱신 (예약 시간이 되면 진료 중으로 자동 변경)
+    const interval = setInterval(() => {
+      loadAppointments();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [loadAppointments, loadPrescriptions]);
 
   // 처방전 발급 이벤트 처리 (처방전 목록 새로고침)
   useEffect(() => {
@@ -721,15 +732,15 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     예약 내역
                   </h3>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[130px] h-8 text-xs">
+                    <SelectTrigger className="w-[130px] h-8 text-xs cursor-pointer">
                       <SelectValue placeholder="전체" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALL">전체</SelectItem>
-                      <SelectItem value="SCHEDULED">진료 예정</SelectItem>
-                      <SelectItem value="IN_PROGRESS">진료 중</SelectItem>
-                      <SelectItem value="COMPLETED">진료 완료</SelectItem>
-                      <SelectItem value="CANCELLED">취소됨</SelectItem>
+                      <SelectItem value="ALL" className="cursor-pointer">전체</SelectItem>
+                      <SelectItem value="SCHEDULED" className="cursor-pointer">진료 예정</SelectItem>
+                      <SelectItem value="IN_PROGRESS" className="cursor-pointer">진료 중</SelectItem>
+                      <SelectItem value="COMPLETED" className="cursor-pointer">진료 완료</SelectItem>
+                      <SelectItem value="CANCELLED" className="cursor-pointer">취소됨</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1265,14 +1276,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         value={selectedDepartment}
                         onValueChange={setSelectedDepartment}
                       >
-                        <SelectTrigger className="rounded-xl">
+                        <SelectTrigger className="rounded-xl cursor-pointer">
                           <SelectValue placeholder="진료과를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="internal">내과</SelectItem>
-                          <SelectItem value="surgery">외과</SelectItem>
-                          <SelectItem value="psychiatry">신경정신과</SelectItem>
-                          <SelectItem value="dermatology">피부과</SelectItem>
+                          <SelectItem value="internal" className="cursor-pointer">내과</SelectItem>
+                          <SelectItem value="surgery" className="cursor-pointer">외과</SelectItem>
+                          <SelectItem value="psychiatry" className="cursor-pointer">신경정신과</SelectItem>
+                          <SelectItem value="dermatology" className="cursor-pointer">피부과</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1298,7 +1309,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             color: "#C93831",
                           },
                         }}
-                        className="rounded-xl border"
+                        className="rounded-xl border cursor-pointer"
                       />
                       <p className="text-xs text-gray-600 mt-2">
                         * 빨간색 날짜는 공휴일입니다 (선택 불가)
@@ -1332,7 +1343,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 } ${
                                   isDisabled
                                     ? "opacity-50 cursor-not-allowed bg-gray-100"
-                                    : ""
+                                    : "cursor-pointer"
                                 }`}
                               >
                                 {time}

@@ -124,7 +124,8 @@ class CommentReportServiceTest {
         commentReportService.toggleReport(reporter, commentId);
 
         // then
-        verify(commentReportRepository).deleteByReporterIdAndCommentId(reporter.getId(), commentId);
+        // [Fix] Repository 메서드 이름 일치 (deleteByReporter_IdAndComment_Id)
+        verify(commentReportRepository).deleteByReporter_IdAndComment_Id(reporter.getId(), commentId);
         verify(commentReportRepository, never()).save(any(CommentReport.class));
     }
 

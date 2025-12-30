@@ -19,13 +19,20 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
 
     void deleteByReporterAndComment(User reporter, Comment comment);
 
-    // [수정] Long 반환, count 쿼리
-    @Query(value = "SELECT COUNT(*) FROM comment_reports WHERE reporter_id = :reporterId AND comment_id = :commentId", nativeQuery = true)
-    Long countByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
+    // [벤치마킹] JPQL로 변경하여 Type Safe하게 조회
+    @Query("SELECT COUNT(cr) FROM CommentReport cr WHERE cr.reporter.id = :reporterId AND cr.comment.id = :commentId")
+    long countByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
 
-    @Modifying
-    @Query(value = "DELETE FROM comment_reports WHERE reporter_id = :reporterId AND comment_id = :commentId", nativeQuery = true)
-    void deleteByReporterIdAndCommentId(@Param("reporterId") Long reporterId, @Param("commentId") Long commentId);
+    // [벤치마킹] 좋아요 기능 벤치마킹: ID로 존재 여부 확인 (Derived Query)
+    boolean existsByReporter_IdAndComment_Id(Long reporterId, Long commentId);
+
+    // [벤치마킹] 삭제도 JPA 방식으로 안전하게 (Derived Query)
+    void deleteByReporter_IdAndComment_Id(Long reporterId, Long commentId);
+
+    // [벤치마킹] N+1 방지용 Bulk 조회: 내가 신고한 댓글 ID 목록 조회 (JPQL)
+    // Feed: findFeedIdsByReporterIdAndFeedIdIn -> Comment: findCommentIdsByReporterIdAndCommentIdIn
+    @Query("SELECT cr.comment.id FROM CommentReport cr WHERE cr.reporter.id = :reporterId AND cr.comment.id IN :commentIds")
+    java.util.List<Long> findCommentIdsByReporterIdAndCommentIdIn(@Param("reporterId") Long reporterId, @Param("commentIds") java.util.List<Long> commentIds);
 
     void deleteByComment(Comment comment);
 
@@ -36,7 +43,4 @@ public interface CommentReportRepository extends JpaRepository<CommentReport, Lo
     @Modifying
     @Query("DELETE FROM CommentReport cr WHERE cr.comment.feed.id = :feedId")
     void deleteByFeedId(@Param("feedId") Long feedId);
-
-    @Query(value = "SELECT comment_id FROM comment_reports WHERE reporter_id = :reporterId AND comment_id IN :commentIds", nativeQuery = true)
-    java.util.List<Long> findReportedCommentIdsByReporterId(@Param("reporterId") Long reporterId, @Param("commentIds") java.util.List<Long> commentIds);
 }

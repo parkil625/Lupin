@@ -41,27 +41,36 @@ export default function AppointmentsPage({
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [completedPopupOpen, setCompletedPopupOpen] = useState(false);
 
-  // 예약 목록 불러오기
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        let data: AppointmentResponse[] = [];
+  // 예약 목록 불러오기 함수
+  const fetchAppointments = useCallback(async () => {
+    try {
+      let data: AppointmentResponse[] = [];
 
-        if (currentUser.role === "DOCTOR") {
-          data = await appointmentApi.getDoctorAppointments(currentUser.id);
-        } else if (currentUser.role === "PATIENT") {
-          // 환자인 경우 내 예약 목록 조회 (필요 시 주석 해제)
-          // data = await appointmentApi.getPatientAppointments(currentUser.id);
-        }
-
-        setAppointments(data);
-      } catch (err) {
-        console.error("예약 목록 로드 실패:", err);
+      if (currentUser.role === "DOCTOR") {
+        data = await appointmentApi.getDoctorAppointments(currentUser.id);
+      } else if (currentUser.role === "PATIENT") {
+        data = await appointmentApi.getPatientAppointments(currentUser.id);
       }
-    };
 
-    fetchAppointments();
+      setAppointments(data);
+    } catch (err) {
+      console.error("예약 목록 로드 실패:", err);
+    }
   }, [currentUser.id, currentUser.role]);
+
+  // 초기 예약 목록 불러오기 + 1분마다 자동 갱신 (5분 전 입장 버튼 표시를 위해)
+  useEffect(() => {
+    // 초기 로드
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchAppointments();
+
+    // 1분마다 갱신
+    const interval = setInterval(() => {
+      fetchAppointments();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [fetchAppointments]);
 
   // 채팅 시작 핸들러
   const handleChatClick = useCallback(
@@ -181,6 +190,15 @@ export default function AppointmentsPage({
     }
   };
 
+  // 예약 시간 5분 전인지 확인하는 함수
+  const isFiveMinutesBeforeAppointment = (appointmentDate: string) => {
+    const appointmentTime = new Date(appointmentDate);
+    const now = new Date();
+    const fiveMinutesBefore = new Date(appointmentTime.getTime() - 5 * 60 * 1000);
+
+    return now >= fiveMinutesBefore;
+  };
+
   // 상태에 따른 뱃지 스타일/텍스트 반환
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -242,16 +260,16 @@ export default function AppointmentsPage({
             )}
             <div className="min-w-[200px]">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="rounded-xl h-11 bg-white border-gray-200 shadow-sm">
+                <SelectTrigger className="rounded-xl h-11 bg-white border-gray-200 shadow-sm cursor-pointer">
                   <SelectValue placeholder="전체 예약" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">전체 예약</SelectItem>
-                  <SelectItem value="SCHEDULED">예약된 진료</SelectItem>
-                  <SelectItem value="IN_PROGRESS_OR_COMPLETED">
+                  <SelectItem value="ALL" className="cursor-pointer">전체 예약</SelectItem>
+                  <SelectItem value="SCHEDULED" className="cursor-pointer">예약된 진료</SelectItem>
+                  <SelectItem value="IN_PROGRESS_OR_COMPLETED" className="cursor-pointer">
                     진행 중 진료
                   </SelectItem>
-                  <SelectItem value="CANCELLED">취소된 진료</SelectItem>
+                  <SelectItem value="CANCELLED" className="cursor-pointer">취소된 진료</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -343,14 +361,24 @@ export default function AppointmentsPage({
 
                     {apt.status === "SCHEDULED" && (
                       <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-bold h-11"
-                          onClick={() => handleCancelAppointment(apt.id)}
-                        >
-                          <XCircle className="w-4 h-4 mr-2" />
-                          예약 취소
-                        </Button>
+                        {isFiveMinutesBeforeAppointment(apt.date) ? (
+                          <Button
+                            className="flex-1 rounded-xl bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:opacity-90 font-bold h-11"
+                            onClick={() => handleChatClick(apt)}
+                          >
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            채팅 입장
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 font-bold h-11"
+                            onClick={() => handleCancelAppointment(apt.id)}
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            예약 취소
+                          </Button>
+                        )}
                       </div>
                     )}
                     {(apt.status === "COMPLETED" ||

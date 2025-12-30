@@ -893,6 +893,33 @@ const FeedItem = React.memo(function FeedItem({
   const isFirstImage = currentImageIndex === 0;
   const isLastImage = currentImageIndex === images.length - 1;
 
+  // [추가] 모바일 터치 스와이프 로직 (useRef를 사용하여 불필요한 리렌더링 방지)
+  const touchStartX = useRef<number | null>(null);
+  const minSwipeDistance = 50; // 스와이프 인식 최소 거리 (px)
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    // 터치 시작 지점 저장
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX.current) return;
+    // 터치 종료 지점 가져오기
+    const touchEndX = e.changedTouches[0].clientX;
+    const distance = touchStartX.current - touchEndX;
+
+    // 왼쪽으로 스와이프 (거리 50px 이상) -> 다음 이미지
+    if (distance > minSwipeDistance && !isLastImage) {
+      onNextImage();
+    }
+    // 오른쪽으로 스와이프 (거리 -50px 이하) -> 이전 이미지
+    if (distance < -minSwipeDistance && !isFirstImage) {
+      onPrevImage();
+    }
+    // 초기화
+    touchStartX.current = null;
+  };
+
   // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
   const currentImageUrl = hasImages
     ? getCdnUrl(images[currentImageIndex])
@@ -902,19 +929,26 @@ const FeedItem = React.memo(function FeedItem({
 
   return (
     <div
-      // [수정] 모바일: 높이를 100dvh - 150px로 맞춰서 외부 컨테이너와 동일하게 확장
-      // [수정] 데스크톱: w-fit으로 변경하여 댓글 패널이 열릴 때 가로로 자연스럽게 확장되도록 함 (aspect-[9/16] 제거)
-      className={`h-[calc(100dvh-150px)] md:h-[calc(100vh-120px)] w-full md:w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
+      // [수정] 모바일: h-full로 변경하여 부모(Virtuoso Wrapper)의 여백 설정에 맞춰 꽉 채우도록 함 (높이 자동 조절)
+      // [수정] 데스크톱: w-fit 유지
+      className={`h-full md:h-[calc(100vh-120px)] w-full md:w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full w-full md:w-auto md:aspect-[9/16] md:max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
         {/* 이미지 영역 - 57% */}
-        <div className="relative h-[57%]">
+        {/* [수정] touch-pan-y: 가로 스와이프는 JS로 처리하고, 세로 스크롤은 브라우저 기본 동작 허용 */}
+        <div
+          className="relative h-[57%] touch-pan-y"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
           {hasImages ? (
             <img
               src={getCdnUrl(images[currentImageIndex] || images[0])}
               alt={feed.activity}
-              className="w-full h-full object-cover"
+              // [수정] select-none 및 draggable={false} 추가하여 스와이프 경험 개선
+              className="w-full h-full object-cover select-none"
+              draggable={false}
               loading={isPriority ? "eager" : "lazy"}
               fetchPriority={isPriority ? "high" : "auto"}
             />
@@ -931,7 +965,8 @@ const FeedItem = React.memo(function FeedItem({
             <>
               {!isFirstImage && (
                 <button
-                  className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
+                  // [수정] hidden md:block 추가 -> 모바일 숨김, 데스크톱 표시
+                  className="hidden md:block absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform z-10"
                   onClick={onPrevImage}
                   aria-label="이전 이미지"
                 >
@@ -940,7 +975,8 @@ const FeedItem = React.memo(function FeedItem({
               )}
               {!isLastImage && (
                 <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
+                  // [수정] hidden md:block 추가 -> 모바일 숨김, 데스크톱 표시
+                  className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform z-10"
                   onClick={onNextImage}
                   aria-label="다음 이미지"
                 >
@@ -1264,9 +1300,9 @@ export default function FeedView({
               <div
                 key={feed.id}
                 id={`feed-${feed.id}`}
-                // [수정] 높이를 100dvh - 150px로 늘려서 모바일 화면을 더 꽉 채우도록 변경 (1.5개 보임 방지)
-                // [수정] py-2를 다시 추가하여 피드 사이에 약간의 간격을 줌
-                className="h-[calc(100dvh-150px)] md:h-[calc(100vh-80px)] w-full snap-center snap-always flex items-center justify-center py-2 md:py-4"
+                // [수정] my-4(상하 마진)를 추가하여 피드 사이에 물리적인 공백을 확보 (이전/다음 피드 끄트머리 숨김)
+                // 모바일에서만 마진을 주고, 데스크톱(md)은 기존 레이아웃 유지를 위해 마진 제거(md:my-0)
+                className="h-[calc(100dvh-150px)] md:h-[calc(100vh-80px)] w-full snap-center snap-always flex items-center justify-center py-2 my-4 md:py-4 md:my-0"
               >
                 <FeedItem
                   feed={feed}

@@ -30,16 +30,16 @@ public class NotificationSseController {
      * @param token JWT 토큰
      * @param lastEventId 마지막으로 받은 이벤트 ID (재연결 시 브라우저가 자동 전송)
      */
-    // [수정] HttpServletResponse를 주입받아 Nginx 버퍼링 방지 헤더 설정
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(
             @RequestParam("token") String token,
             @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId,
             jakarta.servlet.http.HttpServletResponse response) {
 
-        // [핵심] Nginx에게 "이 응답은 버퍼링하지 말고 즉시 전송해!"라고 명령
-        // Spring Boot 3.x 이상에서는 javax 대신 jakarta 패키지를 사용합니다.
-        response.addHeader("X-Accel-Buffering", "no");
+        // [수정] Nginx 버퍼링 방지 및 HTTP/2 호환 헤더 설정
+        response.setHeader("X-Accel-Buffering", "no");
+        response.setHeader("Cache-Control", "no-cache, no-transform"); // 캐시 및 변환 금지
+        // response.setHeader("Connection", "keep-alive"); // 삭제: HTTP/2에서 프로토콜 에러 유발
 
         // "Bearer " 접두사가 있다면 제거
         if (token != null && token.startsWith("Bearer ")) {

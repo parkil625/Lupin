@@ -39,7 +39,9 @@ public class NotificationSseService {
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
-    private static final long HEARTBEAT_INTERVAL = 25; // 25초마다 heartbeat
+    
+    // [수정] 3초마다 데이터를 보내서 버퍼가 고이는 것을 방지 (반응속도 향상)
+    private static final long HEARTBEAT_INTERVAL = 3;
 
     // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
     private ThreadPoolTaskScheduler heartbeatScheduler;

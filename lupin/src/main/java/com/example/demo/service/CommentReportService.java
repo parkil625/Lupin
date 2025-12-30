@@ -13,12 +13,14 @@ import com.example.demo.repository.NotificationRepository;
 import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.event.NotificationEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -39,8 +41,11 @@ public class CommentReportService {
 
         // [수정] count > 0 체크
         if (commentReportRepository.countByReporterIdAndCommentId(reporter.getId(), commentId) > 0) {
-            commentReportRepository.deleteByReporterIdAndCommentId(reporter.getId(), commentId);
+            log.info(">>> [CommentReportService] Removing report for commentId: {} by reporterId: {}", commentId, reporter.getId());
+            // [Fix] Repository method name match: deleteByReporter_IdAndComment_Id
+            commentReportRepository.deleteByReporter_IdAndComment_Id(reporter.getId(), commentId);
         } else {
+            log.info(">>> [CommentReportService] Creating report for commentId: {} by reporterId: {}", commentId, reporter.getId());
             Comment comment = commentRepository.getReferenceById(commentId);
 
             CommentReport commentReport = CommentReport.builder()

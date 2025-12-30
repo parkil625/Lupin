@@ -24,6 +24,10 @@ public class CommentResponse {
     private Long likeCount;
     private Boolean isLiked;
     private LocalDateTime updatedAt;
+
+    // [벤치마킹] FeedResponse와 동일하게 @JsonProperty 사용하여 JSON 키 "isReported" 유지
+    // Lombok Getter(isReported()) 사용 시 Jackson이 "reported"로 직렬화하는 문제 방지
+    @com.fasterxml.jackson.annotation.JsonProperty("isReported")
     private Boolean isReported;
 
     // [추가할 코드]

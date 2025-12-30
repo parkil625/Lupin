@@ -272,7 +272,9 @@ public class CommentService {
         if (commentIds.isEmpty()) {
             return Collections.emptySet();
         }
-        return Set.copyOf(commentReportRepository.findReportedCommentIdsByReporterId(userId, commentIds));
+        log.debug(">>> [CommentService] Fetching reported comments for userId: {}, commentIds count: {}", userId, commentIds.size());
+        // [Fix] Repository method name match: findCommentIdsByReporterIdAndCommentIdIn
+        return Set.copyOf(commentReportRepository.findCommentIdsByReporterIdAndCommentIdIn(userId, commentIds));
     }
 
     /**

@@ -22,6 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const WORKOUT_TYPES = [
   { value: "산책", label: "산책" },
   { value: "요가", label: "요가" },

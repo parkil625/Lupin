@@ -130,12 +130,6 @@ public class PrescriptionService {
             throw new IllegalArgumentException("해당 예약의 환자 정보가 일치하지 않습니다.");
         }
 
-        // 중복 처방전 발행 방지
-        Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(request.getAppointmentId());
-        if (existingPrescription.isPresent()) {
-            throw new IllegalStateException("이미 처방전이 발행된 예약입니다.");
-        }
-
         User doctor = userRepository.findById(doctorId)
                 .orElseThrow(() -> new IllegalArgumentException("의사를 찾을 수 없습니다."));
 
@@ -143,20 +137,33 @@ public class PrescriptionService {
                 .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
 
         String medicationString = request.getMedicines().stream()
-                .map(item -> String.format("%s (%s, %s)", 
+                .map(item -> String.format("%s (%s, %s)",
                         item.getMedicineName(), item.getDosage(), item.getFrequency()))
                 .collect(Collectors.joining("\n"));
 
-        Prescription prescription = Prescription.builder()
-                .doctor(doctor)
-                .patient(patient)
-                .appointment(appointment)
-                .diagnosis(request.getDiagnosis())
-                .medications(medicationString)
-                .date(LocalDate.now())
-                .build();
+        // 기존 처방전 확인 - 있으면 업데이트, 없으면 새로 생성
+        Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(request.getAppointmentId());
 
-        appointment.complete();
+        Prescription prescription;
+        if (existingPrescription.isPresent()) {
+            // 기존 처방전 업데이트
+            prescription = existingPrescription.get();
+            prescription.updateDiagnosis(request.getDiagnosis());
+            prescription.updateMedications(medicationString);
+        } else {
+            // 새 처방전 생성
+            prescription = Prescription.builder()
+                    .doctor(doctor)
+                    .patient(patient)
+                    .appointment(appointment)
+                    .diagnosis(request.getDiagnosis())
+                    .medications(medicationString)
+                    .date(LocalDate.now())
+                    .build();
+
+            appointment.complete();
+        }
+
         Prescription savedPrescription = prescriptionRepository.save(prescription);
 
         return PrescriptionResponse.from(savedPrescription);
@@ -178,6 +185,11 @@ public class PrescriptionService {
 
     public Optional<PrescriptionResponse> getPrescriptionById(Long id) {
         return prescriptionRepository.findById(id)
+                .map(PrescriptionResponse::from);
+    }
+
+    public Optional<PrescriptionResponse> getPrescriptionByAppointmentId(Long appointmentId) {
+        return prescriptionRepository.findByAppointmentId(appointmentId)
                 .map(PrescriptionResponse::from);
     }
 }

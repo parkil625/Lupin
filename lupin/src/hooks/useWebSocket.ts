@@ -48,7 +48,8 @@ export const useWebSocket = ({
     const client = new Client({
       webSocketFactory: () =>
         new SockJS(socketUrl, null, {
-          transports: ["websocket"],
+          // 로컬: WebSocket만 사용, 배포: 모든 폴백 허용
+          transports: isLocal ? ["websocket"] : undefined,
         }),
       debug: () => {
         // 프로덕션 환경에서는 debug 로그 비활성화

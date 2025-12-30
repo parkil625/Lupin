@@ -75,6 +75,16 @@ export const prescriptionApi = {
     return response.data;
   },
 
+  // 예약 ID로 처방전 조회
+  getByAppointmentId: async (appointmentId: number): Promise<PrescriptionResponse | null> => {
+    try {
+      const response = await apiClient.get(`/prescriptions/appointment/${appointmentId}`);
+      return response.data;
+    } catch {
+      return null;
+    }
+  },
+
   // 약품 검색
   searchMedicines: async (query: string): Promise<MedicineResponse[]> => {
     const response = await apiClient.get(`/prescriptions/medicines/search`, {

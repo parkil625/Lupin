@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,19 @@ export default function PrescriptionDialog({
   const [searchResults, setSearchResults] = useState<MedicineResponse[]>([]);
   const [, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingPrescription, setExistingPrescription] = useState<boolean>(false);
+
+  // 다이얼로그가 열릴 때 기존 처방전 확인
+  useEffect(() => {
+    if (!open) return;
+
+    const checkExistingPrescription = async () => {
+      const response = await prescriptionApi.getByAppointmentId(appointmentId);
+      setExistingPrescription(response !== null);
+    };
+
+    checkExistingPrescription();
+  }, [open, appointmentId]);
 
   const handleAddMedicine = () => {
     setMedicines([
@@ -367,7 +380,10 @@ export default function PrescriptionDialog({
                 disabled={isSubmitting}
               >
                 <CheckCircle className="w-5 h-5 mr-2" />
-                {isSubmitting ? "발급 중..." : "처방전 발급"}
+                {isSubmitting
+                  ? (existingPrescription ? "수정 중..." : "발급 중...")
+                  : (existingPrescription ? "처방전 수정" : "처방전 발급")
+                }
               </Button>
             </div>
           </div>

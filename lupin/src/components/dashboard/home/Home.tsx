@@ -31,7 +31,7 @@ import {
   Bell,
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
-import { userApi, feedApi, getThumbnailUrl } from "@/api";
+import { userApi, feedApi, getThumbnailUrl, getCdnUrl } from "@/api";
 
 // ============================================================================
 // [0] Image Optimization Utilities
@@ -157,12 +157,35 @@ const FeedItem = memo(
     index: number;
     onFeedClick: (feedId: number) => void;
   }) => {
-    // 상위 4개 이미지는 즉시 로딩 (모바일 2x2 그리드 기준)
+    // 상위 4개 이미지는 즉시 로딩
     const isPriority = index < 4;
 
-    // [최적화 6] 썸네일 URL 사용 (300x400, 50% 품질)
+    // [수정] 원본 이미지 URL 확인
     const originalUrl = feed.images?.[0];
-    const imageUrl = originalUrl ? getThumbnailUrl(originalUrl) : undefined;
+
+    // [수정] 1. 에러 상태와 이전 URL을 추적 (Derived State 패턴)
+    const [hasError, setHasError] = useState(false);
+    const [prevUrl, setPrevUrl] = useState(originalUrl);
+
+    // [수정] 2. 피드가 변경되면(originalUrl 변경) 에러 상태를 즉시 초기화
+    // useEffect 대신 렌더링 도중 상태를 업데이트하여 경고 해결 및 성능 최적화
+    if (originalUrl !== prevUrl) {
+      setPrevUrl(originalUrl);
+      setHasError(false);
+    }
+
+    // [수정] 3. 최종 이미지 URL 결정 (변수명 imgSrc 유지)
+    // 에러가 발생했으면(hasError) 원본(CDN) URL, 아니면 썸네일 URL 사용
+    const imgSrc = originalUrl
+      ? hasError
+        ? getCdnUrl(originalUrl)
+        : getThumbnailUrl(originalUrl)
+      : undefined;
+
+    // [수정] 4. 에러 핸들러: 썸네일 로드 실패 시 에러 상태만 true로 변경
+    const handleImgError = () => {
+      if (!hasError) setHasError(true);
+    };
 
     return (
       <div
@@ -172,25 +195,23 @@ const FeedItem = memo(
         tabIndex={0}
         onKeyDown={(e) => e.key === "Enter" && onFeedClick(feed.id)}
         aria-label={`${feed.activity} 피드, 포인트 ${feed.points}점`}
-        // [최적화 5] content-visibility로 화면 밖 요소 렌더링 생략
         style={{ contentVisibility: "auto", containIntrinsicSize: "1px 400px" }}
       >
-        {/* aspect-ratio로 CLS 방지 */}
         <div className="aspect-[3/4] w-full">
           <Card className="h-full w-full overflow-hidden rounded-none bg-white border-0 hover:opacity-90 transition-all relative">
             <div className="w-full h-full bg-white">
-              {imageUrl ? (
+              {imgSrc ? (
                 <img
-                  src={imageUrl}
+                  src={imgSrc} // [수정] state 변수 사용
                   alt={feed.activity}
                   width="300"
                   height="400"
-                  // [최적화 6] Blur Placeholder로 로딩 UX 개선
+                  // [수정] 에러 핸들러 연결
+                  onError={handleImgError}
                   style={{
                     backgroundImage: `url("${BLUR_DATA_URL}")`,
                     backgroundSize: "cover",
                   }}
-                  // [최적화 4] 이미지 로딩 전략
                   loading={isPriority ? "eager" : "lazy"}
                   decoding="async"
                   fetchPriority={isPriority ? "high" : "auto"}

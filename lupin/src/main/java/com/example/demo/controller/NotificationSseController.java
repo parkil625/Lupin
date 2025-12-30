@@ -35,9 +35,10 @@ public class NotificationSseController {
     public SseEmitter subscribe(
             @RequestParam("token") String token,
             @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId,
-            javax.servlet.http.HttpServletResponse response) {
+            jakarta.servlet.http.HttpServletResponse response) {
 
         // [핵심] Nginx에게 "이 응답은 버퍼링하지 말고 즉시 전송해!"라고 명령
+        // Spring Boot 3.x 이상에서는 javax 대신 jakarta 패키지를 사용합니다.
         response.addHeader("X-Accel-Buffering", "no");
 
         // "Bearer " 접두사가 있다면 제거

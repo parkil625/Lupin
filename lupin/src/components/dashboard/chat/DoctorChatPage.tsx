@@ -24,7 +24,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Send, CheckCircle, FileText, Plus, Minus, Edit2 } from "lucide-react";
+import { Send, CheckCircle, FileText, Minus, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { Member } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -34,23 +34,21 @@ import { appointmentApi } from "@/api/appointmentApi";
 
 interface MedicineQuantity {
   id: number;
-  name: string;
-  quantity: number;
+  code: string;
+  description?: string;
+  precautions?: string;
 }
 
 interface MedicineSearchResult {
   id: number;
   code: string;
-  name: string;
-  manufacturer: string;
-  standardDosage: string;
-  unit: string;
-  description: string;
+  description?: string;
+  precautions?: string;
 }
 
 // 🔧 제거: ReadNotification (REST API로만 처리)
 
-// 시간 포맷 함수 (카톡 스타일)
+// 시간 포맷 함수 (카톡 스타일)-
 const formatChatTime = (timeString?: string) => {
   if (!timeString) return "";
 
@@ -306,15 +304,7 @@ export default function DoctorChatPage() {
     setIsSearching(true);
     try {
       const data = await prescriptionApi.searchMedicines(query);
-      // API 응답의 optional 필드에 기본값 제공
-      const formattedData = data.map((medicine) => ({
-        ...medicine,
-        manufacturer: medicine.manufacturer || "",
-        standardDosage: medicine.standardDosage || "",
-        unit: medicine.unit || "",
-        description: medicine.description || "",
-      }));
-      setSearchResults(formattedData);
+      setSearchResults(data);
     } catch (error) {
       console.error("약품 검색 실패:", error);
     } finally {
@@ -327,21 +317,15 @@ export default function DoctorChatPage() {
     // 이미 추가된 약품인지 확인
     const existing = selectedMedicines.find((m) => m.id === medicine.id);
 
-    if (existing) {
-      // 수량 증가
-      setSelectedMedicines(
-        selectedMedicines.map((m) =>
-          m.id === medicine.id ? { ...m, quantity: m.quantity + 1 } : m
-        )
-      );
-    } else {
+    if (!existing) {
       // 새로 추가
       setSelectedMedicines([
         ...selectedMedicines,
         {
           id: medicine.id,
-          name: medicine.name,
-          quantity: 1,
+          code: medicine.code,
+          description: medicine.description,
+          precautions: medicine.precautions,
         },
       ]);
     }
@@ -351,19 +335,9 @@ export default function DoctorChatPage() {
     setSearchResults([]);
   };
 
-  // 약품 수량 변경
-  const handleUpdateQuantity = (id: number, change: number) => {
-    setSelectedMedicines(
-      selectedMedicines
-        .map((m) => {
-          if (m.id === id) {
-            const newQuantity = Math.max(0, m.quantity + change);
-            return { ...m, quantity: newQuantity };
-          }
-          return m;
-        })
-        .filter((m) => m.quantity > 0)
-    ); // 수량이 0이면 제거
+  // 약품 제거
+  const handleRemoveMedicine = (id: number) => {
+    setSelectedMedicines(selectedMedicines.filter((m) => m.id !== id));
   };
 
   const handleOpenMedicineDialog = () => {
@@ -400,11 +374,11 @@ export default function DoctorChatPage() {
       // API 통신을 위해 기본값 또는 전역 지침(instructions)을 매핑합니다.
       const medicinePayload = selectedMedicines.map((med) => ({
         medicineId: med.id,
-        medicineName: med.name,
-        dosage: "기본 용량", // UI에 입력 필드 추가 필요 (임시 값)
-        frequency: "1일 3회", // UI에 입력 필드 추가 필요 (임시 값)
-        durationDays: 3, // UI에 입력 필드 추가 필요 (임시 값)
-        instructions: instructions, // 전체 복용 방법을 개별 약품 메모로 매핑
+        medicineName: med.code,
+        dosage: med.description || "",
+        frequency: instructions,
+        durationDays: 0,
+        instructions: med.precautions || "",
       }));
 
       const requestData = {
@@ -414,7 +388,7 @@ export default function DoctorChatPage() {
         medicines: medicinePayload,
       };
 
-      console.log("처방전 전송 데이터:", requestData); // 디버깅용 로그
+      console.log("처방전 전송 데이터:", requestData);
 
       // 4. API 호출
       await prescriptionApi.create(requestData);
@@ -441,7 +415,7 @@ export default function DoctorChatPage() {
 
   const getMedicinesText = () => {
     if (selectedMedicines.length === 0) return "약품을 선택하세요";
-    return selectedMedicines.map((m) => `${m.name} ${m.quantity}개`).join(", ");
+    return selectedMedicines.map((m) => m.code).join(", ");
   };
 
   return (
@@ -844,7 +818,7 @@ export default function DoctorChatPage() {
                         className="p-3 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
                       >
                         <div className="font-medium text-gray-900">
-                          {medicine.name}
+                          {medicine.code}
                         </div>
                         {medicine.description && (
                           <div className="text-xs text-gray-500 mt-1">
@@ -874,30 +848,24 @@ export default function DoctorChatPage() {
                       key={medicine.id}
                       className="flex items-center justify-between p-3 rounded-lg border bg-white hover:bg-gray-50"
                     >
-                      <span className="text-sm font-medium text-gray-700 flex-1">
-                        {medicine.name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0 rounded-full"
-                          onClick={() => handleUpdateQuantity(medicine.id, -1)}
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="text-sm font-bold w-8 text-center">
-                          {medicine.quantity}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0 rounded-full"
-                          onClick={() => handleUpdateQuantity(medicine.id, 1)}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-700">
+                          {medicine.code}
+                        </div>
+                        {medicine.description && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {medicine.description}
+                          </div>
+                        )}
                       </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleRemoveMedicine(medicine.id)}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
                     </div>
                   ))
                 )}

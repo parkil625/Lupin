@@ -49,6 +49,7 @@ interface BackendComment {
   createdAt: string;
   likeCount?: number;
   isLiked?: boolean;
+  isReported?: boolean; // [벤치마킹] 서버 응답 필드 추가
   updatedAt?: string;
   [key: string]: unknown;
 }
@@ -168,6 +169,7 @@ export default function FeedDetailDialogHome({
                   time: getRelativeTime(reply.createdAt),
                   likeCount: reply.likeCount || 0,
                   isLiked: reply.isLiked || false,
+                  isReported: reply.isReported || false, // [벤치마킹] 답글 신고 상태 매핑
                 })
               );
               return {
@@ -179,6 +181,7 @@ export default function FeedDetailDialogHome({
                 time: getRelativeTime(comment.createdAt),
                 likeCount: comment.likeCount || 0,
                 isLiked: comment.isLiked || false,
+                isReported: comment.isReported || false, // [벤치마킹] 댓글 신고 상태 매핑
                 replies,
               };
             } catch {
@@ -191,6 +194,7 @@ export default function FeedDetailDialogHome({
                 time: getRelativeTime(comment.createdAt),
                 likeCount: comment.likeCount || 0,
                 isLiked: comment.isLiked || false,
+                isReported: comment.isReported || false, // [벤치마킹] 에러 시 기본값
                 replies: [],
               };
             }
@@ -202,11 +206,17 @@ export default function FeedDetailDialogHome({
         // commentLikes 상태 초기화
         const likesState: { [key: number]: { liked: boolean; count: number } } =
           {};
+        // [벤치마킹] commentReported 상태 초기화 (State Hydration)
+        const reportedState: { [key: number]: boolean } = {};
+
         commentsWithReplies.forEach((comment) => {
           likesState[comment.id] = {
             liked: comment.isLiked || false,
             count: comment.likeCount || 0,
           };
+          // [벤치마킹] 댓글 신고 상태 초기화
+          reportedState[comment.id] = comment.isReported || false;
+
           // 답글도 초기화
           if (comment.replies) {
             comment.replies.forEach((reply: Comment) => {
@@ -214,10 +224,13 @@ export default function FeedDetailDialogHome({
                 liked: reply.isLiked || false,
                 count: reply.likeCount || 0,
               };
+              // [벤치마킹] 답글 신고 상태 초기화
+              reportedState[reply.id] = reply.isReported || false;
             });
           }
         });
         setCommentLikes(likesState);
+        setCommentReported(reportedState); // [핵심] 신고 상태 일괄 적용
 
         // targetCommentId가 있으면 댓글창 열기 (-1은 "댓글 창만 열기" 신호)
         if (targetCommentId !== null && targetCommentId !== undefined) {

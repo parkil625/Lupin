@@ -902,12 +902,12 @@ const FeedItem = React.memo(function FeedItem({
 
   return (
     <div
-      // [수정] 모바일: 100dvh 사용으로 주소창 대응 & 하단 메뉴바/상단바 공간 충분히 확보 (-190px)
+      // [수정] 모바일: 100dvh - 240px로 변경하여 상단 검색창과 하단 네비바 공간을 넉넉히 확보하고 간격을 유지함
       // [수정] 데스크톱: w-fit으로 변경하여 댓글 패널이 열릴 때 가로로 자연스럽게 확장되도록 함 (aspect-[9/16] 제거)
-      className={`h-[calc(100dvh-190px)] md:h-[calc(100vh-120px)] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
+      className={`h-[calc(100dvh-240px)] md:h-[calc(100vh-120px)] w-full md:w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
     >
       {/* 피드 카드 (왼쪽) */}
-      <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
+      <div className="h-full w-full md:w-auto md:aspect-[9/16] md:max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
         {/* 이미지 영역 - 57% */}
         <div className="relative h-[57%]">
           {hasImages ? (

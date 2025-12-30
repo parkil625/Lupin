@@ -39,7 +39,7 @@ public class NotificationSseController {
         // [수정] Nginx 버퍼링 방지 및 HTTP/2 호환 헤더 설정
         response.setHeader("X-Accel-Buffering", "no");
         response.setHeader("Cache-Control", "no-cache, no-transform"); // 캐시 및 변환 금지
-        response.setHeader("Connection", "keep-alive");      // 연결 유지 명시
+        // response.setHeader("Connection", "keep-alive"); // 삭제: HTTP/2에서 프로토콜 에러 유발
 
         // "Bearer " 접두사가 있다면 제거
         if (token != null && token.startsWith("Bearer ")) {

@@ -64,7 +64,7 @@ public class NotificationEventListener {
                         .findTopByUserIdAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
                                 targetUser.getId(),
                                 event.getType(),
-                                event.getRefId()
+                                String.valueOf(event.getRefId())
                         );
 
                 if (existingOpt.isPresent()) {

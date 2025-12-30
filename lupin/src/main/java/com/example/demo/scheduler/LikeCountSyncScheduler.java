@@ -86,7 +86,7 @@ public class LikeCountSyncScheduler {
         if (!processedIds.isEmpty()) {
             redisTemplate.opsForSet().remove(
                     RedisKeyUtils.feedLikeDirtySet(),
-                    processedIds.toArray(new String[0])
+                    processedIds.toArray()
             );
         }
     }

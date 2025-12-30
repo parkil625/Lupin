@@ -71,7 +71,7 @@ public class PrescriptionService {
     }
 
     @Transactional
-    public Prescription issuePrescription(Long appointmentId, Long doctorId, Long patientId, String diagnosis) {
+    public PrescriptionResponse issuePrescription(Long appointmentId, Long doctorId, Long patientId, String diagnosis) {
         Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
 
@@ -112,7 +112,9 @@ public class PrescriptionService {
 
         appointment.complete();
 
-        return prescriptionRepository.save(prescription);
+        Prescription saved = prescriptionRepository.save(prescription);
+
+        return PrescriptionResponse.from(saved);
     }
 
     @Transactional

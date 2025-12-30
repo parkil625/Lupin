@@ -372,14 +372,9 @@ export default function DoctorChatPage() {
       const appointmentId = parseInt(activeRoomId.replace("appointment_", ""));
 
       // 3. API 요청 데이터 구성
-      // 주의: 우측 패널 UI에는 약품별 '용량/빈도/일수' 입력란이 없으므로,
-      // API 통신을 위해 기본값 또는 전역 지침(instructions)을 매핑합니다.
       const medicinePayload = selectedMedicines.map((med) => ({
         medicineId: med.id,
         medicineName: med.name,
-        dosage: "3정",
-        frequency: "1일 3회",
-        durationDays: 3,
         instructions: instructions || "",
       }));
 

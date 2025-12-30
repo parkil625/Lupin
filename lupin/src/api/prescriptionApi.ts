@@ -3,8 +3,8 @@ import apiClient from "./client";
 export interface MedicineItem {
   medicineId?: number;
   medicineName: string;
-  dosage: string;
-  frequency: string;
+  dosage?: string;
+  frequency?: string;
   durationDays?: number;
   instructions?: string;
 }

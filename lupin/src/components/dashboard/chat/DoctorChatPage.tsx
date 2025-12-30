@@ -35,6 +35,7 @@ import { appointmentApi } from "@/api/appointmentApi";
 interface MedicineQuantity {
   id: number;
   code: string;
+  name: string;
   description?: string;
   precautions?: string;
 }
@@ -42,6 +43,7 @@ interface MedicineQuantity {
 interface MedicineSearchResult {
   id: number;
   code: string;
+  name: string;
   description?: string;
   precautions?: string;
 }
@@ -92,7 +94,6 @@ export default function DoctorChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 처방전 폼 상태
-  const [prescriptionName, setPrescriptionName] = useState("");
   const [prescriptionDate] = useState(
     new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })
   );
@@ -324,6 +325,7 @@ export default function DoctorChatPage() {
         {
           id: medicine.id,
           code: medicine.code,
+          name: medicine.name,
           description: medicine.description,
           precautions: medicine.precautions,
         },
@@ -374,9 +376,9 @@ export default function DoctorChatPage() {
       // API 통신을 위해 기본값 또는 전역 지침(instructions)을 매핑합니다.
       const medicinePayload = selectedMedicines.map((med) => ({
         medicineId: med.id,
-        medicineName: med.code,
-        dosage: med.description || "",
-        frequency: instructions,
+        medicineName: med.name,
+        dosage: med.description || "표준 용량",
+        frequency: instructions || "의사 지시에 따름",
         durationDays: 0,
         instructions: med.precautions || "",
       }));
@@ -403,7 +405,6 @@ export default function DoctorChatPage() {
       );
 
       // 6. 폼 초기화
-      setPrescriptionName("");
       setDiagnosis("");
       setInstructions("");
       setSelectedMedicines([]);
@@ -415,7 +416,7 @@ export default function DoctorChatPage() {
 
   const getMedicinesText = () => {
     if (selectedMedicines.length === 0) return "약품을 선택하세요";
-    return selectedMedicines.map((m) => m.code).join(", ");
+    return selectedMedicines.map((m) => m.name).join(", ");
   };
 
   return (
@@ -675,16 +676,6 @@ export default function DoctorChatPage() {
                   <div className="flex-1 overflow-y-auto pr-2">
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm font-bold">처방명</Label>
-                        <Input
-                          value={prescriptionName}
-                          onChange={(e) => setPrescriptionName(e.target.value)}
-                          placeholder="예: 감기약 처방"
-                          className="mt-1 rounded-xl"
-                        />
-                      </div>
-
-                      <div>
                         <Label className="text-sm font-bold">처방일</Label>
                         <Input
                           value={prescriptionDate}
@@ -818,6 +809,9 @@ export default function DoctorChatPage() {
                         className="p-3 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
                       >
                         <div className="font-medium text-gray-900">
+                          {medicine.name}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
                           {medicine.code}
                         </div>
                         {medicine.description && (
@@ -850,6 +844,9 @@ export default function DoctorChatPage() {
                     >
                       <div className="flex-1">
                         <div className="text-sm font-medium text-gray-700">
+                          {medicine.name}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
                           {medicine.code}
                         </div>
                         {medicine.description && (

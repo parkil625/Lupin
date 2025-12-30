@@ -27,6 +27,7 @@ class MedicineResponseTest {
         // then
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getCode()).isEqualTo("A01BC01");
+        assertThat(response.getName()).isEqualTo("타이레놀");
         assertThat(response.getDescription()).isEqualTo("해열진통제");
         assertThat(response.getPrecautions()).isEqualTo("공복 시 복용 주의");
     }

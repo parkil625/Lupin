@@ -72,9 +72,10 @@ public class NotificationEventListener {
                     newTitle = event.getActorName() + "님 외 " + (likeCount - 1) + "명이 회원님의 게시물을 좋아합니다.";
                 }
 
+                // [수정] ID 대신 User 객체로 조회 (JPA 매핑 문제 해결)
                 java.util.Optional<Notification> existingOpt = notificationRepository
-                        .findTopByUserIdAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
-                                targetUser.getId(),
+                        .findTopByUserAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
+                                targetUser,
                                 event.getType(),
                                 String.valueOf(event.getRefId())
                         );

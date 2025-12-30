@@ -1264,9 +1264,9 @@ export default function FeedView({
               <div
                 key={feed.id}
                 id={`feed-${feed.id}`}
-                // [수정] 높이를 100dvh - 70px(검색바)로 설정하여 한 화면에 하나만 표시
-                // [수정] items-center로 내부 카드를 수직 중앙 정렬, 상하 여백(py-2) 추가
-                className="h-[calc(100dvh-70px)] md:h-[calc(100vh-80px)] w-full snap-center snap-always flex items-center justify-center py-2 md:py-4"
+                // [수정] 높이를 피드 카드와 동일하게 100dvh - 240px로 맞춤 (모바일)
+                // [수정] 모바일에서는 py-0으로 변경하여 정확한 크기 유지 (밀림 방지)
+                className="h-[calc(100dvh-240px)] md:h-[calc(100vh-80px)] w-full snap-center snap-always flex items-center justify-center py-0 md:py-4"
               >
                 <FeedItem
                   feed={feed}

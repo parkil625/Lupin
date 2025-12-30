@@ -62,10 +62,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     boolean existsByUserIdAndTypeAndRefId(@Param("userId") Long userId, @Param("type") NotificationType type, @Param("refId") String refId);
 
     // [추가] 알림 뭉치기용: 특정 타겟(Feed 등)에 대해 읽지 않은 최신 알림 1건 조회
-    // @Query 어노테이션 제거 (JPQL은 LIMIT을 지원하지 않으며, 메서드 이름(findTop)만으로 충분합니다)
-    java.util.Optional<Notification> findTopByUserIdAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
-            @Param("userId") Long userId,
-            @Param("type") NotificationType type,
-            @Param("refId") String refId
+    // UserId(Long) 대신 User 객체로 조회하여 매핑 정확도 향상
+    java.util.Optional<Notification> findTopByUserAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
+            User user,
+            NotificationType type,
+            String refId
     );
 }

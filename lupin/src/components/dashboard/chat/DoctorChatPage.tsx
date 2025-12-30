@@ -168,6 +168,32 @@ export default function DoctorChatPage() {
     loadChatRooms();
   }, [loadChatRooms]);
 
+  // 1분마다 채팅방 목록을 갱신하여 5분 전 입장 가능한 방을 자동으로 표시
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadChatRooms();
+    }, 60000); // 1분마다 갱신
+
+    return () => clearInterval(interval);
+  }, [loadChatRooms]);
+
+  // 예약 시간 5분 전부터 입장 가능한지 확인하는 함수
+  const canEnterChatRoom = (appointmentTime?: string, status?: string) => {
+    // 이미 진료 중이면 무조건 입장 가능
+    if (status === "IN_PROGRESS") return true;
+
+    // 예약 예정 상태인 경우, 예약 시간 5분 전부터 입장 가능
+    if (status === "SCHEDULED" && appointmentTime) {
+      const appointmentDate = new Date(appointmentTime);
+      const now = new Date();
+      const fiveMinutesBefore = new Date(appointmentDate.getTime() - 5 * 60 * 1000);
+
+      return now >= fiveMinutesBefore;
+    }
+
+    return false;
+  };
+
   // 알림 클릭 시 채팅창 자동 오픈 (5분 전 알림)
   useEffect(() => {
     const handleOpenChat = async (event: Event) => {
@@ -180,8 +206,8 @@ export default function DoctorChatPage() {
       // 채팅방 목록에서 해당 채팅방 찾기
       const chatRoom = chatRooms.find((room) => room.roomId === roomId);
 
-      if (chatRoom && chatRoom.status === "IN_PROGRESS") {
-        // IN_PROGRESS 상태인 경우에만 채팅창 오픈
+      if (chatRoom && canEnterChatRoom(chatRoom.appointmentTime, chatRoom.status)) {
+        // 입장 가능한 경우 채팅창 오픈
         setActiveRoomId(roomId);
         setSelectedChatMember({
           id: chatRoom.patientId,
@@ -433,14 +459,14 @@ export default function DoctorChatPage() {
               </h3>
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
-                  {chatRooms.filter((room) => room.status === "IN_PROGRESS")
+                  {chatRooms.filter((room) => canEnterChatRoom(room.appointmentTime, room.status))
                     .length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
-                      진료 중인 환자가 없습니다
+                      입장 가능한 채팅방이 없습니다
                     </div>
                   ) : (
                     chatRooms
-                      .filter((room) => room.status === "IN_PROGRESS")
+                      .filter((room) => canEnterChatRoom(room.appointmentTime, room.status))
                       .map((room) => {
                         const isMyNameInList = room.patientName === "김민준";
                         const displayName = isMyNameInList

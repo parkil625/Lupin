@@ -45,6 +45,21 @@ export const useWebSocket = ({
       ? "http://localhost:8081/ws"
       : `${window.location.protocol}//${window.location.host}/ws`;
 
+    // WebSocket 에러를 무시하기 위한 원본 console.error 백업
+    const originalConsoleError = console.error;
+    if (!isLocal) {
+      console.error = (...args: unknown[]) => {
+        // WebSocket connection failed 에러만 무시
+        const firstArg = args[0];
+        if (firstArg && typeof firstArg === 'object' && 'toString' in firstArg) {
+          if (firstArg.toString().includes('WebSocket connection')) {
+            return;
+          }
+        }
+        originalConsoleError(...args);
+      };
+    }
+
     const client = new Client({
       webSocketFactory: () =>
         new SockJS(socketUrl, null, {
@@ -91,6 +106,10 @@ export const useWebSocket = ({
         client.deactivate();
       }
       setIsConnected(false);
+      // console.error 복원
+      if (!isLocal) {
+        console.error = originalConsoleError;
+      }
     };
   }, [roomId, userId]);
 

@@ -140,19 +140,29 @@ public class PrescriptionService {
 
         String medicationString = request.getMedicines().stream()
                 .map(item -> {
-                    String name = item.getMedicineName();
-                    String dosage = item.getDosage() != null ? item.getDosage() : "";
-                    String frequency = item.getFrequency() != null ? item.getFrequency() : "";
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(item.getMedicineName());
 
-                    if (dosage.isEmpty() && frequency.isEmpty()) {
-                        return name;
-                    } else if (dosage.isEmpty()) {
-                        return String.format("%s (%s)", name, frequency);
-                    } else if (frequency.isEmpty()) {
-                        return String.format("%s (%s)", name, dosage);
-                    } else {
-                        return String.format("%s (%s, %s)", name, dosage, frequency);
+                    // 용량, 복용 횟수, 복용 기간을 괄호 안에 포함
+                    List<String> details = new java.util.ArrayList<>();
+
+                    if (item.getDosage() != null && !item.getDosage().isEmpty()) {
+                        details.add(item.getDosage());
                     }
+
+                    if (item.getFrequency() != null && !item.getFrequency().isEmpty()) {
+                        details.add(item.getFrequency());
+                    }
+
+                    if (item.getDurationDays() != null && item.getDurationDays() > 0) {
+                        details.add(item.getDurationDays() + "일");
+                    }
+
+                    if (!details.isEmpty()) {
+                        sb.append(" (").append(String.join(", ", details)).append(")");
+                    }
+
+                    return sb.toString();
                 })
                 .collect(Collectors.joining("\n"));
 

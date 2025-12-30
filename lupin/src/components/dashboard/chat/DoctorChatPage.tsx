@@ -38,6 +38,9 @@ interface MedicineQuantity {
   name: string;
   description?: string;
   precautions?: string;
+  dosage?: string;        // 용량
+  frequency?: string;     // 복용 횟수
+  durationDays?: number;  // 복용 기간
 }
 
 interface MedicineSearchResult {
@@ -401,9 +404,9 @@ export default function DoctorChatPage() {
       const medicinePayload = selectedMedicines.map((med) => ({
         medicineId: med.id,
         medicineName: med.name,
-        dosage: "표준용량",
-        frequency: "1일 3회",
-        durationDays: 7,
+        dosage: med.dosage || "",
+        frequency: med.frequency || "",
+        durationDays: med.durationDays || 0,
         instructions: instructions || "",
       }));
 
@@ -867,7 +870,7 @@ export default function DoctorChatPage() {
               <Label className="text-sm font-bold mb-2 block">
                 선택된 약품 ({selectedMedicines.length}개)
               </Label>
-              <div className="border rounded-xl p-3 min-h-[150px] max-h-[250px] overflow-y-auto space-y-2">
+              <div className="border rounded-xl p-3 min-h-[150px] max-h-[400px] overflow-y-auto space-y-3">
                 {selectedMedicines.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     선택된 약품이 없습니다
@@ -876,26 +879,84 @@ export default function DoctorChatPage() {
                   selectedMedicines.map((medicine) => (
                     <div
                       key={medicine.id}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-white hover:bg-gray-50"
+                      className="p-3 rounded-lg border bg-white space-y-2"
                     >
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-700">
-                          {medicine.name}
-                        </div>
-                        {medicine.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {medicine.description}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-700">
+                            {medicine.name}
                           </div>
-                        )}
+                          {medicine.description && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {medicine.description}
+                            </div>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleRemoveMedicine(medicine.id)}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleRemoveMedicine(medicine.id)}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
+
+                      {/* 약품 상세 정보 입력 */}
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div>
+                          <Label className="text-xs text-gray-600">용량</Label>
+                          <Input
+                            placeholder="1정"
+                            value={medicine.dosage || ""}
+                            onChange={(e) => {
+                              setSelectedMedicines(prev =>
+                                prev.map(m =>
+                                  m.id === medicine.id
+                                    ? { ...m, dosage: e.target.value }
+                                    : m
+                                )
+                              );
+                            }}
+                            className="mt-1 h-8 text-xs rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600">복용 횟수</Label>
+                          <Input
+                            placeholder="1일 3회"
+                            value={medicine.frequency || ""}
+                            onChange={(e) => {
+                              setSelectedMedicines(prev =>
+                                prev.map(m =>
+                                  m.id === medicine.id
+                                    ? { ...m, frequency: e.target.value }
+                                    : m
+                                )
+                              );
+                            }}
+                            className="mt-1 h-8 text-xs rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600">복용 기간</Label>
+                          <Input
+                            type="number"
+                            placeholder="7"
+                            value={medicine.durationDays || ""}
+                            onChange={(e) => {
+                              setSelectedMedicines(prev =>
+                                prev.map(m =>
+                                  m.id === medicine.id
+                                    ? { ...m, durationDays: parseInt(e.target.value) || undefined }
+                                    : m
+                                )
+                              );
+                            }}
+                            className="mt-1 h-8 text-xs rounded-lg"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))
                 )}

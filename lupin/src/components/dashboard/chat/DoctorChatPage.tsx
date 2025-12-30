@@ -255,13 +255,14 @@ export default function DoctorChatPage() {
       // 진료 완료 API 호출
       await appointmentApi.completeAppointment(appointmentId);
 
+      // 즉시 UI 업데이트 및 toast 표시
       toast.success(`${selectedChatMember.name}님의 진료가 완료되었습니다.`);
       setSelectedChatMember(null);
       setActiveRoomId(null);
       setMessages([]);
 
-      // 채팅방 목록 갱신
-      await loadChatRooms();
+      // 채팅방 목록 갱신은 백그라운드에서 처리 (await 제거)
+      loadChatRooms();
     } catch (error) {
       console.error('진료 종료 실패:', error);
       toast.error('진료 종료 중 오류가 발생했습니다.');

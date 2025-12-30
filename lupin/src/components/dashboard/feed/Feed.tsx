@@ -902,9 +902,9 @@ const FeedItem = React.memo(function FeedItem({
 
   return (
     <div
-      // [수정] 모바일: 높이를 100dvh - 150px로 맞춰서 외부 컨테이너와 동일하게 확장
-      // [수정] 데스크톱: w-fit으로 변경하여 댓글 패널이 열릴 때 가로로 자연스럽게 확장되도록 함 (aspect-[9/16] 제거)
-      className={`h-[calc(100dvh-150px)] md:h-[calc(100vh-120px)] w-full md:w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
+      // [수정] 모바일: h-full로 변경하여 부모(Virtuoso Wrapper)의 여백 설정에 맞춰 꽉 채우도록 함 (높이 자동 조절)
+      // [수정] 데스크톱: w-fit 유지
+      className={`h-full md:h-[calc(100vh-120px)] w-full md:w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full w-full md:w-auto md:aspect-[9/16] md:max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
@@ -1264,9 +1264,9 @@ export default function FeedView({
               <div
                 key={feed.id}
                 id={`feed-${feed.id}`}
-                // [수정] 높이를 100dvh - 150px로 늘려서 모바일 화면을 더 꽉 채우도록 변경 (1.5개 보임 방지)
-                // [수정] py-2를 다시 추가하여 피드 사이에 약간의 간격을 줌
-                className="h-[calc(100dvh-150px)] md:h-[calc(100vh-80px)] w-full snap-center snap-always flex items-center justify-center py-2 md:py-4"
+                // [수정] my-4(상하 마진)를 추가하여 피드 사이에 물리적인 공백을 확보 (이전/다음 피드 끄트머리 숨김)
+                // 모바일에서만 마진을 주고, 데스크톱(md)은 기존 레이아웃 유지를 위해 마진 제거(md:my-0)
+                className="h-[calc(100dvh-150px)] md:h-[calc(100vh-80px)] w-full snap-center snap-always flex items-center justify-center py-2 my-4 md:py-4 md:my-0"
               >
                 <FeedItem
                   feed={feed}

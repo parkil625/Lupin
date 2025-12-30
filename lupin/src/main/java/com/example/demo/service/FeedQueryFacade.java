@@ -36,8 +36,9 @@ public class FeedQueryFacade {
     /**
      * 홈 피드 목록 조회 (조립 로직 포함)
      */
-    public SliceResponse<FeedResponse> getHomeFeeds(User user, int page, int size) {
-        Slice<Feed> feeds = feedService.getHomeFeeds(user, page, size);
+    public SliceResponse<FeedResponse> getHomeFeeds(User user, int page, int size, String search) {
+        // [수정] search 파라미터 전달
+        Slice<Feed> feeds = feedService.getHomeFeeds(user, page, size, search);
         return toSliceResponse(feeds, user, page, size);
     }
 

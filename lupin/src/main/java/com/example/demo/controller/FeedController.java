@@ -66,9 +66,10 @@ public class FeedController {
     public ResponseEntity<SliceResponse<FeedResponse>> getHomeFeeds(
             @CurrentUser User user,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search // [추가] 검색어 파라미터
     ) {
-        return ResponseEntity.ok(feedQueryFacade.getHomeFeeds(user, page, size));
+        return ResponseEntity.ok(feedQueryFacade.getHomeFeeds(user, page, size, search));
     }
 
     @GetMapping("/my")

@@ -38,9 +38,14 @@ public class FeedService {
     private final FeedDeleteFacade feedDeleteFacade;
     private final UserPenaltyRepository userPenaltyRepository; // [추가] Repository 주입
 
-    public Slice<Feed> getHomeFeeds(User user, int page, int size) {
+    public Slice<Feed> getHomeFeeds(User user, int page, int size, String search) {
+        // [수정] 검색어가 존재하면 이름 검색 쿼리 실행
+        if (search != null && !search.isBlank()) {
+            return feedRepository.findByWriterNameContainingOrderByIdDesc(search, PageRequest.of(page, size));
+        }
+        
+        // 검색어가 없으면 기존 로직 (내 글 제외 홈 피드)
         // @BatchSize(100)로 images 지연 로딩 최적화 (N+1 방지)
-        // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
         return feedRepository.findByWriterIdNotOrderByIdDesc(user.getId(), PageRequest.of(page, size));
     }
 

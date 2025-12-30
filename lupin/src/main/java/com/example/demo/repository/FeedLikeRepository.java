@@ -47,4 +47,8 @@ public interface FeedLikeRepository extends JpaRepository<FeedLike, Long> {
 
     // [추가] 객체 대신 ID로 카운트 조회 (Proxy 문제 해결용)
     long countByFeedId(Long feedId);
+
+    // [추가] 해당 피드의 가장 최근 좋아요 조회 (알림 갱신용)
+    @Query("SELECT fl FROM FeedLike fl JOIN FETCH fl.user WHERE fl.feed.id = :feedId ORDER BY fl.createdAt DESC LIMIT 1")
+    Optional<FeedLike> findTopByFeedIdOrderByCreatedAtDesc(@Param("feedId") Long feedId);
 }

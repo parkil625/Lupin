@@ -163,7 +163,8 @@ class FeedControllerTest {
     void getHomeFeeds_Success() throws Exception {
         // given
         SliceResponse<FeedResponse> sliceResponse = SliceResponse.of(List.of(testFeedResponse), false, 0, 10);
-        given(feedQueryFacade.getHomeFeeds(any(User.class), eq(0), eq(10)))
+        // [수정] getHomeFeeds 메서드 시그니처 변경에 맞춰 search 파라미터(null)를 추가했습니다.
+        given(feedQueryFacade.getHomeFeeds(any(User.class), eq(0), eq(10), eq(null)))
                 .willReturn(sliceResponse);
 
         // when & then

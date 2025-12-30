@@ -903,8 +903,8 @@ const FeedItem = React.memo(function FeedItem({
   return (
     <div
       // [수정] 모바일: 100dvh 사용으로 주소창 대응 & 하단 메뉴바/상단바 공간 충분히 확보 (-190px)
-      // [수정] 데스크톱: 비율 유지 및 중앙 정렬 최적화, 최대 너비 제한
-      className={`h-[calc(100dvh-190px)] md:h-[calc(100vh-120px)] w-auto aspect-[9/16] max-w-lg mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
+      // [수정] 데스크톱: w-fit으로 변경하여 댓글 패널이 열릴 때 가로로 자연스럽게 확장되도록 함 (aspect-[9/16] 제거)
+      className={`h-[calc(100dvh-190px)] md:h-[calc(100vh-120px)] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
@@ -1116,7 +1116,7 @@ export default function FeedView({
   feedContainerRef,
   scrollToFeedId,
   setScrollToFeedId,
-  loadMoreFeeds,
+  loadMoreFeeds: _loadMoreFeeds, // [수정] 기존 props 대신 스토어 액션 사용
   isLoadingFeeds,
 }: FeedViewProps) {
   // 스토어, 이미지 프리로드, 검색 등 기존 로직 유지
@@ -1124,7 +1124,10 @@ export default function FeedView({
     targetCommentIdForFeed,
     pivotFeedId,
     setTargetCommentIdForFeed,
-    toggleReport, // [추가] 액션 가져오기
+    toggleReport,
+    loadFeeds, // [추가] 검색어 기반 로딩을 위해 액션 가져오기
+    feedPage, // [추가] 현재 페이지 번호 가져오기
+    hasMoreFeeds, // [추가] 더 불러올 피드가 있는지 확인
   } = useFeedStore();
 
   useEffect(() => {
@@ -1149,13 +1152,20 @@ export default function FeedView({
     [allFeeds]
   );
 
-  const filteredFeeds = useMemo(() => {
-    if (!searchQuery.trim()) return allFeeds;
-    return allFeeds.filter((feed) => {
-      const authorName = feed.author || feed.writerName;
-      return authorName.toLowerCase().includes(searchQuery.toLowerCase());
-    });
-  }, [allFeeds, searchQuery]);
+  // [수정] 클라이언트 필터링 제거 -> 서버 데이터를 그대로 사용
+  // 검색어가 있으면 서버에서 이미 필터링된 데이터를 allFeeds에 담아옵니다.
+  const filteredFeeds = allFeeds;
+
+  // [추가] 검색어 변경 시 서버 재요청 (디바운싱 적용)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // 검색어가 있거나, 검색어가 비워졌을 때(원래 목록 복귀) 모두 서버 호출
+      // 페이지 0부터 다시 로드 (reset=true)
+      loadFeeds(0, true, undefined, searchQuery);
+    }, 500); // 0.5초 딜레이
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, loadFeeds]);
 
   // [Debug] 필터링된 피드 데이터 변경 감지
   useEffect(() => {
@@ -1169,11 +1179,14 @@ export default function FeedView({
 
   useEffect(() => {
     if (scrollToFeedId) {
-      const element = document.getElementById(`feed-${scrollToFeedId}`);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
-        setScrollToFeedId(null);
-      }
+      // [수정] DOM이 렌더링될 시간을 살짝 줌 (검색 후 리스트 변경 시 안정성 확보)
+      setTimeout(() => {
+        const element = document.getElementById(`feed-${scrollToFeedId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+          setScrollToFeedId(null);
+        }
+      }, 100);
     }
   }, [scrollToFeedId, setScrollToFeedId, filteredFeeds]);
 
@@ -1230,8 +1243,17 @@ export default function FeedView({
           className="scrollbar-hide snap-y snap-mandatory"
           style={{ height: "100%", width: "100%" }}
           data={filteredFeeds}
-          // [핵심] 바닥에 닿으면 loadMoreFeeds 자동 호출
-          endReached={loadMoreFeeds}
+          // [핵심] 바닥에 닿으면 다음 페이지 로드 (검색어 상태 유지)
+          endReached={() => {
+            if (hasMoreFeeds && !isLoadingFeeds) {
+              loadFeeds(
+                feedPage + 1, // 현재 페이지 + 1
+                false, // reset=false (기존 데이터 유지)
+                undefined,
+                searchQuery // 검색어 전달
+              );
+            }
+          }}
           // [핵심] 미리 렌더링할 픽셀 범위 (스크롤 끊김 방지)
           overscan={1000}
           itemContent={(index: number, feed: Feed) => {

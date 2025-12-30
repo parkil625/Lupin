@@ -13,6 +13,16 @@ interface ImageUploadBoxProps {
   isLoading?: boolean; // [추가] 로딩 상태
 }
 
+// [수정] 컴포넌트 밖으로 이동된 로딩 오버레이
+const LoadingOverlay = () => (
+  <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg cursor-wait">
+    <Loader2 className="w-8 h-8 text-[#C93831] animate-spin mb-2" />
+    <span className="text-[10px] font-bold text-[#C93831] animate-pulse">
+      처리 중...
+    </span>
+  </div>
+);
+
 export default function ImageUploadBox({
   label,
   image,
@@ -21,11 +31,20 @@ export default function ImageUploadBox({
   variant = "default",
   showCount,
   className = "",
-  isLoading = false, // [추가] 기본값 false
+  isLoading = false,
 }: ImageUploadBoxProps) {
-  const handleClick = () => {
-    if (variant === "display" || isLoading) return; // 로딩 중 클릭 방지
+  // [추가] 디버깅용 로그
+  console.log(
+    `[ImageUploadBox] Rendered - Label: ${label}, Variant: ${variant}, IsLoading: ${isLoading}`
+  );
 
+  const handleClick = () => {
+    if (variant === "display" || isLoading) {
+      console.log("[ImageUploadBox] Click ignored (Display mode or Loading)");
+      return;
+    }
+
+    console.log("[ImageUploadBox] Opening file selector");
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -33,10 +52,15 @@ export default function ImageUploadBox({
 
     input.onchange = async (e) => {
       const files = Array.from((e.target as HTMLInputElement).files || []);
+      console.log(`[ImageUploadBox] Files selected: ${files.length}`);
+
       for (const file of files) {
         if (file.type.startsWith("image/")) {
+          console.log(`[ImageUploadBox] Processing file: ${file.name}`);
           await onFileSelect(file);
           if (variant !== "upload") break;
+        } else {
+          console.log(`[ImageUploadBox] Ignored non-image file: ${file.name}`);
         }
       }
     };
@@ -47,11 +71,16 @@ export default function ImageUploadBox({
     e.preventDefault();
     e.stopPropagation();
 
-    if (variant === "display" || isLoading) return;
+    if (variant === "display" || isLoading) {
+      console.log("[ImageUploadBox] Drop ignored (Display mode or Loading)");
+      return;
+    }
 
+    console.log("[ImageUploadBox] Files dropped");
     const files = Array.from(e.dataTransfer.files);
     for (const file of files) {
       if (file.type.startsWith("image/")) {
+        console.log(`[ImageUploadBox] Processing dropped file: ${file.name}`);
         await onFileSelect(file);
         if (variant !== "upload") break;
       }
@@ -60,18 +89,9 @@ export default function ImageUploadBox({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log(`[ImageUploadBox] Removing image - Label: ${label}`);
     onImageChange(null);
   };
-
-  // [추가] 로딩 오버레이 (프로그레스 역할)
-  const LoadingOverlay = () => (
-    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg cursor-wait">
-      <Loader2 className="w-8 h-8 text-[#C93831] animate-spin mb-2" />
-      <span className="text-[10px] font-bold text-[#C93831] animate-pulse">
-        처리 중...
-      </span>
-    </div>
-  );
 
   // 1. 업로드 전용 박스
   if (variant === "upload") {

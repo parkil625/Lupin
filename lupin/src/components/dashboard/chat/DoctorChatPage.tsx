@@ -30,6 +30,7 @@ import { Member } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 import { prescriptionApi } from "@/api/prescriptionApi";
+import { appointmentApi } from "@/api/appointmentApi";
 
 interface MedicineQuantity {
   id: number;
@@ -252,7 +253,6 @@ export default function DoctorChatPage() {
       const appointmentId = parseInt(activeRoomId.replace('appointment_', ''));
 
       // 진료 완료 API 호출
-      const { appointmentApi } = await import('@/api');
       await appointmentApi.completeAppointment(appointmentId);
 
       toast.success(`${selectedChatMember.name}님의 진료가 완료되었습니다.`);
@@ -751,9 +751,11 @@ export default function DoctorChatPage() {
                         className="p-3 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
                       >
                         <div className="font-medium text-gray-900">{medicine.name}</div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {medicine.manufacturer} | {medicine.standardDosage}
-                        </div>
+                        {medicine.description && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {medicine.description}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

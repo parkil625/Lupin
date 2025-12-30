@@ -459,14 +459,14 @@ export default function DoctorChatPage() {
               </h3>
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
-                  {chatRooms.filter((room) => canEnterChatRoom(room.appointmentTime, room.status))
+                  {chatRooms.filter((room) => room.status === "IN_PROGRESS" || room.status === "SCHEDULED")
                     .length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
-                      입장 가능한 채팅방이 없습니다
+                      예약된 채팅방이 없습니다
                     </div>
                   ) : (
                     chatRooms
-                      .filter((room) => canEnterChatRoom(room.appointmentTime, room.status))
+                      .filter((room) => room.status === "IN_PROGRESS" || room.status === "SCHEDULED")
                       .map((room) => {
                         const isMyNameInList = room.patientName === "김민준";
                         const displayName = isMyNameInList
@@ -476,10 +476,16 @@ export default function DoctorChatPage() {
                         // activeRoomId로 선택 여부 판단
                         const isSelected = activeRoomId === room.roomId;
 
+                        // 입장 가능 여부 확인
+                        const canEnter = canEnterChatRoom(room.appointmentTime, room.status);
+
                         return (
                           <div
                             key={room.roomId}
                             onClick={() => {
+                              // 입장 불가능하면 클릭 무시
+                              if (!canEnter) return;
+
                               // 이미 선택된 채팅방이면 아무 작업도 하지 않음
                               if (isSelected) return;
 
@@ -502,10 +508,12 @@ export default function DoctorChatPage() {
                               setSelectedChatMember(newMember);
                               setMessages([]);
                             }}
-                            className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
-                              isSelected
-                                ? "bg-blue-50 border-blue-300"
-                                : "bg-white/80 border-gray-200"
+                            className={`p-3 rounded-xl border transition-all ${
+                              !canEnter
+                                ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
+                                : isSelected
+                                ? "bg-blue-50 border-blue-300 cursor-pointer hover:shadow-lg"
+                                : "bg-white/80 border-gray-200 cursor-pointer hover:shadow-lg"
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">
@@ -524,17 +532,23 @@ export default function DoctorChatPage() {
                                   </div>
                                 </div>
                                 {room.appointmentTime && (
-                                  <div className="text-xs text-[#C93831] font-semibold mb-1">
-                                    📅{" "}
-                                    {new Date(
-                                      room.appointmentTime
-                                    ).toLocaleString("ko-KR", {
-                                      month: "long",
-                                      day: "numeric",
-                                      hour: "numeric",
-                                      minute: "2-digit",
-                                    })}{" "}
-                                    예약
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="text-xs text-[#C93831] font-semibold">
+                                      📅{" "}
+                                      {new Date(
+                                        room.appointmentTime
+                                      ).toLocaleString("ko-KR", {
+                                        month: "long",
+                                        day: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                      })}
+                                    </div>
+                                    {!canEnter && (
+                                      <Badge className="bg-yellow-500 text-white font-bold border-0 text-xs">
+                                        예약 중
+                                      </Badge>
+                                    )}
                                   </div>
                                 )}
                                 <div className="flex items-center justify-between">

@@ -81,6 +81,14 @@ public class PrescriptionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "예약별 처방전 조회", description = "예약 ID로 처방전을 조회합니다.")
+    @GetMapping("/appointment/{appointmentId}")
+    public ResponseEntity<PrescriptionResponse> getPrescriptionByAppointment(@PathVariable Long appointmentId) {
+        return prescriptionService.getPrescriptionByAppointmentId(appointmentId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @Operation(summary = "약품 검색", description = "약품명으로 검색합니다.")
     @GetMapping("/medicines/search")
     @PreAuthorize("hasRole('DOCTOR')")

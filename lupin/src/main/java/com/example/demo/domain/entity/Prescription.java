@@ -49,4 +49,8 @@ public class Prescription {
     public void updateDiagnosis(String diagnosis) {
         this.diagnosis = diagnosis;
     }
+
+    public void updateMedications(String medications) {
+        this.medications = medications;
+    }
 }

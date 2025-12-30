@@ -139,8 +139,21 @@ public class PrescriptionService {
                 .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
 
         String medicationString = request.getMedicines().stream()
-                .map(item -> String.format("%s (%s, %s)",
-                        item.getMedicineName(), item.getDosage(), item.getFrequency()))
+                .map(item -> {
+                    String name = item.getMedicineName();
+                    String dosage = item.getDosage() != null ? item.getDosage() : "";
+                    String frequency = item.getFrequency() != null ? item.getFrequency() : "";
+
+                    if (dosage.isEmpty() && frequency.isEmpty()) {
+                        return name;
+                    } else if (dosage.isEmpty()) {
+                        return String.format("%s (%s)", name, frequency);
+                    } else if (frequency.isEmpty()) {
+                        return String.format("%s (%s)", name, dosage);
+                    } else {
+                        return String.format("%s (%s, %s)", name, dosage, frequency);
+                    }
+                })
                 .collect(Collectors.joining("\n"));
 
         // 기존 처방전 확인 - 있으면 업데이트, 없으면 새로 생성

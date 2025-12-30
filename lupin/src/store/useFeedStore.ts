@@ -58,7 +58,8 @@ interface FeedState {
   loadFeeds: (
     page: number,
     reset?: boolean,
-    excludeFeedId?: number
+    excludeFeedId?: number,
+    searchQuery?: string // [추가] 검색어 인자 정의 추가
   ) => Promise<void>;
   loadMoreFeeds: () => void;
 
@@ -158,20 +159,29 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   // 다른 사람 피드 로드 (페이지네이션)
-  loadFeeds: async (page: number, reset = false, excludeFeedId?: number) => {
+  loadFeeds: async (
+    page: number,
+    reset = false,
+    excludeFeedId?: number,
+    searchQuery?: string
+  ) => {
     const { isLoadingFeeds } = get();
-    if (isLoadingFeeds) return;
+    // [수정] reset이 true이면 로딩 중이어도 강제 진행 (검색 시 기존 로딩 취소 느낌)
+    if (isLoadingFeeds && !reset) return;
 
     set({ isLoadingFeeds: true });
     try {
       // [수정] 한 번에 5개씩 불러오도록 변경
       const pageSize = 5;
       const currentUserId = parseInt(localStorage.getItem("userId") || "0");
+
+      // [수정] API 호출 시 searchQuery 전달
       const response = await feedApi.getAllFeeds(
         page,
         pageSize,
         currentUserId,
-        excludeFeedId
+        excludeFeedId,
+        searchQuery
       );
       if (!response) return;
       const feeds = (response.content || []).filter(

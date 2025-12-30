@@ -72,9 +72,35 @@ public class FeedLikeService {
         // [Hot Write 최적화] Redis 카운트 감소 → 스케줄러가 DB 동기화
         likeCountCacheService.decrementLikeCount(feedId);
 
-        // refId = feedId (피드 참조)
-        notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE);
+        // 1. 좋아요 삭제 진행
         feedLikeRepository.delete(feedLike);
+        // [디버깅] 좋아요 삭제 완료
+        // log.debug("Deleted FeedLike for userId: {}, feedId: {}", user.getId(), feedId);
+
+        // 2. 남은 좋아요 개수 확인 (스마트한 알림 처리)
+        long remainingLikes = feedLikeRepository.countByFeedId(feedId);
+
+        if (remainingLikes == 0) {
+            // 남은 좋아요가 없으면 알림도 깔끔하게 삭제
+            notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE);
+        } else {
+            // 남은 좋아요가 있다면, 가장 최근에 누른 사람을 찾아 알림 갱신 이벤트 발행
+            feedLikeRepository.findTopByFeedIdOrderByCreatedAtDesc(feedId)
+                    .ifPresent(latestLike -> {
+                        Feed feed = latestLike.getFeed();
+                        User latestLiker = latestLike.getUser();
+
+                        // 알림 갱신을 위해 이벤트 재발행 (Listener가 "뭉치기" 로직 수행)
+                        eventPublisher.publishEvent(NotificationEvent.feedLike(
+                                feed.getWriter().getId(),
+                                latestLiker.getId(), // 이제 이 사람이 주인공
+                                latestLiker.getName(),
+                                latestLiker.getAvatar(),
+                                feedId,
+                                feed.getContent()
+                        ));
+                    });
+        }
     }
 
     /**

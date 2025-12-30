@@ -33,6 +33,7 @@ public class NotificationEventListener {
     private final NotificationSseService notificationSseService;
     private final NotificationFactory notificationFactory;
     private final UserRepository userRepository;
+    private final com.example.demo.repository.FeedLikeRepository feedLikeRepository; // [추가] 좋아요 개수 조회용
 
     /**
      * 트랜잭션 커밋 후 비동기로 알림 처리
@@ -60,6 +61,17 @@ public class NotificationEventListener {
 
             // 1. FEED_LIKE(좋아요) 타입인 경우 덮어쓰기/뭉치기 시도
             if ("FEED_LIKE".equals(event.getType().name())) {
+                // [뭉치기 로직] 현재 피드의 전체 좋아요 개수 조회
+                long likeCount = feedLikeRepository.countByFeedId(event.getRefId());
+                String newTitle;
+
+                if (likeCount <= 1) {
+                    newTitle = event.getActorName() + "님이 회원님의 게시물을 좋아합니다.";
+                } else {
+                    // 예: "철수님 외 2명이 회원님의 게시물을 좋아합니다."
+                    newTitle = event.getActorName() + "님 외 " + (likeCount - 1) + "명이 회원님의 게시물을 좋아합니다.";
+                }
+
                 java.util.Optional<Notification> existingOpt = notificationRepository
                         .findTopByUserIdAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
                                 targetUser.getId(),
@@ -69,19 +81,20 @@ public class NotificationEventListener {
 
                 if (existingOpt.isPresent()) {
                     Notification existing = existingOpt.get();
-                    log.info("[Notification] 기존 알림 발견 (ID: {}). 덮어쓰기 수행.", existing.getId());
+                    log.info("[Notification] 기존 알림 뭉치기 (ID: {}). Count: {}", existing.getId(), likeCount);
 
-                    // 새 이벤트 내용으로 갱신 (Factory가 생성한 임시 객체에서 정보 추출)
-                    Notification tempNew = notificationFactory.create(event, targetUser);
-                    
-                    // 기존 알림 업데이트: 타이틀, 프로필이미지, 시간(Now)
-                    existing.updateForAggregation(tempNew.getTitle(), tempNew.getActorProfileImage());
-                    
+                    // 기존 알림 업데이트: 타이틀(뭉친 메시지), 프로필이미지(최신 누른 사람), 시간(Now)
+                    existing.updateForAggregation(newTitle, event.getActorProfileImage());
                     savedNotification = notificationRepository.save(existing);
                 } else {
                     // 기존 알림 없으면 신규 생성
-                    log.info("[Notification] 기존 알림 없음. 신규 생성.");
-                    savedNotification = notificationRepository.save(notificationFactory.create(event, targetUser));
+                    log.info("[Notification] 신규 알림 생성. Count: {}", likeCount);
+                    Notification newNotif = notificationFactory.create(event, targetUser);
+                    
+                    // Factory는 기본 메시지만 만드므로, 뭉치기 메시지로 덮어쓰기
+                    newNotif.updateForAggregation(newTitle, event.getActorProfileImage());
+                    
+                    savedNotification = notificationRepository.save(newNotif);
                 }
             } 
             // 2. 그 외 타입(댓글, 시스템 알림 등)은 항상 신규 생성

@@ -56,7 +56,8 @@ export const feedApi = {
     page = 0,
     size = 10,
     _excludeUserId?: number,
-    _excludeFeedId?: number
+    _excludeFeedId?: number,
+    search?: string // [추가] 검색어 파라미터
   ) => {
     try {
       // 백엔드는 인증된 사용자 기준으로 자동으로 본인 피드를 제외함
@@ -64,6 +65,12 @@ export const feedApi = {
         page: String(page),
         size: String(size),
       });
+
+      // [추가] 검색어가 있으면 파라미터에 추가
+      if (search) {
+        params.append("search", search);
+      }
+
       const response = await apiClient.get(`/feeds?${params}`);
       return transformSliceFeeds(response.data);
     } catch {

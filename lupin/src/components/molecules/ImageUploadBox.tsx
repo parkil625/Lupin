@@ -33,18 +33,11 @@ export default function ImageUploadBox({
   className = "",
   isLoading = false,
 }: ImageUploadBoxProps) {
-  // [추가] 디버깅용 로그
-  console.log(
-    `[ImageUploadBox] Rendered - Label: ${label}, Variant: ${variant}, IsLoading: ${isLoading}`
-  );
-
   const handleClick = () => {
     if (variant === "display" || isLoading) {
-      console.log("[ImageUploadBox] Click ignored (Display mode or Loading)");
       return;
     }
 
-    console.log("[ImageUploadBox] Opening file selector");
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
@@ -52,15 +45,11 @@ export default function ImageUploadBox({
 
     input.onchange = async (e) => {
       const files = Array.from((e.target as HTMLInputElement).files || []);
-      console.log(`[ImageUploadBox] Files selected: ${files.length}`);
 
       for (const file of files) {
         if (file.type.startsWith("image/")) {
-          console.log(`[ImageUploadBox] Processing file: ${file.name}`);
           await onFileSelect(file);
           if (variant !== "upload") break;
-        } else {
-          console.log(`[ImageUploadBox] Ignored non-image file: ${file.name}`);
         }
       }
     };
@@ -72,15 +61,12 @@ export default function ImageUploadBox({
     e.stopPropagation();
 
     if (variant === "display" || isLoading) {
-      console.log("[ImageUploadBox] Drop ignored (Display mode or Loading)");
       return;
     }
 
-    console.log("[ImageUploadBox] Files dropped");
     const files = Array.from(e.dataTransfer.files);
     for (const file of files) {
       if (file.type.startsWith("image/")) {
-        console.log(`[ImageUploadBox] Processing dropped file: ${file.name}`);
         await onFileSelect(file);
         if (variant !== "upload") break;
       }
@@ -89,7 +75,6 @@ export default function ImageUploadBox({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`[ImageUploadBox] Removing image - Label: ${label}`);
     onImageChange(null);
   };
 

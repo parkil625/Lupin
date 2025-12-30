@@ -139,20 +139,25 @@ function useDashboardLogic(
   // SSE Setup
   useNotificationSse({
     onNotificationReceived: useCallback((n: Notification) => {
-      console.log("[Dashboard] 새 알림 화면 반영 시도:", n);
+      console.log("[Dashboard] 알림 수신 (Upsert/New):", n);
 
       setNotifications((prev) => {
-        // 이미 존재하는 알림인지 ID로 확인 (중복 방지)
-        const exists = prev.some((existing) => existing.id === n.id);
-        if (exists) {
-          console.log("[Dashboard] 중복된 알림이라 추가하지 않음:", n.id);
-          return prev;
+        // [수정] 덮어쓰기 전략: 같은 ID가 있으면 삭제하고 새것(시간갱신됨)을 맨 위로 올림
+        const filtered = prev.filter((existing) => existing.id !== n.id);
+
+        // 기존에 있었으면 콘솔 로그
+        if (filtered.length !== prev.length) {
+          console.log(`[Dashboard] 기존 알림(ID: ${n.id}) 갱신 및 상단 이동`);
         }
-        // 새 알림을 배열 맨 앞에 추가
-        return [n, ...prev];
+
+        return [n, ...filtered];
       });
 
-      toast.info(n.title, { description: n.content });
+      // 토스트 메시지도 ID를 지정하여 중복 쌓임을 방지
+      toast.info(n.title, {
+        id: `noti-${n.id}`,
+        description: n.content,
+      });
     }, []),
   });
 

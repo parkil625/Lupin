@@ -8,7 +8,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +35,7 @@ public class LikeCountSyncScheduler {
      * JDBC Batch Update로 N번 쿼리를 1번으로 최적화
      */
     @Scheduled(fixedRate = 10000)
-    @Transactional
+    // [수정] Redis 조회 등 DB와 무관한 작업까지 트랜잭션에 묶여 락(Lock)을 유발하므로 @Transactional 제거
     public void syncLikeCountsToDb() {
         Set<String> dirtyFeedIds = redisTemplate.opsForSet()
                 .members(RedisKeyUtils.feedLikeDirtySet());

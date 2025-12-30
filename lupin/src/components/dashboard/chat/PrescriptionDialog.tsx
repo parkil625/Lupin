@@ -35,6 +35,8 @@ export default function PrescriptionDialog({
   patientName,
   onSuccess,
 }: PrescriptionDialogProps) {
+  console.log("PrescriptionDialog 컴포넌트 렌더링:", { open, appointmentId, patientId, patientName });
+
   const [diagnosis, setDiagnosis] = useState("");
   const [medicines, setMedicines] = useState<MedicineItem[]>([
     {
@@ -53,13 +55,18 @@ export default function PrescriptionDialog({
 
   // 다이얼로그가 열릴 때 기존 처방전 확인
   useEffect(() => {
-    if (!open) return;
+    console.log("PrescriptionDialog useEffect 실행:", { open, appointmentId, patientId, patientName });
 
-    console.log("처방전 다이얼로그 열림:", { appointmentId, patientId, patientName });
+    if (!open) {
+      console.log("다이얼로그가 닫혀있음, useEffect 종료");
+      return;
+    }
+
+    console.log("=== 처방전 다이얼로그 열림 ===", { appointmentId, patientId, patientName });
 
     const checkExistingPrescription = async () => {
       const response = await prescriptionApi.getByAppointmentId(appointmentId);
-      console.log("기존 처방전 확인:", response);
+      console.log("기존 처방전 확인 결과:", response);
       setExistingPrescription(response !== null);
     };
 
@@ -393,7 +400,10 @@ export default function PrescriptionDialog({
                 취소
               </Button>
               <Button
-                onClick={handleSubmit}
+                onClick={(e) => {
+                  console.log("버튼 클릭 이벤트 발생!", e);
+                  handleSubmit();
+                }}
                 className="flex-1 bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-2xl h-12"
                 disabled={isSubmitting}
               >

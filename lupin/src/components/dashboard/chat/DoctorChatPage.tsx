@@ -106,7 +106,9 @@ export default function DoctorChatPage() {
 
   // 약품 검색 관련 상태
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MedicineSearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<MedicineSearchResult[]>(
+    []
+  );
   const [isSearching, setIsSearching] = useState(false);
 
   // 채팅방 목록 로드 함수 (재사용 가능하도록 별도 함수로 분리)
@@ -249,7 +251,7 @@ export default function DoctorChatPage() {
     }
 
     // roomId에서 appointmentId 추출 (appointment_123 -> 123)
-    const appointmentId = parseInt(activeRoomId.replace('appointment_', ''));
+    const appointmentId = parseInt(activeRoomId.replace("appointment_", ""));
     const memberName = selectedChatMember.name;
 
     // 즉시 UI 업데이트 (사용자 경험 향상)
@@ -261,12 +263,12 @@ export default function DoctorChatPage() {
     // API 호출은 백그라운드에서 처리
     try {
       await appointmentApi.completeAppointment(appointmentId);
-      console.log('진료 종료 성공:', appointmentId);
+      console.log("진료 종료 성공:", appointmentId);
 
       // 채팅방 목록 갱신 (백그라운드)
       loadChatRooms();
     } catch (error) {
-      console.error('진료 종료 API 실패:', error);
+      console.error("진료 종료 API 실패:", error);
       // API 실패해도 UI는 이미 업데이트되었으므로 사용자에게는 영향 없음
       // 필요시 재시도 로직 추가 가능
     }
@@ -305,7 +307,7 @@ export default function DoctorChatPage() {
     try {
       const data = await prescriptionApi.searchMedicines(query);
       // API 응답의 optional 필드에 기본값 제공
-      const formattedData = data.map(medicine => ({
+      const formattedData = data.map((medicine) => ({
         ...medicine,
         manufacturer: medicine.manufacturer || "",
         standardDosage: medicine.standardDosage || "",
@@ -323,20 +325,25 @@ export default function DoctorChatPage() {
   // 약품 추가 (클릭 또는 엔터)
   const handleAddMedicine = (medicine: MedicineSearchResult) => {
     // 이미 추가된 약품인지 확인
-    const existing = selectedMedicines.find(m => m.id === medicine.id);
+    const existing = selectedMedicines.find((m) => m.id === medicine.id);
 
     if (existing) {
       // 수량 증가
-      setSelectedMedicines(selectedMedicines.map(m =>
-        m.id === medicine.id ? { ...m, quantity: m.quantity + 1 } : m
-      ));
+      setSelectedMedicines(
+        selectedMedicines.map((m) =>
+          m.id === medicine.id ? { ...m, quantity: m.quantity + 1 } : m
+        )
+      );
     } else {
       // 새로 추가
-      setSelectedMedicines([...selectedMedicines, {
-        id: medicine.id,
-        name: medicine.name,
-        quantity: 1
-      }]);
+      setSelectedMedicines([
+        ...selectedMedicines,
+        {
+          id: medicine.id,
+          name: medicine.name,
+          quantity: 1,
+        },
+      ]);
     }
 
     // 검색어 초기화하지만 다이얼로그는 유지
@@ -346,13 +353,17 @@ export default function DoctorChatPage() {
 
   // 약품 수량 변경
   const handleUpdateQuantity = (id: number, change: number) => {
-    setSelectedMedicines(selectedMedicines.map(m => {
-      if (m.id === id) {
-        const newQuantity = Math.max(0, m.quantity + change);
-        return { ...m, quantity: newQuantity };
-      }
-      return m;
-    }).filter(m => m.quantity > 0)); // 수량이 0이면 제거
+    setSelectedMedicines(
+      selectedMedicines
+        .map((m) => {
+          if (m.id === id) {
+            const newQuantity = Math.max(0, m.quantity + change);
+            return { ...m, quantity: newQuantity };
+          }
+          return m;
+        })
+        .filter((m) => m.quantity > 0)
+    ); // 수량이 0이면 제거
   };
 
   const handleOpenMedicineDialog = () => {
@@ -361,16 +372,71 @@ export default function DoctorChatPage() {
     setShowMedicineDialog(true);
   };
 
-  const handleSavePrescription = () => {
-    if (!selectedChatMember) {
-      toast.error("환자를 선택해주세요");
+  // DoctorChatPage.tsx 내부의 handleSavePrescription 함수를 이것으로 교체하세요.
+
+  const handleSavePrescription = async () => {
+    // 1. 기본 유효성 검사
+    if (!selectedChatMember || !activeRoomId) {
+      toast.error("환자 및 진료 대화방이 선택되지 않았습니다.");
       return;
     }
-    toast.success("처방전이 저장되었습니다");
-    setPrescriptionName("");
-    setDiagnosis("");
-    setInstructions("");
-    setSelectedMedicines([]);
+
+    if (!diagnosis.trim()) {
+      toast.error("진단명을 입력해주세요.");
+      return;
+    }
+
+    if (selectedMedicines.length === 0) {
+      toast.error("처방할 약품을 최소 1개 이상 선택해주세요.");
+      return;
+    }
+
+    try {
+      // 2. roomId에서 appointmentId 추출 (예: "appointment_123" -> 123)
+      const appointmentId = parseInt(activeRoomId.replace("appointment_", ""));
+
+      // 3. API 요청 데이터 구성
+      // 주의: 우측 패널 UI에는 약품별 '용량/빈도/일수' 입력란이 없으므로,
+      // API 통신을 위해 기본값 또는 전역 지침(instructions)을 매핑합니다.
+      const medicinePayload = selectedMedicines.map((med) => ({
+        medicineId: med.id,
+        medicineName: med.name,
+        dosage: "기본 용량", // UI에 입력 필드 추가 필요 (임시 값)
+        frequency: "1일 3회", // UI에 입력 필드 추가 필요 (임시 값)
+        durationDays: 3, // UI에 입력 필드 추가 필요 (임시 값)
+        instructions: instructions, // 전체 복용 방법을 개별 약품 메모로 매핑
+      }));
+
+      const requestData = {
+        appointmentId: appointmentId,
+        patientId: selectedChatMember.id,
+        diagnosis: diagnosis,
+        medicines: medicinePayload,
+      };
+
+      console.log("처방전 전송 데이터:", requestData); // 디버깅용 로그
+
+      // 4. API 호출
+      await prescriptionApi.create(requestData);
+
+      // 5. 성공 처리
+      toast.success("처방전이 성공적으로 발급되었습니다.");
+
+      // 채팅방에도 알림 메시지 자동 전송
+      sendWebSocketMessage(
+        "처방전이 발급되었습니다. 확인해주세요.",
+        currentUserId
+      );
+
+      // 6. 폼 초기화
+      setPrescriptionName("");
+      setDiagnosis("");
+      setInstructions("");
+      setSelectedMedicines([]);
+    } catch (error) {
+      console.error("처방전 발급 실패:", error);
+      toast.error("처방전 발급 중 오류가 발생했습니다.");
+    }
   };
 
   const getMedicinesText = () => {
@@ -397,92 +463,99 @@ export default function DoctorChatPage() {
               </h3>
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
-                  {chatRooms.filter(room => room.status === 'IN_PROGRESS').length === 0 ? (
+                  {chatRooms.filter((room) => room.status === "IN_PROGRESS")
+                    .length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
                       진료 중인 환자가 없습니다
                     </div>
                   ) : (
-                    chatRooms.filter(room => room.status === 'IN_PROGRESS').map((room) => {
-                      const isMyNameInList = room.patientName === "김민준";
-                      const displayName = isMyNameInList
-                        ? "김강민"
-                        : room.patientName;
+                    chatRooms
+                      .filter((room) => room.status === "IN_PROGRESS")
+                      .map((room) => {
+                        const isMyNameInList = room.patientName === "김민준";
+                        const displayName = isMyNameInList
+                          ? "김강민"
+                          : room.patientName;
 
-                      // activeRoomId로 선택 여부 판단
-                      const isSelected = activeRoomId === room.roomId;
+                        // activeRoomId로 선택 여부 판단
+                        const isSelected = activeRoomId === room.roomId;
 
-                      return (
-                        <div
-                          key={room.roomId}
-                          onClick={() => {
-                            // 이미 선택된 채팅방이면 아무 작업도 하지 않음
-                            if (isSelected) return;
+                        return (
+                          <div
+                            key={room.roomId}
+                            onClick={() => {
+                              // 이미 선택된 채팅방이면 아무 작업도 하지 않음
+                              if (isSelected) return;
 
-                            // 활성 룸 ID 변경 (useEffect가 메시지 로드)
-                            setActiveRoomId(room.roomId);
+                              // 활성 룸 ID 변경 (useEffect가 메시지 로드)
+                              setActiveRoomId(room.roomId);
 
-                            // 선택된 멤버 정보 업데이트
-                            const newMember: Member = {
-                              id: room.patientId,
-                              name: displayName,
-                              avatar: displayName.charAt(0),
-                              age: 0,
-                              gender: "",
-                              lastVisit: "정보 없음",
-                              condition: "양호",
-                              status: "in-progress",
-                            };
+                              // 선택된 멤버 정보 업데이트
+                              const newMember: Member = {
+                                id: room.patientId,
+                                name: displayName,
+                                avatar: displayName.charAt(0),
+                                age: 0,
+                                gender: "",
+                                lastVisit: "정보 없음",
+                                condition: "양호",
+                                status: "in-progress",
+                              };
 
-                            // 메시지 초기화
-                            setSelectedChatMember(newMember);
-                            setMessages([]);
-                          }}
-                          className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
-                            isSelected
-                              ? "bg-blue-50 border-blue-300"
-                              : "bg-white/80 border-gray-200"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 mb-2">
-                            <Avatar className="w-10 h-10">
-                              <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-sm">
-                                {displayName.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="font-bold text-sm text-gray-900">
-                                  {displayName}
+                              // 메시지 초기화
+                              setSelectedChatMember(newMember);
+                              setMessages([]);
+                            }}
+                            className={`p-3 rounded-xl border cursor-pointer hover:shadow-lg transition-all ${
+                              isSelected
+                                ? "bg-blue-50 border-blue-300"
+                                : "bg-white/80 border-gray-200"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 mb-2">
+                              <Avatar className="w-10 h-10">
+                                <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-sm">
+                                  {displayName.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="font-bold text-sm text-gray-900">
+                                    {displayName}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {formatChatTime(room.lastMessageTime)}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-gray-500">
-                                  {formatChatTime(room.lastMessageTime)}
-                                </div>
-                              </div>
-                              {room.appointmentTime && (
-                                <div className="text-xs text-[#C93831] font-semibold mb-1">
-                                  📅 {new Date(room.appointmentTime).toLocaleString("ko-KR", {
-                                    month: "long",
-                                    day: "numeric",
-                                    hour: "numeric",
-                                    minute: "2-digit"
-                                  })} 예약
-                                </div>
-                              )}
-                              <div className="flex items-center justify-between">
-                                <div className="text-xs text-gray-600 truncate flex-1">
-                                  {room.lastMessage || "메시지를 시작하세요"}
-                                </div>
-                                {room.unreadCount > 0 && (
-                                  <Badge className="bg-red-500 text-white font-bold border-0 text-xs ml-2 flex-shrink-0">
-                                    {room.unreadCount}
-                                  </Badge>
+                                {room.appointmentTime && (
+                                  <div className="text-xs text-[#C93831] font-semibold mb-1">
+                                    📅{" "}
+                                    {new Date(
+                                      room.appointmentTime
+                                    ).toLocaleString("ko-KR", {
+                                      month: "long",
+                                      day: "numeric",
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                    })}{" "}
+                                    예약
+                                  </div>
                                 )}
+                                <div className="flex items-center justify-between">
+                                  <div className="text-xs text-gray-600 truncate flex-1">
+                                    {room.lastMessage || "메시지를 시작하세요"}
+                                  </div>
+                                  {room.unreadCount > 0 && (
+                                    <Badge className="bg-red-500 text-white font-bold border-0 text-xs ml-2 flex-shrink-0">
+                                      {room.unreadCount}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })
+                        );
+                      })
                   )}
                 </div>
               </div>
@@ -726,7 +799,9 @@ export default function DoctorChatPage() {
       <Dialog open={showMedicineDialog} onOpenChange={setShowMedicineDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black">약품 검색 및 선택</DialogTitle>
+            <DialogTitle className="text-2xl font-black">
+              약품 검색 및 선택
+            </DialogTitle>
             <DialogDescription>
               약품명을 검색하여 처방할 약품을 추가하세요
             </DialogDescription>
@@ -740,7 +815,7 @@ export default function DoctorChatPage() {
                 value={searchQuery}
                 onChange={(e) => handleSearchMedicines(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && searchResults.length > 0) {
+                  if (e.key === "Enter" && searchResults.length > 0) {
                     handleAddMedicine(searchResults[0]);
                   }
                 }}
@@ -753,9 +828,13 @@ export default function DoctorChatPage() {
             {searchQuery && (
               <div className="border rounded-xl p-2 max-h-[200px] overflow-y-auto">
                 {isSearching ? (
-                  <div className="text-center py-4 text-gray-500">검색 중...</div>
+                  <div className="text-center py-4 text-gray-500">
+                    검색 중...
+                  </div>
                 ) : searchResults.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500">검색 결과가 없습니다</div>
+                  <div className="text-center py-4 text-gray-500">
+                    검색 결과가 없습니다
+                  </div>
                 ) : (
                   <div className="space-y-1">
                     {searchResults.map((medicine) => (
@@ -764,7 +843,9 @@ export default function DoctorChatPage() {
                         onClick={() => handleAddMedicine(medicine)}
                         className="p-3 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
                       >
-                        <div className="font-medium text-gray-900">{medicine.name}</div>
+                        <div className="font-medium text-gray-900">
+                          {medicine.name}
+                        </div>
                         {medicine.description && (
                           <div className="text-xs text-gray-500 mt-1">
                             {medicine.description}

@@ -149,7 +149,7 @@ export default function PrescriptionDialog({
     }
 
     const validMedicines = medicines.filter(
-      (m) => m.medicineName.trim() && m.dosage.trim() && m.frequency.trim()
+      (m) => m.medicineName.trim() && m.dosage?.trim() && m.frequency?.trim()
     );
     console.log("유효한 약품 개수:", validMedicines.length);
 

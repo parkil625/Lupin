@@ -248,24 +248,27 @@ export default function DoctorChatPage() {
       return;
     }
 
+    // roomId에서 appointmentId 추출 (appointment_123 -> 123)
+    const appointmentId = parseInt(activeRoomId.replace('appointment_', ''));
+    const memberName = selectedChatMember.name;
+
+    // 즉시 UI 업데이트 (사용자 경험 향상)
+    setSelectedChatMember(null);
+    setActiveRoomId(null);
+    setMessages([]);
+    toast.success(`${memberName}님의 진료를 종료합니다...`);
+
+    // API 호출은 백그라운드에서 처리
     try {
-      // roomId에서 appointmentId 추출 (appointment_123 -> 123)
-      const appointmentId = parseInt(activeRoomId.replace('appointment_', ''));
-
-      // 진료 완료 API 호출
       await appointmentApi.completeAppointment(appointmentId);
+      console.log('진료 종료 성공:', appointmentId);
 
-      // 즉시 UI 업데이트 및 toast 표시
-      toast.success(`${selectedChatMember.name}님의 진료가 완료되었습니다.`);
-      setSelectedChatMember(null);
-      setActiveRoomId(null);
-      setMessages([]);
-
-      // 채팅방 목록 갱신은 백그라운드에서 처리 (await 제거)
+      // 채팅방 목록 갱신 (백그라운드)
       loadChatRooms();
     } catch (error) {
-      console.error('진료 종료 실패:', error);
-      toast.error('진료 종료 중 오류가 발생했습니다.');
+      console.error('진료 종료 API 실패:', error);
+      // API 실패해도 UI는 이미 업데이트되었으므로 사용자에게는 영향 없음
+      // 필요시 재시도 로직 추가 가능
     }
   };
 

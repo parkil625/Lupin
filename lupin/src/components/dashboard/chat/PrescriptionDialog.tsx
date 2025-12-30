@@ -55,13 +55,16 @@ export default function PrescriptionDialog({
   useEffect(() => {
     if (!open) return;
 
+    console.log("처방전 다이얼로그 열림:", { appointmentId, patientId, patientName });
+
     const checkExistingPrescription = async () => {
       const response = await prescriptionApi.getByAppointmentId(appointmentId);
+      console.log("기존 처방전 확인:", response);
       setExistingPrescription(response !== null);
     };
 
     checkExistingPrescription();
-  }, [open, appointmentId]);
+  }, [open, appointmentId, patientId, patientName]);
 
   const handleAddMedicine = () => {
     setMedicines([

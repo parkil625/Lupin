@@ -16,7 +16,7 @@ export interface ChatMessageResponse {
 
 /**
  * 채팅방 응답 DTO
- * 백엔드에서 정의 필요 (현재 미구현)
+ * 백엔드 ChatController.java의 getChatRooms와 일치
  */
 export interface ChatRoomResponse {
   roomId: string;           // "appointment_123"
@@ -27,6 +27,7 @@ export interface ChatRoomResponse {
   unreadCount: number;
   lastMessageTime?: string;
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'UNKNOWN';
+  appointmentTime?: string; // 예약 시간 (추가)
 }
 
 export const chatApi = {

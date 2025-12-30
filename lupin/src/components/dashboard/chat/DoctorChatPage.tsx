@@ -401,14 +401,18 @@ export default function DoctorChatPage() {
       const medicinePayload = selectedMedicines.map((med) => ({
         medicineId: med.id,
         medicineName: med.name,
+        dosage: "표준용량",
+        frequency: "1일 3회",
+        durationDays: 7,
         instructions: instructions || "",
       }));
 
       const requestData = {
         appointmentId: appointmentId,
         patientId: selectedChatMember.id,
-        diagnosis: diagnosis,
+        diagnosis: diagnosis.trim(),
         medicines: medicinePayload,
+        additionalInstructions: instructions || "",
       };
 
       console.log("처방전 전송 데이터:", requestData);

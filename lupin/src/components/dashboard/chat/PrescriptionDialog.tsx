@@ -131,8 +131,12 @@ export default function PrescriptionDialog({
   };
 
   const handleSubmit = async () => {
+    console.log("=== 처방전 저장 버튼 클릭됨 ===");
+    console.log("현재 상태:", { diagnosis, medicines, appointmentId, patientId });
+
     // 유효성 검사
     if (!diagnosis.trim()) {
+      console.log("유효성 검사 실패: 진단명 없음");
       alert("진단명을 입력해주세요.");
       return;
     }
@@ -140,11 +144,15 @@ export default function PrescriptionDialog({
     const validMedicines = medicines.filter(
       (m) => m.medicineName.trim() && m.dosage.trim() && m.frequency.trim()
     );
+    console.log("유효한 약품 개수:", validMedicines.length);
+
     if (validMedicines.length === 0) {
+      console.log("유효성 검사 실패: 약품 없음");
       alert("최소 하나 이상의 약품을 처방해야 합니다.");
       return;
     }
 
+    console.log("유효성 검사 통과, API 요청 시작");
     setIsSubmitting(true);
     try {
       const requestData = {
@@ -154,7 +162,7 @@ export default function PrescriptionDialog({
         medicines: validMedicines,
       };
 
-      console.log("처방전 발급 요청:", requestData);
+      console.log("처방전 발급 요청 데이터:", JSON.stringify(requestData, null, 2));
 
       const response = await prescriptionApi.create(requestData);
 

@@ -19,13 +19,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -46,8 +46,6 @@ public class AuctionService {
 
     private final AuctionSseService auctionSseService;
     private final RedissonClient redissonClient;
-
-
     @Lazy
     @Autowired
     private AuctionService self;
@@ -80,6 +78,9 @@ public class AuctionService {
 
         // 스케줄러 업데이트 (마감 시간이 변경되었을 수 있으므로)
         auctionTaskScheduler.scheduleAuctionEnd(auction.getId(), auction.getEndTime());
+
+        RBucket<String> bucket = redissonClient.getBucket("auction_price:" + auction.getId(), StringCodec.INSTANCE);
+        bucket.set(String.valueOf(auction.getCurrentPrice()));
 
         // SSE 전송
         AuctionSseMessage message = AuctionSseMessage.builder()

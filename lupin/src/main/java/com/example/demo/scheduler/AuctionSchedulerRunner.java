@@ -5,6 +5,9 @@ import com.example.demo.domain.enums.AuctionStatus;
 import com.example.demo.repository.AuctionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RBucket;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -20,6 +23,7 @@ public class AuctionSchedulerRunner implements ApplicationRunner {
 
     private final AuctionRepository auctionRepository;
     private final AuctionTaskScheduler auctionTaskScheduler;
+    private final RedissonClient redissonClient;
 
     @Override
     @Transactional
@@ -33,6 +37,9 @@ public class AuctionSchedulerRunner implements ApplicationRunner {
         for (Auction auction : activeAuctions) {
             if (auction.getEndTime().isAfter(now)) { // 아직 안 끝난 거만
                 auctionTaskScheduler.scheduleAuctionEnd(auction.getId(), auction.getEndTime());
+
+                RBucket<String> bucket = redissonClient.getBucket("auction_price:" + auction.getId(), StringCodec.INSTANCE);
+                bucket.set(String.valueOf(auction.getCurrentPrice()));
             } else {
                 // (선택) 이미 시간이 지났는데 ACTIVE인 애들은 여기서 바로 종료 처리 해도 됨
             }

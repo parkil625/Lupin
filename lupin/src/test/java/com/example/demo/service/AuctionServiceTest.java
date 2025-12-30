@@ -84,9 +84,9 @@ class AuctionServiceTest {
 
         given(auctionRepository.findById(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(10L)).willReturn(Optional.of(user));
-        
-        // [수정] 포인트 조회 로직(Stubbing) 삭제 (입찰 시 잔액 체크 안함)
-        // given(pointService.getTotalPoints(user)).willReturn(200L);
+
+        // [수정] 인자가 2개(Key, Codec)인 메소드 호출을 허용하도록 변경
+        given(redissonClient.getBucket(anyString(), any())).willReturn(rBucket);
 
         // when
         auctionService.placeBid(1L, 10L, 200L, LocalDateTime.now());
@@ -197,7 +197,6 @@ class AuctionServiceTest {
         User oldUser = createUser(1L, "옛입찰자");
         User newUser = createUser(2L, "새입찰자");
 
-        // 기존 최고 입찰 (ACTIVE 상태)
         AuctionBid prevBid = AuctionBid.builder()
                 .id(999L)
                 .auction(auction)
@@ -209,12 +208,12 @@ class AuctionServiceTest {
 
         given(auctionRepository.findById(1L)).willReturn(Optional.of(auction));
         given(userRepository.findById(2L)).willReturn(Optional.of(newUser));
-        
-        // [수정] 포인트 조회 Stubbing 삭제
-        // given(pointService.getTotalPoints(newUser)).willReturn(200L);
 
         given(auctionBidRepository.findTopByAuctionAndStatusOrderByBidAmountDescBidTimeDesc(auction, BidStatus.ACTIVE))
                 .willReturn(Optional.of(prevBid));
+
+        // [수정] 인자 2개 허용
+        given(redissonClient.getBucket(anyString(), any())).willReturn(rBucket);
 
         // when
         auctionService.placeBid(1L, 2L, 200L, now.plusMinutes(1));
@@ -399,14 +398,13 @@ class AuctionServiceTest {
         given(auctionRepository.findById(auctionId)).willReturn(Optional.of(auction));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
-        // [수정] 포인트 조회 Stub 삭제
-        // given(pointService.getTotalPoints(user)).willReturn(2000L);
+        // [수정] 인자 2개 허용
+        given(redissonClient.getBucket(anyString(), any())).willReturn(rBucket);
 
         // when
         auctionService.placeBid(auctionId, userId, bidAmount, now);
 
         // then
-        // [중요] 정책 변경: 입찰 시점에는 포인트 차감을 하지 않음 (종료 시 일괄 처리)
         verify(pointService, never()).deductPoints(any(), anyLong());
         verify(pointService, never()).usePoints(any(), anyLong());
 
@@ -659,14 +657,12 @@ class AuctionServiceTest {
         Long bidAmount = 10000L;
         LocalDateTime now = LocalDateTime.now();
 
-        // 1. 포인트가 0원인 유저 생성 (포인트 검사 로직 삭제 확인용)
         User user = User.builder()
                 .id(userId)
                 .name("가난한입찰자")
                 .totalPoints(0L)
                 .build();
 
-        // 2. 진행 중인 경매 생성
         Auction auction = Auction.builder()
                 .id(auctionId)
                 .status(AuctionStatus.ACTIVE)
@@ -674,27 +670,23 @@ class AuctionServiceTest {
                 .regularEndTime(now.plusHours(1))
                 .build();
 
-        // 3. Mock 설정 (DB에서 조회하면 위 객체들을 리턴한다고 가정)
         given(auctionRepository.findById(auctionId)).willReturn(Optional.of(auction));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // [수정] 인자 2개 허용
+        given(redissonClient.getBucket(anyString(), any())).willReturn(rBucket);
 
         // when (실행)
         auctionService.placeBid(auctionId, userId, bidAmount, now);
 
         // then (검증)
-        // 1. SSE 서비스의 broadcast 메소드가 호출되었는지 확인하면서, 매개변수(message)를 낚아챔(Capture)
         ArgumentCaptor<AuctionSseMessage> messageCaptor = ArgumentCaptor.forClass(AuctionSseMessage.class);
         verify(auctionSseService, times(1)).broadcast(messageCaptor.capture());
 
-        // 2. 낚아챈 메시지 까보기
         AuctionSseMessage sentMessage = messageCaptor.getValue();
-
-        // [핵심 검증] 메시지 안에 bidderId가 내 ID(1L)와 똑같은지 확인!
         assertThat(sentMessage.getBidderId()).isEqualTo(userId);
-
-        // 기타 검증
         assertThat(sentMessage.getBidderName()).isEqualTo("가난한입찰자");
-        assertThat(sentMessage.getCurrentPrice()).isEqualTo(bidAmount); // 가격 갱신 확인
+        assertThat(sentMessage.getCurrentPrice()).isEqualTo(bidAmount);
     }
 
     @Test

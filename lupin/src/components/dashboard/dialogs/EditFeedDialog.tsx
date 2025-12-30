@@ -77,6 +77,13 @@ export default function EditFeedDialog({
   const [isDesktop, setIsDesktop] = useState(false);
   const prevOpenRef = useRef(open);
 
+  // [추가] 각 이미지 박스별 로딩 상태 관리
+  const [imageLoading, setImageLoading] = useState({
+    start: false,
+    end: false,
+    other: false,
+  });
+
   // 데스크톱 여부 감지
   useEffect(() => {
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
@@ -223,28 +230,35 @@ export default function EditFeedDialog({
     }
   }, [startExifTime, endExifTime, imagesChanged]);
 
-  // 이미지 업로드 핸들러 (S3에 실제 업로드)
-  const uploadImage = async (file: File, setter: (url: string) => void) => {
+  // [수정] 이미지 업로드 핸들러 (로딩 상태 제어 추가)
+  const uploadImage = async (
+    file: File,
+    setter: (url: string) => void,
+    key: "start" | "end" | "other" // [추가] 박스 구분 키
+  ) => {
+    // 해당 박스 로딩 시작
+    setImageLoading((prev) => ({ ...prev, [key]: true }));
+
     try {
-      // [추가] 브라우저단 이미지 압축 옵션
       const options = {
-        maxSizeMB: 1, // 최대 1MB로 제한
-        maxWidthOrHeight: 1920, // 최대 해상도 FHD급으로 제한
-        useWebWorker: true, // 별도 스레드 사용으로 화면 멈춤 방지
-        fileType: "image/webp", // 웹에 최적화된 포맷 사용
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: "image/webp",
       };
 
-      // 압축 수행 (여기서 용량이 확 줄어듭니다)
+      // 압축 수행
       const compressedFile = await imageCompression(file, options);
 
-      // 원본 대신 압축된 파일(compressedFile)을 전송
-      // 기존 file -> compressedFile 로 변경
+      // 업로드
       const s3Url = await imageApi.uploadFeedImage(compressedFile);
-
       setter(s3Url);
     } catch (error) {
       console.error("이미지 업로드 실패:", error);
       toast.error("이미지 업로드 실패");
+    } finally {
+      // 해당 박스 로딩 종료
+      setImageLoading((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -267,24 +281,29 @@ export default function EditFeedDialog({
     return null;
   };
 
-  // 시작 이미지 업로드 + EXIF 추출
+  // [수정] 시작 이미지 업로드 (key: start)
   const handleStartImageUpload = async (file: File) => {
     const exifTime = await extractExifTime(file);
     setStartExifTime(exifTime);
     setImagesChanged(true);
-    await uploadImage(file, setStartImage);
+    await uploadImage(file, setStartImage, "start");
   };
 
-  // 끝 이미지 업로드 + EXIF 추출
+  // [수정] 끝 이미지 업로드 (key: end)
   const handleEndImageUpload = async (file: File) => {
     const exifTime = await extractExifTime(file);
     setEndExifTime(exifTime);
     setImagesChanged(true);
-    await uploadImage(file, setEndImage);
+    await uploadImage(file, setEndImage, "end");
   };
 
+  // [수정] 기타 이미지 업로드 (key: other)
   const handleOtherImageUpload = (file: File) =>
-    uploadImage(file, (url) => setOtherImages((prev) => [...prev, url]));
+    uploadImage(
+      file,
+      (url) => setOtherImages((prev) => [...prev, url]),
+      "other"
+    );
 
   // 제출 가능: 시작/끝 사진만 있으면 됨
   const canSubmit = startImage && endImage;
@@ -444,6 +463,7 @@ export default function EditFeedDialog({
                               image={startImage}
                               onImageChange={setStartImage}
                               onFileSelect={handleStartImageUpload}
+                              isLoading={imageLoading.start}
                             />
                           </div>
                         </TooltipTrigger>
@@ -459,6 +479,7 @@ export default function EditFeedDialog({
                               image={endImage}
                               onImageChange={setEndImage}
                               onFileSelect={handleEndImageUpload}
+                              isLoading={imageLoading.end}
                             />
                           </div>
                         </TooltipTrigger>
@@ -494,6 +515,7 @@ export default function EditFeedDialog({
                               onImageChange={() => {}}
                               onFileSelect={handleOtherImageUpload}
                               variant="upload"
+                              isLoading={imageLoading.other}
                             />
                           </div>
                         </TooltipTrigger>
@@ -571,7 +593,12 @@ export default function EditFeedDialog({
           <div className="p-4 border-t border-gray-200 flex-shrink-0">
             <Button
               onClick={handleSave}
-              disabled={!canSubmit}
+              disabled={
+                !canSubmit ||
+                imageLoading.start ||
+                imageLoading.end ||
+                imageLoading.other
+              }
               className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {canSubmit ? "수정 완료" : "시작/끝 사진 필요"}
@@ -652,6 +679,7 @@ export default function EditFeedDialog({
                                 image={startImage}
                                 onImageChange={setStartImage}
                                 onFileSelect={handleStartImageUpload}
+                                isLoading={imageLoading.start}
                               />
                             </div>
                           </TooltipTrigger>
@@ -671,6 +699,7 @@ export default function EditFeedDialog({
                                 image={endImage}
                                 onImageChange={setEndImage}
                                 onFileSelect={handleEndImageUpload}
+                                isLoading={imageLoading.end}
                               />
                             </div>
                           </TooltipTrigger>
@@ -714,6 +743,7 @@ export default function EditFeedDialog({
                                 onImageChange={() => {}}
                                 onFileSelect={handleOtherImageUpload}
                                 variant="upload"
+                                isLoading={imageLoading.other}
                               />
                             </div>
                           </TooltipTrigger>
@@ -791,7 +821,12 @@ export default function EditFeedDialog({
             <div className="p-4 border-t border-gray-200 flex-shrink-0">
               <Button
                 onClick={handleSave}
-                disabled={!canSubmit}
+                disabled={
+                  !canSubmit ||
+                  imageLoading.start ||
+                  imageLoading.end ||
+                  imageLoading.other
+                }
                 className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {canSubmit ? "수정 완료" : "시작/끝 사진 필요"}

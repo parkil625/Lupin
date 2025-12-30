@@ -39,6 +39,7 @@ import { Image, FileText, X } from "lucide-react";
 import { FeedContentInput } from "@/components/shared/FeedContent";
 import { imageApi } from "@/api/imageApi";
 import exifr from "exifr";
+import imageCompression from "browser-image-compression";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface CreateFeedDialogProps {
@@ -68,8 +69,15 @@ export default function CreateFeedDialog({
   const [otherImages, setOtherImages] = useState<string[]>([]);
   const [workoutType, setWorkoutType] = useState<string>("헬스");
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // [주의] 전체 제출(작성버튼) 로딩
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
+
+  // [추가] 각 이미지 박스별 로딩 상태
+  const [imageLoading, setImageLoading] = useState({
+    start: false,
+    end: false,
+    other: false,
+  });
   const [isDesktop, setIsDesktop] = useState(false);
   const firstButtonRef = useRef<HTMLButtonElement>(null);
   const prevOpenRef = useRef(open);
@@ -255,18 +263,36 @@ export default function CreateFeedDialog({
     }
   };
 
-  // 이미지 업로드 핸들러
-  const uploadImage = async (file: File, setter: (url: string) => void) => {
-    setIsUploading(true);
+  // [수정] 이미지 업로드 핸들러 (압축 + 개별 로딩)
+  const uploadImage = async (
+    file: File,
+    setter: (url: string) => void,
+    key: "start" | "end" | "other" // 어느 박스인지 구분
+  ) => {
+    // 해당 박스 로딩 켜기
+    setImageLoading((prev) => ({ ...prev, [key]: true }));
 
     try {
-      const s3Url = await imageApi.uploadFeedImage(file);
+      // 1. 브라우저 이미지 압축 (500 에러 해결 핵심)
+      const options = {
+        maxSizeMB: 1, // 1MB 이하로 압축
+        maxWidthOrHeight: 1920, // FHD 해상도
+        useWebWorker: true, // UI 멈춤 방지
+        fileType: "image/webp",
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      // console.log(`압축: ${file.size} -> ${compressedFile.size}`);
+
+      // 2. 압축된 파일 업로드
+      const s3Url = await imageApi.uploadFeedImage(compressedFile);
       setter(s3Url);
     } catch (error) {
       console.error(error);
-      toast.error("이미지 업로드 실패");
+      toast.error("이미지 업로드 실패 (용량을 확인해주세요)");
     } finally {
-      setIsUploading(false);
+      // 해당 박스 로딩 끄기
+      setImageLoading((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -289,22 +315,27 @@ export default function CreateFeedDialog({
     return null;
   };
 
-  // 시작 이미지 업로드 + EXIF 추출
+  // [수정] 시작 이미지 (키: start)
   const handleStartImageUpload = async (file: File) => {
     const exifTime = await extractExifTime(file);
     setStartExifTime(exifTime);
-    await uploadImage(file, setStartImage);
+    await uploadImage(file, setStartImage, "start");
   };
 
-  // 끝 이미지 업로드 + EXIF 추출
+  // [수정] 끝 이미지 (키: end)
   const handleEndImageUpload = async (file: File) => {
     const exifTime = await extractExifTime(file);
     setEndExifTime(exifTime);
-    await uploadImage(file, setEndImage);
+    await uploadImage(file, setEndImage, "end");
   };
 
+  // [수정] 기타 이미지 (키: other)
   const handleOtherImageUpload = (file: File) =>
-    uploadImage(file, (url) => setOtherImages((prev) => [...prev, url]));
+    uploadImage(
+      file,
+      (url) => setOtherImages((prev) => [...prev, url]),
+      "other"
+    );
 
   // 제출 가능: 시작/끝 사진만 있으면 됨 (EXIF 검증은 백엔드에서)
   const canSubmit = startImage && endImage;
@@ -420,6 +451,7 @@ export default function CreateFeedDialog({
                               image={startImage}
                               onImageChange={setStartImage}
                               onFileSelect={handleStartImageUpload}
+                              isLoading={imageLoading.start}
                             />
                           </div>
                         </TooltipTrigger>
@@ -435,6 +467,7 @@ export default function CreateFeedDialog({
                               image={endImage}
                               onImageChange={setEndImage}
                               onFileSelect={handleEndImageUpload}
+                              isLoading={imageLoading.end}
                             />
                           </div>
                         </TooltipTrigger>
@@ -470,6 +503,7 @@ export default function CreateFeedDialog({
                               onImageChange={() => {}}
                               onFileSelect={handleOtherImageUpload}
                               variant="upload"
+                              isLoading={imageLoading.other}
                             />
                           </div>
                         </TooltipTrigger>
@@ -539,7 +573,13 @@ export default function CreateFeedDialog({
           <div className="p-4 border-t border-gray-200 flex-shrink-0">
             <Button
               onClick={handleSubmit}
-              disabled={!canSubmit || isUploading}
+              disabled={
+                !canSubmit ||
+                isUploading ||
+                imageLoading.start ||
+                imageLoading.end ||
+                imageLoading.other
+              }
               // [수정] 스피너와 텍스트 정렬을 위해 flex 관련 클래스 추가
               className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
@@ -632,6 +672,7 @@ export default function CreateFeedDialog({
                                 image={startImage}
                                 onImageChange={setStartImage}
                                 onFileSelect={handleStartImageUpload}
+                                isLoading={imageLoading.start}
                               />
                             </div>
                           </TooltipTrigger>
@@ -651,6 +692,7 @@ export default function CreateFeedDialog({
                                 image={endImage}
                                 onImageChange={setEndImage}
                                 onFileSelect={handleEndImageUpload}
+                                isLoading={imageLoading.end}
                               />
                             </div>
                           </TooltipTrigger>
@@ -694,6 +736,7 @@ export default function CreateFeedDialog({
                                 onImageChange={() => {}}
                                 onFileSelect={handleOtherImageUpload}
                                 variant="upload"
+                                isLoading={imageLoading.other}
                               />
                             </div>
                           </TooltipTrigger>
@@ -768,7 +811,13 @@ export default function CreateFeedDialog({
             <div className="p-4 border-t border-gray-200 flex-shrink-0">
               <Button
                 onClick={handleSubmit}
-                disabled={!canSubmit || isUploading}
+                disabled={
+                  !canSubmit ||
+                  isUploading ||
+                  imageLoading.start ||
+                  imageLoading.end ||
+                  imageLoading.other
+                }
                 className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isUploading ? (

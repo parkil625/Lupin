@@ -1187,7 +1187,7 @@ export default function FeedView({
   };
 
   return (
-    <div className="h-full flex flex-col p-4 gap-4 relative">
+    <div className="h-full flex flex-col p-2 gap-4 relative">
       {/* 검색바 */}
       <div className="mx-auto max-w-2xl w-full flex-shrink-0 z-10">
         <SearchInput

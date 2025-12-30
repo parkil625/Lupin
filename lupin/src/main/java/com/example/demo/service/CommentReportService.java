@@ -9,6 +9,7 @@ import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentReportRepository;
 import com.example.demo.repository.CommentRepository;
+import com.example.demo.repository.FeedRepository; // [추가] FeedRepository 임포트
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.domain.enums.NotificationType;
 import com.example.demo.event.NotificationEvent;
@@ -30,6 +31,7 @@ public class CommentReportService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final NotificationRepository notificationRepository;
+    private final FeedRepository feedRepository; // [추가] 필드 추가
     private final ApplicationEventPublisher eventPublisher;
     private final UserPenaltyService userPenaltyService;
 
@@ -89,7 +91,14 @@ public class CommentReportService {
         }
 
         commentLikeRepository.deleteByComment(comment);
-        commentReportRepository.deleteByComment(comment);
+        // [수정] 신고 내역은 삭제하지 않음 (페널티 근거 데이터 유지)
+        // commentReportRepository.deleteByComment(comment);
+
+        // [수정] soft delete (deleted_at 갱신)
         commentRepository.delete(comment);
+
+        // [추가] 실제 남은 댓글 수(deleted_at이 null인 것)를 세어서 피드 정보 동기화
+        long realCount = commentRepository.countByFeed(comment.getFeed());
+        feedRepository.updateCommentCount(comment.getFeed().getId(), (int) realCount);
     }
 }

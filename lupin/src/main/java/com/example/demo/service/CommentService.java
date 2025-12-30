@@ -142,9 +142,11 @@ public class CommentService {
         commentLikeRepository.deleteByCommentIn(replies);
 
         // [수정] 단순 감소 로직 제거 (상위 메서드에서 일괄 동기화)
-        // [N+1 문제 해결] deleteAll()은 각 엔티티마다 delete 쿼리를 날리므로, deleteAllInBatch()를 사용하여 단일 쿼리로 삭제
-        log.info(">>> [Comment Service] Batch deleting {} replies for parent comment ID: {}", replies.size(), parentComment.getId());
-        commentRepository.deleteAllInBatch(replies);
+        // [수정] deleteAllInBatch()는 하드 딜리트(SQL DELETE)를 수행하여 FK 제약조건(대댓글 신고 등) 위반으로 롤백될 수 있고,
+        //        @SQLDelete(Soft Delete)가 적용되지 않습니다.
+        //        대신 deleteAll()을 사용하여 각 엔티티마다 정상적으로 Soft Delete(UPDATE)가 수행되도록 변경합니다.
+        log.info(">>> [Comment Service] Soft deleting {} replies for parent comment ID: {}", replies.size(), parentComment.getId());
+        commentRepository.deleteAll(replies);
     }
 
     public Comment getComment(Long commentId) {

@@ -46,6 +46,10 @@ class CommentReportServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
 
+    // [추가] FeedRepository Mock 추가 (서비스 코드 변경 반영)
+    @Mock
+    private com.example.demo.repository.FeedRepository feedRepository;
+
     @Mock
     private ApplicationEventPublisher eventPublisher;
 

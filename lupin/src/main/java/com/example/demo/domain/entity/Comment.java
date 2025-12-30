@@ -47,7 +47,8 @@ public class Comment {
     @Builder.Default
     private List<Comment> replies = new ArrayList<>();
 
-    @OneToMany(mappedBy = "comment", cascade = CascadeType.REMOVE)
+    // [수정] 댓글 삭제 시 신고 내역은 유지하기 위해 cascade = CascadeType.REMOVE 제거
+    @OneToMany(mappedBy = "comment")
     @Builder.Default
     private List<CommentReport> commentReports = new ArrayList<>();
 

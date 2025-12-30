@@ -35,8 +35,14 @@ import {
   Siren,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
-import { commentApi, reportApi, getCdnUrl } from "@/api";
+import { commentApi, reportApi, userApi, getCdnUrl } from "@/api"; // [수정] userApi 추가
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"; // [추가] 툴팁 컴포넌트
 
 // 백엔드 댓글 응답 타입
 interface BackendComment {
@@ -117,10 +123,26 @@ export default function FeedDetailDialogHome({
   }>({});
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentText, setEditCommentText] = useState("");
+  const [hasCommentPenalty, setHasCommentPenalty] = useState(false); // [추가] 페널티 상태
 
   // 현재 사용자 정보
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
+
+  // [추가] 페널티 여부 확인
+  useEffect(() => {
+    const checkPenalty = async () => {
+      try {
+        const userData = await userApi.getUserById(currentUserId);
+        if (userData && userData.hasCommentPenalty) {
+          setHasCommentPenalty(true);
+        }
+      } catch (error) {
+        console.error("사용자 정보 로드 실패:", error);
+      }
+    };
+    checkPenalty();
+  }, [currentUserId]);
 
   // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
   const hasImages = feed?.images && feed.images.length > 0;
@@ -740,26 +762,20 @@ export default function FeedDetailDialogHome({
                 <div className="mb-3">
                   <input
                     type="text"
-                    placeholder="답글을 입력하세요..."
+                    placeholder={
+                      hasCommentPenalty
+                        ? "댓글 작성이 제한되었습니다."
+                        : "답글을 입력하세요..."
+                    }
                     value={replyCommentText}
                     onChange={(e) => setReplyCommentText(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSendReply()}
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem 0",
-                      fontSize: "0.875rem",
-                      background: "transparent",
-                      border: "none",
-                      borderBottom: "2px solid #d1d5db",
-                      outline: "none",
-                      transition: "border-color 0.2s",
-                    }}
-                    onFocus={(e) =>
-                      (e.target.style.borderBottomColor = "#C93831")
+                    onKeyDown={(e) =>
+                      !hasCommentPenalty &&
+                      e.key === "Enter" &&
+                      handleSendReply()
                     }
-                    onBlur={(e) =>
-                      (e.target.style.borderBottomColor = "#d1d5db")
-                    }
+                    disabled={hasCommentPenalty}
+                    className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     autoFocus
                   />
                   <div className="flex gap-2 mt-2">
@@ -772,13 +788,35 @@ export default function FeedDetailDialogHome({
                     >
                       취소
                     </button>
-                    <button
-                      onClick={handleSendReply}
-                      disabled={!replyCommentText.trim()}
-                      className="px-3 py-1 text-xs font-semibold text-[#C93831] hover:text-[#B02F28] disabled:opacity-50 cursor-pointer"
-                    >
-                      답글
-                    </button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-block">
+                            <button
+                              onClick={handleSendReply}
+                              disabled={
+                                hasCommentPenalty || !replyCommentText.trim()
+                              }
+                              className={`px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                hasCommentPenalty
+                                  ? "bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+                                  : "text-[#C93831] hover:text-[#B02F28] cursor-pointer"
+                              }`}
+                            >
+                              답글
+                            </button>
+                          </div>
+                        </TooltipTrigger>
+                        {hasCommentPenalty && (
+                          <TooltipContent side="top">
+                            <p>
+                              신고 누적으로 인해 댓글 작성이 3일간
+                              제한되었습니다.
+                            </p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               )}
@@ -878,13 +916,22 @@ export default function FeedDetailDialogHome({
               <div className="relative flex-1">
                 <input
                   type="text"
-                  placeholder="댓글을 입력하세요..."
+                  placeholder={
+                    hasCommentPenalty
+                      ? "댓글 작성이 제한되었습니다."
+                      : "댓글을 입력하세요..."
+                  }
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendComment()}
-                  className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8"
+                  onKeyDown={(e) =>
+                    !hasCommentPenalty &&
+                    e.key === "Enter" &&
+                    handleSendComment()
+                  }
+                  disabled={hasCommentPenalty}
+                  className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                {commentText && (
+                {commentText && !hasCommentPenalty && (
                   <button
                     onClick={() => setCommentText("")}
                     className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
@@ -893,13 +940,33 @@ export default function FeedDetailDialogHome({
                   </button>
                 )}
               </div>
-              <button
-                onClick={handleSendComment}
-                disabled={!commentText.trim()}
-                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white flex items-center justify-center hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 cursor-pointer"
-              >
-                <Send className="w-4 h-4" />
-              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="inline-block">
+                      <button
+                        onClick={handleSendComment}
+                        disabled={hasCommentPenalty || !commentText.trim()}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-shadow flex-shrink-0 cursor-pointer ${
+                          hasCommentPenalty
+                            ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                            : "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        }`}
+                        aria-label="댓글 전송"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </TooltipTrigger>
+                  {hasCommentPenalty && (
+                    <TooltipContent side="top">
+                      <p>
+                        신고 누적으로 인해 댓글 작성이 3일간 제한되었습니다.
+                      </p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         </div>

@@ -58,16 +58,16 @@ export default function AppointmentsPage({
     }
   }, [currentUser.id, currentUser.role]);
 
-  // 초기 예약 목록 불러오기
+  // 초기 예약 목록 불러오기 + 1분마다 자동 갱신 (5분 전 입장 버튼 표시를 위해)
   useEffect(() => {
+    // 초기 로드
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAppointments();
-  }, [fetchAppointments]);
 
-  // 1분마다 예약 목록 자동 갱신 (5분 전 입장 버튼 표시를 위해)
-  useEffect(() => {
+    // 1분마다 갱신
     const interval = setInterval(() => {
       fetchAppointments();
-    }, 60000); // 1분마다 갱신
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [fetchAppointments]);

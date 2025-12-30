@@ -576,20 +576,20 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     }
   }, [currentPatientId]);
 
-  // 초기 예약 목록 및 처방전 로드
+  // 초기 예약 목록 및 처방전 로드 + 1분마다 예약 목록 자동 갱신
   useEffect(() => {
+    // 초기 로드
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAppointments();
     loadPrescriptions();
-  }, [loadAppointments, loadPrescriptions]);
 
-  // 1분마다 예약 목록 자동 갱신 (예약 시간이 되면 진료 중으로 자동 변경)
-  useEffect(() => {
+    // 1분마다 예약 목록 갱신 (예약 시간이 되면 진료 중으로 자동 변경)
     const interval = setInterval(() => {
       loadAppointments();
-    }, 60000); // 1분마다 갱신
+    }, 60000);
 
     return () => clearInterval(interval);
-  }, [loadAppointments]);
+  }, [loadAppointments, loadPrescriptions]);
 
   // 처방전 발급 이벤트 처리 (처방전 목록 새로고침)
   useEffect(() => {

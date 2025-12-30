@@ -260,16 +260,16 @@ export default function AppointmentsPage({
             )}
             <div className="min-w-[200px]">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="rounded-xl h-11 bg-white border-gray-200 shadow-sm">
+                <SelectTrigger className="rounded-xl h-11 bg-white border-gray-200 shadow-sm cursor-pointer">
                   <SelectValue placeholder="전체 예약" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">전체 예약</SelectItem>
-                  <SelectItem value="SCHEDULED">예약된 진료</SelectItem>
-                  <SelectItem value="IN_PROGRESS_OR_COMPLETED">
+                  <SelectItem value="ALL" className="cursor-pointer">전체 예약</SelectItem>
+                  <SelectItem value="SCHEDULED" className="cursor-pointer">예약된 진료</SelectItem>
+                  <SelectItem value="IN_PROGRESS_OR_COMPLETED" className="cursor-pointer">
                     진행 중 진료
                   </SelectItem>
-                  <SelectItem value="CANCELLED">취소된 진료</SelectItem>
+                  <SelectItem value="CANCELLED" className="cursor-pointer">취소된 진료</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -732,15 +732,15 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     예약 내역
                   </h3>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[130px] h-8 text-xs">
+                    <SelectTrigger className="w-[130px] h-8 text-xs cursor-pointer">
                       <SelectValue placeholder="전체" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALL">전체</SelectItem>
-                      <SelectItem value="SCHEDULED">진료 예정</SelectItem>
-                      <SelectItem value="IN_PROGRESS">진료 중</SelectItem>
-                      <SelectItem value="COMPLETED">진료 완료</SelectItem>
-                      <SelectItem value="CANCELLED">취소됨</SelectItem>
+                      <SelectItem value="ALL" className="cursor-pointer">전체</SelectItem>
+                      <SelectItem value="SCHEDULED" className="cursor-pointer">진료 예정</SelectItem>
+                      <SelectItem value="IN_PROGRESS" className="cursor-pointer">진료 중</SelectItem>
+                      <SelectItem value="COMPLETED" className="cursor-pointer">진료 완료</SelectItem>
+                      <SelectItem value="CANCELLED" className="cursor-pointer">취소됨</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1276,14 +1276,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         value={selectedDepartment}
                         onValueChange={setSelectedDepartment}
                       >
-                        <SelectTrigger className="rounded-xl">
+                        <SelectTrigger className="rounded-xl cursor-pointer">
                           <SelectValue placeholder="진료과를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="internal">내과</SelectItem>
-                          <SelectItem value="surgery">외과</SelectItem>
-                          <SelectItem value="psychiatry">신경정신과</SelectItem>
-                          <SelectItem value="dermatology">피부과</SelectItem>
+                          <SelectItem value="internal" className="cursor-pointer">내과</SelectItem>
+                          <SelectItem value="surgery" className="cursor-pointer">외과</SelectItem>
+                          <SelectItem value="psychiatry" className="cursor-pointer">신경정신과</SelectItem>
+                          <SelectItem value="dermatology" className="cursor-pointer">피부과</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1309,7 +1309,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             color: "#C93831",
                           },
                         }}
-                        className="rounded-xl border"
+                        className="rounded-xl border cursor-pointer"
                       />
                       <p className="text-xs text-gray-600 mt-2">
                         * 빨간색 날짜는 공휴일입니다 (선택 불가)
@@ -1343,7 +1343,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 } ${
                                   isDisabled
                                     ? "opacity-50 cursor-not-allowed bg-gray-100"
-                                    : ""
+                                    : "cursor-pointer"
                                 }`}
                               >
                                 {time}

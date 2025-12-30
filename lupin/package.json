@@ -1,6 +1,7 @@
 {
   "name": "Health Management Platform",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

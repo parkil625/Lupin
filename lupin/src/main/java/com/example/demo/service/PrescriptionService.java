@@ -165,6 +165,7 @@ public class PrescriptionService {
             prescription = existingPrescription.get();
             prescription.updateDiagnosis(request.getDiagnosis());
             prescription.updateMedications(medicationString);
+            prescription.updateInstructions(request.getAdditionalInstructions());
         } else {
             // 새 처방전 생성
             prescription = Prescription.builder()
@@ -173,6 +174,7 @@ public class PrescriptionService {
                     .appointment(appointment)
                     .diagnosis(request.getDiagnosis())
                     .medications(medicationString)
+                    .instructions(request.getAdditionalInstructions())
                     .date(LocalDate.now())
                     .build();
 

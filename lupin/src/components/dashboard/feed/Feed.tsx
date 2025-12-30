@@ -893,6 +893,33 @@ const FeedItem = React.memo(function FeedItem({
   const isFirstImage = currentImageIndex === 0;
   const isLastImage = currentImageIndex === images.length - 1;
 
+  // [추가] 모바일 터치 스와이프 로직 (useRef를 사용하여 불필요한 리렌더링 방지)
+  const touchStartX = useRef<number | null>(null);
+  const minSwipeDistance = 50; // 스와이프 인식 최소 거리 (px)
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    // 터치 시작 지점 저장
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX.current) return;
+    // 터치 종료 지점 가져오기
+    const touchEndX = e.changedTouches[0].clientX;
+    const distance = touchStartX.current - touchEndX;
+
+    // 왼쪽으로 스와이프 (거리 50px 이상) -> 다음 이미지
+    if (distance > minSwipeDistance && !isLastImage) {
+      onNextImage();
+    }
+    // 오른쪽으로 스와이프 (거리 -50px 이하) -> 이전 이미지
+    if (distance < -minSwipeDistance && !isFirstImage) {
+      onPrevImage();
+    }
+    // 초기화
+    touchStartX.current = null;
+  };
+
   // 이미지 밝기에 따른 아이콘 색상 결정 (CDN URL 사용)
   const currentImageUrl = hasImages
     ? getCdnUrl(images[currentImageIndex])
@@ -909,12 +936,19 @@ const FeedItem = React.memo(function FeedItem({
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full w-full md:w-auto md:aspect-[9/16] md:max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
         {/* 이미지 영역 - 57% */}
-        <div className="relative h-[57%]">
+        {/* [수정] touch-pan-y: 가로 스와이프는 JS로 처리하고, 세로 스크롤은 브라우저 기본 동작 허용 */}
+        <div
+          className="relative h-[57%] touch-pan-y"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
           {hasImages ? (
             <img
               src={getCdnUrl(images[currentImageIndex] || images[0])}
               alt={feed.activity}
-              className="w-full h-full object-cover"
+              // [수정] select-none 및 draggable={false} 추가하여 스와이프 경험 개선
+              className="w-full h-full object-cover select-none"
+              draggable={false}
               loading={isPriority ? "eager" : "lazy"}
               fetchPriority={isPriority ? "high" : "auto"}
             />
@@ -931,7 +965,8 @@ const FeedItem = React.memo(function FeedItem({
             <>
               {!isFirstImage && (
                 <button
-                  className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
+                  // [수정] hidden md:block 추가 -> 모바일 숨김, 데스크톱 표시
+                  className="hidden md:block absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform z-10"
                   onClick={onPrevImage}
                   aria-label="이전 이미지"
                 >
@@ -940,7 +975,8 @@ const FeedItem = React.memo(function FeedItem({
               )}
               {!isLastImage && (
                 <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
+                  // [수정] hidden md:block 추가 -> 모바일 숨김, 데스크톱 표시
+                  className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform z-10"
                   onClick={onNextImage}
                   aria-label="다음 이미지"
                 >

@@ -16,7 +16,8 @@ import java.time.LocalDateTime;
     @Index(name = "idx_bid_user", columnList = "user_id"),
     @Index(name = "idx_bid_status", columnList = "status"),
     @Index(name = "idx_bid_time", columnList = "bid_time"),
-    @Index(name = "idx_bid_auction_user", columnList = "auction_id, user_id")
+    @Index(name = "idx_bid_auction_user", columnList = "auction_id, user_id"),
+    @Index(name = "idx_bid_ranking", columnList = "auction_id, status, bid_amount DESC, bid_time DESC")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

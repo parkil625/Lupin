@@ -72,7 +72,7 @@ public class PrescriptionService {
 
     @Transactional
     public Prescription issuePrescription(Long appointmentId, Long doctorId, Long patientId, String diagnosis) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
+        Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
 
         // 담당 의사 검증
@@ -117,7 +117,7 @@ public class PrescriptionService {
 
     @Transactional
     public PrescriptionResponse createPrescription(Long doctorId, PrescriptionRequest request) {
-        Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
+        Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(request.getAppointmentId())
                 .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
 
         // 담당 의사 검증

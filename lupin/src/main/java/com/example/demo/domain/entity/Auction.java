@@ -133,10 +133,6 @@ public class Auction {
             throw new IllegalStateException("Active 상태에서만 종료할 수 있습니다");
         }
 
-        if (this.winner == null) {
-            throw new IllegalStateException("winner가 없는 경매는 종료할 수 없습니다.");
-        }
-
         for (AuctionBid bid : bids) {
             // 1. 현재 살아있는 1등 표(ACTIVE)라면 ->우승(WINNING)
             if (bid.isActive()) {

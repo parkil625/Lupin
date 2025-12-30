@@ -902,8 +902,9 @@ const FeedItem = React.memo(function FeedItem({
 
   return (
     <div
-      // [복구] 사용자 선호 디자인: h-[calc(100vh-140px)]
-      className={`h-[calc(100vh-140px)] w-fit mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
+      // [수정] 모바일: 100dvh 사용으로 주소창 대응 & 하단 메뉴바/상단바 공간 충분히 확보 (-190px)
+      // [수정] 데스크톱: 비율 유지 및 중앙 정렬 최적화, 최대 너비 제한
+      className={`h-[calc(100dvh-190px)] md:h-[calc(100vh-120px)] w-auto aspect-[9/16] max-w-lg mx-auto flex shadow-[0_2px_12px_rgba(0,0,0,0.12)] rounded-2xl overflow-hidden transition-all duration-300 relative bg-white`}
     >
       {/* 피드 카드 (왼쪽) */}
       <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] flex flex-col flex-shrink-0">
@@ -1156,6 +1157,16 @@ export default function FeedView({
     });
   }, [allFeeds, searchQuery]);
 
+  // [Debug] 필터링된 피드 데이터 변경 감지
+  useEffect(() => {
+    console.log(
+      `[FeedView] filteredFeeds updated. Count: ${filteredFeeds.length}, SearchQuery: "${searchQuery}"`
+    );
+    if (filteredFeeds.length > 0) {
+      console.log(`[FeedView] First feed ID: ${filteredFeeds[0].id}`);
+    }
+  }, [filteredFeeds, searchQuery]);
+
   useEffect(() => {
     if (scrollToFeedId) {
       const element = document.getElementById(`feed-${scrollToFeedId}`);
@@ -1168,16 +1179,30 @@ export default function FeedView({
 
   // [추가] 신고 핸들러 (낙관적 업데이트)
   const handleReport = async (feedId: number, currentStatus: boolean) => {
+    console.log(
+      `[FeedView] handleReport called. FeedId: ${feedId}, CurrentStatus: ${currentStatus}, Action: ${
+        !currentStatus ? "Report" : "Cancel Report"
+      }`
+    );
+
     // 1. UI 즉시 업데이트 (Toggle)
     toggleReport(feedId, !currentStatus);
 
     try {
       // 2. API 호출
+      console.log(`[FeedView] Calling reportApi.reportFeed(${feedId})...`);
       await reportApi.reportFeed(feedId);
+      console.log(`[FeedView] Report API success for FeedId: ${feedId}`);
+
       toast.success(
         !currentStatus ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
       );
-    } catch {
+    } catch (error) {
+      console.error(
+        `[FeedView] Report API failed for FeedId: ${feedId}`,
+        error
+      );
+
       // 3. 실패 시 롤백
       toggleReport(feedId, currentStatus);
       toast.error(
@@ -1209,43 +1234,50 @@ export default function FeedView({
           endReached={loadMoreFeeds}
           // [핵심] 미리 렌더링할 픽셀 범위 (스크롤 끊김 방지)
           overscan={1000}
-          itemContent={(index, feed) => (
-            <div
-              key={feed.id}
-              id={`feed-${feed.id}`}
-              // [수정] snap-start -> snap-center (중앙 정렬로 잘림 방지)
-              // [수정] py-4 -> p-4 (높이 왜곡 방지)
-              className="h-[calc(100vh-60px)] w-full snap-center snap-always flex items-center justify-center"
-            >
-              <FeedItem
-                feed={feed}
-                currentImageIndex={getFeedImageIndex(feed.id)}
-                liked={hasLiked(feed.id)}
-                // [추가] Store 상태 및 핸들러 전달
-                isReported={feed.isReported || false}
-                onReport={() => handleReport(feed.id, feed.isReported || false)}
-                onPrevImage={() =>
-                  setFeedImageIndex(feed.id, (prev: number) =>
-                    Math.max(0, prev - 1)
-                  )
-                }
-                onNextImage={() =>
-                  setFeedImageIndex(feed.id, (prev: number) =>
-                    Math.min(feed.images.length - 1, prev + 1)
-                  )
-                }
-                onLike={() => handleLike(feed.id)}
-                isPriority={index < 2} // 상위 2개는 우선 로딩
-                targetCommentId={
-                  index === 0 && pivotFeedId && feed.id === pivotFeedId
-                    ? targetCommentIdForFeed
-                    : null
-                }
-              />
-            </div>
-          )}
+          itemContent={(index: number, feed: Feed) => {
+            // [Debug] 개별 아이템 렌더링 로그 (너무 빈번하면 주석 처리)
+            // console.log(`[FeedView] Rendering Item - Index: ${index}, FeedID: ${feed.id}`);
+
+            return (
+              <div
+                key={feed.id}
+                id={`feed-${feed.id}`}
+                // [수정] 높이를 100dvh - 70px(검색바)로 설정하여 한 화면에 하나만 표시
+                // [수정] items-center로 내부 카드를 수직 중앙 정렬, 상하 여백(py-2) 추가
+                className="h-[calc(100dvh-70px)] md:h-[calc(100vh-80px)] w-full snap-center snap-always flex items-center justify-center py-2 md:py-4"
+              >
+                <FeedItem
+                  feed={feed}
+                  currentImageIndex={getFeedImageIndex(feed.id)}
+                  liked={hasLiked(feed.id)}
+                  // [추가] Store 상태 및 핸들러 전달
+                  isReported={feed.isReported || false}
+                  onReport={() =>
+                    handleReport(feed.id, feed.isReported || false)
+                  }
+                  onPrevImage={() =>
+                    setFeedImageIndex(feed.id, (prev: number) =>
+                      Math.max(0, prev - 1)
+                    )
+                  }
+                  onNextImage={() =>
+                    setFeedImageIndex(feed.id, (prev: number) =>
+                      Math.min(feed.images.length - 1, prev + 1)
+                    )
+                  }
+                  onLike={() => handleLike(feed.id)}
+                  isPriority={index < 2} // 상위 2개는 우선 로딩
+                  targetCommentId={
+                    index === 0 && pivotFeedId && feed.id === pivotFeedId
+                      ? targetCommentIdForFeed
+                      : null
+                  }
+                />
+              </div>
+            );
+          }}
           // [수정] 스크롤 컨테이너 ref 연결 (헬퍼 함수 사용)
-          scrollerRef={(ref) => {
+          scrollerRef={(ref: HTMLElement | Window | null) => {
             updateFeedRef(feedContainerRef, ref as HTMLElement);
           }}
         />

@@ -377,10 +377,10 @@ export default function DoctorChatPage() {
       const medicinePayload = selectedMedicines.map((med) => ({
         medicineId: med.id,
         medicineName: med.name,
-        dosage: med.description || "표준 용량",
-        frequency: instructions || "의사 지시에 따름",
-        durationDays: 0,
-        instructions: med.precautions || "",
+        dosage: "3정",
+        frequency: "1일 3회",
+        durationDays: 3,
+        instructions: instructions || "",
       }));
 
       const requestData = {
@@ -811,9 +811,6 @@ export default function DoctorChatPage() {
                         <div className="font-medium text-gray-900">
                           {medicine.name}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {medicine.code}
-                        </div>
                         {medicine.description && (
                           <div className="text-xs text-gray-500 mt-1">
                             {medicine.description}
@@ -845,9 +842,6 @@ export default function DoctorChatPage() {
                       <div className="flex-1">
                         <div className="text-sm font-medium text-gray-700">
                           {medicine.name}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          {medicine.code}
                         </div>
                         {medicine.description && (
                           <div className="text-xs text-gray-500 mt-1">

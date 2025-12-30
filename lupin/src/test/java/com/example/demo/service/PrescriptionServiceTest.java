@@ -205,7 +205,7 @@ class PrescriptionServiceTest {
                 .diagnosis(diagnosis)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
         given(userRepository.findById(doctorId))
                 .willReturn(Optional.of(doctor));
@@ -249,7 +249,7 @@ class PrescriptionServiceTest {
                 .diagnosis(diagnosis)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
         given(userRepository.findById(doctorId))
                 .willReturn(Optional.of(doctor));
@@ -291,7 +291,7 @@ class PrescriptionServiceTest {
                 .diagnosis(diagnosis)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
         given(userRepository.findById(doctorId))
                 .willReturn(Optional.of(doctor));
@@ -332,7 +332,7 @@ class PrescriptionServiceTest {
                 .diagnosis("기존 진단")
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(completedAppointment));
         given(prescriptionRepository.findByAppointmentId(appointmentId))
                 .willReturn(Optional.of(existingPrescription));
@@ -360,7 +360,7 @@ class PrescriptionServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // when & then
@@ -387,7 +387,7 @@ class PrescriptionServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // when & then
@@ -413,7 +413,7 @@ class PrescriptionServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // when & then
@@ -439,7 +439,7 @@ class PrescriptionServiceTest {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        given(appointmentRepository.findById(appointmentId))
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
                 .willReturn(Optional.of(appointment));
 
         // when & then

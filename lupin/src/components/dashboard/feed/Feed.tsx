@@ -1177,7 +1177,7 @@ export default function FeedView({
       toast.success(
         !currentStatus ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
       );
-    } catch (error) {
+    } catch {
       // 3. 실패 시 롤백
       toggleReport(feedId, currentStatus);
       toast.error(

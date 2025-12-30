@@ -39,7 +39,11 @@ function extractTextFromBlockNote(content: string): string {
     const extractFromContent = (contentArray: unknown[]): string => {
       return contentArray
         .map((item: unknown) => {
-          const typedItem = item as { type?: string; text?: string; content?: unknown[] };
+          const typedItem = item as {
+            type?: string;
+            text?: string;
+            content?: unknown[];
+          };
           if (typedItem.type === "text") {
             return typedItem.text || "";
           }
@@ -114,7 +118,10 @@ function formatContent(text: string): React.ReactNode[] {
  * - 줄바꿈 유지
  * - BlockNote JSON도 텍스트로 변환해서 표시
  */
-export function FeedContentDisplay({ content, className = "" }: FeedContentDisplayProps) {
+export function FeedContentDisplay({
+  content,
+  className = "",
+}: FeedContentDisplayProps) {
   const displayContent = useMemo(() => {
     const text = extractTextFromBlockNote(content);
     return formatContent(text);
@@ -123,7 +130,9 @@ export function FeedContentDisplay({ content, className = "" }: FeedContentDispl
   if (!content) return null;
 
   return (
-    <p className={`text-gray-900 text-sm leading-relaxed whitespace-pre-wrap ${className}`}>
+    <p
+      className={`text-gray-900 text-sm leading-relaxed whitespace-pre-wrap ${className}`}
+    >
       {displayContent}
     </p>
   );
@@ -161,6 +170,7 @@ export function FeedContentInput({
 /**
  * 기존 BlockNote content를 plain text로 변환 (마이그레이션용)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function convertBlockNoteToPlainText(content: string): string {
   return extractTextFromBlockNote(content);
 }

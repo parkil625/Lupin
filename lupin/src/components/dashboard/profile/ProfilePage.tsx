@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback, memo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Card } from "@/components/ui/card";
@@ -262,7 +262,7 @@ const BasicInfoForm = memo(
       register,
       handleSubmit,
       setValue,
-      watch,
+      control,
       reset,
       formState: { errors },
     } = useForm<ProfileFormData>({
@@ -274,7 +274,7 @@ const BasicInfoForm = memo(
         gender: localStorage.getItem("userGender") || "",
       },
     });
-    const gender = watch("gender");
+    const gender = useWatch({ control, name: "gender" });
 
     useEffect(() => {
       const fetchMyInfo = async () => {

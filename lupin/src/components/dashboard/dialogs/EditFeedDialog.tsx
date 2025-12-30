@@ -128,7 +128,6 @@ export default function EditFeedDialog({
 
       if (hasActualChanges) {
         // 변경사항이 있으면 확인 다이얼로그 표시
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- 외부 닫기 감지
         setShowCloseConfirm(true);
       } else {
         // 변경사항 없으면 상태 초기화
@@ -146,7 +145,6 @@ export default function EditFeedDialog({
       const initialOtherImages = feed.images.slice(2) || [];
       const initialWorkoutType = feed.activity || "running";
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- feed 데이터로 폼 초기화 필요
       setStartImage(initialStartImage);
       setEndImage(initialEndImage);
       setOtherImages(initialOtherImages);
@@ -184,7 +182,6 @@ export default function EditFeedDialog({
   // EXIF 시간 검증 (이미지가 변경된 경우에만)
   useEffect(() => {
     if (!imagesChanged) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 검증 상태 초기화
       setVerificationStatus("none");
       return;
     }
@@ -228,7 +225,7 @@ export default function EditFeedDialog({
     } else {
       setVerificationStatus("invalid");
     }
-  }, [startExifTime, endExifTime, imagesChanged]);
+  }, [startExifTime, endExifTime, imagesChanged, feed]);
 
   // [수정] 이미지 업로드 핸들러 (로딩 상태 제어 추가)
   const uploadImage = async (

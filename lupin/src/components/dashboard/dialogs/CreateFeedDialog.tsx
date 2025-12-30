@@ -7,7 +7,7 @@
  * - 운동 시작/끝 사진 업로드
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -104,19 +104,19 @@ export default function CreateFeedDialog({
   const [content, setContent] = useState("");
 
   // 콘텐츠가 있는지 확인하는 함수
-  const checkHasEditorContent = () => {
+  const checkHasEditorContent = useCallback(() => {
     return content.trim().length > 0;
-  };
+  }, [content]);
 
   // 실제 저장할 가치가 있는 변경사항이 있는지 확인 (이미지 또는 글)
-  const checkHasMeaningfulChanges = () => {
+  const checkHasMeaningfulChanges = useCallback(() => {
     return (
       startImage !== null ||
       endImage !== null ||
       otherImages.length > 0 ||
       checkHasEditorContent()
     );
-  };
+  }, [startImage, endImage, otherImages, checkHasEditorContent]);
 
   // 외부에서 open이 false로 변경되면 확인 다이얼로그 표시
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function CreateFeedDialog({
     if (open) {
       isSavingRef.current = false;
     }
-  }, [open, startImage, endImage, otherImages]);
+  }, [open, checkHasMeaningfulChanges]);
 
   // 다이얼로그 열릴 때 localStorage에서 불러오기
   useEffect(() => {

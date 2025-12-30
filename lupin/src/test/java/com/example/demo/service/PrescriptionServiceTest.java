@@ -308,7 +308,7 @@ class PrescriptionServiceTest {
     }
 
     @Test
-    @DisplayName("완료된 예약에 중복 처방전 발행 불가")
+    @DisplayName("issuePrescription: 완료된 예약에 중복 처방전 발행 불가")
     void shouldNotAllowDuplicatePrescriptionForCompletedAppointment() {
         // given
         Long appointmentId = 1L;
@@ -447,5 +447,62 @@ class PrescriptionServiceTest {
                 prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("진단명은 필수입니다.");
+    }
+
+    @Test
+    @DisplayName("예약 ID로 처방전 Response 조회")
+    void getPrescriptionByAppointmentId() {
+        // given
+        Long appointmentId = 1L;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        Prescription prescriptionWithAppointment = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .date(LocalDate.of(2025, 12, 1))
+                .diagnosis("감기")
+                .medications("타이레놀 500mg")
+                .build();
+
+        given(prescriptionRepository.findByAppointmentId(appointmentId))
+                .willReturn(Optional.of(prescriptionWithAppointment));
+
+        // when
+        var result = prescriptionService.getPrescriptionByAppointmentId(appointmentId);
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().getDiagnosis()).isEqualTo("감기");
+    }
+
+    @Test
+    @DisplayName("처방전 약품 정보 업데이트")
+    void updateMedications() {
+        // given
+        Prescription prescription = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .date(LocalDate.now())
+                .diagnosis("감기")
+                .medications("타이레놀 500mg")
+                .build();
+
+        String newMedications = "아스피린 100mg";
+
+        // when
+        prescription.updateMedications(newMedications);
+
+        // then
+        assertThat(prescription.getMedications()).isEqualTo(newMedications);
     }
 }

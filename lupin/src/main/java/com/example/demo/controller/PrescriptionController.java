@@ -34,11 +34,22 @@ public class PrescriptionController {
             @CurrentUser User currentUser,
             @Valid @RequestBody PrescriptionRequest request
     ) {
-        PrescriptionResponse response = prescriptionService.createPrescription(
-                currentUser.getId(),
-                request
-        );
-        return ResponseEntity.ok(response);
+        System.out.println("=== 처방전 발급 요청 시작 ===");
+        System.out.println("의사 ID: " + currentUser.getId());
+        System.out.println("요청 데이터: " + request);
+
+        try {
+            PrescriptionResponse response = prescriptionService.createPrescription(
+                    currentUser.getId(),
+                    request
+            );
+            System.out.println("처방전 발급 성공: " + response.getId());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("처방전 발급 실패: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Operation(summary = "환자 처방전 목록 조회", description = "환자의 모든 처방전을 조회합니다.")

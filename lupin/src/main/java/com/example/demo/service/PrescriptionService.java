@@ -123,9 +123,10 @@ public class PrescriptionService {
 
     @Transactional
     public PrescriptionResponse createPrescription(Long doctorId, PrescriptionRequest request) {
+        // [디버깅 로그 강화]
         System.out.println("========================================");
-        System.out.println("[처방전 발급] 시작 - Service 진입");
-        System.out.println("요청 데이터: 의사ID=" + doctorId + ", 예약ID=" + request.getAppointmentId() + ", 환자ID=" + request.getPatientId());
+        System.out.println("[처방전 발급] 프로세스 시작 - JPA Cascade 방식");
+        System.out.println("요청 데이터: 의사ID=" + doctorId + ", 예약ID=" + request.getAppointmentId());
 
         try {
             // 1. 예약 조회
@@ -134,15 +135,15 @@ public class PrescriptionService {
 
             // 2. 중복 발급 체크
             if (prescriptionRepository.findByAppointmentId(request.getAppointmentId()).isPresent()) {
-                throw new IllegalStateException("이미 처방전이 발급된 예약입니다. AppointmentID: " + request.getAppointmentId());
+                throw new IllegalStateException("이미 처방전이 발급된 예약입니다.");
             }
 
-            // 3. 권한 및 일치 여부 검증 (추가된 로직)
+            // 3. 권한 및 일치 여부 검증
             if (!appointment.getDoctor().getId().equals(doctorId)) {
-                throw new IllegalArgumentException("해당 예약의 담당 의사가 아닙니다. (예약 의사 ID: " + appointment.getDoctor().getId() + ")");
+                throw new IllegalArgumentException("해당 예약의 담당 의사가 아닙니다.");
             }
             if (!appointment.getPatient().getId().equals(request.getPatientId())) {
-                throw new IllegalArgumentException("예약의 환자 정보와 요청된 환자 정보가 일치하지 않습니다. (예약 환자 ID: " + appointment.getPatient().getId() + ")");
+                throw new IllegalArgumentException("예약의 환자 정보와 요청된 환자 정보가 일치하지 않습니다.");
             }
 
             // 4. 사용자(의사/환자) 조회
@@ -151,7 +152,7 @@ public class PrescriptionService {
             User patient = userRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다. ID: " + request.getPatientId()));
 
-            // 5. 처방전 객체 생성 및 1차 저장 (ID 생성)
+            // 5. 처방전(부모) 객체 생성 (아직 저장 전)
             Prescription prescription = Prescription.builder()
                     .doctor(doctor)
                     .patient(patient)
@@ -159,56 +160,45 @@ public class PrescriptionService {
                     .diagnosis(request.getDiagnosis())
                     .instructions(request.getAdditionalInstructions())
                     .date(LocalDate.now())
-                    .medicines(new ArrayList<>())
+                    .medicines(new ArrayList<>()) // 리스트 초기화
                     .build();
 
-            // [핵심] 부모 엔티티를 먼저 저장하여 ID를 확보합니다. (Transient -> Persistent)
-            Prescription savedPrescription = prescriptionRepository.save(prescription);
-            System.out.println("✓ 처방전 기본 정보 저장 완료 (ID: " + savedPrescription.getId() + ")");
-
-            // 6. 약품 추가
+            // 6. 약품(자식) 객체 생성 및 관계 설정
             if (request.getMedicines() == null || request.getMedicines().isEmpty()) {
                 throw new IllegalArgumentException("처방할 약품이 없습니다.");
             }
 
             for (PrescriptionRequest.MedicineItem item : request.getMedicines()) {
                 Medicine medicine;
+                // 약품 조회
                 if (item.getMedicineId() != null) {
                     medicine = medicineRepository.findById(item.getMedicineId())
-                            .orElseThrow(() -> new IllegalArgumentException("약품 ID를 찾을 수 없습니다: " + item.getMedicineId()));
+                            .orElseThrow(() -> new IllegalArgumentException("약품 ID 오류: " + item.getMedicineId()));
                 } else {
                     medicine = medicineRepository.findByName(item.getMedicineName())
-                            .orElseThrow(() -> new IllegalArgumentException("약품명으로 찾을 수 없습니다: " + item.getMedicineName()));
+                            .orElseThrow(() -> new IllegalArgumentException("약품명 오류: " + item.getMedicineName()));
                 }
 
-                // 저장된 부모 엔티티(savedPrescription)를 주입
+                // 처방 약품 객체 생성
                 PrescriptionMedicine pm = PrescriptionMedicine.builder()
                         .medicine(medicine)
                         .instructions(item.getInstructions())
-                        .prescription(savedPrescription) // ID가 존재하는 영속 객체 참조
+                        .prescription(prescription) // 부모 참조 설정
                         .build();
-                
-                // [핵심] EntityManager로 자식 엔티티를 직접 저장 (Cascade 설정 문제 회피)
-                entityManager.persist(pm);
-                
-                // 메모리 객체 동기화 (응답값용)
-                savedPrescription.addMedicine(pm);
-                System.out.println("   - 약품 저장 완료: " + medicine.getName());
+
+                // [핵심] 부모 엔티티의 리스트에 추가 (Cascade 설정에 의해 함께 저장됨)
+                prescription.addMedicine(pm);
+                System.out.println("   - 약품 추가 대기: " + medicine.getName());
             }
 
             // 7. 예약 상태 완료로 변경
             appointment.complete();
-            
-            // 8. 최종 반영 (Flush)
-            entityManager.flush();
-            entityManager.clear(); // 영속성 컨텍스트 초기화 (데이터 무결성 보장)
 
-            // 저장된 데이터를 다시 조회하여 완전한 상태로 반환
-            Prescription savedPrescriptionResult = prescriptionRepository.findById(savedPrescription.getId())
-                    .orElseThrow(() -> new IllegalStateException("처방전 저장 후 조회 실패"));
-            
-            // 변수명 일치를 위해 대입
-            savedPrescription = savedPrescriptionResult;
+            // 8. 통합 저장 (부모만 저장하면 자식들도 자동 저장됨)
+            // EntityManager 관련 코드(persist, flush, clear) 제거하여 트랜잭션 안전성 확보
+            Prescription savedPrescription = prescriptionRepository.save(prescription);
+
+            System.out.println("✓ 처방전 및 약품 저장 완료 (ID: " + savedPrescription.getId() + ")");
             System.out.println("========================================");
 
             return PrescriptionResponse.from(savedPrescription);
@@ -217,7 +207,7 @@ public class PrescriptionService {
             System.err.println("!!! [처방전 발급 중 에러 발생] !!!");
             System.err.println("에러 타입: " + e.getClass().getName());
             System.err.println("에러 메시지: " + e.getMessage());
-            e.printStackTrace(); // 서버 로그에 상세 스택트레이스 출력
+            e.printStackTrace();
             throw e;
         }
     }

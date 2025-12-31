@@ -35,8 +35,10 @@ import {
   Siren,
 } from "lucide-react";
 import { Feed, Comment } from "@/types/dashboard.types";
-import { commentApi, reportApi, userApi, getCdnUrl } from "@/api"; // [수정] userApi 추가
+import { commentApi, reportApi, userApi, getCdnUrl } from "@/api";
+import { useFeedStore } from "@/store/useFeedStore"; // [추가] 스토어 가져오기
 import { toast } from "sonner";
+import { AxiosError } from "axios";
 import {
   Tooltip,
   TooltipContent,
@@ -94,7 +96,8 @@ export default function FeedDetailDialogHome({
   onDelete,
   targetCommentId,
 }: FeedDetailDialogHomeProps) {
-  const isMobile = useIsMobile(); // [추가] 모바일 여부 확인
+  const isMobile = useIsMobile();
+  const { deleteFeed, adjustCommentCount } = useFeedStore(); // [추가] 액션 가져오기
 
   // [벤치마킹] 모바일 터치 스와이프 로직 (Feed.tsx와 동일)
   const touchStartX = useRef<number | null>(null);
@@ -302,15 +305,29 @@ export default function FeedDetailDialogHome({
     fetchComments();
   }, [feed, targetCommentId]);
 
-  // 피드 신고 핸들러
+  // 피드 신고 핸들러 (토글 지원 및 삭제 감지)
   const handleReportFeed = async () => {
-    if (!feed || feedReported) return;
+    if (!feed) return;
+
+    // 낙관적 업데이트 (현재 상태 반전)
+    const newStatus = !feedReported;
+    setFeedReported(newStatus);
+
     try {
       await reportApi.reportFeed(feed.id);
-      setFeedReported(true);
-      toast.success("신고가 접수되었습니다.");
-    } catch {
-      toast.error("신고에 실패했습니다.");
+      toast.success(
+        newStatus ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
+      );
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 404) {
+        toast.error("이미 삭제된 피드입니다.");
+        onOpenChange(false); // 다이얼로그 닫기
+        deleteFeed(feed.id); // 전체 목록에서도 제거
+      } else {
+        setFeedReported(!newStatus); // 실패 시 롤백
+        toast.error("신고 처리에 실패했습니다.");
+      }
     }
   };
 
@@ -319,14 +336,32 @@ export default function FeedDetailDialogHome({
     try {
       await reportApi.reportComment(commentId);
       setCommentReported((prev) => {
-        const isReported = !prev[commentId]; // 상태 반전
+        const isReported = !prev[commentId];
         toast.success(
           isReported ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
         );
         return { ...prev, [commentId]: isReported };
       });
-    } catch {
-      toast.error("신고 처리에 실패했습니다.");
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response?.status === 404) {
+        toast.error("이미 삭제된 댓글입니다.");
+        // 로컬 상태에서 제거
+        setComments((prev) =>
+          prev
+            .filter((c) => c.id !== commentId)
+            .map((c) => ({
+              ...c,
+              replies: c.replies?.filter((r) => r.id !== commentId),
+            }))
+        );
+        // 피드 정보(댓글 수) 동기화
+        if (feed) {
+          adjustCommentCount(feed.id, -1);
+        }
+      } else {
+        toast.error("신고 처리에 실패했습니다.");
+      }
     }
   };
 

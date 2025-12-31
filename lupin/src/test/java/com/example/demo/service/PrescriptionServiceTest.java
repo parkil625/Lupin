@@ -125,35 +125,25 @@ class PrescriptionServiceTest {
         given(medicineRepository.findByName("아스피린"))
                 .willReturn(Optional.of(aspirin));
 
-        // 1차 저장 (save) Mocking: ID 생성을 위해 먼저 호출됨
+        // [수정] save 호출 시 ID가 부여된 객체를 반환하도록 설정
+        // 리팩토링된 서비스 코드는 medicines가 채워진 상태로 save를 호출하므로 그대로 반환하면 됨
         given(prescriptionRepository.save(any(Prescription.class)))
                 .willAnswer(invocation -> {
                     Prescription p = invocation.getArgument(0);
+                    // 저장 시점에 이미 약품 리스트가 추가되어 있음
                     return Prescription.builder()
-                            .id(1L)
+                            .id(1L) // ID 부여 시뮬레이션
                             .doctor(p.getDoctor())
                             .patient(p.getPatient())
                             .appointment(p.getAppointment())
                             .diagnosis(p.getDiagnosis())
                             .instructions(p.getInstructions())
                             .date(p.getDate())
-                            .medicines(new ArrayList<>())
+                            .medicines(p.getMedicines()) // 중요: 들어온 약품 리스트 유지
                             .build();
                 });
 
-        // [필수] 서비스 마지막에 저장된 데이터를 다시 조회하는 findById 호출에 대한 Mocking
-        Prescription finalPrescription = Prescription.builder()
-                .id(1L)
-                .doctor(doctor)
-                .patient(patient)
-                .appointment(appointment)
-                .diagnosis("감기")
-                .instructions("하루 3회 복용")
-                .medicines(new ArrayList<>())
-                .build();
-
-        given(prescriptionRepository.findById(1L))
-                .willReturn(Optional.of(finalPrescription));
+        // [삭제됨] findById Stub 제거 (서비스 코드에서 더 이상 호출하지 않음)
 
         // when
         PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
@@ -190,7 +180,7 @@ class PrescriptionServiceTest {
         given(medicineRepository.findByName("타이레놀"))
                 .willReturn(Optional.of(tylenol));
 
-        // 1차 저장 (save) Mocking
+        // [수정] save Mocking: findByIdStub 제거됨
         given(prescriptionRepository.save(any(Prescription.class)))
                 .willAnswer(invocation -> {
                     Prescription p = invocation.getArgument(0);
@@ -202,22 +192,9 @@ class PrescriptionServiceTest {
                             .diagnosis(p.getDiagnosis())
                             .instructions(p.getInstructions())
                             .date(p.getDate())
-                            .medicines(new ArrayList<>())
+                            .medicines(p.getMedicines()) // 리스트 유지
                             .build();
                 });
-
-        // [필수] 서비스 마지막 findById 조회 Mocking
-        Prescription finalPrescription = Prescription.builder()
-                .id(1L)
-                .doctor(doctor)
-                .patient(patient)
-                .appointment(appointment)
-                .diagnosis("통증")
-                .medicines(new ArrayList<>())
-                .build();
-
-        given(prescriptionRepository.findById(1L))
-                .willReturn(Optional.of(finalPrescription));
 
         // when
         PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
@@ -337,26 +314,14 @@ class PrescriptionServiceTest {
         given(medicineRepository.findByName("존재하지않는약"))
                 .willReturn(Optional.empty());
 
-        // [수정됨] 1차 저장 (save) Mocking 추가: 약품 조회 전에 save가 호출되므로 필요함
-        given(prescriptionRepository.save(any(Prescription.class)))
-                .willAnswer(invocation -> {
-                    Prescription p = invocation.getArgument(0);
-                    return Prescription.builder()
-                            .id(1L)
-                            .doctor(p.getDoctor())
-                            .patient(p.getPatient())
-                            .appointment(p.getAppointment())
-                            .diagnosis(p.getDiagnosis())
-                            .instructions(p.getInstructions())
-                            .date(p.getDate())
-                            .medicines(new ArrayList<>())
-                            .build();
-                });
+        // [수정] save Mocking 제거:
+        // 리팩토링된 코드는 약품 조회 루프 -> 에러 발생 -> save 호출 안함.
+        // 따라서 save stub을 남겨두면 UnnecessaryStubbingException 발생함.
 
         // when & then
         assertThatThrownBy(() ->
                 prescriptionService.createPrescription(doctor.getId(), request))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("찾을 수 없습니다"); // [수정됨] 약품/약품명 메시지 유연하게 대응
+                .hasMessageContaining("오류"); // [수정] "약품명 오류: ..." 형태로 메시지가 변경되었으므로 "오류" 또는 "약품명 오류"로 검증
     }
 }

@@ -35,6 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { AxiosError } from "axios";
 import { useImageBrightness } from "@/hooks";
 import { useFeedStore } from "@/store/useFeedStore";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
@@ -510,8 +511,25 @@ function CommentPanel({
         );
         return { ...prev, [commentId]: isReported };
       });
-    } catch {
-      toast.error("신고 처리에 실패했습니다.");
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      // 404: 이미 삭제된 댓글 (신고/취소 모두 해당)
+      if (axiosError.response?.status === 404) {
+        toast.error("이미 삭제된 댓글입니다.");
+        // 로컬 상태에서 즉시 제거
+        setComments((prev) =>
+          prev
+            .filter((c) => c.id !== commentId)
+            .map((c) => ({
+              ...c,
+              replies: c.replies?.filter((r) => r.id !== commentId),
+            }))
+        );
+        // 피드 전체 댓글 수 -1 동기화
+        adjustCommentCount(feedId, -1);
+      } else {
+        toast.error("신고 처리에 실패했습니다.");
+      }
     }
   };
 
@@ -1213,9 +1231,10 @@ export default function FeedView({
     pivotFeedId,
     setTargetCommentIdForFeed,
     toggleReport,
-    loadFeeds, // [추가] 검색어 기반 로딩을 위해 액션 가져오기
-    feedPage, // [추가] 현재 페이지 번호 가져오기
-    hasMoreFeeds, // [추가] 더 불러올 피드가 있는지 확인
+    loadFeeds,
+    feedPage,
+    hasMoreFeeds,
+    deleteFeed, // [추가] 삭제된 피드 처리를 위해 액션 추가
   } = useFeedStore();
 
   useEffect(() => {
@@ -1278,37 +1297,30 @@ export default function FeedView({
     }
   }, [scrollToFeedId, setScrollToFeedId, filteredFeeds]);
 
-  // [추가] 신고 핸들러 (낙관적 업데이트)
+  // [추가] 신고 핸들러 (낙관적 업데이트 및 삭제 감지)
   const handleReport = async (feedId: number, currentStatus: boolean) => {
-    console.log(
-      `[FeedView] handleReport called. FeedId: ${feedId}, CurrentStatus: ${currentStatus}, Action: ${
-        !currentStatus ? "Report" : "Cancel Report"
-      }`
-    );
-
     // 1. UI 즉시 업데이트 (Toggle)
     toggleReport(feedId, !currentStatus);
 
     try {
       // 2. API 호출
-      console.log(`[FeedView] Calling reportApi.reportFeed(${feedId})...`);
       await reportApi.reportFeed(feedId);
-      console.log(`[FeedView] Report API success for FeedId: ${feedId}`);
-
       toast.success(
         !currentStatus ? "신고가 접수되었습니다." : "신고가 취소되었습니다."
       );
     } catch (error) {
-      console.error(
-        `[FeedView] Report API failed for FeedId: ${feedId}`,
-        error
-      );
-
-      // 3. 실패 시 롤백
-      toggleReport(feedId, currentStatus);
-      toast.error(
-        !currentStatus ? "신고에 실패했습니다." : "신고 취소에 실패했습니다."
-      );
+      const axiosError = error as AxiosError;
+      // 404: 이미 삭제된 피드 (신고/취소 모두 해당)
+      if (axiosError.response?.status === 404) {
+        toast.error("이미 삭제된 피드입니다.");
+        deleteFeed(feedId); // 스토어에서 제거 -> 화면에서 즉시 사라짐
+      } else {
+        // 3. 실패 시 롤백
+        toggleReport(feedId, currentStatus);
+        toast.error(
+          !currentStatus ? "신고에 실패했습니다." : "신고 취소에 실패했습니다."
+        );
+      }
     }
   };
 

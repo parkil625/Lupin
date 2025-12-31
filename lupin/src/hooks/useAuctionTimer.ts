@@ -72,6 +72,7 @@ export const useAuctionTimer = (
         const interval = setInterval(tick, 100);
 
         return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         selectedAuction?.auctionId,
         selectedAuction?.regularEndTime,

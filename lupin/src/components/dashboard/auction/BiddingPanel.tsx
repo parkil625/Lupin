@@ -13,6 +13,7 @@ interface BiddingPanelProps {
   onPlaceBid: () => void;
   bidHistory: BidHistory[];
   userPoints: number;
+  isBidding: boolean;
 }
 
 export const BiddingPanel = ({
@@ -21,9 +22,14 @@ export const BiddingPanel = ({
   setBidAmount,
   onPlaceBid,
   bidHistory,
-  userPoints,
+  isBidding,
 }: BiddingPanelProps) => {
     const currentUserId = Number(localStorage.getItem("userId"));
+
+    const addAmount = (amountToAdd: number) => {
+        const current = parseInt(bidAmount.replace(/[^0-9]/g, "")) || 0;
+        setBidAmount((current + amountToAdd).toString());
+    };
 
   if (!selectedAuction || selectedAuction.status !== "ACTIVE") {
     return (
@@ -64,7 +70,7 @@ export const BiddingPanel = ({
         <CardContent className="space-y-4">
           <div>
             <label className="text-sm font-bold text-gray-700 mb-2 block">
-              입찰 금액 (보유: {userPoints.toLocaleString()}P)
+              입찰 금액
             </label>
             <Input
               type="number"
@@ -74,18 +80,34 @@ export const BiddingPanel = ({
               className="font-bold"
               onWheel={(e) => e.currentTarget.blur()}
             />
+              <div className="flex gap-2 mt-2 mb-4">
+                  {[100, 500, 1000].map((amt) => (
+                      <button
+                          key={amt}
+                          onClick={() => addAmount(amt)}
+                          className="px-3 py-1 text-xs font-bold bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+                      >
+                          +{amt.toLocaleString()}
+                      </button>
+                  ))}
+              </div>
             <p className="text-xs text-gray-500 mt-1 font-medium">
               현재가({selectedAuction.currentPrice.toLocaleString()}P)보다 높은 금액을 입찰해주세요
             </p>
           </div>
 
-          <Button
-            onClick={onPlaceBid}
-            className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold hover:shadow-lg"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            입찰하기
-          </Button>
+            <Button
+                onClick={onPlaceBid}
+                disabled={isBidding} // [중요] 로딩 중 클릭 방지 추가!
+                className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold hover:shadow-lg disabled:opacity-70"
+            >
+                {isBidding ? (
+                    <span className="animate-spin mr-2">⏳</span> // 로딩 아이콘
+                ) : (
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                )}
+                {isBidding ? "처리 중..." : "입찰하기"}
+            </Button>
         </CardContent>
       </Card>
 

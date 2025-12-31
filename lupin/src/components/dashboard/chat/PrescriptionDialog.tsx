@@ -37,6 +37,7 @@ export default function PrescriptionDialog({
   console.log("PrescriptionDialog 컴포넌트 렌더링:", { open, appointmentId, patientId, patientName });
 
   const [diagnosis, setDiagnosis] = useState("");
+  const [additionalInstructions, setAdditionalInstructions] = useState("");
   const [medicines, setMedicines] = useState<MedicineItem[]>([
     {
       medicineName: "",
@@ -155,7 +156,11 @@ export default function PrescriptionDialog({
         appointmentId,
         patientId,
         diagnosis,
-        medicines: validMedicines,
+        medicines: validMedicines.map(m => ({
+          medicineId: m.medicineId,
+          medicineName: m.medicineName,
+        })),
+        additionalInstructions: additionalInstructions.trim() || undefined,
       };
 
       console.log("처방전 발급 요청 데이터:", JSON.stringify(requestData, null, 2));
@@ -170,6 +175,7 @@ export default function PrescriptionDialog({
 
       // 초기화
       setDiagnosis("");
+      setAdditionalInstructions("");
       setMedicines([
         {
           medicineName: "",
@@ -235,6 +241,22 @@ export default function PrescriptionDialog({
                 value={diagnosis}
                 onChange={(e) => setDiagnosis(e.target.value)}
               />
+            </div>
+
+            {/* 복용 방법 */}
+            <div>
+              <Label className="text-base font-black mb-2 block">
+                복용 방법 및 주의사항
+              </Label>
+              <Input
+                placeholder="예: 식후 30분, 하루 3회 복용"
+                className="rounded-xl"
+                value={additionalInstructions}
+                onChange={(e) => setAdditionalInstructions(e.target.value)}
+              />
+              <p className="text-xs text-gray-500 mt-1 ml-1">
+                💊 기본 복용: 1정, 1일 3회, 3일간 (추가 지침사항을 입력하세요)
+              </p>
             </div>
 
             {/* 처방 의약품 */}
@@ -311,11 +333,6 @@ export default function PrescriptionDialog({
                           </Button>
                         )}
                       </div>
-                    </div>
-
-                    {/* 복용 정보 안내 */}
-                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                      💊 복용 방법: 1정, 1일 3회, 3일간 (고정값)
                     </div>
                   </div>
                 ))}

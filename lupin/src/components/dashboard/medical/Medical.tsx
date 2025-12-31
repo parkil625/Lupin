@@ -893,15 +893,11 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 "ko-KR"
                               ),
                               doctor: pres.doctorName,
-                              medicines: pres.medicines.map(
-                                (m) => `${m.medicineName} ${m.dosage}`
+                              medicines: pres.medicineDetails.map(
+                                (m) => m.medicineName
                               ),
                               diagnosis: pres.diagnosis,
-                              instructions: pres.medicines
-                                .map(
-                                  (m) => m.instructions || `${m.frequency} 복용`
-                                )
-                                .join(", "),
+                              instructions: pres.instructions || "1정, 1일 3회, 3일간 복용",
                             })
                           }
                         >

@@ -290,7 +290,7 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
 
-        return AppointmentTimeUtils.isChatAvailable(appointment.getStatus());
+        return AppointmentTimeUtils.isChatAvailable(appointment.getDate(), appointment.getStatus());
     }
 
     /**

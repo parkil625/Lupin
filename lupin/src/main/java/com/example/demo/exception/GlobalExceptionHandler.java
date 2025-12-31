@@ -44,4 +44,10 @@ public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgum
     ErrorResponse response = ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, e.getMessage());
     return ResponseEntity.status(ErrorCode.INVALID_INPUT_VALUE.getStatus()).body(response);
 }
+
+@ExceptionHandler(IllegalStateException.class)
+public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException e) {
+    // 중복 요청 등의 경우 400 Bad Request 또는 409 Conflict 반환
+    return ResponseEntity.status(409).body(ErrorResponse.of(ErrorCode.INVALID_INPUT_VALUE, e.getMessage()));
+}
 }

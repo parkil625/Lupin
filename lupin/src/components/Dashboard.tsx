@@ -63,7 +63,6 @@ const NotFoundPage = lazy(() => import("./errors/NotFoundPage"));
 // Stores & APIs
 import {
   Feed,
-  Prescription,
   Notification,
   Member,
   ChatMessage,

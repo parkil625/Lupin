@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Clock, FileText, XCircle, Send } from "lucide-react"; // CalendarIcon 대신 Calendar 사용
-import { Prescription } from "@/types/dashboard.types";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { appointmentApi, AppointmentResponse } from "@/api/appointmentApi";

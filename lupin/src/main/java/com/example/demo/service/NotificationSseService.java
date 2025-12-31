@@ -40,8 +40,8 @@ public class NotificationSseService {
 
     private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
     
-    // [수정] 30초로 변경 (서버 부하 감소 및 타임아웃 방지 적정선)
-    private static final long HEARTBEAT_INTERVAL = 30;
+    // [수정] 3초로 초단축 (연결을 절대 놓지 않겠다는 강력한 설정)
+    private static final long HEARTBEAT_INTERVAL = 3;
 
     // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
     private ThreadPoolTaskScheduler heartbeatScheduler;

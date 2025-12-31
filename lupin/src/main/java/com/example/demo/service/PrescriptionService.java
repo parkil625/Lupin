@@ -119,16 +119,30 @@ public class PrescriptionService {
 
     @Transactional
     public PrescriptionResponse createPrescription(Long doctorId, PrescriptionRequest request) {
+        System.out.println("=== createPrescription 시작 ===");
+        System.out.println("doctorId: " + doctorId);
+        System.out.println("request.getAppointmentId(): " + request.getAppointmentId());
+        System.out.println("request.getPatientId(): " + request.getPatientId());
+
         Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(request.getAppointmentId())
-                .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    System.err.println("예약을 찾을 수 없음: appointmentId=" + request.getAppointmentId());
+                    return new IllegalArgumentException("예약을 찾을 수 없습니다.");
+                });
+
+        System.out.println("예약 찾음: " + appointment.getId());
+        System.out.println("예약의 의사 ID: " + appointment.getDoctor().getId());
+        System.out.println("예약의 환자 ID: " + appointment.getPatient().getId());
 
         // 담당 의사 검증
         if (!appointment.getDoctor().getId().equals(doctorId)) {
+            System.err.println("의사 ID 불일치: expected=" + appointment.getDoctor().getId() + ", actual=" + doctorId);
             throw new IllegalArgumentException("해당 예약의 담당 의사만 처방전을 발행할 수 있습니다.");
         }
 
         // 환자 정보 검증
         if (!appointment.getPatient().getId().equals(request.getPatientId())) {
+            System.err.println("환자 ID 불일치: expected=" + appointment.getPatient().getId() + ", actual=" + request.getPatientId());
             throw new IllegalArgumentException("해당 예약의 환자 정보가 일치하지 않습니다.");
         }
 
@@ -140,19 +154,29 @@ public class PrescriptionService {
 
         String medicationString = request.getMedicines().stream()
                 .map(item -> {
-                    String name = item.getMedicineName();
-                    String dosage = item.getDosage() != null ? item.getDosage() : "";
-                    String frequency = item.getFrequency() != null ? item.getFrequency() : "";
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(item.getMedicineName());
 
-                    if (dosage.isEmpty() && frequency.isEmpty()) {
-                        return name;
-                    } else if (dosage.isEmpty()) {
-                        return String.format("%s (%s)", name, frequency);
-                    } else if (frequency.isEmpty()) {
-                        return String.format("%s (%s)", name, dosage);
-                    } else {
-                        return String.format("%s (%s, %s)", name, dosage, frequency);
+                    // 용량, 복용 횟수, 복용 기간을 괄호 안에 포함
+                    List<String> details = new java.util.ArrayList<>();
+
+                    if (item.getDosage() != null && !item.getDosage().isEmpty()) {
+                        details.add(item.getDosage());
                     }
+
+                    if (item.getFrequency() != null && !item.getFrequency().isEmpty()) {
+                        details.add(item.getFrequency());
+                    }
+
+                    if (item.getDurationDays() != null && item.getDurationDays() > 0) {
+                        details.add(item.getDurationDays() + "일");
+                    }
+
+                    if (!details.isEmpty()) {
+                        sb.append(" (").append(String.join(", ", details)).append(")");
+                    }
+
+                    return sb.toString();
                 })
                 .collect(Collectors.joining("\n"));
 
@@ -165,6 +189,7 @@ public class PrescriptionService {
             prescription = existingPrescription.get();
             prescription.updateDiagnosis(request.getDiagnosis());
             prescription.updateMedications(medicationString);
+            prescription.updateInstructions(request.getAdditionalInstructions());
         } else {
             // 새 처방전 생성
             prescription = Prescription.builder()
@@ -173,6 +198,7 @@ public class PrescriptionService {
                     .appointment(appointment)
                     .diagnosis(request.getDiagnosis())
                     .medications(medicationString)
+                    .instructions(request.getAdditionalInstructions())
                     .date(LocalDate.now())
                     .build();
 

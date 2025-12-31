@@ -22,8 +22,8 @@ public class AppointmentAutoStartScheduler {
     @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void autoStartAppointments() {
-        // 현재 시간 (예약 시간이 지난 예약들을 IN_PROGRESS로 변경)
-        LocalDateTime threshold = LocalDateTime.now();
+        // 5분 후 시간 (예약 시간 5분 전부터 IN_PROGRESS로 변경하여 채팅 입장 가능하게 함)
+        LocalDateTime threshold = LocalDateTime.now().plusMinutes(5);
 
         int updatedCount = appointmentRepository.bulkUpdateStatusToInProgress(threshold);
 

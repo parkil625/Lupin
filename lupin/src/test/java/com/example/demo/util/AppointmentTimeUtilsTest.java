@@ -56,14 +56,15 @@ class AppointmentTimeUtilsTest {
     @DisplayName("SCHEDULED 상태이고 6분 전일 때 채팅 불가능해야 함")
     void shouldNotAllowChatWhenScheduledAnd6MinutesBefore() {
         // given
-        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(6);
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(6).plusSeconds(10);
         AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
         // when
-        boolean result = AppointmentTimeUtils.isChatAvailable(appointmentTime, status);
+        String message = AppointmentTimeUtils.getChatLockMessage(appointmentTime, status);
 
         // then
-        assertThat(result).isFalse();
+        assertThat(message).contains("6분 남았습니다");
+        assertThat(message).contains("진료 5분 전부터 채팅이 가능합니다");
     }
 
     @Test

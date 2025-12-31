@@ -199,16 +199,9 @@ public class PrescriptionService {
             System.out.println("약품 문자열 생성 시작...");
             String medicationString;
             try {
+                // 약품명만 저장 (용량, 복용 횟수, 복용 기간은 프론트엔드에서 고정값으로 표시)
                 medicationString = request.getMedicines().stream()
-                        .map(item -> {
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(item.getMedicineName());
-
-                            // 고정값: 용량 1정, 복용 횟수 1일 3회, 복용 기간 3일
-                            sb.append(" (1정, 1일 3회, 3일)");
-
-                            return sb.toString();
-                        })
+                        .map(item -> item.getMedicineName())
                         .collect(Collectors.joining("\n"));
                 System.out.println("약품 문자열 생성 완료: " + medicationString);
             } catch (Exception e) {

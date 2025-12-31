@@ -27,15 +27,6 @@ public class PrescriptionMedicine {
     @JoinColumn(name = "medicine_id", nullable = false)
     private Medicine medicine;
 
-    @Column(length = 100)
-    private String dosage;
-
-    @Column(length = 100)
-    private String frequency;
-
-    @Column(name = "duration_days")
-    private Integer durationDays;
-
     @Column(columnDefinition = "TEXT")
     private String instructions;
 

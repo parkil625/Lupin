@@ -1,14 +1,14 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AuctionData } from "@/types/auction.types";
-import { Gavel, Clock, Trophy, Calendar, Users, Award, Coins } from "lucide-react"; // 아이콘 추가
+import { Gavel, Clock, Trophy, Calendar, Users, Award, Coins } from "lucide-react";
+import { AuctionTimer } from "@/components/dashboard/auction/AuctionTimer"
 
 interface AuctionCardProps {
     auction: AuctionData;
     isSelected?: boolean; // 선택 안 되는 경우도 있으므로 optional로 변경 권장
     onSelect?: (item: AuctionData) => void;
-    countdown?: number;
-    isOvertime?: boolean;
+    onTimeEnd?: () => void;
     winnerName?: string;
     winningBid?: number;
     status?: 'ACTIVE' | 'SCHEDULED' | 'ENDED';
@@ -18,8 +18,7 @@ export const AuctionCard = ({
                                 auction,
                                 isSelected = false,
                                 onSelect,
-                                countdown = 0,
-                                isOvertime = false,
+                                onTimeEnd,
                                 winnerName,
                                 winningBid,
                                 status,
@@ -40,16 +39,6 @@ export const AuctionCard = ({
         const hours = String(date.getHours()).padStart(2, "0");
         const minutes = String(date.getMinutes()).padStart(2, "0");
         return `${year}.${month}.${day} ${hours}:${minutes}`;
-    };
-
-    // 카운트다운 포맷 함수
-    const formatCountdown = (seconds: number) => {
-        if (seconds >= 60) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${String(secs).padStart(2, "0")}`;
-        }
-        return `${seconds}초`;
     };
 
     // 상태 배지 렌더링
@@ -162,20 +151,9 @@ export const AuctionCard = ({
 
                         {/* 하단 정보 (선택된 경우 타이머 표시) */}
                         <div className="flex items-center gap-4 mt-3">
-                            {/* 진행 중이고 선택되었을 때만 타이머 */}
                             {isSelected && isActive && (
-                                <div
-                                    className={`flex items-center gap-1 text-sm font-bold ${
-                                        isOvertime ? "text-red-600" : "text-gray-600"
-                                    }`}
-                                >
-                                    <Clock className="w-4 h-4" />
-                                    {isOvertime
-                                        ? `초읽기 ${countdown}초`
-                                        : formatCountdown(countdown)}
-                                </div>
+                                <AuctionTimer auction={auction} onTimeEnd={onTimeEnd} />
                             )}
-
                             {/* 진행 중일 때만 입찰 수 표시 */}
                             {isActive && (
                                 <div className="flex items-center gap-1 text-sm font-bold text-gray-600">

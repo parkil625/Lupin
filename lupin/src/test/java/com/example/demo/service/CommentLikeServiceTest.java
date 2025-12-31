@@ -12,7 +12,9 @@ import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.NotificationRepository;
+import com.example.demo.domain.entity.Notification;
 import org.junit.jupiter.api.BeforeEach;
+import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.DisplayName;
@@ -45,6 +47,9 @@ class CommentLikeServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private NotificationSseService notificationSseService;
 
     @InjectMocks
     private CommentLikeService commentLikeService;
@@ -143,15 +148,32 @@ class CommentLikeServiceTest {
                 .comment(comment)
                 .build();
 
+        // 알림 삭제 로직 테스트를 위한 Mock Notification
+        Notification notification = Notification.builder()
+                .user(writer)
+                .type(NotificationType.COMMENT_LIKE)
+                .refId(String.valueOf(commentId))
+                .content("알림 내용")
+                .build();
+        ReflectionTestUtils.setField(notification, "id", 100L);
+
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
         given(commentLikeRepository.findByUserIdAndCommentId(user.getId(), commentId)).willReturn(Optional.of(commentLike));
+
+        // 남은 좋아요 수가 0이어야 알림 삭제 로직이 실행됨
+        given(commentLikeRepository.countByCommentId(commentId)).willReturn(0L);
+        // 알림 조회 Stubbing
+        given(notificationRepository.findByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE))
+                .willReturn(List.of(notification));
 
         // when
         commentLikeService.unlikeComment(user, commentId);
 
-        // then - refId는 commentId 사용
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
+        // then
         verify(commentLikeRepository).delete(commentLike);
+        // SSE 전송 및 DB 삭제 검증
+        verify(notificationSseService).sendNotificationDelete(any(), any());
+        verify(notificationRepository).deleteAll(any());
     }
 
     @Test

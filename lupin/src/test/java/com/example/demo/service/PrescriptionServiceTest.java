@@ -10,6 +10,7 @@ import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.MedicineRepository;
 import com.example.demo.repository.PrescriptionRepository;
 import com.example.demo.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,9 @@ class PrescriptionServiceTest {
 
     @Mock
     private MedicineRepository medicineRepository;
+
+    @Mock
+    private EntityManager entityManager;
 
     @InjectMocks
     private PrescriptionService prescriptionService;
@@ -120,27 +124,36 @@ class PrescriptionServiceTest {
                 .willReturn(Optional.of(tylenol));
         given(medicineRepository.findByName("아스피린"))
                 .willReturn(Optional.of(aspirin));
-        
-        // [수정됨] 1차 저장 (save) Mocking 추가: ID 생성을 위해 먼저 호출됨
+
+        // 1차 저장 (save) Mocking: ID 생성을 위해 먼저 호출됨
         given(prescriptionRepository.save(any(Prescription.class)))
                 .willAnswer(invocation -> {
                     Prescription p = invocation.getArgument(0);
-                    // 1차 저장 시점에는 ID가 부여되고 약품 목록은 비어있음
                     return Prescription.builder()
-                            .id(1L) 
+                            .id(1L)
                             .doctor(p.getDoctor())
                             .patient(p.getPatient())
                             .appointment(p.getAppointment())
                             .diagnosis(p.getDiagnosis())
                             .instructions(p.getInstructions())
                             .date(p.getDate())
-                            .medicines(new ArrayList<>()) 
+                            .medicines(new ArrayList<>())
                             .build();
                 });
 
-        // [수정됨] 최종 저장 (saveAndFlush) Mocking
-        given(prescriptionRepository.saveAndFlush(any(Prescription.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        // [필수] 서비스 마지막에 저장된 데이터를 다시 조회하는 findById 호출에 대한 Mocking
+        Prescription finalPrescription = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .diagnosis("감기")
+                .instructions("하루 3회 복용")
+                .medicines(new ArrayList<>())
+                .build();
+
+        given(prescriptionRepository.findById(1L))
+                .willReturn(Optional.of(finalPrescription));
 
         // when
         PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
@@ -149,7 +162,6 @@ class PrescriptionServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getDiagnosis()).isEqualTo("감기");
         assertThat(result.getInstructions()).isEqualTo("하루 3회 복용");
-        // Medicine details might be empty in response depending on mapper, but execution should succeed
     }
 
     @Test
@@ -177,8 +189,8 @@ class PrescriptionServiceTest {
                 .willReturn(Optional.of(patient));
         given(medicineRepository.findByName("타이레놀"))
                 .willReturn(Optional.of(tylenol));
-        
-        // [수정됨] 1차 저장 (save) Mocking 추가
+
+        // 1차 저장 (save) Mocking
         given(prescriptionRepository.save(any(Prescription.class)))
                 .willAnswer(invocation -> {
                     Prescription p = invocation.getArgument(0);
@@ -194,9 +206,18 @@ class PrescriptionServiceTest {
                             .build();
                 });
 
-        // [수정됨] 최종 저장 (saveAndFlush) Mocking
-        given(prescriptionRepository.saveAndFlush(any(Prescription.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        // [필수] 서비스 마지막 findById 조회 Mocking
+        Prescription finalPrescription = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .diagnosis("통증")
+                .medicines(new ArrayList<>())
+                .build();
+
+        given(prescriptionRepository.findById(1L))
+                .willReturn(Optional.of(finalPrescription));
 
         // when
         PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);

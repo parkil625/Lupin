@@ -98,22 +98,28 @@ class PointLogRepositoryTest extends BaseRepositoryTest {
         // given
         // 1. 100점 유저 (1등)
         User user1 = createAndSaveUser("Winner");
-        user1.addPoints(100L); // User 엔티티의 totalPoints 필드 업데이트
-        entityManager.persist(user1); // 영속성 컨텍스트 반영
+        // [수정] 쿼리가 point_logs 테이블을 집계하므로 PointLog를 저장해야 함
+        pointLogRepository.save(PointLog.builder()
+                .user(user1)
+                .points(100L)
+                .type(PointType.EARN)
+                .build());
 
         // 2. -50점 유저 (2등)
         User user2 = createAndSaveUser("Loser");
-        user2.deductPoints(50L); // 0 - 50 = -50 (User 엔티티가 음수 허용으로 수정되었다고 가정)
-        entityManager.persist(user2);
-
-        entityManager.flush(); // DB에 즉시 반영하여 네이티브 쿼리가 읽을 수 있게 함
+        // [수정] 쿼리 조건에 맞는 DEDUCT 타입으로 음수 로그 저장
+        pointLogRepository.save(PointLog.builder()
+                .user(user2)
+                .points(-50L)
+                .type(PointType.DEDUCT)
+                .build());
 
         // when
-        // -50점인 유저(user2)의 랭킹 컨텍스트 조회
-        // [수정됨] 메서드 시그니처에 맞춰 호출. 만약 컴파일러가 LocalDateTime을 요구한다고 계속 에러를 낸다면, 
-        // PointLogRepository 인터페이스 정의가 갱신되지 않은 것이므로 clean build가 필요할 수 있음.
-        // 우선 현재 코드상으로는 userId 하나만 받는 것이 맞으므로 그대로 유지하되, 주석을 추가함.
-        List<Object[]> result = pointLogRepository.findUserRankingContext(user2.getId());
+        // [수정] 기간 파라미터 추가 (전체 기간 조회를 위해 넉넉하게 설정)
+        LocalDateTime start = LocalDateTime.now().minusDays(1);
+        LocalDateTime end = LocalDateTime.now().plusDays(1);
+        
+        List<Object[]> result = pointLogRepository.findUserRankingContext(user2.getId(), start, end);
 
         // then
         // 결과: id, name, avatar, department, total_points, user_rank
@@ -122,7 +128,7 @@ class PointLogRepositoryTest extends BaseRepositoryTest {
                 .findFirst()
                 .orElseThrow();
 
-        // 검증 1: DB에는 -50으로 저장되어 있어도 조회 결과는 0이어야 함 (GREATEST 함수 동작 확인)
+        // 검증 1: DB에는 -50으로 계산되어도 조회 결과(total_points)는 0이어야 함 (GREATEST 함수 동작)
         assertThat(((Number) myRankRow[4]).longValue()).isEqualTo(0L);
 
         // 검증 2: 점수는 0으로 보이지만, 100점 유저 다음인 2등이어야 함

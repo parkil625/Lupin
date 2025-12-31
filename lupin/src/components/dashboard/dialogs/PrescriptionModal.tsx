@@ -6,24 +6,30 @@
  * - 처방 약물 및 복용법 안내
  * - PDF 다운로드 기능
  */
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, FileText } from "lucide-react";
-import { Prescription } from "@/types/dashboard.types";
+import { PrescriptionResponse } from "@/api/prescriptionApi";
 
 interface PrescriptionModalProps {
-  prescription: Prescription | null;
+  prescription: PrescriptionResponse | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDownload: (prescription: Prescription) => void;
+  onDownload: (prescription: PrescriptionResponse) => void;
 }
 
 export default function PrescriptionModal({
   prescription,
   open,
   onOpenChange,
-  onDownload
+  onDownload,
 }: PrescriptionModalProps) {
   if (!prescription) return null;
 
@@ -42,8 +48,10 @@ export default function PrescriptionModal({
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <div className="text-sm text-gray-600 font-bold">처방명</div>
-              <div className="font-black text-lg">{prescription.name}</div>
+              <div className="text-sm text-gray-600 font-bold">환자명</div>
+              <div className="font-black text-lg">
+                {prescription.patientName}
+              </div>
             </div>
             <div className="space-y-2">
               <div className="text-sm text-gray-600 font-bold">처방일</div>
@@ -51,7 +59,7 @@ export default function PrescriptionModal({
             </div>
             <div className="space-y-2">
               <div className="text-sm text-gray-600 font-bold">담당 의사</div>
-              <div className="font-bold">{prescription.doctor}</div>
+              <div className="font-bold">{prescription.doctorName}</div>
             </div>
             <div className="space-y-2">
               <div className="text-sm text-gray-600 font-bold">진단명</div>
@@ -62,28 +70,28 @@ export default function PrescriptionModal({
           <div className="space-y-2">
             <div className="text-sm text-gray-600 font-bold">처방 약물</div>
             <div className="space-y-3">
-              {prescription.medicineDetails && prescription.medicineDetails.length > 0 ? (
+              {prescription.medicineDetails &&
+              prescription.medicineDetails.length > 0 ? (
                 prescription.medicineDetails.map((medicine, idx) => (
                   <div key={idx} className="p-3 bg-gray-50 rounded-xl">
-                    <div className="font-bold text-gray-900">{medicine.name}</div>
+                    <div className="font-bold text-gray-900">
+                      {medicine.name}
+                    </div>
                     {medicine.precautions && (
                       <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <div className="text-xs font-bold text-yellow-800 mb-1">⚠️ 주의사항</div>
-                        <div className="text-xs text-yellow-700">{medicine.precautions}</div>
+                        <div className="text-xs font-bold text-yellow-800 mb-1">
+                          ⚠️ 주의사항
+                        </div>
+                        <div className="text-xs text-yellow-700">
+                          {medicine.precautions}
+                        </div>
                       </div>
                     )}
                   </div>
                 ))
               ) : (
-                <div className="flex gap-2 flex-wrap">
-                  {prescription.medicines.map((medicine, idx) => (
-                    <Badge
-                      key={idx}
-                      className="bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white px-3 py-1 font-bold"
-                    >
-                      {medicine}
-                    </Badge>
-                  ))}
+                <div className="text-gray-500 text-sm">
+                  처방된 약물이 없습니다.
                 </div>
               )}
             </div>

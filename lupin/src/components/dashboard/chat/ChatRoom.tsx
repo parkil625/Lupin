@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, FileText, CheckCircle2 } from "lucide-react";
 import PrescriptionDialog from "./PrescriptionDialog";
+import PrescriptionModal from "../dialogs/PrescriptionModal"; // [수정] 경로 수정
+import { prescriptionApi, PrescriptionResponse } from "@/api/prescriptionApi"; // [수정] 타입 Import 수정
+import { toast } from "sonner"; // [추가] 알림용
 import apiClient from "@/api/client";
 
 interface ChatRoomProps {
@@ -27,7 +30,13 @@ export default function ChatRoom({
 }: ChatRoomProps) {
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
   const [input, setInput] = useState("");
+
   const [prescriptionDialogOpen, setPrescriptionDialogOpen] = useState(false);
+  // [추가] 처방전 조회 모달 상태 관리
+  const [viewPrescriptionOpen, setViewPrescriptionOpen] = useState(false);
+  const [receivedPrescription, setReceivedPrescription] =
+    useState<PrescriptionResponse | null>(null);
+
   const [isEndingConsultation, setIsEndingConsultation] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -54,9 +63,38 @@ export default function ChatRoom({
   const { isConnected, sendMessage } = useWebSocket({
     roomId,
     userId: currentUser.id,
-    onMessageReceived: (
+    onMessageReceived: async (
       msg: ChatMessageResponse & { type?: string; doctorName?: string }
     ) => {
+      // [추가] 처방전 발급 메시지 감지 및 모달 자동 오픈 (환자용)
+      // DoctorChatPage.tsx에서 보내는 메시지와 텍스트("처방전이 발급되었습니다")가 일치해야 함
+      if (
+        currentUser.role === "PATIENT" &&
+        msg.content &&
+        msg.content.includes("처방전이 발급되었습니다")
+      ) {
+        try {
+          // 해당 예약의 처방전 정보 조회
+          const response = await prescriptionApi.getByAppointmentId(
+            appointmentId
+          );
+          if (response) {
+            setReceivedPrescription(response);
+            setViewPrescriptionOpen(true);
+            toast.success("처방전이 도착했습니다.");
+          }
+
+          // 대시보드 등의 상태 갱신 이벤트
+          window.dispatchEvent(
+            new CustomEvent("prescription-created", {
+              detail: { patientId: currentUser.id },
+            })
+          );
+        } catch (e) {
+          console.error("처방전 로드 실패", e);
+        }
+      }
+
       // 진료 종료 알림 처리
       if (msg.type === "CONSULTATION_END") {
         if (currentUser.role === "PATIENT") {
@@ -259,7 +297,7 @@ export default function ChatRoom({
         </DialogContent>
       </Dialog>
 
-      {/* 처방전 발급 다이얼로그 */}
+      {/* 의사용: 처방전 작성 다이얼로그 */}
       <PrescriptionDialog
         open={prescriptionDialogOpen}
         onOpenChange={setPrescriptionDialogOpen}
@@ -267,14 +305,23 @@ export default function ChatRoom({
         patientId={targetUser.id}
         patientName={targetUser.name}
         onSuccess={() => {
-          // 처방전 발급 성공 시 채팅으로 알림 메시지 전송
-          sendMessage("처방전을 발급했습니다. 확인해주세요.", currentUser.id);
+          // [수정] 메시지 문구 통일 ("발급했습니다" -> "발급되었습니다")
+          sendMessage("처방전이 발급되었습니다. 확인해주세요.", currentUser.id);
 
-          // 처방전 목록 새로고침 이벤트 발생 (환자 Medical 페이지용)
-          window.dispatchEvent(new CustomEvent("prescription-created", {
-            detail: { patientId: targetUser.id }
-          }));
+          window.dispatchEvent(
+            new CustomEvent("prescription-created", {
+              detail: { patientId: targetUser.id },
+            })
+          );
         }}
+      />
+
+      {/* [추가] 환자용: 처방전 조회 모달 렌더링 */}
+      <PrescriptionModal
+        open={viewPrescriptionOpen}
+        onOpenChange={setViewPrescriptionOpen}
+        prescription={receivedPrescription}
+        onDownload={(p: PrescriptionResponse) => console.log("PDF 다운로드", p)}
       />
     </>
   );

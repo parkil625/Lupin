@@ -175,9 +175,12 @@ public class PrescriptionService {
                             .orElseThrow(() -> new IllegalArgumentException("약품명으로 찾을 수 없습니다: " + item.getMedicineName()));
                 }
 
+                // [수정] 자식 엔티티(PrescriptionMedicine)에 부모(Prescription)를 명시적으로 주입
+                // 이것이 누락되면 FK가 null이 되어 500 에러가 발생합니다.
                 PrescriptionMedicine pm = PrescriptionMedicine.builder()
                         .medicine(medicine)
                         .instructions(item.getInstructions())
+                        .prescription(prescription) // ★ 핵심 수정: 부모 엔티티 참조 설정
                         .build();
                 
                 prescription.addMedicine(pm);

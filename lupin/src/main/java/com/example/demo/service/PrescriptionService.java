@@ -156,14 +156,13 @@ public class PrescriptionService {
                 .build();
         System.out.println("✓ 처방전 엔티티 생성 완료");
 
-        // 약품 정보를 PrescriptionMedicine 엔티티로 변환 후 추가 (고정값 사용)
+        // 약품 정보를 PrescriptionMedicine 엔티티로 변환 후 추가
         request.getMedicines().forEach(medicineItem -> {
             Medicine medicine = medicineRepository.findByName(medicineItem.getMedicineName())
                     .orElseThrow(() -> new IllegalArgumentException("약품을 찾을 수 없습니다: " + medicineItem.getMedicineName()));
 
             PrescriptionMedicine pm = PrescriptionMedicine.builder()
                     .medicine(medicine)
-                    .instructions(request.getAdditionalInstructions())
                     .build();
 
             prescription.addMedicine(pm);

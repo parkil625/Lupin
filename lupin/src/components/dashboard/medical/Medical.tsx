@@ -894,7 +894,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                               ),
                               doctor: pres.doctorName,
                               medicines: pres.medicineDetails.map(
-                                (m) => m.medicineName
+                                (m) => m.name
                               ),
                               diagnosis: pres.diagnosis,
                               instructions: pres.instructions || "1정, 1일 3회, 3일간 복용",

@@ -27,9 +27,6 @@ public class PrescriptionMedicine {
     @JoinColumn(name = "medicine_id", nullable = false)
     private Medicine medicine;
 
-    @Column(columnDefinition = "TEXT")
-    private String instructions;
-
     // 양방향 관계 설정을 위한 편의 메서드
     public void setPrescription(Prescription prescription) {
         this.prescription = prescription;

@@ -37,7 +37,7 @@ export interface PrescriptionResponse {
   date: string;
   medicineDetails: {
     medicineId: number;
-    medicineName: string;
+    name: string;
     precautions?: string;
   }[];
 }

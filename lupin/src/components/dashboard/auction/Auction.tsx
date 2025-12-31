@@ -287,15 +287,23 @@ try {
           fetchBidHistory();
           fetchUserPoints();
 
-      } catch (error: unknown) {
+      } catch (error) { // : any 제거 (기본적으로 unknown 타입이 됨)
           console.error("입찰 실패:", error);
-          const axiosError = error as { response?: { data?: { message?: string } } };
-          const errorMessage = axiosError.response?.data?.message || "입찰에 실패했습니다.";
 
-          // [수정] 에러도 Toast로 띄우기
+          // 1. 에러를 '우리가 예상하는 모양'으로 잠깐 변신시킵니다 (Type Assertion)
+          // "이 에러는 response 안에 data가 있을 수도 있는 객체야!" 라고 알려주는 겁니다.
+          const axiosError = error as { response?: { data?: string | { message?: string } } };
+
+          // 2. 이제 안전하게 데이터를 꺼낼 수 있습니다.
+          const errorData = axiosError.response?.data;
+
+          // 3. 메시지가 문자열("실패!")인지 객체({message: "실패!"})인지 확인해서 추출
+          const errorMessage = typeof errorData === 'string'
+              ? errorData
+              : errorData?.message || "입찰에 실패했습니다.";
+
           toast.error(errorMessage);
       } finally {
-          // [필수 추가] 성공하든 실패하든 로딩 상태를 반드시 해제해야 합니다.
           setIsBidding(false);
       }
   };

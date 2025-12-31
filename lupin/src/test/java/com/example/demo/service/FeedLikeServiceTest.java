@@ -48,6 +48,9 @@ class FeedLikeServiceTest {
     @Mock
     private LikeCountCacheService likeCountCacheService;
 
+    @Mock
+    private NotificationSseService notificationSseService; // [추가] Mock 주입
+
     @InjectMocks
     private FeedLikeService feedLikeService;
 
@@ -139,14 +142,32 @@ class FeedLikeServiceTest {
                 .build();
 
         given(feedRepository.existsById(feedId)).willReturn(true);
-        // userId만 사용하여 detached entity 문제 방지
         given(feedLikeRepository.findByUserIdAndFeedId(user.getId(), feedId)).willReturn(Optional.of(feedLike));
+        
+        // [수정] 남은 좋아요가 0개여야 알림 삭제 로직이 동작함
+        given(feedLikeRepository.countByFeedId(feedId)).willReturn(0L);
+        
+        // [수정] 알림 조회 Mocking (SSE 전송 대상)
+        com.example.demo.domain.entity.Notification notification = com.example.demo.domain.entity.Notification.builder()
+                .id(100L)
+                .user(writer) // 피드 주인
+                .type(NotificationType.FEED_LIKE)
+                .refId(String.valueOf(feedId))
+                .build();
+        given(notificationRepository.findByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE))
+                .willReturn(java.util.List.of(notification));
 
         // when
         feedLikeService.unlikeFeed(user, feedId);
 
-        // then - refId는 feedId 사용
-        verify(notificationRepository).deleteByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE);
+        // then
+        // 1. 알림 조회 호출 확인
+        verify(notificationRepository).findByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE);
+        // 2. SSE 삭제 이벤트 전송 확인
+        verify(notificationSseService).sendNotificationDelete(writer.getId(), java.util.List.of(100L));
+        // 3. 알림 DB 삭제 확인 (deleteAll)
+        verify(notificationRepository).deleteAll(java.util.List.of(notification));
+        
         verify(feedLikeRepository).delete(feedLike);
     }
 

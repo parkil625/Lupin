@@ -159,6 +159,11 @@ function useDashboardLogic(
         description: n.content,
       });
     }, []),
+    // [추가] 알림 삭제 이벤트 처리
+    onNotificationDeleted: useCallback((ids: number[]) => {
+      console.log("[Dashboard] 알림 삭제 이벤트 수신:", ids);
+      setNotifications((prev) => prev.filter((n) => !ids.includes(n.id)));
+    }, []),
   });
 
   // Deep Linking Navigation Logic

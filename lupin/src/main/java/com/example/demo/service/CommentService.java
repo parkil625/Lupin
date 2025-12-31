@@ -114,17 +114,17 @@ public class CommentService {
         if (comment.getParent() == null) {
             // 원댓글: 피드 주인에게 간 COMMENT 알림 (targetId가 commentId)
             notificationsToDelete.addAll(
-                    notificationRepository.findByTargetIdAndType(String.valueOf(commentId), NotificationType.COMMENT)
+                    notificationRepository.findByTargetIdAndType(commentId, NotificationType.COMMENT)
             );
 
-            // 원댓글 삭제 시, 대댓글들에 대한 알림(REPLY)들도 모두 삭제해야 함
+            // 원댓글 삭제 시, 대댓글들에 대한 알림(REPLY)들도 모두 삭제해야 함 (refId가 부모댓글ID)
             notificationsToDelete.addAll(
                     notificationRepository.findByRefIdAndType(String.valueOf(commentId), NotificationType.REPLY)
             );
         } else {
             // 대댓글: 원댓글 주인에게 간 REPLY 알림 (targetId가 commentId)
             notificationsToDelete.addAll(
-                    notificationRepository.findByTargetIdAndType(String.valueOf(commentId), NotificationType.REPLY)
+                    notificationRepository.findByTargetIdAndType(commentId, NotificationType.REPLY)
             );
         }
 

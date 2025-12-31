@@ -41,8 +41,11 @@ public class NotificationSseService {
 
     private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
     
-    // [수정] 표준 30초로 변경 (패딩 기법을 사용하므로 짧게 잡을 필요 없음)
-    private static final long HEARTBEAT_INTERVAL = 30 * 1000L;
+    // [수정] 연결 유지 및 버퍼 플러시를 위해 10초 주기로 단축 (더 자주 뚫어줌)
+    private static final long HEARTBEAT_INTERVAL = 10 * 1000L;
+
+    // [추가] Nginx/Cloudflare 기본 버퍼(4KB~8KB)를 확실히 뚫기 위한 5KB 더미 데이터
+    private static final String DUMMY_DATA = " ".repeat(5000);
 
     // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
     private ThreadPoolTaskScheduler heartbeatScheduler;
@@ -84,9 +87,7 @@ public class NotificationSseService {
      * - SseEmitter는 Thread-Safe 하지 않으므로 synchronized 처리
      */
     private void sendHeartbeatToAll() {
-        if (emitters.isEmpty()) {
-            return;
-        }
+        if (emitters.isEmpty()) return;
 
         Queue<Long> deadConnections = new ConcurrentLinkedQueue<>();
 
@@ -97,9 +98,11 @@ public class NotificationSseService {
             // SseEmitter Thread-Safety: 동시 send 방지
             synchronized (emitter) {
                 try {
+                    // [수정] 하트비트에도 5KB 패딩을 붙여 연결이 살아있음을 즉시 전송 (버퍼링 방지)
                     emitter.send(SseEmitter.event()
                             .name("heartbeat")
-                            .data("ping"));
+                            .data("ping")
+                            .comment(DUMMY_DATA));
                 } catch (IOException e) {
                     log.debug("Heartbeat 전송 실패, 연결 제거: userId={}", userId);
                     deadConnections.add(userId);
@@ -149,11 +152,12 @@ public class NotificationSseService {
 
         emitters.put(userId, emitter);
 
-        // 연결 확인용 초기 이벤트 전송
+        // [수정] 연결 즉시 버퍼를 뚫어주어야 함 (매우 중요: 브라우저가 연결 성공을 바로 인지하도록)
         try {
             emitter.send(SseEmitter.event()
                     .name("connect")
-                    .data("SSE 연결 성공"));
+                    .data("connected")
+                    .comment(DUMMY_DATA)); // [핵심] 5KB 패딩으로 초기 연결 즉시 전송
         } catch (IOException e) {
             log.error("SSE 초기 이벤트 전송 실패: userId={}", userId, e);
             emitters.remove(userId);
@@ -266,8 +270,8 @@ public class NotificationSseService {
                 emitter.send(SseEmitter.event()
                         .name("notification-delete")
                         .data(notificationIds)
-                        .comment(" ".repeat(1024))); // [핵심] 1KB 공백 패딩 추가
-                        
+                        .comment(DUMMY_DATA)); // [수정] 5KB 패딩 적용 (확실한 전송 보장)
+
                 log.info("SSE 알림 삭제 전송 성공: userId={}, ids={}", userId, notificationIds);
             } catch (IOException e) {
                 log.error("SSE 알림 삭제 전송 실패: userId={}", userId, e);
@@ -304,8 +308,8 @@ public class NotificationSseService {
                         .id(String.valueOf(notification.getId()))
                         .name("notification")
                         .data(notification)
-                        .comment(" ".repeat(1024))); // [핵심] 1KB 공백 패딩 추가 (버퍼링 무시하고 즉시 전송)
-                        
+                        .comment(DUMMY_DATA)); // [수정] 5KB 패딩 적용 (즉시 전송 보장)
+                
                 log.info("SSE 알림 전송 성공: userId={}, type={}, eventId={}",
                         userId, notification.getType(), notification.getId());
             } catch (IOException e) {

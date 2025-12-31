@@ -742,6 +742,7 @@ export default function ProfilePage({
     [
       isEditing,
       isImageRemoved,
+      isSubmitting,
       pendingImage,
       profileImage,
       previewUrl,

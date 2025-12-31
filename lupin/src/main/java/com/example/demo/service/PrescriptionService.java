@@ -126,6 +126,7 @@ public class PrescriptionService {
         System.out.println("[처방전 발급] 시작");
         System.out.println("요청 - 의사ID: " + doctorId + ", 예약ID: " + request.getAppointmentId() + ", 환자ID: " + request.getPatientId());
         System.out.println("진단: " + request.getDiagnosis());
+        System.out.println("복용 지침 (additionalInstructions): " + request.getAdditionalInstructions());
 
         Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(request.getAppointmentId())
                 .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
@@ -158,19 +159,30 @@ public class PrescriptionService {
 
         // 약품 정보를 PrescriptionMedicine 엔티티로 변환 후 추가
         request.getMedicines().forEach(medicineItem -> {
-            Medicine medicine = medicineRepository.findByName(medicineItem.getMedicineName())
-                    .orElseThrow(() -> new IllegalArgumentException("약품을 찾을 수 없습니다: " + medicineItem.getMedicineName()));
+    Medicine medicine;
+    
+    // 1. ID가 있으면 ID로 조회 (가장 정확하고 안전함)
+    if (medicineItem.getMedicineId() != null) {
+        medicine = medicineRepository.findById(medicineItem.getMedicineId())
+                .orElseThrow(() -> new IllegalArgumentException("약품 ID를 찾을 수 없습니다: " + medicineItem.getMedicineId()));
+    } 
+    // 2. ID가 없으면 이름으로 조회 (차선책)
+    else {
+        medicine = medicineRepository.findByName(medicineItem.getMedicineName())
+                .orElseThrow(() -> new IllegalArgumentException("약품을 찾을 수 없습니다: " + medicineItem.getMedicineName()));
+    }
 
-            PrescriptionMedicine pm = PrescriptionMedicine.builder()
-                    .medicine(medicine)
-                    .build();
+    PrescriptionMedicine pm = PrescriptionMedicine.builder()
+            .medicine(medicine)
+            .build();
 
-            prescription.addMedicine(pm);
-        });
+    prescription.addMedicine(pm);
+});
         System.out.println("✓ 약품 정보 추가 완료 - 약품수: " + request.getMedicines().size());
 
         Prescription savedPrescription = prescriptionRepository.save(prescription);
         System.out.println("✓ 처방전 DB 저장 완료 - 처방전 ID: " + savedPrescription.getId());
+        System.out.println("✓ 저장된 복용 지침: " + savedPrescription.getInstructions());
         System.out.println("[처방전 발급] 성공");
         System.out.println("========================================");
 

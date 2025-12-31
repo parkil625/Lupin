@@ -578,17 +578,18 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
   // 초기 예약 목록 및 처방전 로드 + 1분마다 예약 목록 자동 갱신
   useEffect(() => {
-    // 초기 로드
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadAppointments();
-    loadPrescriptions();
+    // 초기 로드를 IIFE로 감싸서 cascading render 방지
+    (async () => {
+      await loadAppointments();
+      await loadPrescriptions();
 
-    // 초기 마운트 완료 표시
-    isInitialMount.current = false;
+      // 초기 마운트 완료 표시
+      isInitialMount.current = false;
+    })();
 
     // 1분마다 예약 목록 갱신 (예약 시간이 되면 진료 중으로 자동 변경)
     const interval = setInterval(() => {
-      loadAppointments(true); // skipViewChange = true로 전달
+      void loadAppointments(true); // skipViewChange = true로 전달
     }, 60000);
 
     return () => clearInterval(interval);

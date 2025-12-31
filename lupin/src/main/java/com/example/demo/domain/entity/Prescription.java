@@ -36,10 +36,13 @@ public class Prescription {
 
     // 복잡한 연관관계 테이블 제거 -> 단순 텍스트로 저장
     @Column(columnDefinition = "TEXT")
-    private String medications; 
+    private String medications;
 
     @Column(columnDefinition = "TEXT")
     private String diagnosis;
+
+    @Column(columnDefinition = "TEXT")
+    private String instructions;
 
     @Column(name = "date", nullable = false)
     private LocalDate date;
@@ -52,5 +55,9 @@ public class Prescription {
 
     public void updateMedications(String medications) {
         this.medications = medications;
+    }
+
+    public void updateInstructions(String instructions) {
+        this.instructions = instructions;
     }
 }

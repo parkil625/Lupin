@@ -129,6 +129,12 @@ public class PrescriptionService {
 
         Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(request.getAppointmentId())
                 .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+
+        Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(request.getAppointmentId());
+        if (existingPrescription.isPresent()) {
+            throw new IllegalStateException("이미 처방전이 발급된 예약입니다."); // 400 또는 409 에러로 처리 가능
+        }
+
         System.out.println("✓ 예약 조회 성공 - ID: " + appointment.getId());
 
         User doctor = userRepository.findById(doctorId)

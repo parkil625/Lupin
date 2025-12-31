@@ -17,6 +17,7 @@ import { useAuctionTimer } from "@/hooks/useAuctionTimer";
 import { AuctionCard } from "./AuctionCard";
 import { BiddingPanel } from "./BiddingPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {toast} from "sonner";
 
 export default function Auction() {
   const [auctions, setAuctions] = useState<AuctionData[]>([]);
@@ -27,6 +28,7 @@ export default function Auction() {
   const [bidHistory, setBidHistory] = useState<BidHistory[]>([]);
   const [userPoints, setUserPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBidding, setIsBidding] = useState(false);
 
 
     // ▼ [SSE 연결 로직]
@@ -122,6 +124,7 @@ export default function Auction() {
         return () => {
             eventSource.close();
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAuction?.auctionId]); // 경매방 바뀔 때마다 재실행
 
 
@@ -248,42 +251,53 @@ try {
    * 입찰 처리 핸들러
    */
   const handlePlaceBid = async () => {
-    if (!selectedAuction) return;
+      if (!selectedAuction) return;
 
-    // 1. 입력값 검증 (숫자 변환 및 콤마 제거)
-    const amount = parseInt(bidAmount.replace(/[^0-9]/g, ""));
+      // 1. 입력값 검증
+      const amount = parseInt(bidAmount.replace(/[^0-9]/g, ""));
 
-    if (isNaN(amount)) {
-      alert("올바른 금액을 입력해주세요.");
-      return;
-    }
-    if (amount <= selectedAuction.currentPrice || amount < 0) {
-      alert("현재가보다 높은 금액을 입찰해주세요.");
-      return;
-    }
-    if (amount > userPoints) {
-      alert("보유 포인트가 부족합니다.");
-      return;
-    }
+      if (isNaN(amount)) {
+          toast.error("올바른 금액을 입력해주세요."); // alert 대신 toast
+          return;
+      }
+      if (amount <= selectedAuction.currentPrice || amount < 0) {
+          toast.error("현재가보다 높은 금액을 입찰해주세요."); // alert 대신 toast
+          return;
+      }
+      if (amount > userPoints) {
+          toast.error("보유 포인트가 부족합니다."); // alert 대신 toast
+          return;
+      }
 
-    try {
-      // 2. 실제 API 호출 연결
-      await placeBid(selectedAuction.auctionId, amount);
+      // [로딩 시작] 버튼 비활성화
+      setIsBidding(true);
 
-      alert("입찰이 완료되었습니다!");
+      try {
+          // 2. 실제 API 호출
+          await placeBid(selectedAuction.auctionId, amount);
 
-      // 3. 데이터 갱신 (경매 정보, 입찰 내역, 포인트)
-      fetchAuctions(); // 현재가 갱신
-      fetchBidHistory(); // 입찰 내역 갱신
-      fetchUserPoints(); // 내 잔액 갱신
+          // 성공 알림
+          toast.success("입찰에 성공했습니다! 🎉", {
+              description: `${amount.toLocaleString()}P 입찰 완료`,
+              duration: 2000,
+          });
 
-    } catch (error: unknown) {
-      console.error("입찰 실패:", error);
-      // 백엔드 에러 메시지가 있다면 보여주기
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      const errorMessage = axiosError.response?.data?.message || "입찰에 실패했습니다.";
-      alert(errorMessage);
-    }
+          // 3. 데이터 갱신
+          fetchAuctions();
+          fetchBidHistory();
+          fetchUserPoints();
+
+      } catch (error: unknown) {
+          console.error("입찰 실패:", error);
+          const axiosError = error as { response?: { data?: { message?: string } } };
+          const errorMessage = axiosError.response?.data?.message || "입찰에 실패했습니다.";
+
+          // [수정] 에러도 Toast로 띄우기
+          toast.error(errorMessage);
+      } finally {
+          // [필수 추가] 성공하든 실패하든 로딩 상태를 반드시 해제해야 합니다.
+          setIsBidding(false);
+      }
   };
 
   return (
@@ -421,6 +435,7 @@ try {
                   onPlaceBid={handlePlaceBid}
                   bidHistory={bidHistory}
                   userPoints={userPoints}
+                  isBidding={isBidding}
                 />
               </div>
             </div>

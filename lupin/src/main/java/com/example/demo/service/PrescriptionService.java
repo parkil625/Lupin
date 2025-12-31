@@ -134,6 +134,13 @@ public class PrescriptionService {
         System.out.println("예약의 의사 ID: " + appointment.getDoctor().getId());
         System.out.println("예약의 환자 ID: " + appointment.getPatient().getId());
 
+        // 예약 상태 검증 - 진료 중이거나 완료된 예약만 처방전 발급/수정 가능
+        if (appointment.getStatus() != AppointmentStatus.IN_PROGRESS &&
+            appointment.getStatus() != AppointmentStatus.COMPLETED) {
+            System.err.println("예약 상태가 진료 중 또는 완료가 아님: status=" + appointment.getStatus());
+            throw new IllegalArgumentException("진료 중이거나 완료된 예약만 처방전을 발급할 수 있습니다.");
+        }
+
         // 담당 의사 검증
         if (!appointment.getDoctor().getId().equals(doctorId)) {
             System.err.println("의사 ID 불일치: expected=" + appointment.getDoctor().getId() + ", actual=" + doctorId);
@@ -201,8 +208,6 @@ public class PrescriptionService {
                     .instructions(request.getAdditionalInstructions())
                     .date(LocalDate.now())
                     .build();
-
-            appointment.complete();
         }
 
         Prescription savedPrescription = prescriptionRepository.save(prescription);

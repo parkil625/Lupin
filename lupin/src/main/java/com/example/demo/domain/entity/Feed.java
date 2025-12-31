@@ -124,6 +124,11 @@ public class Feed {
         }
     }
 
+    // [추가] DB에서 조회한 정확한 실제 개수로 엔티티 상태를 동기화하는 메서드
+    public void syncCommentCount(int realCount) {
+        this.commentCount = realCount;
+    }
+
     public void updateThumbnail(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
     }

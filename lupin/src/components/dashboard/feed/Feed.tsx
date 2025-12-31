@@ -96,7 +96,7 @@ function CommentPanel({
   const [hasCommentPenalty, setHasCommentPenalty] = useState(false);
 
   // [추가] 댓글 수 조정을 위한 Store 액션
-  const { adjustCommentCount } = useFeedStore();
+  const { adjustCommentCount, updateFeed } = useFeedStore();
 
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
   const currentUserId = parseInt(localStorage.getItem("userId") || "1");
@@ -188,6 +188,13 @@ function CommentPanel({
           )
         );
         setComments(commentsWithReplies);
+
+        // [추가] 실제 댓글 수를 세서 피드 정보(버튼 숫자)를 강제로 동기화!
+        const realCount = countAllComments(commentsWithReplies);
+        console.log(
+          `[Sync] Feed ${feedId}: DB says ${commentsWithReplies.length} comments (replies included in calculation)`
+        );
+        updateFeed(feedId, { comments: realCount });
 
         // commentLikes 상태 초기화 (likeCount, isLiked 반영)
         const likesState: { [key: number]: { liked: boolean; count: number } } =

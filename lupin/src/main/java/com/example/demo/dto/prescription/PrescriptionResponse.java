@@ -25,6 +25,7 @@ public class PrescriptionResponse {
     private LocalDate date;
 
     private String medications;
+    private String instructions;
 
     public static PrescriptionResponse from(Prescription prescription) {
         // Null safety: prescription의 연관 엔티티가 null인 경우 기본값 처리
@@ -60,6 +61,7 @@ public class PrescriptionResponse {
                 .diagnosis(prescription.getDiagnosis())
                 .date(prescription.getDate())
                 .medications(prescription.getMedications())
+                .instructions(prescription.getInstructions())
                 .build();
     }
 }

@@ -4,6 +4,8 @@ import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.Prescription;
 import com.example.demo.domain.entity.User;
 import com.example.demo.domain.enums.AppointmentStatus;
+import com.example.demo.dto.prescription.PrescriptionRequest;
+import com.example.demo.dto.prescription.PrescriptionResponse;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.PrescriptionRepository;
 import com.example.demo.repository.UserRepository;
@@ -17,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -193,7 +197,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         Prescription newPrescription = Prescription.builder()
@@ -237,7 +241,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         Prescription savedPrescription = Prescription.builder()
@@ -266,46 +270,6 @@ class PrescriptionServiceTest {
         assertThat(result.getAppointmentId()).isEqualTo(appointmentId);
     }
 
-    @Test
-    @DisplayName("처방전 발행 시 예약 상태 'COMPLETED'로 변경")
-    void shouldChangeAppointmentStatusToCompletedWhenIssuingPrescription() {
-        // given
-        Long appointmentId = 1L;
-        Long doctorId = 1L;
-        String diagnosis = "감기";
-
-        Appointment appointment = Appointment.builder()
-                .id(appointmentId)
-                .patient(patient)
-                .doctor(doctor)
-                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
-                .build();
-
-        Prescription savedPrescription = Prescription.builder()
-                .id(1L)
-                .doctor(doctor)
-                .patient(patient)
-                .appointment(appointment)
-                .date(LocalDate.of(2025, 12, 1))
-                .diagnosis(diagnosis)
-                .build();
-
-        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
-                .willReturn(Optional.of(appointment));
-        given(userRepository.findById(doctorId))
-                .willReturn(Optional.of(doctor));
-        given(userRepository.findById(patient.getId()))
-                .willReturn(Optional.of(patient));
-        given(prescriptionRepository.save(any(Prescription.class)))
-                .willReturn(savedPrescription);
-
-        // when
-        prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis);
-
-        // then
-        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
-    }
 
     @Test
     @DisplayName("issuePrescription: 완료된 예약에 중복 처방전 발행 불가")
@@ -357,7 +321,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)  // doctor(id=1)가 담당 의사
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
@@ -384,7 +348,7 @@ class PrescriptionServiceTest {
                 .patient(patient)  // patient(id=3)가 예약 환자
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
@@ -410,7 +374,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
@@ -436,7 +400,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
@@ -504,5 +468,314 @@ class PrescriptionServiceTest {
 
         // then
         assertThat(prescription.getMedications()).isEqualTo(newMedications);
+    }
+
+    @Test
+    @DisplayName("createPrescription: 정상적인 처방전 생성")
+    void createPrescription_Success() {
+        // given
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        Long patientId = 3L;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        List<PrescriptionRequest.MedicineItem> medicines = Arrays.asList(
+                PrescriptionRequest.MedicineItem.builder()
+                        .medicineId(1L)
+                        .medicineName("타이레놀")
+                        .dosage("1정")
+                        .frequency("1일 3회")
+                        .durationDays(7)
+                        .build()
+        );
+
+        PrescriptionRequest request = PrescriptionRequest.builder()
+                .appointmentId(appointmentId)
+                .patientId(patientId)
+                .diagnosis("감기")
+                .medicines(medicines)
+                .additionalInstructions("식후 복용")
+                .build();
+
+        Prescription savedPrescription = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .diagnosis("감기")
+                .medications("타이레놀 (1정, 1일 3회, 7일)")
+                .instructions("식후 복용")
+                .date(LocalDate.now())
+                .build();
+
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
+                .willReturn(Optional.of(appointment));
+        given(userRepository.findById(doctorId))
+                .willReturn(Optional.of(doctor));
+        given(userRepository.findById(patientId))
+                .willReturn(Optional.of(patient));
+        given(prescriptionRepository.findByAppointmentId(appointmentId))
+                .willReturn(Optional.empty());
+        given(prescriptionRepository.save(any(Prescription.class)))
+                .willReturn(savedPrescription);
+
+        // when
+        PrescriptionResponse result = prescriptionService.createPrescription(doctorId, request);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getDiagnosis()).isEqualTo("감기");
+        assertThat(result.getMedications()).contains("타이레놀");
+        assertThat(result.getInstructions()).isEqualTo("식후 복용");
+    }
+
+    @Test
+    @DisplayName("createPrescription: 약품 정보 포맷팅 - 모든 정보 포함")
+    void createPrescription_MedicationFormatting_AllFields() {
+        // given
+        Long appointmentId = 1L;
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        List<PrescriptionRequest.MedicineItem> medicines = Arrays.asList(
+                PrescriptionRequest.MedicineItem.builder()
+                        .medicineId(1L)
+                        .medicineName("타이레놀")
+                        .dosage("1정")
+                        .frequency("1일 3회")
+                        .durationDays(7)
+                        .build()
+        );
+
+        PrescriptionRequest request = PrescriptionRequest.builder()
+                .appointmentId(appointmentId)
+                .patientId(patient.getId())
+                .diagnosis("감기")
+                .medicines(medicines)
+                .build();
+
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
+                .willReturn(Optional.of(appointment));
+        given(userRepository.findById(doctor.getId()))
+                .willReturn(Optional.of(doctor));
+        given(userRepository.findById(patient.getId()))
+                .willReturn(Optional.of(patient));
+        given(prescriptionRepository.findByAppointmentId(appointmentId))
+                .willReturn(Optional.empty());
+        given(prescriptionRepository.save(any(Prescription.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
+
+        // then
+        assertThat(result.getMedications()).isEqualTo("타이레놀 (1정, 1일 3회, 7일)");
+    }
+
+    @Test
+    @DisplayName("createPrescription: 약품 정보 포맷팅 - 부분 정보만")
+    void createPrescription_MedicationFormatting_PartialFields() {
+        // given
+        Long appointmentId = 1L;
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        List<PrescriptionRequest.MedicineItem> medicines = Arrays.asList(
+                PrescriptionRequest.MedicineItem.builder()
+                        .medicineId(1L)
+                        .medicineName("아스피린")
+                        .frequency("1일 2회")
+                        .build()
+        );
+
+        PrescriptionRequest request = PrescriptionRequest.builder()
+                .appointmentId(appointmentId)
+                .patientId(patient.getId())
+                .diagnosis("통증")
+                .medicines(medicines)
+                .build();
+
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
+                .willReturn(Optional.of(appointment));
+        given(userRepository.findById(doctor.getId()))
+                .willReturn(Optional.of(doctor));
+        given(userRepository.findById(patient.getId()))
+                .willReturn(Optional.of(patient));
+        given(prescriptionRepository.findByAppointmentId(appointmentId))
+                .willReturn(Optional.empty());
+        given(prescriptionRepository.save(any(Prescription.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
+
+        // then
+        assertThat(result.getMedications()).isEqualTo("아스피린 (1일 2회)");
+    }
+
+    @Test
+    @DisplayName("createPrescription: 기존 처방전 업데이트")
+    void createPrescription_UpdateExisting() {
+        // given
+        Long appointmentId = 1L;
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        Prescription existingPrescription = Prescription.builder()
+                .id(1L)
+                .doctor(doctor)
+                .patient(patient)
+                .appointment(appointment)
+                .diagnosis("기존 진단")
+                .medications("기존 약품")
+                .instructions("기존 지침")
+                .date(LocalDate.now())
+                .build();
+
+        List<PrescriptionRequest.MedicineItem> medicines = Arrays.asList(
+                PrescriptionRequest.MedicineItem.builder()
+                        .medicineId(2L)
+                        .medicineName("새로운 약")
+                        .dosage("2정")
+                        .frequency("1일 2회")
+                        .durationDays(5)
+                        .build()
+        );
+
+        PrescriptionRequest request = PrescriptionRequest.builder()
+                .appointmentId(appointmentId)
+                .patientId(patient.getId())
+                .diagnosis("새로운 진단")
+                .medicines(medicines)
+                .additionalInstructions("새로운 지침")
+                .build();
+
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
+                .willReturn(Optional.of(appointment));
+        given(userRepository.findById(doctor.getId()))
+                .willReturn(Optional.of(doctor));
+        given(userRepository.findById(patient.getId()))
+                .willReturn(Optional.of(patient));
+        given(prescriptionRepository.findByAppointmentId(appointmentId))
+                .willReturn(Optional.of(existingPrescription));
+        given(prescriptionRepository.save(any(Prescription.class)))
+                .willReturn(existingPrescription);
+
+        // when
+        PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
+
+        // then
+        assertThat(existingPrescription.getDiagnosis()).isEqualTo("새로운 진단");
+        assertThat(existingPrescription.getMedications()).isEqualTo("새로운 약 (2정, 1일 2회, 5일)");
+        assertThat(existingPrescription.getInstructions()).isEqualTo("새로운 지침");
+    }
+
+    @Test
+    @DisplayName("createPrescription: 담당 의사가 아닌 경우 예외")
+    void createPrescription_UnauthorizedDoctor() {
+        // given
+        Long appointmentId = 1L;
+        Long unauthorizedDoctorId = 2L;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)  // doctor.id = 1
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        PrescriptionRequest request = PrescriptionRequest.builder()
+                .appointmentId(appointmentId)
+                .patientId(patient.getId())
+                .diagnosis("감기")
+                .medicines(Arrays.asList())
+                .build();
+
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
+                .willReturn(Optional.of(appointment));
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.createPrescription(unauthorizedDoctorId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 예약의 담당 의사만 처방전을 발행할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("createPrescription: 환자 정보 불일치 예외")
+    void createPrescription_PatientMismatch() {
+        // given
+        Long appointmentId = 1L;
+        Long wrongPatientId = 999L;
+
+        Appointment appointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)  // patient.id = 3
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        PrescriptionRequest request = PrescriptionRequest.builder()
+                .appointmentId(appointmentId)
+                .patientId(wrongPatientId)
+                .diagnosis("감기")
+                .medicines(Arrays.asList())
+                .build();
+
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
+                .willReturn(Optional.of(appointment));
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.createPrescription(doctor.getId(), request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("해당 예약의 환자 정보가 일치하지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("createPrescription: 예약을 찾을 수 없는 경우")
+    void createPrescription_AppointmentNotFound() {
+        // given
+        Long appointmentId = 999L;
+
+        PrescriptionRequest request = PrescriptionRequest.builder()
+                .appointmentId(appointmentId)
+                .patientId(patient.getId())
+                .diagnosis("감기")
+                .medicines(Arrays.asList())
+                .build();
+
+        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.createPrescription(doctor.getId(), request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("예약을 찾을 수 없습니다.");
     }
 }

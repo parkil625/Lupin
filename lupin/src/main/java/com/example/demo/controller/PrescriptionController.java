@@ -37,6 +37,17 @@ public class PrescriptionController {
         System.out.println("=== 처방전 발급 요청 시작 ===");
         System.out.println("의사 ID: " + currentUser.getId());
         System.out.println("요청 데이터: " + request);
+        System.out.println("약품 목록:");
+        if (request.getMedicines() != null) {
+            for (int i = 0; i < request.getMedicines().size(); i++) {
+                var med = request.getMedicines().get(i);
+                System.out.println("  [" + i + "] " + med.getMedicineName() +
+                    " - dosage: " + med.getDosage() +
+                    ", freq: " + med.getFrequency() +
+                    ", duration: " + med.getDurationDays() +
+                    ", instructions: " + med.getInstructions());
+            }
+        }
 
         try {
             PrescriptionResponse response = prescriptionService.createPrescription(
@@ -46,7 +57,8 @@ public class PrescriptionController {
             System.out.println("처방전 발급 성공: " + response.getId());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.err.println("처방전 발급 실패: " + e.getMessage());
+            System.err.println("처방전 발급 실패: " + e.getClass().getName() + " - " + e.getMessage());
+            System.err.println("스택 트레이스:");
             e.printStackTrace();
             throw e;
         }

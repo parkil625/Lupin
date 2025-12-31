@@ -40,7 +40,7 @@ public class NotificationSseService {
 
     private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
     
-    // [수정] 3초마다 데이터를 보내서 버퍼가 고이는 것을 방지 (반응속도 향상)
+    // [수정] 3초로 초단축 (연결을 절대 놓지 않겠다는 강력한 설정)
     private static final long HEARTBEAT_INTERVAL = 3;
 
     // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)

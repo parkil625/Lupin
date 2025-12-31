@@ -15,9 +15,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PrescriptionMedicineDto {
-    private Long medicineId;      // 약품 ID
+    private Long medicineId;      // 약품 ID.
     private String name;          // 약품명
-    private String instructions;  // 복용 지침
     private String precautions;   // 주의사항
 
     public static PrescriptionMedicineDto from(PrescriptionMedicine pm) {
@@ -25,7 +24,6 @@ public class PrescriptionMedicineDto {
         return PrescriptionMedicineDto.builder()
                 .medicineId(medicine != null ? medicine.getId() : null)
                 .name(medicine != null ? medicine.getName() : "알 수 없음")
-                .instructions(pm.getInstructions())
                 .precautions(medicine != null ? medicine.getPrecautions() : null)
                 .build();
     }

@@ -65,9 +65,36 @@ public class CommentLikeService {
         CommentLike commentLike = commentLikeRepository.findByUserIdAndCommentId(user.getId(), commentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIKE_NOT_FOUND));
 
-        // refId = commentId (댓글 참조)
-        notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
+        // 1. 좋아요 데이터 삭제
         commentLikeRepository.delete(commentLike);
+        log.info(">>> [CommentLike Service] Deleted like for commentId: {}, userId: {}", commentId, user.getId());
+
+        // 2. [핵심] 알림 뭉치기 대응 로직
+        // 삭제 후 남은 좋아요 개수 확인
+        long remainingLikes = commentLikeRepository.countByCommentId(commentId);
+
+        if (remainingLikes == 0) {
+            // 남은 좋아요가 없으면 알림 완전 삭제 (refId = commentId)
+            log.info(">>> [CommentLike Service] No likes remaining. Deleting notification for commentId: {}", commentId);
+            notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
+        } else {
+            // 남은 좋아요가 있다면, 가장 최근에 좋아요 누른 사람을 찾아 알림 갱신 이벤트 발행
+            // -> Listener가 이 이벤트를 받아서 기존 알림을 찾아 "A님 외 N명이..." 형태로 내용을 업데이트함
+            log.info(">>> [CommentLike Service] Likes remaining: {}. Updating notification...", remainingLikes);
+            commentLikeRepository.findTopByCommentIdOrderByCreatedAtDesc(commentId)
+                    .ifPresent(latestLike -> {
+                        User latestLiker = latestLike.getUser();
+
+                        eventPublisher.publishEvent(NotificationEvent.commentLike(
+                                comment.getWriter().getId(),
+                                latestLiker.getId(), // 이제 이 사람이 대표 알림 유발자
+                                latestLiker.getName(),
+                                latestLiker.getAvatar(),
+                                commentId,
+                                comment.getContent()
+                        ));
+                    });
+        }
     }
 
     /**

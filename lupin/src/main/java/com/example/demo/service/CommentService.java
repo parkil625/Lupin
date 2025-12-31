@@ -99,26 +99,37 @@ public class CommentService {
 
         comment.validateOwner(user);
 
-        // [수정] 단순 감소(decrement) 로직 제거 - 마지막에 동기화(sync)로 처리
+        log.info(">>> [Comment Service] Deleting commentId: {}, ownerId: {}", commentId, user.getId());
 
-        // COMMENT_LIKE 알림 삭제 (refId = commentId)
+        // 1. [기존] COMMENT_LIKE 알림 삭제
+        // (이 댓글이 사라지면 여기에 달린 좋아요 알림은 뭉치기 여부와 상관없이 모두 삭제)
         notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
 
-        // 댓글 좋아요 삭제 (외래키 제약조건)
+        // 2. [추가] 댓글/대댓글 작성 시 발송되었던 알림 삭제 (targetId 기준)
+        if (comment.getParent() == null) {
+            // 원댓글인 경우: 피드 주인에게 갔던 COMMENT 알림 삭제
+            notificationRepository.deleteByTargetIdAndType(String.valueOf(commentId), NotificationType.COMMENT);
+        } else {
+            // 답글인 경우: 원댓글 주인에게 갔던 REPLY 알림 삭제
+            notificationRepository.deleteByTargetIdAndType(String.valueOf(commentId), NotificationType.REPLY);
+        }
+
+        // 3. 댓글 좋아요 데이터 삭제
         commentLikeRepository.deleteByComment(comment);
 
-        // 부모 댓글인 경우
+        // 4. 부모 댓글인 경우 하위 데이터 처리
         if (comment.getParent() == null) {
-            // REPLY 알림 삭제 (refId = 부모 댓글 ID = 본인 ID)
+            // 이 댓글에 달린 대댓글들의 알림(REPLY) 삭제 (refId = 부모 댓글 ID)
             notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.REPLY);
-            // 대댓글들의 좋아요 및 알림 삭제
+
+            // 대댓글들의 데이터 및 관련 알림 삭제
             deleteRepliesData(comment);
         }
 
+        // 5. 댓글 삭제
         commentRepository.delete(comment);
 
-        // [핵심] 삭제 후 실제 DB에 남은 댓글 수(deleted_at 없는 것만)를 세어서 피드 정보에 덮어씌움
-        // @SQLRestriction 덕분에 countByFeed는 삭제된 댓글을 자동으로 제외하고 셉니다.
+        // 6. 피드 댓글 수 동기화
         long realCount = commentRepository.countByFeed(comment.getFeed());
         feedRepository.updateCommentCount(comment.getFeed().getId(), (int) realCount);
     }
@@ -132,19 +143,22 @@ public class CommentService {
             return;
         }
 
-        // 대댓글 ID 수집 후 COMMENT_LIKE 알림 삭제 (refId = commentId)
         List<String> replyIds = replies.stream()
                 .map(r -> String.valueOf(r.getId()))
                 .toList();
+
+        // 대댓글에 달린 좋아요 알림 삭제
         notificationRepository.deleteByRefIdInAndType(replyIds, NotificationType.COMMENT_LIKE);
+
+        // [추가] 대댓글 작성 알림(REPLY)들도 명시적으로 삭제 (targetId 기준)
+        for (String replyId : replyIds) {
+            notificationRepository.deleteByTargetIdAndType(replyId, NotificationType.REPLY);
+        }
 
         // [최적화] 대댓글들의 좋아요 일괄 삭제 (N개 쿼리 → 1개 쿼리)
         commentLikeRepository.deleteByCommentIn(replies);
 
         // [수정] 단순 감소 로직 제거 (상위 메서드에서 일괄 동기화)
-        // [수정] deleteAllInBatch()는 하드 딜리트(SQL DELETE)를 수행하여 FK 제약조건(대댓글 신고 등) 위반으로 롤백될 수 있고,
-        //        @SQLDelete(Soft Delete)가 적용되지 않습니다.
-        //        대신 deleteAll()을 사용하여 각 엔티티마다 정상적으로 Soft Delete(UPDATE)가 수행되도록 변경합니다.
         log.info(">>> [Comment Service] Soft deleting {} replies for parent comment ID: {}", replies.size(), parentComment.getId());
         commentRepository.deleteAll(replies);
     }

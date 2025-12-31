@@ -395,11 +395,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           );
           setBookedTimes(updatedBookedTimes);
 
-          // 예약 목록 다시 로드 (서버에서 최신 데이터)
-          const data = await appointmentApi.getPatientAppointments(
-            currentPatientId
-          );
-          setAppointments(data);
+          // 예약 목록 다시 로드 (서버에서 최신 데이터, viewState 변경 방지)
+          await loadAppointments(true);
         } catch (error) {
           console.error("예약 목록 갱신 실패:", error);
         }
@@ -545,16 +542,19 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   // [처방전] 상태 및 로직
   // -------------------------------------------------------------------------
 
+  // 초기 마운트 여부 추적
+  const isInitialMount = useRef(true);
+
   // 예약 목록 로드 함수
-  const loadAppointments = useCallback(async () => {
+  const loadAppointments = useCallback(async (skipViewChange = false) => {
     try {
       const data = await appointmentApi.getPatientAppointments(
         currentPatientId
       );
       setAppointments(data);
 
-      // 예약이 있으면 LIST 뷰를 우선 표시 (초기 로드 시에만)
-      if (data.length > 0 && viewState === "FORM") {
+      // 예약이 있으면 LIST 뷰를 우선 표시 (초기 마운트 시에만)
+      if (!skipViewChange && isInitialMount.current && data.length > 0 && viewState === "FORM") {
         setViewState("LIST");
       }
     } catch (error) {
@@ -583,9 +583,12 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     loadAppointments();
     loadPrescriptions();
 
+    // 초기 마운트 완료 표시
+    isInitialMount.current = false;
+
     // 1분마다 예약 목록 갱신 (예약 시간이 되면 진료 중으로 자동 변경)
     const interval = setInterval(() => {
-      loadAppointments();
+      loadAppointments(true); // skipViewChange = true로 전달
     }, 60000);
 
     return () => clearInterval(interval);

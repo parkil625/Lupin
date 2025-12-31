@@ -9,7 +9,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, PlusSquare, Trash2, User } from "lucide-react";
 import {
@@ -41,10 +40,6 @@ export default function PrescriptionDialog({
   const [medicines, setMedicines] = useState<MedicineItem[]>([
     {
       medicineName: "",
-      dosage: "",
-      frequency: "",
-      durationDays: undefined,
-      instructions: "",
     },
   ]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,10 +73,6 @@ export default function PrescriptionDialog({
       ...medicines,
       {
         medicineName: "",
-        dosage: "",
-        frequency: "",
-        durationDays: undefined,
-        instructions: "",
       },
     ]);
   };
@@ -127,10 +118,8 @@ export default function PrescriptionDialog({
   const handleSelectMedicine = (medicine: MedicineResponse) => {
     const updated = [...medicines];
     updated[selectedMedicineIndex] = {
-      ...updated[selectedMedicineIndex],
       medicineId: medicine.id,
       medicineName: medicine.name,
-      dosage: medicine.standardDosage || "",
     };
     setMedicines(updated);
     setSearchResults([]);
@@ -324,58 +313,10 @@ export default function PrescriptionDialog({
                       </div>
                     </div>
 
-                    {/* 용량, 빈도, 일수 */}
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="용량 (예: 500mg)"
-                        className="rounded-xl flex-1"
-                        value={medicine.dosage}
-                        onChange={(e) =>
-                          handleMedicineChange(index, "dosage", e.target.value)
-                        }
-                      />
-                      <Input
-                        placeholder="복용 빈도 (예: 1일 3회)"
-                        className="rounded-xl flex-1"
-                        value={medicine.frequency}
-                        onChange={(e) =>
-                          handleMedicineChange(
-                            index,
-                            "frequency",
-                            e.target.value
-                          )
-                        }
-                      />
-                      <Input
-                        type="number"
-                        placeholder="일수"
-                        className="rounded-xl w-24"
-                        value={medicine.durationDays || ""}
-                        onChange={(e) =>
-                          handleMedicineChange(
-                            index,
-                            "durationDays",
-                            e.target.value
-                              ? parseInt(e.target.value)
-                              : undefined
-                          )
-                        }
-                      />
+                    {/* 복용 정보 안내 */}
+                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                      💊 복용 방법: 1정, 1일 3회, 3일간 (고정값)
                     </div>
-
-                    {/* 복용 지침 */}
-                    <Textarea
-                      placeholder="복용 지침 (선택사항)"
-                      className="rounded-xl"
-                      value={medicine.instructions || ""}
-                      onChange={(e) =>
-                        handleMedicineChange(
-                          index,
-                          "instructions",
-                          e.target.value
-                        )
-                      }
-                    />
                   </div>
                 ))}
                 <Button

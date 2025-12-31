@@ -60,6 +60,20 @@ interface FeedViewProps {
   isLoadingFeeds: boolean;
 }
 
+const countAllComments = (commentList: Comment[]): number => {
+  let count = 0;
+  for (const comment of commentList) {
+    // 삭제되지 않은 댓글만 카운트
+    if (!comment.isDeleted) {
+      count += 1;
+    }
+    if (comment.replies && comment.replies.length > 0) {
+      count += countAllComments(comment.replies);
+    }
+  }
+  return count;
+};
+
 /**
  * 댓글 패널 컴포넌트
  */
@@ -228,7 +242,7 @@ function CommentPanel({
       }
     };
     fetchComments();
-  }, [feedId]);
+  }, [feedId, updateFeed]); // [수정] updateFeed 의존성 추가
 
   // 타겟 댓글 하이라이트 및 스크롤
   useEffect(() => {
@@ -271,20 +285,6 @@ function CommentPanel({
       return () => clearTimeout(timer);
     }
   }, [targetCommentId, comments]);
-
-  const countAllComments = (commentList: Comment[]): number => {
-    let count = 0;
-    for (const comment of commentList) {
-      // [수정] 삭제되지 않은 댓글만 카운트
-      if (!comment.isDeleted) {
-        count += 1;
-      }
-      if (comment.replies && comment.replies.length > 0) {
-        count += countAllComments(comment.replies);
-      }
-    }
-    return count;
-  };
 
   const totalCommentCount = countAllComments(comments);
 

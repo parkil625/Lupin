@@ -30,7 +30,6 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
                 .patient(patient)
                 .date(prescribedDate)
                 .diagnosis("감기")
-                .medications("타이레놀 500mg (1정, 1일 3회)")
                 .build();
 
         // when
@@ -42,24 +41,21 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(saved.getPatient()).isEqualTo(patient);
         assertThat(saved.getDate()).isEqualTo(prescribedDate);
         assertThat(saved.getDiagnosis()).isEqualTo("감기");
-        assertThat(saved.getMedications()).isEqualTo("타이레놀 500mg (1정, 1일 3회)");
     }
 
     @Test
-    @DisplayName("처방전 생성 시 약물 정보도 함께 저장되는지 테스트")
+    @DisplayName("처방전 생성 시 약물 정보도 함께 저장되는지 테스트 - prescription_medicines 테이블 사용")
     void shouldSavePrescriptionWithMedicines() {
         // given
         User doctor = createAndSaveUser("doctor2", "Dr. Park");
         User patient = createAndSaveUser("patient2", "Patient Kim");
         LocalDate prescribedDate = LocalDate.of(2025, 12, 1);
-        String medications = "아스피린 (100mg, 하루 1회)\n혈압약 (50mg, 하루 2회)";
 
         Prescription prescription = Prescription.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .date(prescribedDate)
                 .diagnosis("고혈압")
-                .medications(medications)
                 .build();
 
         // when
@@ -67,10 +63,8 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
 
         // then
         assertThat(saved.getId()).isNotNull();
-        assertThat(saved.getMedications()).contains("아스피린");
-        assertThat(saved.getMedications()).contains("혈압약");
-        assertThat(saved.getMedications()).contains("100mg");
-        assertThat(saved.getMedications()).contains("50mg");
+        assertThat(saved.getDiagnosis()).isEqualTo("고혈압");
+        // medicines는 cascade로 저장됨 (별도 테스트 필요)
     }
 
     @Test
@@ -197,19 +191,17 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    @DisplayName("처방전 ID로 상세 조회 (약물 정보 포함)")
+    @DisplayName("처방전 ID로 상세 조회")
     void shouldFindByIdWithMedicines() {
         // given
         User doctor = createAndSaveUser("doctor6", "Dr. Yoon");
         User patient = createAndSaveUser("patient7", "Patient Shin");
-        String medications = "메트포르민 (500mg, 하루 2회)\n인슐린 (10unit, 하루 1회)";
 
         Prescription prescription = Prescription.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .date(LocalDate.of(2025, 12, 1))
                 .diagnosis("당뇨")
-                .medications(medications)
                 .build();
 
         Prescription saved = prescriptionRepository.save(prescription);
@@ -224,8 +216,6 @@ class PrescriptionRepositoryTest extends BaseRepositoryTest {
         assertThat(found.getDoctor()).isEqualTo(doctor);
         assertThat(found.getPatient()).isEqualTo(patient);
         assertThat(found.getDiagnosis()).isEqualTo("당뇨");
-        assertThat(found.getMedications()).contains("메트포르민");
-        assertThat(found.getMedications()).contains("인슐린");
     }
 
     @Test

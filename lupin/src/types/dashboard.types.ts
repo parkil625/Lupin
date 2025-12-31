@@ -47,6 +47,11 @@ export interface Comment {
   updatedAt?: string;
 }
 
+export interface PrescriptionMedicine {
+  name: string;
+  precautions: string | null;
+}
+
 export interface Prescription {
   id: number;
   name: string;
@@ -55,6 +60,7 @@ export interface Prescription {
   medicines: string[];
   diagnosis: string;
   instructions: string;
+  medicineDetails?: PrescriptionMedicine[];
 }
 
 export interface Notification {

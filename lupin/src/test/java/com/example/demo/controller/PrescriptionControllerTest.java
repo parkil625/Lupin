@@ -97,7 +97,6 @@ class PrescriptionControllerTest {
                 .doctor(doctor)
                 .appointment(appointment)
                 .diagnosis("감기")
-                .medications("타이레놀 500mg")
                 .date(LocalDate.now())
                 .build();
 
@@ -196,8 +195,7 @@ class PrescriptionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(prescription.getId()))
-                .andExpect(jsonPath("$.diagnosis").value("감기"))
-                .andExpect(jsonPath("$.medications").value("타이레놀 500mg"));
+                .andExpect(jsonPath("$.diagnosis").value("감기"));
     }
 
     @Test

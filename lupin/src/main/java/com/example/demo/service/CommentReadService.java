@@ -11,6 +11,7 @@ import com.example.demo.repository.CommentLikeRepository;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.FeedRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  * 댓글 조회 서비스 - CQRS 패턴
  * 읽기 작업을 분리하여 조회 성능 최적화 및 책임 분리
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -77,9 +79,20 @@ public class CommentReadService {
 
     /**
      * 피드 댓글 목록 조회 (좋아요, 활동일 정보 포함)
+     * [수정] 조회 시점에 카운트 불일치를 감지하면 자동으로 복구합니다. (Read-Repair)
      */
+    @Transactional // DB 업데이트가 발생할 수 있으므로 읽기 전용 해제
     public List<CommentResponse> getCommentResponsesByFeed(Long feedId, User currentUser) {
-        List<Comment> comments = getCommentsByFeed(feedId);
+        // 1. 피드 조회
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
+
+        // 2. 댓글 수 동기화 (Read-Repair)
+        syncFeedCommentCount(feed);
+
+        // 3. 댓글 목록 조회
+        List<Comment> comments = commentRepository.findByFeedAndParentIsNullOrderByIdDesc(feed);
+        
         return assembleCommentResponses(comments, currentUser);
     }
 
@@ -202,5 +215,19 @@ public class CommentReadService {
         
         Map<Long, Integer> activeDaysMap = getActiveDaysMap(List.of(comment));
         return CommentResponse.from(comment, likeCount, isLiked, isReported, activeDaysMap.getOrDefault(comment.getWriter().getId(), 0));
+    }
+
+    /**
+     * [Self-Healing] 피드 댓글 수 DB 동기화
+     * 실제 개수와 기록된 개수가 다를 때만 업데이트 쿼리를 날립니다.
+     */
+    private void syncFeedCommentCount(Feed feed) {
+        long realCount = commentRepository.countByFeed(feed);
+        
+        if (feed.getCommentCount() != realCount) {
+            log.warn(">>> [Comment Sync - Read] Feed ID {} count mismatch! DB: {}, Real: {}. Fixing...", 
+                    feed.getId(), feed.getCommentCount(), realCount);
+            feedRepository.updateCommentCount(feed.getId(), (int) realCount);
+        }
     }
 }

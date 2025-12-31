@@ -108,6 +108,7 @@ function CommentPanel({
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentText, setEditCommentText] = useState("");
   const [hasCommentPenalty, setHasCommentPenalty] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // [추가] 댓글 수 조정을 위한 Store 액션
   const { adjustCommentCount, updateFeed } = useFeedStore();
@@ -342,71 +343,94 @@ function CommentPanel({
   };
 
   const handleSendComment = async () => {
-    if (commentText.trim()) {
-      try {
-        const response = await commentApi.createComment({
-          content: commentText,
-          feedId: feedId,
-          writerId: currentUserId,
-        });
-        const authorName = response.writerName || currentUserName;
-        const newComment: Comment = {
-          id: response.id,
-          author: authorName,
-          avatar: getAvatarUrl(response.writerAvatar),
-          content: response.content,
-          time: "방금 전",
-          replies: [],
-        };
-        setComments([...comments, newComment]);
-        setCommentText("");
-        // [추가] 피드 카드 댓글 수 +1
-        adjustCommentCount(feedId, 1);
-      } catch (error) {
-        console.error("댓글 작성 실패:", error);
-        toast.error("댓글 작성에 실패했습니다.");
-      }
+    // [수정] 이미 제출 중이거나 내용이 없으면 즉시 중단
+    if (isSubmitting || !commentText.trim()) {
+      console.log("[CommentPanel] 댓글 작성 중복 호출 방지됨");
+      return;
+    }
+
+    setIsSubmitting(true); // [수정] 잠금 설정
+    console.log(`[CommentPanel] 댓글 작성 시작 - Content: ${commentText}`);
+
+    try {
+      const response = await commentApi.createComment({
+        content: commentText,
+        feedId: feedId,
+        writerId: currentUserId,
+      });
+      console.log(`[CommentPanel] 댓글 작성 API 성공 - ID: ${response.id}`);
+
+      const authorName = response.writerName || currentUserName;
+      const newComment: Comment = {
+        id: response.id,
+        author: authorName,
+        avatar: getAvatarUrl(response.writerAvatar),
+        content: response.content,
+        time: "방금 전",
+        replies: [],
+      };
+      setComments([...comments, newComment]);
+      setCommentText("");
+      // [추가] 피드 카드 댓글 수 +1
+      adjustCommentCount(feedId, 1);
+    } catch (error) {
+      console.error("[CommentPanel] 댓글 작성 실패:", error);
+      toast.error("댓글 작성에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false); // [수정] 잠금 해제 (반드시 실행)
+      console.log("[CommentPanel] 댓글 작성 로직 종료 및 잠금 해제");
     }
   };
 
   const handleSendReply = async () => {
-    if (replyCommentText.trim() && replyingTo !== null) {
-      try {
-        const response = await commentApi.createComment({
-          content: replyCommentText,
-          feedId: feedId,
-          writerId: currentUserId,
-          parentId: replyingTo,
-        });
-        const replyAuthorName = response.writerName || currentUserName;
-        const newReply: Comment = {
-          id: response.id,
-          author: replyAuthorName,
-          avatar: getAvatarUrl(response.writerAvatar),
-          content: response.content,
-          time: "방금 전",
-          parentId: replyingTo,
-          replies: [],
-        };
-        setComments(
-          comments.map((comment) => {
-            if (comment.id === replyingTo) {
-              return {
-                ...comment,
-                replies: [...(comment.replies || []), newReply],
-              };
-            }
-            return comment;
-          })
-        );
-        setReplyCommentText("");
-        setReplyingTo(null);
-        // [추가] 피드 카드 댓글 수 +1
-        adjustCommentCount(feedId, 1);
-      } catch (error) {
-        console.error("답글 작성 실패:", error);
-        toast.error("답글 작성에 실패했습니다.");
-      }
+    // [수정] 중복 제출 방지 로직 추가
+    if (isSubmitting || !replyCommentText.trim() || replyingTo === null) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    console.log(`[CommentPanel] 답글 작성 시작 - ParentId: ${replyingTo}`);
+
+    try {
+      const response = await commentApi.createComment({
+        content: replyCommentText,
+        feedId: feedId,
+        writerId: currentUserId,
+        parentId: replyingTo,
+      });
+      console.log(`[CommentPanel] 답글 API 성공 - ID: ${response.id}`);
+
+      const replyAuthorName = response.writerName || currentUserName;
+      const newReply: Comment = {
+        id: response.id,
+        author: replyAuthorName,
+        avatar: getAvatarUrl(response.writerAvatar),
+        content: response.content,
+        time: "방금 전",
+        parentId: replyingTo,
+        replies: [],
+      };
+      setComments(
+        comments.map((comment) => {
+          if (comment.id === replyingTo) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), newReply],
+            };
+          }
+          return comment;
+        })
+      );
+      setReplyCommentText("");
+      setReplyingTo(null);
+      // [추가] 피드 카드 댓글 수 +1
+      adjustCommentCount(feedId, 1);
+    } catch (error) {
+      console.error("[CommentPanel] 답글 작성 실패:", error);
+      toast.error("답글 작성에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false);
+      console.log("[CommentPanel] 답글 작성 잠금 해제");
     }
   };
 
@@ -652,10 +676,19 @@ function CommentPanel({
                   }
                   value={replyCommentText}
                   onChange={(e) => setReplyCommentText(e.target.value)}
-                  onKeyDown={(e) =>
-                    !hasCommentPenalty && e.key === "Enter" && handleSendReply()
-                  }
-                  disabled={hasCommentPenalty}
+                  // [수정] 전송 중이거나 한글 조합 중일 때 엔터 방지
+                  onKeyDown={(e) => {
+                    if (
+                      !hasCommentPenalty &&
+                      !isSubmitting &&
+                      e.key === "Enter" &&
+                      !e.nativeEvent.isComposing
+                    ) {
+                      e.preventDefault();
+                      handleSendReply();
+                    }
+                  }}
+                  disabled={hasCommentPenalty || isSubmitting}
                   className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   autoFocus
                 />
@@ -811,13 +844,22 @@ function CommentPanel({
               }
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) =>
-                !hasCommentPenalty && e.key === "Enter" && handleSendComment()
-              }
-              disabled={hasCommentPenalty}
+              // [수정] 전송 중이거나 한글 조합 중일 때 엔터 방지
+              onKeyDown={(e) => {
+                if (
+                  !hasCommentPenalty &&
+                  !isSubmitting &&
+                  e.key === "Enter" &&
+                  !e.nativeEvent.isComposing
+                ) {
+                  e.preventDefault();
+                  handleSendComment();
+                }
+              }}
+              disabled={hasCommentPenalty || isSubmitting}
               className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            {commentText && !hasCommentPenalty && (
+            {commentText && !hasCommentPenalty && !isSubmitting && (
               <button
                 onClick={() => setCommentText("")}
                 className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
@@ -833,9 +875,12 @@ function CommentPanel({
                 <div className="inline-block">
                   <button
                     onClick={handleSendComment}
-                    disabled={hasCommentPenalty || !commentText.trim()}
+                    // [수정] isSubmitting일 때 버튼 비활성화
+                    disabled={
+                      hasCommentPenalty || isSubmitting || !commentText.trim()
+                    }
                     className={`w-10 h-10 rounded-full flex items-center justify-center transition-shadow flex-shrink-0 cursor-pointer ${
-                      hasCommentPenalty
+                      hasCommentPenalty || isSubmitting
                         ? "bg-gray-300 cursor-not-allowed text-gray-500"
                         : "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     }`}

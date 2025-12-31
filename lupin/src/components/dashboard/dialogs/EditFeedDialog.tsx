@@ -76,6 +76,8 @@ export default function EditFeedDialog({
   const [activeTab, setActiveTab] = useState<"photo" | "content">("photo");
   const [isDesktop, setIsDesktop] = useState(false);
   const prevOpenRef = useRef(open);
+  // [수정] 저장 중복 방지 상태 추가
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // [추가] 각 이미지 박스별 로딩 상태 관리
   const [imageLoading, setImageLoading] = useState({
@@ -307,32 +309,32 @@ export default function EditFeedDialog({
 
   // 저장 처리
   const handleSave = () => {
-    if (!feed) return;
+    // [수정] 피드가 없거나 이미 제출 중이면 차단
+    if (!feed || isSubmitting) return;
 
     if (!startImage || !endImage) {
       toast.error("시작 사진과 끝 사진을 모두 업로드해주세요!");
       return;
     }
 
+    // [수정] 잠금 설정
+    setIsSubmitting(true);
+
     const images = [startImage, endImage, ...otherImages].filter(
       Boolean
     ) as string[];
 
     // [헬퍼] 로컬 시간(KST 등) 그대로 문자열로 변환하는 함수
-    // toISOString()은 UTC로 바꾸기 때문에 시간이 -9시간 되는 문제를 방지함
     const getLocalISOString = (date: Date) => {
       const offset = date.getTimezoneOffset() * 60000;
       return new Date(date.getTime() - offset).toISOString().slice(0, 19);
     };
 
-    // [수정] EXIF 시간 정보 전송 (이미지 변경 시에만)
-    // toISOString() 대신 로컬 시간을 그대로 보냅니다.
     const startAtIso =
       imagesChanged && startExifTime ? getLocalISOString(startExifTime) : null;
     const endAtIso =
       imagesChanged && endExifTime ? getLocalISOString(endExifTime) : null;
 
-    // [디버깅 로그] 부모에게 전달할 데이터 확인
     console.log(
       `[EditFeedDialog] 저장 시도: ID=${feed.id}, imagesChanged=${imagesChanged}`
     );
@@ -345,13 +347,15 @@ export default function EditFeedDialog({
       workoutType,
       startImage,
       endImage,
-      imagesChanged, // [수정] 여기가 핵심! true/false 전달
+      imagesChanged,
       startAtIso,
       endAtIso
     );
     // 저장 완료 후 상태 초기화
     initialDataRef.current = null;
     onOpenChange(false);
+
+    // 다이얼로그가 닫히므로 setIsSubmitting(false)는 호출하지 않아도 됨
   };
 
   // 실제 변경사항이 있는지 확인하는 함수
@@ -590,15 +594,21 @@ export default function EditFeedDialog({
           <div className="p-4 border-t border-gray-200 flex-shrink-0">
             <Button
               onClick={handleSave}
+              // [수정] isSubmitting 추가하여 버튼 비활성화
               disabled={
                 !canSubmit ||
                 imageLoading.start ||
                 imageLoading.end ||
-                imageLoading.other
+                imageLoading.other ||
+                isSubmitting
               }
               className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {canSubmit ? "수정 완료" : "시작/끝 사진 필요"}
+              {isSubmitting
+                ? "저장 중..."
+                : canSubmit
+                ? "수정 완료"
+                : "시작/끝 사진 필요"}
             </Button>
           </div>
         </div>
@@ -818,15 +828,21 @@ export default function EditFeedDialog({
             <div className="p-4 border-t border-gray-200 flex-shrink-0">
               <Button
                 onClick={handleSave}
+                // [수정] isSubmitting 추가하여 버튼 비활성화
                 disabled={
                   !canSubmit ||
                   imageLoading.start ||
                   imageLoading.end ||
-                  imageLoading.other
+                  imageLoading.other ||
+                  isSubmitting
                 }
                 className="w-full bg-[#C93831] hover:bg-[#B02F28] text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {canSubmit ? "수정 완료" : "시작/끝 사진 필요"}
+                {isSubmitting
+                  ? "저장 중..."
+                  : canSubmit
+                  ? "수정 완료"
+                  : "시작/끝 사진 필요"}
               </Button>
             </div>
           </DialogContent>

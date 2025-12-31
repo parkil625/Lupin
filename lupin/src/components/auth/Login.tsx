@@ -282,6 +282,9 @@ export default function Login() {
     );
 
   const onSubmit = async (data: LoginFormData) => {
+    // [수정] 이미 로딩 중이면 함수 실행 차단 (연타 방지)
+    if (isLoading) return;
+
     setError("");
     setIsLoading(true);
     try {

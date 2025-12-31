@@ -210,7 +210,9 @@ export default function CreateFeedDialog({
 
   // 작성 버튼 클릭
   const handleSubmit = async () => {
-    // async 키워드 추가
+    // [수정] 업로드 중이면 중복 실행 방지
+    if (isUploading) return;
+
     if (!startImage || !endImage) {
       toast.error("시작 사진과 끝 사진을 모두 업로드해주세요!");
       return;

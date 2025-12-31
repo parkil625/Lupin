@@ -614,6 +614,8 @@ export default function ProfilePage({
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isImageRemoved, setIsImageRemoved] = useState(false);
+  // [수정] 저장 중복 방지 상태 추가
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateStoreAvatar = useFeedStore((s) => s.updateMyFeedsAvatar);
 
@@ -654,9 +656,11 @@ export default function ProfilePage({
   // 저장 핸들러 (이미지 + 텍스트 정보 일괄 처리)
   const handleSaveProfile = useCallback(
     async (data: ProfileFormData) => {
-      if (!isEditing) return;
+      // [수정] 편집 모드가 아니거나 이미 제출 중이면 차단
+      if (!isEditing || isSubmitting) return;
 
       try {
+        setIsSubmitting(true); // [수정] 잠금 설정
         const userId = Number(localStorage.getItem("userId"));
         if (!userId) {
           toast.error("사용자 정보를 찾을 수 없습니다.");
@@ -731,6 +735,8 @@ export default function ProfilePage({
       } catch (error) {
         console.error(error);
         toast.error("저장에 실패했습니다.");
+      } finally {
+        setIsSubmitting(false); // [수정] 잠금 해제
       }
     },
     [
@@ -776,10 +782,21 @@ export default function ProfilePage({
                         new Event("submit", { bubbles: true, cancelable: true })
                       )
                   }
+                  // [수정] 제출 중일 때 버튼 비활성화 및 로딩 표시
+                  disabled={isSubmitting}
                   variant="outline"
-                  className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold cursor-pointer"
+                  className="bg-[#C93831] text-white hover:bg-[#B02F28] border-transparent font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Edit className="w-4 h-4 mr-2" /> 저장
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      저장 중
+                    </span>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4 mr-2" /> 저장
+                    </>
+                  )}
                 </Button>
               </>
             ) : (

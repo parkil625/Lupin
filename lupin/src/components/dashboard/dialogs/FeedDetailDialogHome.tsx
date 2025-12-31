@@ -124,6 +124,7 @@ export default function FeedDetailDialogHome({
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentText, setEditCommentText] = useState("");
   const [hasCommentPenalty, setHasCommentPenalty] = useState(false); // [추가] 페널티 상태
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 현재 사용자 정보
   const currentUserName = localStorage.getItem("userName") || "알 수 없음";
@@ -375,80 +376,99 @@ export default function FeedDetailDialogHome({
   }, [targetCommentId, open, comments, showComments, collapsedComments]);
 
   const handleSendComment = async () => {
-    if (commentText.trim() && feed) {
-      try {
-        // API 호출하여 댓글 생성
-        const response = await commentApi.createComment({
-          content: commentText,
-          feedId: feed.id,
-          writerId: currentUserId,
-        });
+    // [수정] 중복 제출 방지: 제출 중이거나 내용이 없으면 중단
+    if (isSubmitting || !commentText.trim() || !feed) {
+      return;
+    }
 
-        // 새 댓글을 리스트에 추가 (서버에서 받은 아바타 URL 사용)
-        const authorName = response.writerName || currentUserName;
-        const avatarUrl = response.writerAvatar
-          ? getCdnUrl(response.writerAvatar)
-          : "";
-        const newComment: Comment = {
-          id: response.id,
-          author: authorName,
-          avatar: avatarUrl || authorName.charAt(0),
-          content: response.content,
-          time: "방금 전",
-          replies: [],
-        };
-        setComments([...comments, newComment]);
-        setCommentText("");
-      } catch (error) {
-        console.error("댓글 작성 실패:", error);
-        alert("댓글 작성에 실패했습니다.");
-      }
+    setIsSubmitting(true); // [수정] 잠금 설정
+
+    try {
+      // API 호출하여 댓글 생성
+      const response = await commentApi.createComment({
+        content: commentText,
+        feedId: feed.id,
+        writerId: currentUserId,
+      });
+
+      // 새 댓글을 리스트에 추가 (서버에서 받은 아바타 URL 사용)
+      const authorName = response.writerName || currentUserName;
+      const avatarUrl = response.writerAvatar
+        ? getCdnUrl(response.writerAvatar)
+        : "";
+      const newComment: Comment = {
+        id: response.id,
+        author: authorName,
+        avatar: avatarUrl || authorName.charAt(0),
+        content: response.content,
+        time: "방금 전",
+        replies: [],
+      };
+      setComments([...comments, newComment]);
+      setCommentText("");
+    } catch (error) {
+      console.error("댓글 작성 실패:", error);
+      alert("댓글 작성에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false); // [수정] 잠금 해제 (필수)
     }
   };
 
   const handleSendReply = async () => {
-    if (replyCommentText.trim() && feed && replyingTo !== null) {
-      try {
-        // API 호출하여 답글 생성
-        const response = await commentApi.createComment({
-          content: replyCommentText,
-          feedId: feed.id,
-          writerId: currentUserId,
-          parentId: replyingTo,
-        });
+    // [수정] 중복 제출 방지
+    if (
+      isSubmitting ||
+      !replyCommentText.trim() ||
+      !feed ||
+      replyingTo === null
+    ) {
+      return;
+    }
 
-        // 새 답글을 해당 댓글에 추가 (서버에서 받은 아바타 URL 사용)
-        const replyAuthorName = response.writerName || currentUserName;
-        const replyAvatarUrl = response.writerAvatar
-          ? getCdnUrl(response.writerAvatar)
-          : "";
-        const newReply: Comment = {
-          id: response.id,
-          author: replyAuthorName,
-          avatar: replyAvatarUrl || replyAuthorName.charAt(0),
-          content: response.content,
-          time: "방금 전",
-          parentId: replyingTo,
-          replies: [],
-        };
+    setIsSubmitting(true); // [수정] 잠금 설정
 
-        setComments(
-          comments.map((comment) => {
-            if (comment.id === replyingTo) {
-              return {
-                ...comment,
-                replies: [...(comment.replies || []), newReply],
-              };
-            }
-            return comment;
-          })
-        );
-        setReplyCommentText("");
-        setReplyingTo(null);
-      } catch (error) {
-        console.error("답글 작성 실패:", error);
-        alert("답글 작성에 실패했습니다.");
-      }
+    try {
+      // API 호출하여 답글 생성
+      const response = await commentApi.createComment({
+        content: replyCommentText,
+        feedId: feed.id,
+        writerId: currentUserId,
+        parentId: replyingTo,
+      });
+
+      // 새 답글을 해당 댓글에 추가 (서버에서 받은 아바타 URL 사용)
+      const replyAuthorName = response.writerName || currentUserName;
+      const replyAvatarUrl = response.writerAvatar
+        ? getCdnUrl(response.writerAvatar)
+        : "";
+      const newReply: Comment = {
+        id: response.id,
+        author: replyAuthorName,
+        avatar: replyAvatarUrl || replyAuthorName.charAt(0),
+        content: response.content,
+        time: "방금 전",
+        parentId: replyingTo,
+        replies: [],
+      };
+
+      setComments(
+        comments.map((comment) => {
+          if (comment.id === replyingTo) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), newReply],
+            };
+          }
+          return comment;
+        })
+      );
+      setReplyCommentText("");
+      setReplyingTo(null);
+    } catch (error) {
+      console.error("답글 작성 실패:", error);
+      alert("답글 작성에 실패했습니다.");
+    } finally {
+      setIsSubmitting(false); // [수정] 잠금 해제
     }
   };
 
@@ -769,12 +789,19 @@ export default function FeedDetailDialogHome({
                     }
                     value={replyCommentText}
                     onChange={(e) => setReplyCommentText(e.target.value)}
-                    onKeyDown={(e) =>
-                      !hasCommentPenalty &&
-                      e.key === "Enter" &&
-                      handleSendReply()
-                    }
-                    disabled={hasCommentPenalty}
+                    // [수정] 한글 엔터 중복 방지 및 전송 중 차단
+                    onKeyDown={(e) => {
+                      if (
+                        !hasCommentPenalty &&
+                        !isSubmitting &&
+                        e.key === "Enter" &&
+                        !e.nativeEvent.isComposing
+                      ) {
+                        e.preventDefault();
+                        handleSendReply();
+                      }
+                    }}
+                    disabled={hasCommentPenalty || isSubmitting}
                     className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     autoFocus
                   />
@@ -795,10 +822,12 @@ export default function FeedDetailDialogHome({
                             <button
                               onClick={handleSendReply}
                               disabled={
-                                hasCommentPenalty || !replyCommentText.trim()
+                                hasCommentPenalty ||
+                                isSubmitting ||
+                                !replyCommentText.trim()
                               }
                               className={`px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                                hasCommentPenalty
+                                hasCommentPenalty || isSubmitting
                                   ? "bg-gray-300 text-gray-500 rounded cursor-not-allowed"
                                   : "text-[#C93831] hover:text-[#B02F28] cursor-pointer"
                               }`}
@@ -923,15 +952,22 @@ export default function FeedDetailDialogHome({
                   }
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) =>
-                    !hasCommentPenalty &&
-                    e.key === "Enter" &&
-                    handleSendComment()
-                  }
-                  disabled={hasCommentPenalty}
+                  // [수정] 한글 엔터 중복 방지 및 전송 중 차단
+                  onKeyDown={(e) => {
+                    if (
+                      !hasCommentPenalty &&
+                      !isSubmitting &&
+                      e.key === "Enter" &&
+                      !e.nativeEvent.isComposing
+                    ) {
+                      e.preventDefault();
+                      handleSendComment();
+                    }
+                  }}
+                  disabled={hasCommentPenalty || isSubmitting}
                   className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                {commentText && !hasCommentPenalty && (
+                {commentText && !hasCommentPenalty && !isSubmitting && (
                   <button
                     onClick={() => setCommentText("")}
                     className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
@@ -946,9 +982,13 @@ export default function FeedDetailDialogHome({
                     <div className="inline-block">
                       <button
                         onClick={handleSendComment}
-                        disabled={hasCommentPenalty || !commentText.trim()}
+                        disabled={
+                          hasCommentPenalty ||
+                          isSubmitting ||
+                          !commentText.trim()
+                        }
                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-shadow flex-shrink-0 cursor-pointer ${
-                          hasCommentPenalty
+                          hasCommentPenalty || isSubmitting
                             ? "bg-gray-300 cursor-not-allowed text-gray-500"
                             : "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         }`}
@@ -1343,15 +1383,22 @@ export default function FeedDetailDialogHome({
                         }
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
-                        onKeyDown={(e) =>
-                          !hasCommentPenalty &&
-                          e.key === "Enter" &&
-                          handleSendComment()
-                        }
-                        disabled={hasCommentPenalty}
+                        // [수정] 한글 엔터 중복 방지 및 전송 중 차단
+                        onKeyDown={(e) => {
+                          if (
+                            !hasCommentPenalty &&
+                            !isSubmitting &&
+                            e.key === "Enter" &&
+                            !e.nativeEvent.isComposing
+                          ) {
+                            e.preventDefault();
+                            handleSendComment();
+                          }
+                        }}
+                        disabled={hasCommentPenalty || isSubmitting}
                         className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
-                      {commentText && !hasCommentPenalty && (
+                      {commentText && !hasCommentPenalty && !isSubmitting && (
                         <button
                           onClick={() => setCommentText("")}
                           className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
@@ -1368,10 +1415,12 @@ export default function FeedDetailDialogHome({
                             <button
                               onClick={handleSendComment}
                               disabled={
-                                hasCommentPenalty || !commentText.trim()
+                                hasCommentPenalty ||
+                                isSubmitting ||
+                                !commentText.trim()
                               }
                               className={`w-10 h-10 rounded-full flex items-center justify-center transition-shadow flex-shrink-0 cursor-pointer ${
-                                hasCommentPenalty
+                                hasCommentPenalty || isSubmitting
                                   ? "bg-gray-300 cursor-not-allowed text-gray-500"
                                   : "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                               }`}

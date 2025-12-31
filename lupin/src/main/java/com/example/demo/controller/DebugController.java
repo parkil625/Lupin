@@ -70,7 +70,7 @@ public class DebugController {
         result.put("userId", currentUser.getId());
         result.put("userName", currentUser.getName());
         result.put("userRole", currentUser.getRole().name());
-        result.put("userEmail", currentUser.getEmail());
+        result.put("userEmail", currentUser.getProviderEmail());
         return ResponseEntity.ok(result);
     }
 }

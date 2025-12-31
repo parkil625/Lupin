@@ -38,9 +38,6 @@ interface MedicineQuantity {
   name: string;
   description?: string;
   precautions?: string;
-  dosage?: string;        // 용량
-  frequency?: string;     // 복용 횟수
-  durationDays?: number;  // 복용 기간
 }
 
 interface MedicineSearchResult {
@@ -189,7 +186,9 @@ export default function DoctorChatPage() {
     if (status === "SCHEDULED" && appointmentTime) {
       const appointmentDate = new Date(appointmentTime);
       const now = new Date();
-      const fiveMinutesBefore = new Date(appointmentDate.getTime() - 5 * 60 * 1000);
+      const fiveMinutesBefore = new Date(
+        appointmentDate.getTime() - 5 * 60 * 1000
+      );
 
       return now >= fiveMinutesBefore;
     }
@@ -209,7 +208,10 @@ export default function DoctorChatPage() {
       // 채팅방 목록에서 해당 채팅방 찾기
       const chatRoom = chatRooms.find((room) => room.roomId === roomId);
 
-      if (chatRoom && canEnterChatRoom(chatRoom.appointmentTime, chatRoom.status)) {
+      if (
+        chatRoom &&
+        canEnterChatRoom(chatRoom.appointmentTime, chatRoom.status)
+      ) {
         // 입장 가능한 경우 채팅창 오픈
         setActiveRoomId(roomId);
         setSelectedChatMember({
@@ -404,9 +406,6 @@ export default function DoctorChatPage() {
       const medicinePayload = selectedMedicines.map((med) => ({
         medicineId: med.id,
         medicineName: med.name,
-        dosage: med.dosage || "",
-        frequency: med.frequency || "",
-        durationDays: med.durationDays || 0,
         instructions: instructions || "",
       }));
 
@@ -439,11 +438,15 @@ export default function DoctorChatPage() {
     } catch (error) {
       console.error("처방전 발급 실패:", error);
 
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string } } };
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as {
+          response?: { data?: { message?: string } };
+        };
         console.error("에러 상세:", axiosError.response?.data);
 
-        const errorMessage = axiosError.response?.data?.message || "처방전 발급 중 오류가 발생했습니다.";
+        const errorMessage =
+          axiosError.response?.data?.message ||
+          "처방전 발급 중 오류가 발생했습니다.";
         toast.error(errorMessage);
       } else {
         toast.error("처방전 발급 중 오류가 발생했습니다.");
@@ -475,14 +478,21 @@ export default function DoctorChatPage() {
               </h3>
               <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <div className="space-y-3 pr-2">
-                  {chatRooms.filter((room) => room.status === "IN_PROGRESS" || room.status === "SCHEDULED")
-                    .length === 0 ? (
+                  {chatRooms.filter(
+                    (room) =>
+                      room.status === "IN_PROGRESS" ||
+                      room.status === "SCHEDULED"
+                  ).length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
                       예약된 채팅방이 없습니다
                     </div>
                   ) : (
                     chatRooms
-                      .filter((room) => room.status === "IN_PROGRESS" || room.status === "SCHEDULED")
+                      .filter(
+                        (room) =>
+                          room.status === "IN_PROGRESS" ||
+                          room.status === "SCHEDULED"
+                      )
                       .map((room) => {
                         const isMyNameInList = room.patientName === "김민준";
                         const displayName = isMyNameInList
@@ -493,7 +503,10 @@ export default function DoctorChatPage() {
                         const isSelected = activeRoomId === room.roomId;
 
                         // 입장 가능 여부 확인
-                        const canEnter = canEnterChatRoom(room.appointmentTime, room.status);
+                        const canEnter = canEnterChatRoom(
+                          room.appointmentTime,
+                          room.status
+                        );
 
                         return (
                           <div
@@ -909,62 +922,6 @@ export default function DoctorChatPage() {
                         >
                           <Minus className="w-4 h-4" />
                         </Button>
-                      </div>
-
-                      {/* 약품 상세 정보 입력 */}
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        <div>
-                          <Label className="text-xs text-gray-600">용량</Label>
-                          <Input
-                            placeholder="1정"
-                            value={medicine.dosage || ""}
-                            onChange={(e) => {
-                              setSelectedMedicines(prev =>
-                                prev.map(m =>
-                                  m.id === medicine.id
-                                    ? { ...m, dosage: e.target.value }
-                                    : m
-                                )
-                              );
-                            }}
-                            className="mt-1 h-8 text-xs rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-600">복용 횟수</Label>
-                          <Input
-                            placeholder="1일 3회"
-                            value={medicine.frequency || ""}
-                            onChange={(e) => {
-                              setSelectedMedicines(prev =>
-                                prev.map(m =>
-                                  m.id === medicine.id
-                                    ? { ...m, frequency: e.target.value }
-                                    : m
-                                )
-                              );
-                            }}
-                            className="mt-1 h-8 text-xs rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs text-gray-600">복용 기간</Label>
-                          <Input
-                            type="number"
-                            placeholder="7"
-                            value={medicine.durationDays || ""}
-                            onChange={(e) => {
-                              setSelectedMedicines(prev =>
-                                prev.map(m =>
-                                  m.id === medicine.id
-                                    ? { ...m, durationDays: parseInt(e.target.value) || undefined }
-                                    : m
-                                )
-                              );
-                            }}
-                            className="mt-1 h-8 text-xs rounded-lg"
-                          />
-                        </div>
                       </div>
                     </div>
                   ))

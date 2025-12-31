@@ -18,7 +18,6 @@ export interface MedicineResponse {
   code: string;
   name: string;
   manufacturer?: string;
-  standardDosage?: string;
   unit?: string;
   description?: string;
   sideEffects?: string;
@@ -51,13 +50,17 @@ export const prescriptionApi = {
   },
 
   // 환자 처방전 목록 조회
-  getPatientPrescriptions: async (patientId: number): Promise<PrescriptionResponse[]> => {
+  getPatientPrescriptions: async (
+    patientId: number
+  ): Promise<PrescriptionResponse[]> => {
     const response = await apiClient.get(`/prescriptions/patient/${patientId}`);
     return response.data;
   },
 
   // 의사 발급 처방전 목록 조회
-  getDoctorPrescriptions: async (doctorId: number): Promise<PrescriptionResponse[]> => {
+  getDoctorPrescriptions: async (
+    doctorId: number
+  ): Promise<PrescriptionResponse[]> => {
     const response = await apiClient.get(`/prescriptions/doctor/${doctorId}`);
     return response.data;
   },
@@ -69,9 +72,13 @@ export const prescriptionApi = {
   },
 
   // 예약 ID로 처방전 조회
-  getByAppointmentId: async (appointmentId: number): Promise<PrescriptionResponse | null> => {
+  getByAppointmentId: async (
+    appointmentId: number
+  ): Promise<PrescriptionResponse | null> => {
     try {
-      const response = await apiClient.get(`/prescriptions/appointment/${appointmentId}`);
+      const response = await apiClient.get(
+        `/prescriptions/appointment/${appointmentId}`
+      );
       return response.data;
     } catch {
       return null;

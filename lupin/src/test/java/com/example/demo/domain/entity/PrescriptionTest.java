@@ -38,16 +38,10 @@ class PrescriptionTest {
 
         PrescriptionMedicine pm1 = PrescriptionMedicine.builder()
                 .medicine(tylenol)
-                .dosage("1정")
-                .frequency("1일 3회")
-                .durationDays(3)
                 .build();
 
         PrescriptionMedicine pm2 = PrescriptionMedicine.builder()
                 .medicine(aspirin)
-                .dosage("1정")
-                .frequency("1일 2회")
-                .durationDays(5)
                 .build();
 
         prescription.addMedicine(pm1);
@@ -112,9 +106,6 @@ class PrescriptionTest {
 
         PrescriptionMedicine pm = PrescriptionMedicine.builder()
                 .medicine(tylenol)
-                .dosage("1정")
-                .frequency("1일 3회")
-                .durationDays(3)
                 .build();
 
         prescription.addMedicine(pm);
@@ -151,16 +142,10 @@ class PrescriptionTest {
 
         PrescriptionMedicine pm1 = PrescriptionMedicine.builder()
                 .medicine(tylenol)
-                .dosage("1정")
-                .frequency("1일 3회")
-                .durationDays(3)
                 .build();
 
         PrescriptionMedicine pm2 = PrescriptionMedicine.builder()
                 .medicine(aspirin)
-                .dosage("1정")
-                .frequency("1일 2회")
-                .durationDays(5)
                 .build();
 
         prescription.addMedicine(pm1);

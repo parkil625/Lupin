@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PrescriptionMedicineDto {
-    private Long medicineId;      // 약품 ID
+    private Long medicineId;      // 약품 ID.
     private String name;          // 약품명
     private String precautions;   // 주의사항
 

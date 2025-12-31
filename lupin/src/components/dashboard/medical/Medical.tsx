@@ -3,7 +3,7 @@
  *
  * 진료 관리 페이지 컴포넌트 (2단 레이아웃)
  * - 좌측: 예약 내역 및 처방전 조회
- * - 우측: 실시간 채팅 또는 진료 예약
+ * - 우측: 실시간 채팅 또는 진료 예약.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
@@ -450,9 +450,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           );
           setAppointments(appointmentsData);
 
-          const prescriptionsData = await prescriptionApi.getPatientPrescriptions(
-            currentPatientId
-          );
+          const prescriptionsData =
+            await prescriptionApi.getPatientPrescriptions(currentPatientId);
           setPrescriptions(prescriptionsData);
 
           toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
@@ -546,22 +545,30 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   const isInitialMount = useRef(true);
 
   // 예약 목록 로드 함수
-  const loadAppointments = useCallback(async (skipViewChange = false) => {
-    try {
-      const data = await appointmentApi.getPatientAppointments(
-        currentPatientId
-      );
-      setAppointments(data);
+  const loadAppointments = useCallback(
+    async (skipViewChange = false) => {
+      try {
+        const data = await appointmentApi.getPatientAppointments(
+          currentPatientId
+        );
+        setAppointments(data);
 
-      // 예약이 있으면 LIST 뷰를 우선 표시 (초기 마운트 시에만)
-      if (!skipViewChange && isInitialMount.current && data.length > 0 && viewState === "FORM") {
-        setViewState("LIST");
+        // 예약이 있으면 LIST 뷰를 우선 표시 (초기 마운트 시에만)
+        if (
+          !skipViewChange &&
+          isInitialMount.current &&
+          data.length > 0 &&
+          viewState === "FORM"
+        ) {
+          setViewState("LIST");
+        }
+      } catch (error) {
+        console.error("예약 목록 로드 실패:", error);
+        toast.error("예약 목록을 불러오는데 실패했습니다.");
       }
-    } catch (error) {
-      console.error("예약 목록 로드 실패:", error);
-      toast.error("예약 목록을 불러오는데 실패했습니다.");
-    }
-  }, [currentPatientId, viewState]);
+    },
+    [currentPatientId, viewState]
+  );
 
   // 처방전 로드 함수
   const loadPrescriptions = useCallback(async () => {
@@ -604,7 +611,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       // 현재 환자의 처방전인 경우에만 새로고침
       if (patientId === currentPatientId) {
         try {
-          const data = await prescriptionApi.getPatientPrescriptions(currentPatientId);
+          const data = await prescriptionApi.getPatientPrescriptions(
+            currentPatientId
+          );
           setPrescriptions(data);
         } catch {
           setPrescriptions([]);
@@ -615,7 +624,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     window.addEventListener("prescription-created", handlePrescriptionCreated);
 
     return () => {
-      window.removeEventListener("prescription-created", handlePrescriptionCreated);
+      window.removeEventListener(
+        "prescription-created",
+        handlePrescriptionCreated
+      );
     };
   }, [currentPatientId]);
 
@@ -740,11 +752,24 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                       <SelectValue placeholder="전체" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ALL" className="cursor-pointer">전체</SelectItem>
-                      <SelectItem value="SCHEDULED" className="cursor-pointer">진료 예정</SelectItem>
-                      <SelectItem value="IN_PROGRESS" className="cursor-pointer">진료 중</SelectItem>
-                      <SelectItem value="COMPLETED" className="cursor-pointer">진료 완료</SelectItem>
-                      <SelectItem value="CANCELLED" className="cursor-pointer">취소됨</SelectItem>
+                      <SelectItem value="ALL" className="cursor-pointer">
+                        전체
+                      </SelectItem>
+                      <SelectItem value="SCHEDULED" className="cursor-pointer">
+                        진료 예정
+                      </SelectItem>
+                      <SelectItem
+                        value="IN_PROGRESS"
+                        className="cursor-pointer"
+                      >
+                        진료 중
+                      </SelectItem>
+                      <SelectItem value="COMPLETED" className="cursor-pointer">
+                        진료 완료
+                      </SelectItem>
+                      <SelectItem value="CANCELLED" className="cursor-pointer">
+                        취소됨
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -897,7 +922,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 (m) => m.name
                               ),
                               diagnosis: pres.diagnosis,
-                              instructions: pres.instructions || "1정, 1일 3회, 3일간 복용",
+                              instructions:
+                                pres.instructions || "1정, 1일 3회, 3일간 복용",
                             })
                           }
                         >
@@ -1280,10 +1306,30 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                           <SelectValue placeholder="진료과를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="internal" className="cursor-pointer">내과</SelectItem>
-                          <SelectItem value="surgery" className="cursor-pointer">외과</SelectItem>
-                          <SelectItem value="psychiatry" className="cursor-pointer">신경정신과</SelectItem>
-                          <SelectItem value="dermatology" className="cursor-pointer">피부과</SelectItem>
+                          <SelectItem
+                            value="internal"
+                            className="cursor-pointer"
+                          >
+                            내과
+                          </SelectItem>
+                          <SelectItem
+                            value="surgery"
+                            className="cursor-pointer"
+                          >
+                            외과
+                          </SelectItem>
+                          <SelectItem
+                            value="psychiatry"
+                            className="cursor-pointer"
+                          >
+                            신경정신과
+                          </SelectItem>
+                          <SelectItem
+                            value="dermatology"
+                            className="cursor-pointer"
+                          >
+                            피부과
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

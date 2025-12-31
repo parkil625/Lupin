@@ -5,7 +5,7 @@ import lombok.*;
 
 /**
  * 처방전-약품 중간 테이블 엔티티
- * prescriptions와 medicines의 다대다 관계를 표현
+ * prescriptions와 medicines의 다대다 관계를 표현.
  */
 @Entity
 @Table(name = "prescription_medicines")

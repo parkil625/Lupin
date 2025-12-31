@@ -43,7 +43,7 @@ export interface PrescriptionResponse {
 }
 
 export const prescriptionApi = {
-  // 처방전 발급
+  // 처방전 발급.
   create: async (data: PrescriptionRequest): Promise<PrescriptionResponse> => {
     const response = await apiClient.post("/prescriptions", data);
     return response.data;

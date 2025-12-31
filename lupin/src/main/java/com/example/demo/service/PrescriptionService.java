@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.*;
 import com.example.demo.domain.enums.AppointmentStatus;
-import com.example.demo.dto.prescription.PrescriptionMedicineDto;
 import com.example.demo.dto.prescription.PrescriptionRequest;
 import com.example.demo.dto.prescription.PrescriptionResponse;
 import com.example.demo.repository.AppointmentRepository;
@@ -15,8 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -135,7 +132,7 @@ public class PrescriptionService {
 
         Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(request.getAppointmentId());
         if (existingPrescription.isPresent()) {
-            throw new IllegalStateException("이미 처방전이 발급된 예약입니다."); // 400 또는 409 에러로 처리 가능
+            throw new IllegalStateException("이미 처방전이 발급된 예약입니다.");
         }
 
         System.out.println("✓ 예약 조회 성공 - ID: " + appointment.getId());
@@ -148,21 +145,33 @@ public class PrescriptionService {
                 .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
         System.out.println("✓ 환자 조회 성공 - ID: " + patient.getId() + ", 이름: " + patient.getName());
 
-        String medicationString = request.getMedicines().stream()
-                .map(item -> item.getMedicineName())
-                .collect(Collectors.joining("\n"));
-        System.out.println("✓ 약품 문자열 생성 - 약품수: " + request.getMedicines().size());
-
+        // 처방전 엔티티 생성
         Prescription prescription = Prescription.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .appointment(appointment)
                 .diagnosis(request.getDiagnosis())
-                .medications(medicationString)
                 .instructions(request.getAdditionalInstructions())
                 .date(LocalDate.now())
                 .build();
         System.out.println("✓ 처방전 엔티티 생성 완료");
+
+        // 약품 정보를 PrescriptionMedicine 엔티티로 변환 후 추가
+        request.getMedicines().forEach(medicineItem -> {
+            Medicine medicine = medicineRepository.findByName(medicineItem.getMedicineName())
+                    .orElseThrow(() -> new IllegalArgumentException("약품을 찾을 수 없습니다: " + medicineItem.getMedicineName()));
+
+            PrescriptionMedicine pm = PrescriptionMedicine.builder()
+                    .medicine(medicine)
+                    .dosage(medicineItem.getDosage())
+                    .frequency(medicineItem.getFrequency())
+                    .durationDays(medicineItem.getDurationDays())
+                    .instructions(medicineItem.getInstructions())
+                    .build();
+
+            prescription.addMedicine(pm);
+        });
+        System.out.println("✓ 약품 정보 추가 완료 - 약품수: " + request.getMedicines().size());
 
         Prescription savedPrescription = prescriptionRepository.save(prescription);
         System.out.println("✓ 처방전 DB 저장 완료 - 처방전 ID: " + savedPrescription.getId());
@@ -193,39 +202,6 @@ public class PrescriptionService {
 
     public Optional<PrescriptionResponse> getPrescriptionByAppointmentId(Long appointmentId) {
         return prescriptionRepository.findByAppointmentId(appointmentId)
-                .map(this::enrichWithMedicineDetails);
-    }
-
-    /**
-     * 처방전의 약품명 문자열을 파싱하여 Medicine 테이블에서 주의사항을 조회
-     */
-    private PrescriptionResponse enrichWithMedicineDetails(Prescription prescription) {
-        PrescriptionResponse response = PrescriptionResponse.from(prescription);
-
-        if (prescription.getMedications() != null && !prescription.getMedications().trim().isEmpty()) {
-            List<PrescriptionMedicineDto> medicineDetails = Arrays.stream(prescription.getMedications().split("\n"))
-                    .map(String::trim)
-                    .filter(name -> !name.isEmpty())
-                    .map(this::getMedicineDetail)
-                    .collect(Collectors.toList());
-            response.setMedicineDetails(medicineDetails);
-        }
-
-        return response;
-    }
-
-    /**
-     * 약품명으로 Medicine 테이블에서 주의사항 조회
-     */
-    private PrescriptionMedicineDto getMedicineDetail(String medicineName) {
-        return medicineRepository.findByName(medicineName)
-                .map(medicine -> PrescriptionMedicineDto.builder()
-                        .name(medicine.getName())
-                        .precautions(medicine.getPrecautions())
-                        .build())
-                .orElse(PrescriptionMedicineDto.builder()
-                        .name(medicineName)
-                        .precautions(null)
-                        .build());
+                .map(PrescriptionResponse::from);
     }
 }

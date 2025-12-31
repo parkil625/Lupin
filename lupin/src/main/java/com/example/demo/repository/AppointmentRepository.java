@@ -30,10 +30,14 @@ List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patien
            "FROM Appointment a " +
            "WHERE a.doctor.id = :doctorId " +
            "AND a.date = :date " +
-           "AND a.status != 'CANCELLED'")
+           "AND a.status != com.example.demo.domain.enums.AppointmentStatus.CANCELLED")
     boolean existsByDoctorIdAndDate(@Param("doctorId") Long doctorId, @Param("date") LocalDateTime date);
 
-    boolean existsByPatientIdAndDate(Long patientId, LocalDateTime date);
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END " +
+           "FROM Appointment a " +
+           "WHERE a.patient.id = :patientId " +
+           "AND a.date = :date")
+    boolean existsByPatientIdAndDate(@Param("patientId") Long patientId, @Param("date") LocalDateTime date);
 
     // Patient와 Doctor를 Eager Loading하여 조회 (Lazy Loading 에러 방지)
     @Query("SELECT a FROM Appointment a " +
@@ -66,7 +70,7 @@ List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patien
 
     // 예약 시간이 5분 전인 예약들의 상태를 일괄적으로 진료 중(IN_PROGRESS)로 변경
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Appointment a SET a.status = 'IN_PROGRESS' " +
-       "WHERE a.status = 'SCHEDULED' AND a.date <= :thresholdTime")
+    @Query("UPDATE Appointment a SET a.status = com.example.demo.domain.enums.AppointmentStatus.IN_PROGRESS " +
+       "WHERE a.status = com.example.demo.domain.enums.AppointmentStatus.SCHEDULED AND a.date <= :thresholdTime")
        int bulkUpdateStatusToInProgress(@Param("thresholdTime") LocalDateTime thresholdTime);
 }

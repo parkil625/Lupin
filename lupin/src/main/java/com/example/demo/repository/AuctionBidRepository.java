@@ -21,6 +21,6 @@ public interface AuctionBidRepository extends JpaRepository<AuctionBid, Long> {
 
     List<AuctionBid> findByAuctionId(Long id);
 
-    @Query("SELECT b FROM AuctionBid b JOIN FETCH b.user WHERE b.auction.status = 'ACTIVE' ORDER BY b.bidAmount DESC")
+    @Query("SELECT b FROM AuctionBid b JOIN FETCH b.user WHERE b.auction.status = com.example.demo.domain.enums.AuctionStatus.ACTIVE ORDER BY b.bidAmount DESC")
     List<AuctionBid> findBidsByActiveAuction();
 }

@@ -31,7 +31,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     @Query("""
     select a
     from Auction a
-    where a.status = 'ACTIVE'
+    where a.status = com.example.demo.domain.enums.AuctionStatus.ACTIVE
       and (
          (a.overtimeStarted = true and a.overtimeEndTime < :now)
          OR
@@ -54,7 +54,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     @Query("""
     select a
     from Auction a
-    where a.status = 'ACTIVE'
+    where a.status = com.example.demo.domain.enums.AuctionStatus.ACTIVE
       and a.overtimeStarted = false
       and a.regularEndTime < :now
     """)
@@ -82,7 +82,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
         )
         FROM Auction a
         LEFT JOIN a.winner w
-        WHERE a.status = 'ACTIVE'
+        WHERE a.status = com.example.demo.domain.enums.AuctionStatus.ACTIVE
     """)
     Optional<AuctionStatusResponse> findAuctionStatus();
 

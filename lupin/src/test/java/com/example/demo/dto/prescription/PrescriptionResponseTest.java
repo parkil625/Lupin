@@ -38,7 +38,6 @@ class PrescriptionResponseTest {
                 .doctor(doctor)
                 .appointment(appointment)
                 .diagnosis("감기")
-                .medications("타이레놀 500mg")
                 .date(LocalDate.of(2025, 12, 27))
                 .build();
 
@@ -54,7 +53,7 @@ class PrescriptionResponseTest {
         assertThat(response.getDepartmentName()).isEqualTo("내과");
         assertThat(response.getAppointmentId()).isEqualTo(3L);
         assertThat(response.getDiagnosis()).isEqualTo("감기");
-        assertThat(response.getMedications()).isEqualTo("타이레놀 500mg");
+        assertThat(response.getMedicineDetails()).isEmpty(); // No medicines added
         assertThat(response.getDate()).isEqualTo(LocalDate.of(2025, 12, 27));
     }
 
@@ -73,7 +72,6 @@ class PrescriptionResponseTest {
                 .doctor(doctor)
                 .appointment(null)
                 .diagnosis("감기")
-                .medications("타이레놀 500mg")
                 .date(LocalDate.of(2025, 12, 27))
                 .build();
 
@@ -102,7 +100,6 @@ class PrescriptionResponseTest {
                 .doctor(null)
                 .appointment(null)
                 .diagnosis("감기")
-                .medications("타이레놀 500mg")
                 .date(LocalDate.of(2025, 12, 27))
                 .build();
 
@@ -136,7 +133,6 @@ class PrescriptionResponseTest {
                 .doctor(doctor)
                 .appointment(null)
                 .diagnosis("감기")
-                .medications("타이레놀 500mg")
                 .date(LocalDate.of(2025, 12, 27))
                 .build();
 
@@ -158,7 +154,6 @@ class PrescriptionResponseTest {
                 .doctor(null)
                 .appointment(null)
                 .diagnosis("감기")
-                .medications("타이레놀 500mg")
                 .date(LocalDate.of(2025, 12, 27))
                 .build();
 
@@ -174,40 +169,7 @@ class PrescriptionResponseTest {
         assertThat(response.getDepartmentName()).isNull();
         assertThat(response.getAppointmentId()).isNull();
         assertThat(response.getDiagnosis()).isEqualTo("감기");
-        assertThat(response.getMedications()).isEqualTo("타이레놀 500mg");
         assertThat(response.getDate()).isEqualTo(LocalDate.of(2025, 12, 27));
-    }
-
-    @Test
-    @DisplayName("약물 정보가 null인 경우 처리")
-    void from_WithNullMedications_ShouldHandleGracefully() {
-        // given
-        User patient = User.builder()
-                .id(1L)
-                .name("환자이름")
-                .build();
-
-        User doctor = User.builder()
-                .id(2L)
-                .name("의사이름")
-                .build();
-
-        Prescription prescription = Prescription.builder()
-                .id(100L)
-                .patient(patient)
-                .doctor(doctor)
-                .appointment(null)
-                .diagnosis("감기")
-                .medications(null)
-                .date(LocalDate.of(2025, 12, 27))
-                .build();
-
-        // when
-        PrescriptionResponse response = PrescriptionResponse.from(prescription);
-
-        // then
-        assertThat(response.getMedications()).isNull();
-        assertThat(response.getDiagnosis()).isEqualTo("감기");
     }
 
     @Test
@@ -230,7 +192,6 @@ class PrescriptionResponseTest {
                 .doctor(doctor)
                 .appointment(null)
                 .diagnosis(null)
-                .medications("타이레놀 500mg")
                 .date(LocalDate.of(2025, 12, 27))
                 .build();
 
@@ -239,7 +200,6 @@ class PrescriptionResponseTest {
 
         // then
         assertThat(response.getDiagnosis()).isNull();
-        assertThat(response.getMedications()).isEqualTo("타이레놀 500mg");
     }
 
     @Test
@@ -262,7 +222,6 @@ class PrescriptionResponseTest {
                 .doctor(doctor)
                 .appointment(null)
                 .diagnosis("감기")
-                .medications("타이레놀 500mg")
                 .date(null)
                 .build();
 

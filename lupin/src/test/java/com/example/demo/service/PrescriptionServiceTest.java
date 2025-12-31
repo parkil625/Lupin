@@ -1,11 +1,14 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.Appointment;
+import com.example.demo.domain.entity.Medicine;
 import com.example.demo.domain.entity.Prescription;
+import com.example.demo.domain.entity.PrescriptionMedicine;
 import com.example.demo.domain.entity.User;
 import com.example.demo.dto.prescription.PrescriptionRequest;
 import com.example.demo.dto.prescription.PrescriptionResponse;
 import com.example.demo.repository.AppointmentRepository;
+import com.example.demo.repository.MedicineRepository;
 import com.example.demo.repository.PrescriptionRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,12 +43,17 @@ class PrescriptionServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private MedicineRepository medicineRepository;
+
     @InjectMocks
     private PrescriptionService prescriptionService;
 
     private User doctor;
     private User patient;
     private Appointment appointment;
+    private Medicine tylenol;
+    private Medicine aspirin;
 
     @BeforeEach
     void setUp() {
@@ -65,6 +74,20 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .build();
+
+        tylenol = Medicine.builder()
+                .id(1L)
+                .name("타이레놀")
+                .code("MED001")
+                .precautions("간 질환 환자 주의")
+                .build();
+
+        aspirin = Medicine.builder()
+                .id(2L)
+                .name("아스피린")
+                .code("MED002")
+                .precautions("출혈 위험 주의")
                 .build();
     }
 
@@ -87,25 +110,31 @@ class PrescriptionServiceTest {
                 .additionalInstructions("식후 복용")
                 .build();
 
-        Prescription savedPrescription = Prescription.builder()
-                .id(1L)
-                .doctor(doctor)
-                .patient(patient)
-                .appointment(appointment)
-                .diagnosis("감기")
-                .medications("타이레놀\n아스피린")
-                .instructions("식후 복용")
-                .date(LocalDate.now())
-                .build();
-
         given(appointmentRepository.findByIdWithPatientAndDoctor(1L))
                 .willReturn(Optional.of(appointment));
+        given(prescriptionRepository.findByAppointmentId(1L))
+                .willReturn(Optional.empty());
         given(userRepository.findById(doctor.getId()))
                 .willReturn(Optional.of(doctor));
         given(userRepository.findById(patient.getId()))
                 .willReturn(Optional.of(patient));
+        given(medicineRepository.findByName("타이레놀"))
+                .willReturn(Optional.of(tylenol));
+        given(medicineRepository.findByName("아스피린"))
+                .willReturn(Optional.of(aspirin));
         given(prescriptionRepository.save(any(Prescription.class)))
-                .willReturn(savedPrescription);
+                .willAnswer(invocation -> {
+                    Prescription p = invocation.getArgument(0);
+                    return Prescription.builder()
+                            .id(1L)
+                            .doctor(p.getDoctor())
+                            .patient(p.getPatient())
+                            .appointment(p.getAppointment())
+                            .diagnosis(p.getDiagnosis())
+                            .instructions(p.getInstructions())
+                            .date(p.getDate())
+                            .build();
+                });
 
         // when
         PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
@@ -113,13 +142,13 @@ class PrescriptionServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getDiagnosis()).isEqualTo("감기");
-        assertThat(result.getMedications()).isEqualTo("타이레놀\n아스피린");
         assertThat(result.getInstructions()).isEqualTo("식후 복용");
+        assertThat(result.getMedicineDetails()).isEmpty(); // save가 medicines를 반환하지 않으므로 빈 리스트
     }
 
     @Test
-    @DisplayName("약품명만 저장 - 줄바꿈으로 구분")
-    void createPrescription_SaveOnlyMedicineNames() {
+    @DisplayName("약품 정보를 prescription_medicines 테이블에 저장")
+    void createPrescription_SaveMedicinesInJoinTable() {
         // given
         PrescriptionRequest request = PrescriptionRequest.builder()
                 .appointmentId(1L)
@@ -134,10 +163,14 @@ class PrescriptionServiceTest {
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(1L))
                 .willReturn(Optional.of(appointment));
+        given(prescriptionRepository.findByAppointmentId(1L))
+                .willReturn(Optional.empty());
         given(userRepository.findById(doctor.getId()))
                 .willReturn(Optional.of(doctor));
         given(userRepository.findById(patient.getId()))
                 .willReturn(Optional.of(patient));
+        given(medicineRepository.findByName("타이레놀"))
+                .willReturn(Optional.of(tylenol));
         given(prescriptionRepository.save(any(Prescription.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -145,7 +178,8 @@ class PrescriptionServiceTest {
         PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
 
         // then
-        assertThat(result.getMedications()).isEqualTo("타이레놀");
+        assertThat(result.getDiagnosis()).isEqualTo("통증");
+        // medicines는 cascade로 함께 저장됨
     }
 
     @Test
@@ -190,6 +224,8 @@ class PrescriptionServiceTest {
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(1L))
                 .willReturn(Optional.of(appointment));
+        given(prescriptionRepository.findByAppointmentId(1L))
+                .willReturn(Optional.empty());
         given(userRepository.findById(doctor.getId()))
                 .willReturn(Optional.empty());
 
@@ -217,6 +253,8 @@ class PrescriptionServiceTest {
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(1L))
                 .willReturn(Optional.of(appointment));
+        given(prescriptionRepository.findByAppointmentId(1L))
+                .willReturn(Optional.empty());
         given(userRepository.findById(doctor.getId()))
                 .willReturn(Optional.of(doctor));
         given(userRepository.findById(patient.getId()))
@@ -227,5 +265,38 @@ class PrescriptionServiceTest {
                 prescriptionService.createPrescription(doctor.getId(), request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("환자를 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("약품을 찾을 수 없는 경우 예외")
+    void createPrescription_MedicineNotFound() {
+        // given
+        PrescriptionRequest request = PrescriptionRequest.builder()
+                .appointmentId(1L)
+                .patientId(patient.getId())
+                .diagnosis("감기")
+                .medicines(Arrays.asList(
+                        PrescriptionRequest.MedicineItem.builder()
+                                .medicineName("존재하지않는약")
+                                .build()
+                ))
+                .build();
+
+        given(appointmentRepository.findByIdWithPatientAndDoctor(1L))
+                .willReturn(Optional.of(appointment));
+        given(prescriptionRepository.findByAppointmentId(1L))
+                .willReturn(Optional.empty());
+        given(userRepository.findById(doctor.getId()))
+                .willReturn(Optional.of(doctor));
+        given(userRepository.findById(patient.getId()))
+                .willReturn(Optional.of(patient));
+        given(medicineRepository.findByName("존재하지않는약"))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() ->
+                prescriptionService.createPrescription(doctor.getId(), request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("약품을 찾을 수 없습니다: 존재하지않는약");
     }
 }

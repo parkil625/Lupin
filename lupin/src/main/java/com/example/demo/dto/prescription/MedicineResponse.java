@@ -13,18 +13,14 @@ import lombok.NoArgsConstructor;
 public class MedicineResponse {
 
     private Long id;
-    private String code;
     private String name;
     private String description;
-    private String precautions;
 
     public static MedicineResponse from(Medicine medicine) {
         return MedicineResponse.builder()
                 .id(medicine.getId())
-                .code(medicine.getCode())
                 .name(medicine.getName())
                 .description(medicine.getDescription())
-                .precautions(medicine.getPrecautions())
                 .build();
     }
 }

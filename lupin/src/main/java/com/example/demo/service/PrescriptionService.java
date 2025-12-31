@@ -151,7 +151,7 @@ public class PrescriptionService {
             User patient = userRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다. ID: " + request.getPatientId()));
 
-            // 5. 처방전 생성
+            // 5. 처방전 객체 생성 및 1차 저장 (ID 생성)
             Prescription prescription = Prescription.builder()
                     .doctor(doctor)
                     .patient(patient)
@@ -162,7 +162,11 @@ public class PrescriptionService {
                     .medicines(new ArrayList<>())
                     .build();
 
-            // 6. 약품 추가
+            // [핵심 수정] 부모 엔티티를 먼저 저장하여 ID를 확보합니다. (Transient -> Persistent)
+            Prescription savedPrescription = prescriptionRepository.save(prescription);
+            System.out.println("✓ 처방전 기본 정보 저장 완료 (ID: " + savedPrescription.getId() + ")");
+
+            // 6. 약품 추가 (저장된 처방전 객체 사용)
             if (request.getMedicines() == null || request.getMedicines().isEmpty()) {
                 throw new IllegalArgumentException("처방할 약품이 없습니다.");
             }
@@ -177,24 +181,24 @@ public class PrescriptionService {
                             .orElseThrow(() -> new IllegalArgumentException("약품명으로 찾을 수 없습니다: " + item.getMedicineName()));
                 }
 
-                // [수정] 자식 엔티티(PrescriptionMedicine)에 부모(Prescription)를 명시적으로 주입
-                // 이것이 누락되면 FK가 null이 되어 500 에러가 발생합니다.
+                // 저장된 부모 엔티티(savedPrescription)를 주입하여 FK 오류 방지
                 PrescriptionMedicine pm = PrescriptionMedicine.builder()
                         .medicine(medicine)
                         .instructions(item.getInstructions())
-                        .prescription(prescription) // ★ 핵심 수정: 부모 엔티티 참조 설정
+                        .prescription(savedPrescription) // ★ ID가 존재하는 영속 객체 참조
                         .build();
                 
-                prescription.addMedicine(pm);
-                System.out.println("  - 약품 추가: " + medicine.getName() + " (ID: " + medicine.getId() + ")");
+                savedPrescription.addMedicine(pm);
+                System.out.println("   - 약품 추가: " + medicine.getName() + " (ID: " + medicine.getId() + ")");
             }
 
             // 7. 예약 상태 완료로 변경
             appointment.complete();
             System.out.println("✓ 예약 상태 '완료'로 변경됨");
 
-            // 8. DB 저장 및 Flush (예외 포착을 위해 saveAndFlush 사용)
-            Prescription savedPrescription = prescriptionRepository.saveAndFlush(prescription);
+            // 8. 최종 저장 (약품 정보 포함하여 업데이트 및 Flush)
+            // 이미 영속화된 엔티티이므로 변경사항이 DB에 반영됩니다.
+            savedPrescription = prescriptionRepository.saveAndFlush(savedPrescription);
             System.out.println("✓ 처방전 DB 저장 성공 (ID: " + savedPrescription.getId() + ")");
             System.out.println("========================================");
 

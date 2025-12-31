@@ -66,32 +66,36 @@ export default function ChatRoom({
     onMessageReceived: async (
       msg: ChatMessageResponse & { type?: string; doctorName?: string }
     ) => {
-      // [추가] 처방전 발급 메시지 감지 및 모달 자동 오픈 (환자용)
-      // DoctorChatPage.tsx에서 보내는 메시지와 텍스트("처방전이 발급되었습니다")가 일치해야 함
+      // [수정] 처방전 발급 메시지 감지 및 모달 자동 오픈 (환자용)
       if (
         currentUser.role === "PATIENT" &&
         msg.content &&
-        msg.content.includes("처방전이 발급되었습니다")
+        (msg.content.includes("처방전이 발급되었습니다") ||
+          msg.content.includes("처방전이 도착했습니다"))
       ) {
         try {
+          // DB 트랜잭션 반영 대기 (안전장치)
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
           // 해당 예약의 처방전 정보 조회
           const response = await prescriptionApi.getByAppointmentId(
             appointmentId
           );
+
           if (response) {
             setReceivedPrescription(response);
             setViewPrescriptionOpen(true);
-            toast.success("처방전이 도착했습니다.");
+            toast.success("📋 처방전이 도착했습니다! 확인해보세요.");
           }
 
-          // 대시보드 등의 상태 갱신 이벤트
+          // Medical 페이지 등의 목록 갱신 이벤트
           window.dispatchEvent(
             new CustomEvent("prescription-created", {
               detail: { patientId: currentUser.id },
             })
           );
         } catch (e) {
-          console.error("처방전 로드 실패", e);
+          console.error("처방전 데이터 자동 로드 실패", e);
         }
       }
 

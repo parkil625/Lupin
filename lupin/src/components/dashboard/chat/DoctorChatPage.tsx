@@ -426,10 +426,15 @@ export default function DoctorChatPage() {
       toast.success("처방전이 성공적으로 발급되었습니다.");
 
       // 채팅방에도 알림 메시지 자동 전송
-      sendWebSocketMessage(
-        "처방전이 발급되었습니다. 확인해주세요.",
-        currentUserId
-      );
+      // [중요] 환자 측에서 이 텍스트("처방전이 발급되었습니다")를 감지하여 모달을 띄웁니다.
+      if (isConnected) {
+        sendWebSocketMessage(
+          "📋 처방전이 발급되었습니다. 확인해주세요.",
+          currentUserId
+        );
+      } else {
+        console.warn("WebSocket 연결 끊김: 알림 메시지 전송 실패");
+      }
 
       // 6. 폼 초기화
       setDiagnosis("");

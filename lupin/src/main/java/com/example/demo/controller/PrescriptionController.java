@@ -42,10 +42,7 @@ public class PrescriptionController {
             for (int i = 0; i < request.getMedicines().size(); i++) {
                 var med = request.getMedicines().get(i);
                 System.out.println("  [" + i + "] " + med.getMedicineName() +
-                    " - dosage: " + med.getDosage() +
-                    ", freq: " + med.getFrequency() +
-                    ", duration: " + med.getDurationDays() +
-                    ", instructions: " + med.getInstructions());
+                    " (고정값: 1정, 1일 3회, 3일)");
             }
         }
 

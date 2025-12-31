@@ -42,13 +42,5 @@ public class PrescriptionRequest {
 
         @NotBlank(message = "약품명은 필수입니다.")
         private String medicineName;
-
-        private String dosage;
-
-        private String frequency;
-
-        private Integer durationDays; // 복용 기간
-
-        private String instructions; // 복용 지침
     }
 }

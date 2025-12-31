@@ -107,7 +107,7 @@ class PrescriptionServiceTest {
                                 .medicineName("아스피린")
                                 .build()
                 ))
-                .additionalInstructions("식후 복용")
+                .additionalInstructions("하루 3회 복용")
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(1L))
@@ -142,7 +142,7 @@ class PrescriptionServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getDiagnosis()).isEqualTo("감기");
-        assertThat(result.getInstructions()).isEqualTo("식후 복용");
+        assertThat(result.getInstructions()).isEqualTo("하루 3회 복용");
         assertThat(result.getMedicineDetails()).isEmpty(); // save가 medicines를 반환하지 않으므로 빈 리스트
     }
 

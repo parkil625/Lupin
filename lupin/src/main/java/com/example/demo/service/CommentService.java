@@ -66,8 +66,11 @@ public class CommentService {
 
         Comment savedComment = commentRepository.save(comment);
 
-        // 댓글 카운트 증가 (원자적 업데이트로 동시성 문제 해결)
-        feedRepository.incrementCommentCount(feedId);
+        // [삭제] 단순 카운트 증가는 정확하지 않을 수 있어 제거합니다.
+        // feedRepository.incrementCommentCount(feedId);
+        
+        // [추가] 실제 DB에 저장된 댓글 수를 조회하여 피드 정보를 동기화합니다.
+        syncFeedCommentCount(feed);
 
         // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
         eventPublisher.publishEvent(NotificationEvent.comment(
@@ -156,8 +159,12 @@ public class CommentService {
         commentRepository.delete(comment);
 
         // 6. 피드 댓글 수 동기화
-        long realCount = commentRepository.countByFeed(comment.getFeed());
-        feedRepository.updateCommentCount(comment.getFeed().getId(), (int) realCount);
+        // [삭제] 중복 코드를 제거하고 공통 메서드를 사용합니다.
+        // long realCount = commentRepository.countByFeed(comment.getFeed());
+        // feedRepository.updateCommentCount(comment.getFeed().getId(), (int) realCount);
+        
+        // [추가] 삭제가 반영된 후의 실제 댓글 수를 카운트하여 업데이트합니다.
+        syncFeedCommentCount(comment.getFeed());
     }
 
     /**
@@ -250,8 +257,11 @@ public class CommentService {
 
         Comment savedReply = commentRepository.save(reply);
 
-        // 대댓글도 댓글 카운트 증가 (원자적 업데이트로 동시성 문제 해결)
-        feedRepository.incrementCommentCount(feedId);
+        // [삭제] 단순 카운트 증가는 정확하지 않을 수 있어 제거합니다.
+        // feedRepository.incrementCommentCount(feedId);
+
+        // [추가] 실제 DB에 저장된 댓글 수를 조회하여 피드 정보를 동기화합니다.
+        syncFeedCommentCount(feed);
 
         // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
         eventPublisher.publishEvent(NotificationEvent.reply(
@@ -407,4 +417,23 @@ public class CommentService {
      * 댓글 삭제 결과 (알림 삭제용)
      */
     public record CommentDeleteResult(List<Long> parentCommentIds, List<Long> allCommentIds) {}
+
+    // [추가]
+    /**
+     * [추가] 피드 댓글 수 DB 동기화
+     * delete_at이 없는(삭제되지 않은) 실존 댓글만 카운트하여 feed 테이블에 업데이트합니다.
+     * 트랜잭션 내에서 flush()를 호출하여 변경사항(INSERT/DELETE)을 즉시 반영한 후 조회합니다.
+     */
+    private void syncFeedCommentCount(Feed feed) {
+        // 쿼리 실행 전 변경사항 반영
+        commentRepository.flush();
+        
+        // 실제 댓글 수 조회 (@SQLRestriction으로 인해 삭제된 댓글은 자동 제외됨)
+        long realCount = commentRepository.countByFeed(feed);
+        
+        log.info(">>> [Comment Service] Syncing comment count for feedId: {}. DB Real Count: {}", feed.getId(), realCount);
+        
+        // 피드 테이블 업데이트
+        feedRepository.updateCommentCount(feed.getId(), (int) realCount);
+    }
 }

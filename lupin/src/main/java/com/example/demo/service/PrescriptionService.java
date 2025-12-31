@@ -163,9 +163,6 @@ public class PrescriptionService {
 
             PrescriptionMedicine pm = PrescriptionMedicine.builder()
                     .medicine(medicine)
-                    .dosage("1정")
-                    .frequency("1일 3회")
-                    .durationDays(3)
                     .instructions(request.getAdditionalInstructions())
                     .build();
 

@@ -7,7 +7,7 @@
  * - 피드 상세 정보 표시
  * - 댓글 표시 및 작성 기능
  */
-import { useState, useEffect, useMemo, useRef } from "react"; // [수정] useRef 추가
+import React, { useState, useEffect, useMemo, useRef } from "react"; // [수정] useRef 추가
 import {
   Dialog,
   DialogContent,

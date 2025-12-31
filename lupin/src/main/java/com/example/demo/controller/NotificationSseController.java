@@ -31,46 +31,41 @@ public class NotificationSseController {
      * @param lastEventId 마지막으로 받은 이벤트 ID (재연결 시 브라우저가 자동 전송)
      */
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe(
+    public ResponseEntity<SseEmitter> subscribe(
             @RequestParam("token") String token,
-            @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId,
-            jakarta.servlet.http.HttpServletResponse response) {
+            @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId) {
 
-        // [수정] Nginx 버퍼링 방지 및 HTTP/2 호환 헤더 설정
-        response.setHeader("X-Accel-Buffering", "no");
-        response.setHeader("Cache-Control", "no-cache, no-transform"); // 캐시 및 변환 금지
-        // response.setHeader("Connection", "keep-alive"); // 삭제: HTTP/2에서 프로토콜 에러 유발
+        log.info("[SSE Debug] 구독 요청 수신: token_exists={}, lastEventId={}", 
+                (token != null), lastEventId);
 
         // "Bearer " 접두사가 있다면 제거
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
+        String resolvedToken = (token != null && token.startsWith("Bearer ")) ? token.substring(7) : token;
+
+        // 토큰 유효성 검증
+        if (!jwtTokenProvider.validateToken(resolvedToken)) {
+            log.warn("[SSE Debug] 구독 실패: 유효하지 않은 토큰");
+            return ResponseEntity.status(401).body(null);
         }
 
-        if (!jwtTokenProvider.validateToken(token)) {
-            log.warn("SSE 구독 실패: 유효하지 않은 토큰");
-            SseEmitter emitter = new SseEmitter(0L);
-            try {
-                emitter.send(SseEmitter.event()
-                        .name("error")
-                        .data("Invalid token"));
-                emitter.complete();
-            } catch (Exception e) {
-                emitter.complete();
-            }
-            return emitter;
-        }
-
-        Authentication authentication = jwtTokenProvider.getAuthentication(token);
+        Authentication authentication = jwtTokenProvider.getAuthentication(resolvedToken);
         String userId = authentication.getName();
 
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Last-Event-ID를 Long으로 파싱 (없거나 파싱 실패 시 null)
+        // Last-Event-ID 파싱
         Long lastEventIdLong = parseLastEventId(lastEventId);
 
-        log.info("SSE 구독 요청: userId={}, lastEventId={}", user.getId(), lastEventIdLong);
-        return notificationSseService.subscribe(user.getId(), lastEventIdLong);
+        log.info("[SSE Debug] 서비스 구독 시작: userId={}, lastEventId={}", user.getId(), lastEventIdLong);
+        SseEmitter emitter = notificationSseService.subscribe(user.getId(), lastEventIdLong);
+
+        // [절대 수정 금지] SSE 연결 끊김 및 버퍼링 방지를 위한 필수 헤더 설정 (이 부분은 수정하거나 삭제하지 마세요!)
+        return ResponseEntity.ok()
+                .header("X-Accel-Buffering", "no") // Nginx/Cloudflare 버퍼링 방지 (필수)
+                .header("Cache-Control", "no-cache, no-transform") // 캐시 방지
+                .header("Connection", "keep-alive") // 연결 유지 (HTTP/1.1 호환)
+                .header("Content-Type", "text/event-stream;charset=UTF-8") // 인코딩 명시
+                .body(emitter);
     }
 
     private Long parseLastEventId(String lastEventId) {

@@ -174,6 +174,7 @@ public class PrescriptionService {
 
     PrescriptionMedicine pm = PrescriptionMedicine.builder()
             .medicine(medicine)
+            .instructions(medicineItem.getInstructions())
             .build();
 
     prescription.addMedicine(pm);

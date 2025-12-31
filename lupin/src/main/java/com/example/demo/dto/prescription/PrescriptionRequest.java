@@ -42,5 +42,7 @@ public class PrescriptionRequest {
 
         @NotBlank(message = "약품명은 필수입니다.")
         private String medicineName;
+
+        private String instructions; // 각 약품별 복용 지침 (예: "1일 3회, 식후 30분")
     }
 }

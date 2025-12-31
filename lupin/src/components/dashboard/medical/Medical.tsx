@@ -32,7 +32,7 @@ import { toast } from "sonner";
 
 interface MedicalProps {
   setShowChat: (show: boolean) => void;
-  setSelectedPrescription: (prescription: Prescription | null) => void;
+  setSelectedPrescription: (prescription: PrescriptionResponse | null) => void;
 }
 
 export default function Medical({ setSelectedPrescription }: MedicalProps) {
@@ -910,22 +910,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                           size="sm"
                           variant="outline"
                           className="w-full rounded-lg text-xs"
-                          onClick={() =>
-                            setSelectedPrescription({
-                              id: pres.id,
-                              name: pres.diagnosis,
-                              date: new Date(pres.date).toLocaleDateString(
-                                "ko-KR"
-                              ),
-                              doctor: pres.doctorName,
-                              medicines: pres.medicineDetails.map(
-                                (m) => m.name
-                              ),
-                              diagnosis: pres.diagnosis,
-                              instructions:
-                                pres.instructions || "1정, 1일 3회, 3일간 복용",
-                            })
-                          }
+                          onClick={() => setSelectedPrescription(pres)}
                         >
                           상세보기
                         </Button>

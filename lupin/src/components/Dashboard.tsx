@@ -68,6 +68,7 @@ import {
   Member,
   ChatMessage,
 } from "@/types/dashboard.types";
+import { PrescriptionResponse } from "@/api/prescriptionApi";
 import { feedApi, notificationApi, commentApi, userApi } from "@/api";
 import { useFeedStore, mapBackendFeed } from "@/store/useFeedStore";
 import { useNotificationSse } from "@/hooks/useNotificationSse";
@@ -355,7 +356,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
     chatMessage: "",
   });
   const [selectedPrescription, setSelectedPrescription] =
-    useState<Prescription | null>(null);
+    useState<PrescriptionResponse | null>(null);
   const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(
     null
   );

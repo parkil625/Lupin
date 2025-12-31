@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-// List, ArrayList 임포트 제거
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "prescriptions", indexes = {
@@ -34,10 +35,6 @@ public class Prescription {
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
 
-    // 복잡한 연관관계 테이블 제거 -> 단순 텍스트로 저장
-    @Column(columnDefinition = "TEXT")
-    private String medications;
-
     @Column(columnDefinition = "TEXT")
     private String diagnosis;
 
@@ -47,17 +44,35 @@ public class Prescription {
     @Column(name = "date", nullable = false)
     private LocalDate date;
 
+    // 처방 약품 목록 (prescription_medicines 테이블과 조인)
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<PrescriptionMedicine> medicines = new ArrayList<>();
+
     // 생성일, 수정일 등은 필요하다면 BaseEntity 상속 또는 별도 추가
 
     public void updateDiagnosis(String diagnosis) {
         this.diagnosis = diagnosis;
     }
 
-    public void updateMedications(String medications) {
-        this.medications = medications;
-    }
-
     public void updateInstructions(String instructions) {
         this.instructions = instructions;
+    }
+
+    // 약품 추가 편의 메서드
+    public void addMedicine(PrescriptionMedicine medicine) {
+        medicines.add(medicine);
+        medicine.setPrescription(this);
+    }
+
+    // 약품 제거 편의 메서드
+    public void removeMedicine(PrescriptionMedicine medicine) {
+        medicines.remove(medicine);
+        medicine.setPrescription(null);
+    }
+
+    // 모든 약품 제거
+    public void clearMedicines() {
+        medicines.clear();
     }
 }

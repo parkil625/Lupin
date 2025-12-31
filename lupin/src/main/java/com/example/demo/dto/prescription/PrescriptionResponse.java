@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,8 +25,9 @@ public class PrescriptionResponse {
     private String diagnosis;
     private LocalDate date;
 
-    private String medications;
     private String instructions;
+
+    private List<PrescriptionMedicineDto> medicineDetails;
 
     public static PrescriptionResponse from(Prescription prescription) {
         // Null safety: prescription의 연관 엔티티가 null인 경우 기본값 처리
@@ -49,6 +51,11 @@ public class PrescriptionResponse {
             departmentName = prescription.getAppointment().getDepartmentName();
         }
 
+        // 약품 목록을 DTO로 변환
+        List<PrescriptionMedicineDto> medicineDetails = prescription.getMedicines().stream()
+                .map(PrescriptionMedicineDto::from)
+                .collect(java.util.stream.Collectors.toList());
+
         return PrescriptionResponse.builder()
                 .id(prescription.getId())
                 .patientId(patientId)
@@ -60,8 +67,8 @@ public class PrescriptionResponse {
                         prescription.getAppointment().getId() : null)
                 .diagnosis(prescription.getDiagnosis())
                 .date(prescription.getDate())
-                .medications(prescription.getMedications())
                 .instructions(prescription.getInstructions())
+                .medicineDetails(medicineDetails)
                 .build();
     }
 }

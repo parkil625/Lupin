@@ -132,7 +132,7 @@ public class PrescriptionService {
 
         Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(request.getAppointmentId());
         if (existingPrescription.isPresent()) {
-            throw new IllegalStateException("이미 처방전이 발급된 예약입니다."); // 400 또는 409 에러로 처리 가능
+            throw new IllegalStateException("이미 처방전이 발급된 예약입니다.");
         }
 
         System.out.println("✓ 예약 조회 성공 - ID: " + appointment.getId());
@@ -145,21 +145,33 @@ public class PrescriptionService {
                 .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
         System.out.println("✓ 환자 조회 성공 - ID: " + patient.getId() + ", 이름: " + patient.getName());
 
-        String medicationString = request.getMedicines().stream()
-                .map(item -> item.getMedicineName())
-                .collect(Collectors.joining("\n"));
-        System.out.println("✓ 약품 문자열 생성 - 약품수: " + request.getMedicines().size());
-
+        // 처방전 엔티티 생성
         Prescription prescription = Prescription.builder()
                 .doctor(doctor)
                 .patient(patient)
                 .appointment(appointment)
                 .diagnosis(request.getDiagnosis())
-                .medications(medicationString)
                 .instructions(request.getAdditionalInstructions())
                 .date(LocalDate.now())
                 .build();
         System.out.println("✓ 처방전 엔티티 생성 완료");
+
+        // 약품 정보를 PrescriptionMedicine 엔티티로 변환 후 추가 (고정값 사용)
+        request.getMedicines().forEach(medicineItem -> {
+            Medicine medicine = medicineRepository.findByName(medicineItem.getMedicineName())
+                    .orElseThrow(() -> new IllegalArgumentException("약품을 찾을 수 없습니다: " + medicineItem.getMedicineName()));
+
+            PrescriptionMedicine pm = PrescriptionMedicine.builder()
+                    .medicine(medicine)
+                    .dosage("1정")
+                    .frequency("1일 3회")
+                    .durationDays(3)
+                    .instructions(request.getAdditionalInstructions())
+                    .build();
+
+            prescription.addMedicine(pm);
+        });
+        System.out.println("✓ 약품 정보 추가 완료 - 약품수: " + request.getMedicines().size());
 
         Prescription savedPrescription = prescriptionRepository.save(prescription);
         System.out.println("✓ 처방전 DB 저장 완료 - 처방전 ID: " + savedPrescription.getId());

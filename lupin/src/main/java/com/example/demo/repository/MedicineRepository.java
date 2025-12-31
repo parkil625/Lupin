@@ -12,6 +12,8 @@ public interface MedicineRepository extends JpaRepository<Medicine, Long> {
 
     Optional<Medicine> findByCode(String code);
 
+    Optional<Medicine> findByName(String name);
+
     List<Medicine> findByNameContainingIgnoreCase(String name);
 
     List<Medicine> findByOrderByNameAsc();

@@ -872,153 +872,17 @@ export default function FeedDetailDialogHome({
 
   return (
     <>
-      {/* 모바일용 전체화면 댓글 오버레이 - Dialog 밖에 위치하여 fixed positioning 작동 */}
-      {open && showComments && (
-        <div className="md:hidden fixed inset-x-0 top-0 bottom-[60px] z-[60] bg-white flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h3 className="font-bold text-lg">댓글 {totalCommentCount}개</h3>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <button
-                  onClick={() => setShowSortMenu(!showSortMenu)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  <ArrowUpDown className="w-4 h-4 text-gray-900" />
-                  <span className="text-sm font-semibold text-gray-900">
-                    {sortOrder === "latest" ? "최신순" : "인기순"}
-                  </span>
-                </button>
-                {showSortMenu && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
-                    <button
-                      onClick={() => {
-                        setSortOrder("latest");
-                        setShowSortMenu(false);
-                      }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
-                        sortOrder === "latest"
-                          ? "bg-gray-50 font-semibold text-[#C93831]"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      최신순
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortOrder("popular");
-                        setShowSortMenu(false);
-                      }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
-                        sortOrder === "popular"
-                          ? "bg-gray-50 font-semibold text-[#C93831]"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      인기순
-                    </button>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setShowComments(false)}
-                className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="space-y-4 px-6 pt-4 pb-4">
-                {comments.length === 0 ? (
-                  <div className="text-center text-gray-500 text-sm py-8">
-                    첫 댓글을 남겨보세요!
-                  </div>
-                ) : (
-                  sortedComments.map((comment) => renderComment(comment))
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-          <div className="p-4 border-t border-gray-200/50">
-            <div className="flex gap-2 items-center">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  placeholder={
-                    hasCommentPenalty
-                      ? "댓글 작성이 제한되었습니다."
-                      : "댓글을 입력하세요..."
-                  }
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  // [수정] 한글 엔터 중복 방지 및 전송 중 차단
-                  onKeyDown={(e) => {
-                    if (
-                      !hasCommentPenalty &&
-                      !isSubmitting &&
-                      e.key === "Enter" &&
-                      !e.nativeEvent.isComposing
-                    ) {
-                      e.preventDefault();
-                      handleSendComment();
-                    }
-                  }}
-                  disabled={hasCommentPenalty || isSubmitting}
-                  className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                {commentText && !hasCommentPenalty && !isSubmitting && (
-                  <button
-                    onClick={() => setCommentText("")}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
-                  >
-                    <X className="w-3 h-3 text-gray-600" />
-                  </button>
-                )}
-              </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="inline-block">
-                      <button
-                        onClick={handleSendComment}
-                        disabled={
-                          hasCommentPenalty ||
-                          isSubmitting ||
-                          !commentText.trim()
-                        }
-                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-shadow flex-shrink-0 cursor-pointer ${
-                          hasCommentPenalty || isSubmitting
-                            ? "bg-gray-300 cursor-not-allowed text-gray-500"
-                            : "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        }`}
-                        aria-label="댓글 전송"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </TooltipTrigger>
-                  {hasCommentPenalty && (
-                    <TooltipContent side="top">
-                      <p>
-                        신고 누적으로 인해 댓글 작성이 3일간 제한되었습니다.
-                      </p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* [수정됨] 모바일 댓글 오버레이 위치 이동 (DialogContent 내부로) */}
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className={`block p-0 gap-0 h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 ${
-            showComments
-              ? "md:!w-[825px] md:!max-w-[825px]"
-              : "md:!w-[475px] md:!max-w-[475px]"
-          }`}
+          className={`block p-0 gap-0 overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300
+            md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh]
+            ${
+              showComments
+                ? "h-[100dvh] max-h-[100dvh] w-screen max-w-none md:!w-[825px] md:!max-w-[825px]" // [수정] 댓글 열림 시 모바일 전체 화면 꽉 채움
+                : "h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:!w-[475px] md:!max-w-[475px]" // 기본 상태
+            }`}
           onPointerDownOutside={(e) => {
             // 모바일에서만 댓글 오버레이 클릭 시 다이얼로그 닫힘 방지
             const isMobile = window.innerWidth < 768;
@@ -1445,6 +1309,148 @@ export default function FeedDetailDialogHome({
               </div>
             )}
           </div>
+
+          {/* 모바일용 댓글 오버레이 (DialogContent 내부로 이동 및 absolute 적용) */}
+          {showComments && (
+            <div className="md:hidden absolute inset-0 z-[60] bg-white flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="font-bold text-lg">
+                  댓글 {totalCommentCount}개
+                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowSortMenu(!showSortMenu)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <ArrowUpDown className="w-4 h-4 text-gray-900" />
+                      <span className="text-sm font-semibold text-gray-900">
+                        {sortOrder === "latest" ? "최신순" : "인기순"}
+                      </span>
+                    </button>
+                    {showSortMenu && (
+                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50">
+                        <button
+                          onClick={() => {
+                            setSortOrder("latest");
+                            setShowSortMenu(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
+                            sortOrder === "latest"
+                              ? "bg-gray-50 font-semibold text-[#C93831]"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          최신순
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSortOrder("popular");
+                            setShowSortMenu(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 transition-colors cursor-pointer ${
+                            sortOrder === "popular"
+                              ? "bg-gray-50 font-semibold text-[#C93831]"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          인기순
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowComments(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="space-y-4 px-6 pt-4 pb-4">
+                    {comments.length === 0 ? (
+                      <div className="text-center text-gray-500 text-sm py-8">
+                        첫 댓글을 남겨보세요!
+                      </div>
+                    ) : (
+                      sortedComments.map((comment) => renderComment(comment))
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+              <div className="p-4 border-t border-gray-200/50">
+                <div className="flex gap-2 items-center">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder={
+                        hasCommentPenalty
+                          ? "댓글 작성이 제한되었습니다."
+                          : "댓글을 입력하세요..."
+                      }
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      // [수정] 한글 엔터 중복 방지 및 전송 중 차단
+                      onKeyDown={(e) => {
+                        if (
+                          !hasCommentPenalty &&
+                          !isSubmitting &&
+                          e.key === "Enter" &&
+                          !e.nativeEvent.isComposing
+                        ) {
+                          e.preventDefault();
+                          handleSendComment();
+                        }
+                      }}
+                      disabled={hasCommentPenalty || isSubmitting}
+                      className="w-full py-2 text-sm bg-transparent border-b-2 border-gray-300 focus:border-[#C93831] outline-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    {commentText && !hasCommentPenalty && !isSubmitting && (
+                      <button
+                        onClick={() => setCommentText("")}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-pointer"
+                      >
+                        <X className="w-3 h-3 text-gray-600" />
+                      </button>
+                    )}
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="inline-block">
+                          <button
+                            onClick={handleSendComment}
+                            disabled={
+                              hasCommentPenalty ||
+                              isSubmitting ||
+                              !commentText.trim()
+                            }
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-shadow flex-shrink-0 cursor-pointer ${
+                              hasCommentPenalty || isSubmitting
+                                ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                                : "bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            }`}
+                            aria-label="댓글 전송"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      {hasCommentPenalty && (
+                        <TooltipContent side="top">
+                          <p>
+                            신고 누적으로 인해 댓글 작성이 3일간 제한되었습니다.
+                          </p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -57,8 +58,8 @@ public class AuctionController {
         boolean isSuccess = auctionBidFacade.bid(auctionId, user.getId(), request.getBidAmount(), LocalDateTime.now());
 
         if (!isSuccess) {
-
-            return ResponseEntity.ok().body("아쉽지만 다른 분이 먼저 입찰했습니다.");
+            // [수정] 실패 시 200(ok) 대신 409(CONFLICT)를 반환하여 프론트엔드가 에러로 인식하게 함
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("아쉽지만 다른 분이 먼저 입찰했습니다.");
         }
 
         return ResponseEntity.ok().body("입찰 성공!");

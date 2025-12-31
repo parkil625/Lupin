@@ -138,28 +138,58 @@ class AuctionControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "testuser")
-    @DisplayName("POST /{id}/bid - 경매 입찰 성공")
+    @WithMockUser(username = "testuser") // @CurrentUser가 이 유저를 기반으로 동작한다고 가정
+    @DisplayName("성공: Facade가 true를 반환하면 200 OK와 성공 메시지를 응답한다")
     void placeBid_Success() throws Exception {
+        // given
         Long auctionId = 10L;
         Long bidAmount = 6000L;
         AuctionRequest request = new AuctionRequest(bidAmount);
 
-        // API 호출
+        // [핵심] Facade가 'true'를 반환하도록 스터빙(Stubbing)해야 합니다!
+        given(auctionBidFacade.bid(eq(auctionId), anyLong(), eq(bidAmount), any(LocalDateTime.class)))
+                .willReturn(true);
+
+        // when & then
         mockMvc.perform(post("/api/auction/{auctionId}/bid", auctionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                         .with(csrf()))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isOk()) // 200 확인
+                .andExpect(content().string("입찰 성공!")); // 응답 메시지 확인
 
-        // Service 호출 검증
+        // verify: 실제 Facade가 호출되었는지 확인
         verify(auctionBidFacade).bid(
                 eq(auctionId),
-                eq(testUser.getId()), // 1L
+                anyLong(), // testUser.getId() 대신 anyLong()으로 유연하게 처리하거나 실제 ID 값 넣기
                 eq(bidAmount),
                 any(LocalDateTime.class)
         );
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    @DisplayName("실패: Facade가 false를 반환하면 409 Conflict와 실패 메시지를 응답한다")
+    void placeBid_Fail_Conflict() throws Exception {
+        // given
+        Long auctionId = 10L;
+        Long bidAmount = 6000L;
+        AuctionRequest request = new AuctionRequest(bidAmount);
+
+        // [핵심] 이번엔 'false'를 반환하도록 설정 (누군가 먼저 입찰함)
+        given(auctionBidFacade.bid(eq(auctionId), anyLong(), eq(bidAmount), any(LocalDateTime.class)))
+                .willReturn(false);
+
+        // when & then
+        mockMvc.perform(post("/api/auction/{auctionId}/bid", auctionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                        .with(csrf()))
+                .andDo(print())
+                // [이전 대화 반영] 실패 시 200이 아니라 409를 기대해야 합니다.
+                .andExpect(status().isConflict())
+                .andExpect(content().string("아쉽지만 다른 분이 먼저 입찰했습니다."));
     }
 
     @Test

@@ -287,12 +287,19 @@ try {
           fetchBidHistory();
           fetchUserPoints();
 
-      } catch (error: unknown) {
+      } catch (error: any) {
           console.error("입찰 실패:", error);
-          const axiosError = error as { response?: { data?: { message?: string } } };
-          const errorMessage = axiosError.response?.data?.message || "입찰에 실패했습니다.";
 
-          // [수정] 에러도 Toast로 띄우기
+          // 서버가 보낸 메시지 꺼내기
+          // 1. 에러 응답 데이터 가져오기
+          const errorData = error.response?.data;
+
+
+          const errorMessage = typeof errorData === 'string'
+              ? errorData
+              : errorData?.message || "입찰에 실패했습니다.";
+
+          // [수정] 정확한 에러 메시지 띄우기
           toast.error(errorMessage);
       } finally {
           // [필수 추가] 성공하든 실패하든 로딩 상태를 반드시 해제해야 합니다.

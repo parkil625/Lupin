@@ -204,24 +204,8 @@ public class PrescriptionService {
                             StringBuilder sb = new StringBuilder();
                             sb.append(item.getMedicineName());
 
-                            // 용량, 복용 횟수, 복용 기간을 괄호 안에 포함
-                            List<String> details = new java.util.ArrayList<>();
-
-                            if (item.getDosage() != null && !item.getDosage().isEmpty()) {
-                                details.add(item.getDosage());
-                            }
-
-                            if (item.getFrequency() != null && !item.getFrequency().isEmpty()) {
-                                details.add(item.getFrequency());
-                            }
-
-                            if (item.getDurationDays() != null && item.getDurationDays() > 0) {
-                                details.add(item.getDurationDays() + "일");
-                            }
-
-                            if (!details.isEmpty()) {
-                                sb.append(" (").append(String.join(", ", details)).append(")");
-                            }
+                            // 고정값: 용량 1정, 복용 횟수 1일 3회, 복용 기간 3일
+                            sb.append(" (1정, 1일 3회, 3일)");
 
                             return sb.toString();
                         })

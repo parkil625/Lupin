@@ -123,71 +123,85 @@ public class PrescriptionService {
     @Transactional
     public PrescriptionResponse createPrescription(Long doctorId, PrescriptionRequest request) {
         System.out.println("========================================");
-        System.out.println("[처방전 발급] 시작");
-        System.out.println("요청 - 의사ID: " + doctorId + ", 예약ID: " + request.getAppointmentId() + ", 환자ID: " + request.getPatientId());
-        System.out.println("진단: " + request.getDiagnosis());
-        System.out.println("복용 지침 (additionalInstructions): " + request.getAdditionalInstructions());
+        System.out.println("[처방전 발급] 시작 - Service 진입");
+        System.out.println("요청 데이터: 의사ID=" + doctorId + ", 예약ID=" + request.getAppointmentId() + ", 환자ID=" + request.getPatientId());
 
-        Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(request.getAppointmentId())
-                .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+        try {
+            // 1. 예약 조회
+            Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(request.getAppointmentId())
+                    .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다. ID: " + request.getAppointmentId()));
 
-        Optional<Prescription> existingPrescription = prescriptionRepository.findByAppointmentId(request.getAppointmentId());
-        if (existingPrescription.isPresent()) {
-            throw new IllegalStateException("이미 처방전이 발급된 예약입니다.");
+            // 2. 중복 발급 체크
+            if (prescriptionRepository.findByAppointmentId(request.getAppointmentId()).isPresent()) {
+                throw new IllegalStateException("이미 처방전이 발급된 예약입니다. AppointmentID: " + request.getAppointmentId());
+            }
+
+            // 3. 권한 및 일치 여부 검증 (추가된 로직)
+            if (!appointment.getDoctor().getId().equals(doctorId)) {
+                throw new IllegalArgumentException("해당 예약의 담당 의사가 아닙니다. (예약 의사 ID: " + appointment.getDoctor().getId() + ")");
+            }
+            if (!appointment.getPatient().getId().equals(request.getPatientId())) {
+                throw new IllegalArgumentException("예약의 환자 정보와 요청된 환자 정보가 일치하지 않습니다. (예약 환자 ID: " + appointment.getPatient().getId() + ")");
+            }
+
+            // 4. 사용자(의사/환자) 조회
+            User doctor = userRepository.findById(doctorId)
+                    .orElseThrow(() -> new IllegalArgumentException("의사를 찾을 수 없습니다. ID: " + doctorId));
+            User patient = userRepository.findById(request.getPatientId())
+                    .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다. ID: " + request.getPatientId()));
+
+            // 5. 처방전 생성
+            Prescription prescription = Prescription.builder()
+                    .doctor(doctor)
+                    .patient(patient)
+                    .appointment(appointment)
+                    .diagnosis(request.getDiagnosis())
+                    .instructions(request.getAdditionalInstructions())
+                    .date(LocalDate.now())
+                    .build();
+
+            // 6. 약품 추가
+            if (request.getMedicines() == null || request.getMedicines().isEmpty()) {
+                throw new IllegalArgumentException("처방할 약품이 없습니다.");
+            }
+
+            for (PrescriptionRequest.MedicineItem item : request.getMedicines()) {
+                Medicine medicine;
+                if (item.getMedicineId() != null) {
+                    medicine = medicineRepository.findById(item.getMedicineId())
+                            .orElseThrow(() -> new IllegalArgumentException("약품 ID를 찾을 수 없습니다: " + item.getMedicineId()));
+                } else {
+                    medicine = medicineRepository.findByName(item.getMedicineName())
+                            .orElseThrow(() -> new IllegalArgumentException("약품명으로 찾을 수 없습니다: " + item.getMedicineName()));
+                }
+
+                PrescriptionMedicine pm = PrescriptionMedicine.builder()
+                        .medicine(medicine)
+                        .instructions(item.getInstructions())
+                        .build();
+                
+                prescription.addMedicine(pm);
+                System.out.println("  - 약품 추가: " + medicine.getName() + " (ID: " + medicine.getId() + ")");
+            }
+
+            // 7. 예약 상태 완료로 변경
+            appointment.complete();
+            System.out.println("✓ 예약 상태 '완료'로 변경됨");
+
+            // 8. DB 저장 및 Flush (예외 포착을 위해 saveAndFlush 사용)
+            Prescription savedPrescription = prescriptionRepository.saveAndFlush(prescription);
+            System.out.println("✓ 처방전 DB 저장 성공 (ID: " + savedPrescription.getId() + ")");
+            System.out.println("========================================");
+
+            return PrescriptionResponse.from(savedPrescription);
+
+        } catch (Exception e) {
+            System.err.println("!!! [처방전 발급 중 에러 발생] !!!");
+            System.err.println("에러 타입: " + e.getClass().getName());
+            System.err.println("에러 메시지: " + e.getMessage());
+            e.printStackTrace(); // 서버 로그에 상세 스택트레이스 출력
+            throw e;
         }
-
-        System.out.println("✓ 예약 조회 성공 - ID: " + appointment.getId());
-
-        User doctor = userRepository.findById(doctorId)
-                .orElseThrow(() -> new IllegalArgumentException("의사를 찾을 수 없습니다."));
-        System.out.println("✓ 의사 조회 성공 - ID: " + doctor.getId() + ", 이름: " + doctor.getName());
-
-        User patient = userRepository.findById(request.getPatientId())
-                .orElseThrow(() -> new IllegalArgumentException("환자를 찾을 수 없습니다."));
-        System.out.println("✓ 환자 조회 성공 - ID: " + patient.getId() + ", 이름: " + patient.getName());
-
-        // 처방전 엔티티 생성
-        Prescription prescription = Prescription.builder()
-                .doctor(doctor)
-                .patient(patient)
-                .appointment(appointment)
-                .diagnosis(request.getDiagnosis())
-                .instructions(request.getAdditionalInstructions())
-                .date(LocalDate.now())
-                .build();
-        System.out.println("✓ 처방전 엔티티 생성 완료");
-
-        // 약품 정보를 PrescriptionMedicine 엔티티로 변환 후 추가
-        request.getMedicines().forEach(medicineItem -> {
-    Medicine medicine;
-    
-    // 1. ID가 있으면 ID로 조회 (가장 정확하고 안전함)
-    if (medicineItem.getMedicineId() != null) {
-        medicine = medicineRepository.findById(medicineItem.getMedicineId())
-                .orElseThrow(() -> new IllegalArgumentException("약품 ID를 찾을 수 없습니다: " + medicineItem.getMedicineId()));
-    } 
-    // 2. ID가 없으면 이름으로 조회 (차선책)
-    else {
-        medicine = medicineRepository.findByName(medicineItem.getMedicineName())
-                .orElseThrow(() -> new IllegalArgumentException("약품을 찾을 수 없습니다: " + medicineItem.getMedicineName()));
-    }
-
-    PrescriptionMedicine pm = PrescriptionMedicine.builder()
-            .medicine(medicine)
-            .instructions(medicineItem.getInstructions())
-            .build();
-
-    prescription.addMedicine(pm);
-});
-        System.out.println("✓ 약품 정보 추가 완료 - 약품수: " + request.getMedicines().size());
-
-        Prescription savedPrescription = prescriptionRepository.save(prescription);
-        System.out.println("✓ 처방전 DB 저장 완료 - 처방전 ID: " + savedPrescription.getId());
-        System.out.println("✓ 저장된 복용 지침: " + savedPrescription.getInstructions());
-        System.out.println("[처방전 발급] 성공");
-        System.out.println("========================================");
-
-        return PrescriptionResponse.from(savedPrescription);
     }
 
     public List<PrescriptionResponse> getPatientPrescriptions(Long patientId) {

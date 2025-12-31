@@ -197,7 +197,7 @@ class AppointmentTimeUtilsTest {
     @DisplayName("SCHEDULED 상태이고 6분 전일 때 대기 메시지를 반환해야 함")
     void shouldReturnWaitingMessageWhenScheduledAnd6MinutesBefore() {
         // given
-        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(6);
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(6).plusSeconds(10);
         AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
         // when

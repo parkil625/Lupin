@@ -193,8 +193,8 @@ INSERT INTO auctions (
     winning_bid
 ) VALUES (
              200,
-             @now - INTERVAL 11 DAY,
              @now - INTERVAL 10 DAY,
+             @now - INTERVAL 9 DAY,
              false,
              30,
              'ENDED',

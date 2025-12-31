@@ -7,7 +7,7 @@
  * - 피드 상세 정보 표시
  * - 댓글 표시 및 작성 기능
  */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react"; // [수정] useRef 추가
 import {
   Dialog,
   DialogContent,
@@ -95,6 +95,33 @@ export default function FeedDetailDialogHome({
   targetCommentId,
 }: FeedDetailDialogHomeProps) {
   const isMobile = useIsMobile(); // [추가] 모바일 여부 확인
+
+  // [벤치마킹] 모바일 터치 스와이프 로직 (Feed.tsx와 동일)
+  const touchStartX = useRef<number | null>(null);
+  const minSwipeDistance = 50; // 스와이프 인식 최소 거리
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX.current || !feed || !feed.images) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const distance = touchStartX.current - touchEndX;
+    const isLastImage = currentImageIndex === feed.images.length - 1;
+    const isFirstImage = currentImageIndex === 0;
+
+    // 왼쪽으로 스와이프 (다음 이미지)
+    if (distance > minSwipeDistance && !isLastImage) {
+      onNextImage();
+    }
+    // 오른쪽으로 스와이프 (이전 이미지)
+    if (distance < -minSwipeDistance && !isFirstImage) {
+      onPrevImage();
+    }
+    touchStartX.current = null;
+  };
+
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [replyCommentText, setReplyCommentText] = useState("");
@@ -901,14 +928,21 @@ export default function FeedDetailDialogHome({
             <div className="h-full aspect-[9/16] max-w-[calc(100vw-32px)] md:aspect-auto md:w-[475px] md:max-w-[475px] flex-shrink-0 flex flex-col overflow-hidden">
               {feed.images && feed.images.length > 0 ? (
                 <>
-                  {/* Image Carousel - 모바일에서 57% 높이 (Feed.tsx와 동일) */}
-                  <div className="relative h-[57%] md:h-[545px] w-full md:max-w-[475px] overflow-hidden">
+                  {/* Image Carousel - 모바일에서 57% 높이, 스와이프 적용 */}
+                  <div
+                    // [벤치마킹] touch-pan-y 추가 및 핸들러 연결
+                    className="relative h-[57%] md:h-[545px] w-full md:max-w-[475px] overflow-hidden touch-pan-y"
+                    onTouchStart={onTouchStart}
+                    onTouchEnd={onTouchEnd}
+                  >
                     <img
                       src={getCdnUrl(
                         feed.images[currentImageIndex] || feed.images[0]
                       )}
                       alt={feed.activity}
-                      className="w-full h-full object-cover"
+                      // [벤치마킹] select-none, draggable={false} 추가 (드래그 방지)
+                      className="w-full h-full object-cover select-none"
+                      draggable={false}
                     />
 
                     {feed.images.length > 1 && (
@@ -916,7 +950,8 @@ export default function FeedDetailDialogHome({
                         {currentImageIndex > 0 && (
                           <button
                             onClick={onPrevImage}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
+                            // [벤치마킹] hidden md:block 추가 -> 모바일 화살표 숨김
+                            className="hidden md:block absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
                           >
                             <ChevronLeft
                               className={`w-8 h-8 ${iconColorClass}`}
@@ -926,7 +961,8 @@ export default function FeedDetailDialogHome({
                         {currentImageIndex < feed.images.length - 1 && (
                           <button
                             onClick={onNextImage}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
+                            // [벤치마킹] hidden md:block 추가 -> 모바일 화살표 숨김
+                            className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"
                           >
                             <ChevronRight
                               className={`w-8 h-8 ${iconColorClass}`}

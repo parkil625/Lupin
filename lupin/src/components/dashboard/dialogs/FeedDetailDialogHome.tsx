@@ -69,6 +69,7 @@ import { FeedContentDisplay } from "@/components/shared/FeedContent";
 import { getRelativeTime } from "@/lib/utils";
 import { useImageBrightness } from "@/hooks";
 import { UserHoverCard } from "@/components/dashboard/shared/UserHoverCard";
+import { useIsMobile } from "@/components/ui/use-mobile"; // [추가] 모바일 감지 훅
 
 interface FeedDetailDialogHomeProps {
   feed: Feed | null;
@@ -93,6 +94,7 @@ export default function FeedDetailDialogHome({
   onDelete,
   targetCommentId,
 }: FeedDetailDialogHomeProps) {
+  const isMobile = useIsMobile(); // [추가] 모바일 여부 확인
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [replyCommentText, setReplyCommentText] = useState("");
@@ -874,7 +876,8 @@ export default function FeedDetailDialogHome({
     <>
       {/* [수정됨] 모바일 댓글 오버레이 위치 이동 (DialogContent 내부로) */}
 
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* [수정] 모바일에서는 modal={false}를 주어 외부(메뉴바 등)와 상호작용 가능하게 함 */}
+      <Dialog open={open} onOpenChange={onOpenChange} modal={!isMobile}>
         <DialogContent
           // [수정] 모바일 댓글 열림 시: !top-0 !translate-y-0 등으로 다이얼로그 중앙 정렬을 무시하고 상단에 고정
           // 하단은 h-[calc(100dvh-60px)]로 네비게이션 바 공간(60px)만 남김
@@ -885,20 +888,7 @@ export default function FeedDetailDialogHome({
                 ? "!fixed !top-0 !left-0 !translate-x-0 !translate-y-0 !w-screen !h-[calc(100dvh-60px)] !max-w-none !rounded-none md:!w-[825px] md:!max-w-[825px] md:!h-[95vh] md:!top-[50%] md:!translate-y-[-50%] md:!rounded-lg md:!left-[50%] md:!translate-x-[-50%]"
                 : "h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:!w-[475px] md:!max-w-[475px]"
             }`}
-          onPointerDownOutside={(e) => {
-            // 모바일에서만 댓글 오버레이 클릭 시 다이얼로그 닫힘 방지
-            const isMobile = window.innerWidth < 768;
-            if (showComments && isMobile) {
-              e.preventDefault();
-            }
-          }}
-          onInteractOutside={(e) => {
-            // 모바일에서만 댓글 오버레이와 상호작용 시 다이얼로그 닫힘 방지
-            const isMobile = window.innerWidth < 768;
-            if (showComments && isMobile) {
-              e.preventDefault();
-            }
-          }}
+          // [삭제] onPointerDownOutside, onInteractOutside 핸들러 제거 (외부 클릭 허용)
         >
           <DialogHeader className="sr-only">
             <DialogTitle>피드 상세보기</DialogTitle>

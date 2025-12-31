@@ -61,21 +61,13 @@ export const useNotificationSse = ({
     eventSourceRef.current = eventSource;
 
     const scheduleReconnect = () => {
-      // [수정] 5초 지연의 원인이 될 수 있으므로 1초로 단축
-      // 연결이 끊겨도 1초 만에 다시 붙어서 알림을 즉시 받아오도록 설정
-      const baseDelay = 1000;
-      const maxDelay = 3000;
+      // [최종 수정] 딜레이 없는 즉시 재연결 (5초 -> 0.1초)
+      // 사용자가 연결 끊김을 느끼지 못하게 즉시 다시 붙습니다.
+      console.log("[SSE] 연결 끊김 감지 - 즉시 재연결 시도");
 
-      const delay = Math.min(
-        baseDelay * Math.pow(1.1, reconnectAttemptsRef.current),
-        maxDelay
-      );
-
-      // 재연결 시도 (로그 없이)
       reconnectTimeoutRef.current = setTimeout(() => {
-        // [수정] Ref를 통해 안전하게 자기 자신(재연결) 호출
         connectRef.current();
-      }, delay);
+      }, 100); // 100ms (0.1초)
     };
 
     eventSource.addEventListener("connect", () => {

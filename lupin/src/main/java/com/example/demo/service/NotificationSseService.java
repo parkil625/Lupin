@@ -44,9 +44,19 @@ public class NotificationSseService {
     // [수정] 연결 유지 및 버퍼 플러시를 위해 10초 주기로 단축 (더 자주 뚫어줌)
     private static final long HEARTBEAT_INTERVAL = 10 * 1000L;
 
-    // [수정] 공백은 압축 효율이 너무 좋아(1/100로 축소) 버퍼링을 뚫지 못합니다.
-    // 의미 없는 숫자, 영문, 특수문자를 섞어 압축을 방해하는 '고밀도' 더미 데이터(약 2.5KB)를 사용합니다.
-    private static final String DUMMY_DATA = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+".repeat(30);
+    // [최종 수정] Cloudflare의 Brotli 압축을 무력화하기 위한 '고엔트로피' 무작위 데이터
+    // 단순 반복 문자열은 압축되면 100바이트 미만으로 줄어들어 버퍼링을 뚫지 못합니다.
+    // 매번 다른 UUID를 조합하여 약 10KB 이상의 압축 불가능한 데이터를 만듭니다.
+    private static final String DUMMY_DATA;
+    
+    static {
+        StringBuilder sb = new StringBuilder();
+        // UUID(36자) * 300개 = 약 10,800 바이트 (10KB 이상)
+        for (int i = 0; i < 300; i++) {
+            sb.append(java.util.UUID.randomUUID().toString());
+        }
+        DUMMY_DATA = sb.toString();
+    }
 
     // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
     private ThreadPoolTaskScheduler heartbeatScheduler;

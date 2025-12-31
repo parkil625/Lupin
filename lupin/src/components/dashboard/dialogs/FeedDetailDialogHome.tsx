@@ -876,12 +876,14 @@ export default function FeedDetailDialogHome({
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
+          // [수정] 모바일 댓글 열림 시: !top-0 !translate-y-0 등으로 다이얼로그 중앙 정렬을 무시하고 상단에 고정
+          // 하단은 h-[calc(100dvh-60px)]로 네비게이션 바 공간(60px)만 남김
           className={`block p-0 gap-0 overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300
-            md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh]
+            md:fixed md:top-[50%] md:left-[50%] md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-lg md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh]
             ${
               showComments
-                ? "h-[calc(100dvh-65px)] max-h-[calc(100dvh-65px)] mb-[65px] w-screen max-w-none md:mb-0 md:!w-[825px] md:!max-w-[825px]" // [수정] 모바일 하단 메뉴바 공간(65px) 확보
-                : "h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:!w-[475px] md:!max-w-[475px]" // 기본 상태
+                ? "!fixed !top-0 !left-0 !translate-x-0 !translate-y-0 !w-screen !h-[calc(100dvh-60px)] !max-w-none !rounded-none md:!w-[825px] md:!max-w-[825px] md:!h-[95vh] md:!top-[50%] md:!translate-y-[-50%] md:!rounded-lg md:!left-[50%] md:!translate-x-[-50%]"
+                : "h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:!w-[475px] md:!max-w-[475px]"
             }`}
           onPointerDownOutside={(e) => {
             // 모바일에서만 댓글 오버레이 클릭 시 다이얼로그 닫힘 방지

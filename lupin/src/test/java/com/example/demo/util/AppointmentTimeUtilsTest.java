@@ -14,23 +14,67 @@ class AppointmentTimeUtilsTest {
     @DisplayName("IN_PROGRESS 상태일 때 채팅 가능해야 함")
     void shouldAllowChatWhenStatusIsInProgress() {
         // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(10);
         AppointmentStatus status = AppointmentStatus.IN_PROGRESS;
 
         // when
-        boolean result = AppointmentTimeUtils.isChatAvailable(status);
+        boolean result = AppointmentTimeUtils.isChatAvailable(appointmentTime, status);
 
         // then
         assertThat(result).isTrue();
     }
 
     @Test
-    @DisplayName("SCHEDULED 상태일 때 채팅 불가능해야 함")
-    void shouldNotAllowChatWhenStatusIsScheduled() {
+    @DisplayName("SCHEDULED 상태이고 5분 전일 때 채팅 가능해야 함")
+    void shouldAllowChatWhenScheduledAnd5MinutesBefore() {
         // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(5);
         AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
         // when
-        boolean result = AppointmentTimeUtils.isChatAvailable(status);
+        boolean result = AppointmentTimeUtils.isChatAvailable(appointmentTime, status);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("SCHEDULED 상태이고 3분 전일 때 채팅 가능해야 함")
+    void shouldAllowChatWhenScheduledAnd3MinutesBefore() {
+        // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(3);
+        AppointmentStatus status = AppointmentStatus.SCHEDULED;
+
+        // when
+        boolean result = AppointmentTimeUtils.isChatAvailable(appointmentTime, status);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("SCHEDULED 상태이고 6분 전일 때 채팅 불가능해야 함")
+    void shouldNotAllowChatWhenScheduledAnd6MinutesBefore() {
+        // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(6);
+        AppointmentStatus status = AppointmentStatus.SCHEDULED;
+
+        // when
+        boolean result = AppointmentTimeUtils.isChatAvailable(appointmentTime, status);
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("SCHEDULED 상태이고 30분 전일 때 채팅 불가능해야 함")
+    void shouldNotAllowChatWhenScheduledAnd30MinutesBefore() {
+        // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(30);
+        AppointmentStatus status = AppointmentStatus.SCHEDULED;
+
+        // when
+        boolean result = AppointmentTimeUtils.isChatAvailable(appointmentTime, status);
 
         // then
         assertThat(result).isFalse();
@@ -40,10 +84,11 @@ class AppointmentTimeUtilsTest {
     @DisplayName("CANCELLED 상태일 때 채팅 불가능해야 함")
     void shouldNotAllowChatWhenStatusIsCancelled() {
         // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(3);
         AppointmentStatus status = AppointmentStatus.CANCELLED;
 
         // when
-        boolean result = AppointmentTimeUtils.isChatAvailable(status);
+        boolean result = AppointmentTimeUtils.isChatAvailable(appointmentTime, status);
 
         // then
         assertThat(result).isFalse();
@@ -53,10 +98,11 @@ class AppointmentTimeUtilsTest {
     @DisplayName("COMPLETED 상태일 때 채팅 불가능해야 함")
     void shouldNotAllowChatWhenStatusIsCompleted() {
         // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(3);
         AppointmentStatus status = AppointmentStatus.COMPLETED;
 
         // when
-        boolean result = AppointmentTimeUtils.isChatAvailable(status);
+        boolean result = AppointmentTimeUtils.isChatAvailable(appointmentTime, status);
 
         // then
         assertThat(result).isFalse();
@@ -68,6 +114,48 @@ class AppointmentTimeUtilsTest {
         // given
         LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(10);
         AppointmentStatus status = AppointmentStatus.IN_PROGRESS;
+
+        // when
+        String message = AppointmentTimeUtils.getChatLockMessage(appointmentTime, status);
+
+        // then
+        assertThat(message).isNull();
+    }
+
+    @Test
+    @DisplayName("SCHEDULED 상태이고 5분 전일 때 잠금 메시지가 null이어야 함")
+    void shouldReturnNullLockMessageWhenScheduledAnd5MinutesBefore() {
+        // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(5);
+        AppointmentStatus status = AppointmentStatus.SCHEDULED;
+
+        // when
+        String message = AppointmentTimeUtils.getChatLockMessage(appointmentTime, status);
+
+        // then
+        assertThat(message).isNull();
+    }
+
+    @Test
+    @DisplayName("SCHEDULED 상태이고 3분 전일 때 잠금 메시지가 null이어야 함")
+    void shouldReturnNullLockMessageWhenScheduledAnd3MinutesBefore() {
+        // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(3);
+        AppointmentStatus status = AppointmentStatus.SCHEDULED;
+
+        // when
+        String message = AppointmentTimeUtils.getChatLockMessage(appointmentTime, status);
+
+        // then
+        assertThat(message).isNull();
+    }
+
+    @Test
+    @DisplayName("SCHEDULED 상태이고 1분 전일 때 잠금 메시지가 null이어야 함")
+    void shouldReturnNullLockMessageWhenScheduledAnd1MinuteBefore() {
+        // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(1);
+        AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
         // when
         String message = AppointmentTimeUtils.getChatLockMessage(appointmentTime, status);
@@ -102,6 +190,21 @@ class AppointmentTimeUtilsTest {
 
         // then
         assertThat(message).isEqualTo("취소된 진료입니다.");
+    }
+
+    @Test
+    @DisplayName("SCHEDULED 상태이고 6분 전일 때 대기 메시지를 반환해야 함")
+    void shouldReturnWaitingMessageWhenScheduledAnd6MinutesBefore() {
+        // given
+        LocalDateTime appointmentTime = LocalDateTime.now().plusMinutes(6);
+        AppointmentStatus status = AppointmentStatus.SCHEDULED;
+
+        // when
+        String message = AppointmentTimeUtils.getChatLockMessage(appointmentTime, status);
+
+        // then
+        assertThat(message).contains("6분 남았습니다");
+        assertThat(message).contains("진료 5분 전부터 채팅이 가능합니다");
     }
 
     @Test

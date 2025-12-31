@@ -3,7 +3,6 @@ import apiClient from "./client";
 export interface MedicineItem {
   medicineId?: number;
   medicineName: string;
-  instructions?: string;
 }
 
 export interface PrescriptionRequest {
@@ -35,15 +34,12 @@ export interface PrescriptionResponse {
   departmentName?: string;
   appointmentId?: number;
   diagnosis: string;
+  instructions?: string;
   date: string;
-  medicines: {
-    id: number;
-    medicineId?: number;
+  medicineDetails: {
+    medicineId: number;
     medicineName: string;
-    dosage: string;
-    frequency: string;
-    durationDays?: number;
-    instructions?: string;
+    precautions?: string;
   }[];
 }
 

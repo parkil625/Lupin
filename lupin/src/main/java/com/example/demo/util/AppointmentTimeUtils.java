@@ -24,8 +24,19 @@ public class AppointmentTimeUtils {
     /**
      * 채팅 가능 여부 확인 (예약 시간 5분 전부터 가능)
      */
-    public static boolean isChatAvailable(AppointmentStatus status) {
-        return status == AppointmentStatus.IN_PROGRESS;
+    public static boolean isChatAvailable(LocalDateTime appointmentTime, AppointmentStatus status) {
+        // 이미 진료 중이거나 완료된 경우
+        if (status == AppointmentStatus.IN_PROGRESS) {
+            return true;
+        }
+
+        // 예약 예정 상태이면서 5분 전부터 입장 가능
+        if (status == AppointmentStatus.SCHEDULED) {
+            long minutesUntil = getMinutesUntilAppointment(appointmentTime);
+            return minutesUntil <= 5 && minutesUntil >= 0;
+        }
+
+        return false;
     }
 
     /**
@@ -33,7 +44,7 @@ public class AppointmentTimeUtils {
      */
     public static String getChatLockMessage(LocalDateTime appointmentTime, AppointmentStatus status) {
 
-        if (isChatAvailable(status)) {
+        if (isChatAvailable(appointmentTime, status)) {
             return null;
         }
 

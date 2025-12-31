@@ -876,11 +876,13 @@ export default function FeedDetailDialogHome({
 
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className={`block p-0 gap-0 h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh] overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300 ${
-            showComments
-              ? "md:!w-[825px] md:!max-w-[825px]"
-              : "md:!w-[475px] md:!max-w-[475px]"
-          }`}
+          className={`block p-0 gap-0 overflow-hidden backdrop-blur-2xl bg-white/60 border-0 shadow-2xl transition-all duration-300
+            md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh]
+            ${
+              showComments
+                ? "h-[100dvh] max-h-[100dvh] w-screen max-w-none md:!w-[825px] md:!max-w-[825px]" // [수정] 댓글 열림 시 모바일 전체 화면 꽉 채움
+                : "h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:!w-[475px] md:!max-w-[475px]" // 기본 상태
+            }`}
           onPointerDownOutside={(e) => {
             // 모바일에서만 댓글 오버레이 클릭 시 다이얼로그 닫힘 방지
             const isMobile = window.innerWidth < 768;

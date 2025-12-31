@@ -286,9 +286,21 @@ public class CommentService {
 
     /**
      * 피드 댓글 목록 조회 (좋아요, 활동일 정보 포함)
+     * [수정] 조회 시점에 카운트 불일치를 감지하면 자동으로 복구합니다. (Read-Repair)
      */
+    @Transactional // DB 업데이트가 발생할 수 있으므로 트랜잭션 필수
     public List<CommentResponse> getCommentResponsesByFeed(Long feedId, User currentUser) {
-        List<Comment> comments = getCommentsByFeed(feedId);
+        // 1. 피드 조회
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
+
+        // 2. [핵심] 댓글 조회하러 온 김에, 카운트가 맞는지 검사하고 틀리면 고칩니다!
+        syncFeedCommentCount(feed);
+
+        // 3. 댓글 목록 조회 (기존 getCommentsByFeed 로직을 인라인으로 처리하여 쿼리 최적화)
+        List<Comment> comments = commentRepository.findByFeedAndParentIsNullOrderByIdDesc(feed);
+
+        // 4. 응답 조립
         return assembleCommentResponses(comments, currentUser);
     }
 
@@ -418,22 +430,22 @@ public class CommentService {
      */
     public record CommentDeleteResult(List<Long> parentCommentIds, List<Long> allCommentIds) {}
 
-    // [추가]
     /**
-     * [추가] 피드 댓글 수 DB 동기화
-     * delete_at이 없는(삭제되지 않은) 실존 댓글만 카운트하여 feed 테이블에 업데이트합니다.
-     * 트랜잭션 내에서 flush()를 호출하여 변경사항(INSERT/DELETE)을 즉시 반영한 후 조회합니다.
+     * [Self-Healing] 피드 댓글 수 DB 동기화 (스마트 버전)
+     * 실제 개수와 기록된 개수가 다를 때만 업데이트 쿼리를 날립니다.
      */
     private void syncFeedCommentCount(Feed feed) {
         // 쿼리 실행 전 변경사항 반영
         commentRepository.flush();
         
-        // 실제 댓글 수 조회 (@SQLRestriction으로 인해 삭제된 댓글은 자동 제외됨)
+        // 1. 실제 댓글 수 조회 (가장 정확함)
         long realCount = commentRepository.countByFeed(feed);
         
-        log.info(">>> [Comment Service] Syncing comment count for feedId: {}. DB Real Count: {}", feed.getId(), realCount);
-        
-        // 피드 테이블 업데이트
-        feedRepository.updateCommentCount(feed.getId(), (int) realCount);
+        // 2. 숫자가 틀린 경우에만 DB 업데이트 (Self-Healing)
+        if (feed.getCommentCount() != realCount) {
+            log.warn(">>> [Comment Sync] Feed ID {} count mismatch! DB: {}, Real: {}. Fixing...", 
+                    feed.getId(), feed.getCommentCount(), realCount);
+            feedRepository.updateCommentCount(feed.getId(), (int) realCount);
+        }
     }
 }

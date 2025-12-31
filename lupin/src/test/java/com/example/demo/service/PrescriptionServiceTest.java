@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -120,20 +121,26 @@ class PrescriptionServiceTest {
         given(medicineRepository.findByName("아스피린"))
                 .willReturn(Optional.of(aspirin));
         
-        // [수정됨] save -> saveAndFlush 로 변경
-        given(prescriptionRepository.saveAndFlush(any(Prescription.class)))
+        // [수정됨] 1차 저장 (save) Mocking 추가: ID 생성을 위해 먼저 호출됨
+        given(prescriptionRepository.save(any(Prescription.class)))
                 .willAnswer(invocation -> {
                     Prescription p = invocation.getArgument(0);
+                    // 1차 저장 시점에는 ID가 부여되고 약품 목록은 비어있음
                     return Prescription.builder()
-                            .id(1L)
+                            .id(1L) 
                             .doctor(p.getDoctor())
                             .patient(p.getPatient())
                             .appointment(p.getAppointment())
                             .diagnosis(p.getDiagnosis())
                             .instructions(p.getInstructions())
                             .date(p.getDate())
+                            .medicines(new ArrayList<>()) 
                             .build();
                 });
+
+        // [수정됨] 최종 저장 (saveAndFlush) Mocking
+        given(prescriptionRepository.saveAndFlush(any(Prescription.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         PrescriptionResponse result = prescriptionService.createPrescription(doctor.getId(), request);
@@ -171,7 +178,23 @@ class PrescriptionServiceTest {
         given(medicineRepository.findByName("타이레놀"))
                 .willReturn(Optional.of(tylenol));
         
-        // [수정됨] save -> saveAndFlush 로 변경
+        // [수정됨] 1차 저장 (save) Mocking 추가
+        given(prescriptionRepository.save(any(Prescription.class)))
+                .willAnswer(invocation -> {
+                    Prescription p = invocation.getArgument(0);
+                    return Prescription.builder()
+                            .id(1L)
+                            .doctor(p.getDoctor())
+                            .patient(p.getPatient())
+                            .appointment(p.getAppointment())
+                            .diagnosis(p.getDiagnosis())
+                            .instructions(p.getInstructions())
+                            .date(p.getDate())
+                            .medicines(new ArrayList<>())
+                            .build();
+                });
+
+        // [수정됨] 최종 저장 (saveAndFlush) Mocking
         given(prescriptionRepository.saveAndFlush(any(Prescription.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -292,6 +315,22 @@ class PrescriptionServiceTest {
                 .willReturn(Optional.of(patient));
         given(medicineRepository.findByName("존재하지않는약"))
                 .willReturn(Optional.empty());
+
+        // [수정됨] 1차 저장 (save) Mocking 추가: 약품 조회 전에 save가 호출되므로 필요함
+        given(prescriptionRepository.save(any(Prescription.class)))
+                .willAnswer(invocation -> {
+                    Prescription p = invocation.getArgument(0);
+                    return Prescription.builder()
+                            .id(1L)
+                            .doctor(p.getDoctor())
+                            .patient(p.getPatient())
+                            .appointment(p.getAppointment())
+                            .diagnosis(p.getDiagnosis())
+                            .instructions(p.getInstructions())
+                            .date(p.getDate())
+                            .medicines(new ArrayList<>())
+                            .build();
+                });
 
         // when & then
         assertThatThrownBy(() ->

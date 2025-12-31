@@ -28,6 +28,7 @@ public class CommentLikeService {
     private final CommentRepository commentRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final NotificationSseService notificationSseService;
 
     @Transactional
     public CommentLike likeComment(User user, Long commentId) {
@@ -76,9 +77,24 @@ public class CommentLikeService {
         long remainingLikes = commentLikeRepository.countByCommentId(commentId);
 
         if (remainingLikes == 0) {
-            // 남은 좋아요가 없으면 알림 완전 삭제 (refId = commentId)
-            log.info(">>> [CommentLike Service] No likes remaining. Deleting notification for commentId: {}", commentId);
-            notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
+            // 남은 좋아요가 없으면 알림 조회 -> SSE 전송 -> 삭제
+            String refId = String.valueOf(commentId);
+
+            // 1. 삭제할 알림 조회
+            java.util.List<com.example.demo.domain.entity.Notification> targets = notificationRepository.findByRefIdAndType(refId, NotificationType.COMMENT_LIKE);
+
+            if (!targets.isEmpty()) {
+                // 2. 알림 수신자에게 삭제 이벤트 전송
+                Long receiverId = targets.get(0).getUser().getId();
+                java.util.List<Long> ids = targets.stream().map(com.example.demo.domain.entity.Notification::getId).toList();
+
+                // SSE로 "이 알림 지워라" 명령 전송
+                notificationSseService.sendNotificationDelete(receiverId, ids);
+
+                // 3. DB 삭제
+                notificationRepository.deleteAll(targets);
+            }
+            log.info(">>> [CommentLike Service] No likes remaining. Deleted notification for commentId: {}", commentId);
         } else {
             // 남은 좋아요가 있다면, 가장 최근에 좋아요 누른 사람을 찾아 알림 갱신 이벤트 발행
             // -> Listener가 이 이벤트를 받아서 기존 알림을 찾아 "A님 외 N명이..." 형태로 내용을 업데이트함

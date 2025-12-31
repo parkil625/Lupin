@@ -61,11 +61,13 @@ export const useNotificationSse = ({
     eventSourceRef.current = eventSource;
 
     const scheduleReconnect = () => {
-      // 재연결 대기 시간: Exponential backoff
-      const baseDelay = 5000; // 5초
-      const maxDelay = 30000; // 최대 30초
+      // [수정] 5초 지연의 원인이 될 수 있으므로 1초로 단축
+      // 연결이 끊겨도 1초 만에 다시 붙어서 알림을 즉시 받아오도록 설정
+      const baseDelay = 1000;
+      const maxDelay = 3000;
+
       const delay = Math.min(
-        baseDelay * Math.pow(1.5, reconnectAttemptsRef.current),
+        baseDelay * Math.pow(1.1, reconnectAttemptsRef.current),
         maxDelay
       );
 

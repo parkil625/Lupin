@@ -44,8 +44,9 @@ public class NotificationSseService {
     // [수정] 연결 유지 및 버퍼 플러시를 위해 10초 주기로 단축 (더 자주 뚫어줌)
     private static final long HEARTBEAT_INTERVAL = 10 * 1000L;
 
-    // [추가] Nginx/Cloudflare 기본 버퍼(4KB~8KB)를 확실히 뚫기 위한 5KB 더미 데이터
-    private static final String DUMMY_DATA = " ".repeat(5000);
+    // [수정] 공백은 압축 효율이 너무 좋아(1/100로 축소) 버퍼링을 뚫지 못합니다.
+    // 의미 없는 숫자, 영문, 특수문자를 섞어 압축을 방해하는 '고밀도' 더미 데이터(약 2.5KB)를 사용합니다.
+    private static final String DUMMY_DATA = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+".repeat(30);
 
     // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
     private ThreadPoolTaskScheduler heartbeatScheduler;

@@ -41,8 +41,8 @@ public class NotificationSseService {
 
     private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
     
-    // [수정] 3초로 초단축 (연결을 절대 놓지 않겠다는 강력한 설정)
-    private static final long HEARTBEAT_INTERVAL = 3;
+    // [수정] 표준 30초로 변경 (패딩 기법을 사용하므로 짧게 잡을 필요 없음)
+    private static final long HEARTBEAT_INTERVAL = 30 * 1000L;
 
     // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
     private ThreadPoolTaskScheduler heartbeatScheduler;
@@ -61,9 +61,9 @@ public class NotificationSseService {
         // Heartbeat 작업 등록
         heartbeatTask = heartbeatScheduler.scheduleAtFixedRate(
                 this::sendHeartbeatToAll,
-                Duration.ofSeconds(HEARTBEAT_INTERVAL)
+                Duration.ofMillis(HEARTBEAT_INTERVAL)
         );
-        log.info("SSE Heartbeat 스케줄러 시작 ({}초 간격)", HEARTBEAT_INTERVAL);
+        log.info("SSE Heartbeat 스케줄러 시작 ({}ms 간격)", HEARTBEAT_INTERVAL);
     }
 
     @PreDestroy
@@ -265,7 +265,9 @@ public class NotificationSseService {
                 // 이벤트명: "notification-delete", 데이터: ID 리스트
                 emitter.send(SseEmitter.event()
                         .name("notification-delete")
-                        .data(notificationIds));
+                        .data(notificationIds)
+                        .comment(" ".repeat(1024))); // [핵심] 1KB 공백 패딩 추가
+                        
                 log.info("SSE 알림 삭제 전송 성공: userId={}, ids={}", userId, notificationIds);
             } catch (IOException e) {
                 log.error("SSE 알림 삭제 전송 실패: userId={}", userId, e);
@@ -301,7 +303,9 @@ public class NotificationSseService {
                 emitter.send(SseEmitter.event()
                         .id(String.valueOf(notification.getId()))
                         .name("notification")
-                        .data(notification));
+                        .data(notification)
+                        .comment(" ".repeat(1024))); // [핵심] 1KB 공백 패딩 추가 (버퍼링 무시하고 즉시 전송)
+                        
                 log.info("SSE 알림 전송 성공: userId={}, type={}, eventId={}",
                         userId, notification.getType(), notification.getId());
             } catch (IOException e) {

@@ -194,8 +194,12 @@ export default function PrescriptionDialog({
       // error를 AxiosError로 간주하고, 응답 데이터에 message(string)가 있다고 정의
       const axiosError = error as AxiosError<{ message: string }>;
 
-      console.error("처방전 발급 실패:", error);
-      console.error("에러 상세:", axiosError.response?.data);
+      console.error("=== 처방전 발급 실패 ===");
+      console.error("에러 객체:", error);
+      console.error("응답 상태:", axiosError.response?.status);
+      console.error("응답 데이터:", JSON.stringify(axiosError.response?.data, null, 2));
+      console.error("에러 메시지:", axiosError.response?.data?.message);
+      console.error("전체 응답:", axiosError.response);
 
       // axiosError 변수를 사용하여 안전하게 접근
       alert(

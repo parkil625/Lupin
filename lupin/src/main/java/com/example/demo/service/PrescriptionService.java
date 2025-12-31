@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.entity.*;
+import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.dto.prescription.PrescriptionRequest;
 import com.example.demo.dto.prescription.PrescriptionResponse;
 import com.example.demo.repository.AppointmentRepository;

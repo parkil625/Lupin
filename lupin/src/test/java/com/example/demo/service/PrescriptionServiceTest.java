@@ -197,7 +197,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         Prescription newPrescription = Prescription.builder()
@@ -241,7 +241,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         Prescription savedPrescription = Prescription.builder()
@@ -270,46 +270,6 @@ class PrescriptionServiceTest {
         assertThat(result.getAppointmentId()).isEqualTo(appointmentId);
     }
 
-    @Test
-    @DisplayName("처방전 발행 시 예약 상태 'COMPLETED'로 변경")
-    void shouldChangeAppointmentStatusToCompletedWhenIssuingPrescription() {
-        // given
-        Long appointmentId = 1L;
-        Long doctorId = 1L;
-        String diagnosis = "감기";
-
-        Appointment appointment = Appointment.builder()
-                .id(appointmentId)
-                .patient(patient)
-                .doctor(doctor)
-                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
-                .build();
-
-        Prescription savedPrescription = Prescription.builder()
-                .id(1L)
-                .doctor(doctor)
-                .patient(patient)
-                .appointment(appointment)
-                .date(LocalDate.of(2025, 12, 1))
-                .diagnosis(diagnosis)
-                .build();
-
-        given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
-                .willReturn(Optional.of(appointment));
-        given(userRepository.findById(doctorId))
-                .willReturn(Optional.of(doctor));
-        given(userRepository.findById(patient.getId()))
-                .willReturn(Optional.of(patient));
-        given(prescriptionRepository.save(any(Prescription.class)))
-                .willReturn(savedPrescription);
-
-        // when
-        prescriptionService.issuePrescription(appointmentId, doctorId, patient.getId(), diagnosis);
-
-        // then
-        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
-    }
 
     @Test
     @DisplayName("issuePrescription: 완료된 예약에 중복 처방전 발행 불가")
@@ -361,7 +321,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)  // doctor(id=1)가 담당 의사
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
@@ -388,7 +348,7 @@ class PrescriptionServiceTest {
                 .patient(patient)  // patient(id=3)가 예약 환자
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
@@ -414,7 +374,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))
@@ -440,7 +400,7 @@ class PrescriptionServiceTest {
                 .patient(patient)
                 .doctor(doctor)
                 .date(LocalDateTime.of(2025, 12, 1, 14, 0))
-                .status(AppointmentStatus.SCHEDULED)
+                .status(AppointmentStatus.IN_PROGRESS)
                 .build();
 
         given(appointmentRepository.findByIdWithPatientAndDoctor(appointmentId))

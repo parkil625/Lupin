@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.domain.entity.*;
 import com.example.demo.domain.enums.AppointmentStatus;
+import com.example.demo.dto.prescription.PrescriptionMedicineDto;
 import com.example.demo.dto.prescription.PrescriptionRequest;
 import com.example.demo.dto.prescription.PrescriptionResponse;
 import com.example.demo.repository.AppointmentRepository;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -190,6 +193,39 @@ public class PrescriptionService {
 
     public Optional<PrescriptionResponse> getPrescriptionByAppointmentId(Long appointmentId) {
         return prescriptionRepository.findByAppointmentId(appointmentId)
-                .map(PrescriptionResponse::from);
+                .map(this::enrichWithMedicineDetails);
+    }
+
+    /**
+     * 처방전의 약품명 문자열을 파싱하여 Medicine 테이블에서 주의사항을 조회
+     */
+    private PrescriptionResponse enrichWithMedicineDetails(Prescription prescription) {
+        PrescriptionResponse response = PrescriptionResponse.from(prescription);
+
+        if (prescription.getMedications() != null && !prescription.getMedications().trim().isEmpty()) {
+            List<PrescriptionMedicineDto> medicineDetails = Arrays.stream(prescription.getMedications().split("\n"))
+                    .map(String::trim)
+                    .filter(name -> !name.isEmpty())
+                    .map(this::getMedicineDetail)
+                    .collect(Collectors.toList());
+            response.setMedicineDetails(medicineDetails);
+        }
+
+        return response;
+    }
+
+    /**
+     * 약품명으로 Medicine 테이블에서 주의사항 조회
+     */
+    private PrescriptionMedicineDto getMedicineDetail(String medicineName) {
+        return medicineRepository.findByName(medicineName)
+                .map(medicine -> PrescriptionMedicineDto.builder()
+                        .name(medicine.getName())
+                        .precautions(medicine.getPrecautions())
+                        .build())
+                .orElse(PrescriptionMedicineDto.builder()
+                        .name(medicineName)
+                        .precautions(null)
+                        .build());
     }
 }

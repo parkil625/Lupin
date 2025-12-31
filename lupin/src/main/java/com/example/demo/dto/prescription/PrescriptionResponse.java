@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -26,6 +27,8 @@ public class PrescriptionResponse {
 
     private String medications;
     private String instructions;
+
+    private List<PrescriptionMedicineDto> medicineDetails;
 
     public static PrescriptionResponse from(Prescription prescription) {
         // Null safety: prescription의 연관 엔티티가 null인 경우 기본값 처리

@@ -61,15 +61,31 @@ export default function PrescriptionModal({
 
           <div className="space-y-2">
             <div className="text-sm text-gray-600 font-bold">처방 약물</div>
-            <div className="flex gap-2 flex-wrap">
-              {prescription.medicines.map((medicine, idx) => (
-                <Badge
-                  key={idx}
-                  className="bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white px-3 py-1 font-bold"
-                >
-                  {medicine}
-                </Badge>
-              ))}
+            <div className="space-y-3">
+              {prescription.medicineDetails && prescription.medicineDetails.length > 0 ? (
+                prescription.medicineDetails.map((medicine, idx) => (
+                  <div key={idx} className="p-3 bg-gray-50 rounded-xl">
+                    <div className="font-bold text-gray-900">{medicine.name}</div>
+                    {medicine.precautions && (
+                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="text-xs font-bold text-yellow-800 mb-1">⚠️ 주의사항</div>
+                        <div className="text-xs text-yellow-700">{medicine.precautions}</div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="flex gap-2 flex-wrap">
+                  {prescription.medicines.map((medicine, idx) => (
+                    <Badge
+                      key={idx}
+                      className="bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white px-3 py-1 font-bold"
+                    >
+                      {medicine}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

@@ -8,6 +8,7 @@ import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.MedicineRepository;
 import com.example.demo.repository.PrescriptionRepository;
 import com.example.demo.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public class PrescriptionService {
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final MedicineRepository medicineRepository;
+    private final EntityManager entityManager;
 
     @Transactional
     public void updateDiagnosis(Long prescriptionId, Long doctorId, String newDiagnosis) {
@@ -133,6 +135,16 @@ public class PrescriptionService {
                             System.err.println("예약을 찾을 수 없음: appointmentId=" + request.getAppointmentId());
                             return new IllegalArgumentException("예약을 찾을 수 없습니다.");
                         });
+
+                // EntityManager를 사용하여 DB에서 최신 상태를 다시 읽어옴 (캐시 우회)
+                try {
+                    if (entityManager != null && entityManager.contains(appointment)) {
+                        entityManager.refresh(appointment);
+                        System.out.println("예약 엔티티 refresh 완료");
+                    }
+                } catch (Exception refreshEx) {
+                    System.out.println("예약 엔티티 refresh 건너뜀 (테스트 환경 또는 detached 상태)");
+                }
             } catch (Exception e) {
                 System.err.println("예약 조회 중 에러: " + e.getClass().getName() + " - " + e.getMessage());
                 throw e;

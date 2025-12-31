@@ -36,15 +36,10 @@ List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patien
     boolean existsByPatientIdAndDate(Long patientId, LocalDateTime date);
 
     // Patient와 Doctor를 Eager Loading하여 조회 (Lazy Loading 에러 방지)
-    // hint를 사용하여 항상 DB에서 최신 데이터를 가져옴
-    @Query(value = "SELECT a FROM Appointment a " +
+    @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient " +
            "JOIN FETCH a.doctor " +
            "WHERE a.id = :id")
-    @org.springframework.data.jpa.repository.QueryHints(@org.springframework.data.jpa.repository.QueryHint(
-        name = "javax.persistence.cache.retrieveMode",
-        value = "BYPASS"
-    ))
     Optional<Appointment> findByIdWithPatientAndDoctor(@Param("id") Long id);
 
     // 특정 의사의 특정 날짜 범위 내 예약 목록 조회

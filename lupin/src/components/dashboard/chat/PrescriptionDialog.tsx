@@ -154,8 +154,8 @@ export default function PrescriptionDialog({
     console.log("유효한 약품 개수:", validMedicines.length);
 
     if (validMedicines.length === 0) {
-      console.log("유효성 검사 실패: 약품 없음");
-      alert("최소 하나 이상의 약품을 처방해야 합니다.");
+      console.log("유효성 검사 실패: 약품명 없음");
+      alert("약품명은 필수입니다!");
       return;
     }
 

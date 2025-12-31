@@ -68,9 +68,9 @@ public class DebugController {
     public ResponseEntity<Map<String, Object>> getCurrentUserInfo(@CurrentUser User currentUser) {
         Map<String, Object> result = new HashMap<>();
         result.put("userId", currentUser.getId());
+        result.put("userLoginId", currentUser.getUserId());
         result.put("userName", currentUser.getName());
         result.put("userRole", currentUser.getRole().name());
-        result.put("userEmail", currentUser.getProviderEmail());
         return ResponseEntity.ok(result);
     }
 }

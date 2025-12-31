@@ -438,7 +438,16 @@ export default function DoctorChatPage() {
       setSelectedMedicines([]);
     } catch (error) {
       console.error("처방전 발급 실패:", error);
-      toast.error("처방전 발급 중 오류가 발생했습니다.");
+
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        console.error("에러 상세:", axiosError.response?.data);
+
+        const errorMessage = axiosError.response?.data?.message || "처방전 발급 중 오류가 발생했습니다.";
+        toast.error(errorMessage);
+      } else {
+        toast.error("처방전 발급 중 오류가 발생했습니다.");
+      }
     }
   };
 

@@ -119,16 +119,30 @@ public class PrescriptionService {
 
     @Transactional
     public PrescriptionResponse createPrescription(Long doctorId, PrescriptionRequest request) {
+        System.out.println("=== createPrescription 시작 ===");
+        System.out.println("doctorId: " + doctorId);
+        System.out.println("request.getAppointmentId(): " + request.getAppointmentId());
+        System.out.println("request.getPatientId(): " + request.getPatientId());
+
         Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(request.getAppointmentId())
-                .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    System.err.println("예약을 찾을 수 없음: appointmentId=" + request.getAppointmentId());
+                    return new IllegalArgumentException("예약을 찾을 수 없습니다.");
+                });
+
+        System.out.println("예약 찾음: " + appointment.getId());
+        System.out.println("예약의 의사 ID: " + appointment.getDoctor().getId());
+        System.out.println("예약의 환자 ID: " + appointment.getPatient().getId());
 
         // 담당 의사 검증
         if (!appointment.getDoctor().getId().equals(doctorId)) {
+            System.err.println("의사 ID 불일치: expected=" + appointment.getDoctor().getId() + ", actual=" + doctorId);
             throw new IllegalArgumentException("해당 예약의 담당 의사만 처방전을 발행할 수 있습니다.");
         }
 
         // 환자 정보 검증
         if (!appointment.getPatient().getId().equals(request.getPatientId())) {
+            System.err.println("환자 ID 불일치: expected=" + appointment.getPatient().getId() + ", actual=" + request.getPatientId());
             throw new IllegalArgumentException("해당 예약의 환자 정보가 일치하지 않습니다.");
         }
 

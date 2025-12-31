@@ -34,7 +34,12 @@ export default function PrescriptionDialog({
   patientName,
   onSuccess,
 }: PrescriptionDialogProps) {
-  console.log("PrescriptionDialog 컴포넌트 렌더링:", { open, appointmentId, patientId, patientName });
+  console.log("PrescriptionDialog 컴포넌트 렌더링:", {
+    open,
+    appointmentId,
+    patientId,
+    patientName,
+  });
 
   const [diagnosis, setDiagnosis] = useState("");
   const [additionalInstructions, setAdditionalInstructions] = useState("");
@@ -47,18 +52,28 @@ export default function PrescriptionDialog({
   const [searchResults, setSearchResults] = useState<MedicineResponse[]>([]);
   const [, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [existingPrescription, setExistingPrescription] = useState<boolean>(false);
+  const [existingPrescription, setExistingPrescription] =
+    useState<boolean>(false);
 
   // 다이얼로그가 열릴 때 기존 처방전 확인
   useEffect(() => {
-    console.log("PrescriptionDialog useEffect 실행:", { open, appointmentId, patientId, patientName });
+    console.log("PrescriptionDialog useEffect 실행:", {
+      open,
+      appointmentId,
+      patientId,
+      patientName,
+    });
 
     if (!open) {
       console.log("다이얼로그가 닫혀있음, useEffect 종료");
       return;
     }
 
-    console.log("=== 처방전 다이얼로그 열림 ===", { appointmentId, patientId, patientName });
+    console.log("=== 처방전 다이얼로그 열림 ===", {
+      appointmentId,
+      patientId,
+      patientName,
+    });
 
     const checkExistingPrescription = async () => {
       const response = await prescriptionApi.getByAppointmentId(appointmentId);
@@ -87,12 +102,26 @@ export default function PrescriptionDialog({
   const handleMedicineChange = (
     index: number,
     field: keyof MedicineItem,
-    value: string | number | undefined // 또는 MedicineItem[keyof MedicineItem]
+    value: string | number | undefined
   ) => {
     const updated = [...medicines];
-    // 타입스크립트 설정에 따라 여기서 타입 단언(as)이 필요할 수 있습니다.
-    updated[index] = { ...updated[index], [field]: value } as MedicineItem;
+
+    // [Fix] 약품명이 변경되면 기존 선택된 medicineId를 초기화하여 데이터 불일치 방지
+    if (field === "medicineName") {
+      console.log(
+        `[PrescriptionDialog] 약품명 변경 감지 - Index: ${index}, New Name: ${value}`
+      );
+      updated[index] = {
+        ...updated[index],
+        medicineName: value as string,
+        medicineId: undefined, // ID 초기화: 직접 입력 모드로 전환
+      };
+    } else {
+      updated[index] = { ...updated[index], [field]: value } as MedicineItem;
+    }
+
     setMedicines(updated);
+    console.log("[PrescriptionDialog] Medicines 상태 업데이트:", updated);
   };
 
   const handleSearchMedicine = async (query?: string) => {
@@ -117,6 +146,9 @@ export default function PrescriptionDialog({
   const [selectedMedicineIndex, setSelectedMedicineIndex] = useState<number>(0);
 
   const handleSelectMedicine = (medicine: MedicineResponse) => {
+    console.log(
+      `[PrescriptionDialog] 약품 선택됨 - ID: ${medicine.id}, Name: ${medicine.name}`
+    );
     const updated = [...medicines];
     updated[selectedMedicineIndex] = {
       medicineId: medicine.id,
@@ -129,7 +161,12 @@ export default function PrescriptionDialog({
 
   const handleSubmit = async () => {
     console.log("=== 처방전 저장 버튼 클릭됨 ===");
-    console.log("현재 상태:", { diagnosis, medicines, appointmentId, patientId });
+    console.log("현재 상태:", {
+      diagnosis,
+      medicines,
+      appointmentId,
+      patientId,
+    });
 
     // 유효성 검사
     if (!diagnosis.trim()) {
@@ -138,9 +175,16 @@ export default function PrescriptionDialog({
       return;
     }
 
-    const validMedicines = medicines.filter(
-      (m) => m.medicineName.trim()
-    );
+    const validMedicines = medicines.filter((m) => m.medicineName.trim());
+
+    console.log("=== [PrescriptionDialog] 전송 전 최종 데이터 확인 ===");
+    validMedicines.forEach((m, i) => {
+      console.log(
+        `Medicine [${i}]: Name=${m.medicineName}, ID=${m.medicineId} (${
+          m.medicineId ? "DB약품" : "직접입력"
+        })`
+      );
+    });
     console.log("유효한 약품 개수:", validMedicines.length);
 
     if (validMedicines.length === 0) {
@@ -156,14 +200,17 @@ export default function PrescriptionDialog({
         appointmentId,
         patientId,
         diagnosis,
-        medicines: validMedicines.map(m => ({
+        medicines: validMedicines.map((m) => ({
           medicineId: m.medicineId,
           medicineName: m.medicineName,
         })),
         additionalInstructions: additionalInstructions.trim() || undefined,
       };
 
-      console.log("처방전 발급 요청 데이터:", JSON.stringify(requestData, null, 2));
+      console.log(
+        "처방전 발급 요청 데이터:",
+        JSON.stringify(requestData, null, 2)
+      );
 
       const response = await prescriptionApi.create(requestData);
 
@@ -188,7 +235,10 @@ export default function PrescriptionDialog({
       console.error("=== 처방전 발급 실패 ===");
       console.error("에러 객체:", error);
       console.error("응답 상태:", axiosError.response?.status);
-      console.error("응답 데이터:", JSON.stringify(axiosError.response?.data, null, 2));
+      console.error(
+        "응답 데이터:",
+        JSON.stringify(axiosError.response?.data, null, 2)
+      );
       console.error("에러 메시지:", axiosError.response?.data?.message);
       console.error("전체 응답:", axiosError.response);
 
@@ -202,178 +252,177 @@ export default function PrescriptionDialog({
   };
 
   return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black">
-              처방전 발급
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-black">처방전 발급</DialogTitle>
+        </DialogHeader>
 
-          <div className="space-y-6">
-            {/* 환자 정보 */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-12 h-12">
-                  <AvatarFallback className="bg-white">
-                    <User className="w-6 h-6 text-gray-400" />
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-black text-lg text-gray-900">
-                    {patientName}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    예약 #{appointmentId}
-                  </div>
+        <div className="space-y-6">
+          {/* 환자 정보 */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
+            <div className="flex items-center gap-4">
+              <Avatar className="w-12 h-12">
+                <AvatarFallback className="bg-white">
+                  <User className="w-6 h-6 text-gray-400" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-black text-lg text-gray-900">
+                  {patientName}
+                </div>
+                <div className="text-sm text-gray-600">
+                  예약 #{appointmentId}
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* 진단명 */}
-            <div>
-              <Label className="text-base font-black mb-2 block">
-                진단명 *
-              </Label>
-              <Input
-                placeholder="진단명을 입력하세요 (예: 급성 상기도 감염)"
-                className="rounded-xl"
-                value={diagnosis}
-                onChange={(e) => setDiagnosis(e.target.value)}
-              />
-            </div>
+          {/* 진단명 */}
+          <div>
+            <Label className="text-base font-black mb-2 block">진단명 *</Label>
+            <Input
+              placeholder="진단명을 입력하세요 (예: 급성 상기도 감염)"
+              className="rounded-xl"
+              value={diagnosis}
+              onChange={(e) => setDiagnosis(e.target.value)}
+            />
+          </div>
 
-            {/* 복용 방법 */}
-            <div>
-              <Label className="text-base font-black mb-2 block">
-                복용 방법 및 주의사항
-              </Label>
-              <Input
-                placeholder="예: 식후 30분, 하루 3회 복용"
-                className="rounded-xl"
-                value={additionalInstructions}
-                onChange={(e) => setAdditionalInstructions(e.target.value)}
-              />
-              <p className="text-xs text-gray-500 mt-1 ml-1">
-                💊 기본 복용: 1정, 1일 3회, 3일간 (추가 지침사항을 입력하세요)
-              </p>
-            </div>
+          {/* 복용 방법 */}
+          <div>
+            <Label className="text-base font-black mb-2 block">
+              복용 방법 및 주의사항
+            </Label>
+            <Input
+              placeholder="예: 식후 30분, 하루 3회 복용"
+              className="rounded-xl"
+              value={additionalInstructions}
+              onChange={(e) => setAdditionalInstructions(e.target.value)}
+            />
+            <p className="text-xs text-gray-500 mt-1 ml-1">
+              💊 기본 복용: 1정, 1일 3회, 3일간 (추가 지침사항을 입력하세요)
+            </p>
+          </div>
 
-            {/* 처방 의약품 */}
-            <div>
-              <Label className="text-base font-black mb-2 block">
-                처방 의약품 *
-              </Label>
-              <div className="space-y-3">
-                {medicines.map((medicine, index) => (
-                  <div
-                    key={index}
-                    className="p-4 rounded-xl border bg-gray-50 space-y-3"
-                  >
-                    {/* 약품 검색 */}
-                    <div className="relative">
-                      <div className="flex gap-2">
-                        <div className="flex-1 relative">
-                          <Input
-                            placeholder="약품명으로 검색 (타이레놀, 부루펜 등)"
-                            className="rounded-xl"
-                            value={
-                              index === selectedMedicineIndex
-                                ? searchQuery
-                                : medicine.medicineName
+          {/* 처방 의약품 */}
+          <div>
+            <Label className="text-base font-black mb-2 block">
+              처방 의약품 *
+            </Label>
+            <div className="space-y-3">
+              {medicines.map((medicine, index) => (
+                <div
+                  key={index}
+                  className="p-4 rounded-xl border bg-gray-50 space-y-3"
+                >
+                  {/* 약품 검색 */}
+                  <div className="relative">
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <Input
+                          placeholder="약품명으로 검색 (타이레놀, 부루펜 등)"
+                          className="rounded-xl"
+                          value={
+                            index === selectedMedicineIndex
+                              ? searchQuery
+                              : medicine.medicineName
+                          }
+                          onChange={(e) => {
+                            setSelectedMedicineIndex(index);
+                            setSearchQuery(e.target.value);
+                            handleMedicineChange(
+                              index,
+                              "medicineName",
+                              e.target.value
+                            );
+                            handleSearchMedicine(e.target.value);
+                          }}
+                          onFocus={() => {
+                            setSelectedMedicineIndex(index);
+                            setSearchQuery(medicine.medicineName);
+                            if (medicine.medicineName.length >= 2) {
+                              handleSearchMedicine(medicine.medicineName);
                             }
-                            onChange={(e) => {
-                              setSelectedMedicineIndex(index);
-                              setSearchQuery(e.target.value);
-                              handleMedicineChange(
-                                index,
-                                "medicineName",
-                                e.target.value
-                              );
-                              handleSearchMedicine(e.target.value);
-                            }}
-                            onFocus={() => {
-                              setSelectedMedicineIndex(index);
-                              setSearchQuery(medicine.medicineName);
-                              if (medicine.medicineName.length >= 2) {
-                                handleSearchMedicine(medicine.medicineName);
-                              }
-                            }}
-                          />
-                          {index === selectedMedicineIndex &&
-                            searchResults.length > 0 && (
-                              <div className="absolute z-10 mt-1 w-full p-2 rounded-xl border bg-white shadow-lg max-h-60 overflow-y-auto">
-                                {searchResults.map((med) => (
-                                  <div
-                                    key={med.id}
-                                    className="p-3 hover:bg-blue-50 rounded-lg cursor-pointer border-b last:border-b-0"
-                                    onClick={() => handleSelectMedicine(med)}
-                                  >
-                                    <div className="font-bold text-sm text-gray-900">
-                                      {med.name}
-                                    </div>
-                                    {med.description && (
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        {med.description}
-                                      </div>
-                                    )}
+                          }}
+                        />
+                        {index === selectedMedicineIndex &&
+                          searchResults.length > 0 && (
+                            <div className="absolute z-10 mt-1 w-full p-2 rounded-xl border bg-white shadow-lg max-h-60 overflow-y-auto">
+                              {searchResults.map((med) => (
+                                <div
+                                  key={med.id}
+                                  className="p-3 hover:bg-blue-50 rounded-lg cursor-pointer border-b last:border-b-0"
+                                  onClick={() => handleSelectMedicine(med)}
+                                >
+                                  <div className="font-bold text-sm text-gray-900">
+                                    {med.name}
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                        </div>
-                        {medicines.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-xl text-red-600"
-                            onClick={() => handleRemoveMedicine(index)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                                  {med.description && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {med.description}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                       </div>
+                      {medicines.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="rounded-xl text-red-600"
+                          onClick={() => handleRemoveMedicine(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
-                ))}
-                <Button
-                  variant="outline"
-                  className="w-full rounded-xl border-2 border-dashed border-gray-300 hover:border-[#C93831] hover:bg-red-50"
-                  onClick={handleAddMedicine}
-                >
-                  <PlusSquare className="w-4 h-4 mr-2" />
-                  약품 추가
-                </Button>
-              </div>
-            </div>
-
-            {/* 버튼 */}
-            <div className="flex gap-3 pt-4">
+                </div>
+              ))}
               <Button
                 variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="flex-1 rounded-2xl h-12 font-bold"
-                disabled={isSubmitting}
+                className="w-full rounded-xl border-2 border-dashed border-gray-300 hover:border-[#C93831] hover:bg-red-50"
+                onClick={handleAddMedicine}
               >
-                취소
-              </Button>
-              <Button
-                onClick={(e) => {
-                  console.log("버튼 클릭 이벤트 발생!", e);
-                  handleSubmit();
-                }}
-                className="flex-1 bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-2xl h-12"
-                disabled={isSubmitting}
-              >
-                <CheckCircle className="w-5 h-5 mr-2" />
-                {isSubmitting
-                  ? (existingPrescription ? "수정 중..." : "발급 중...")
-                  : (existingPrescription ? "처방전 수정" : "처방전 발급")
-                }
+                <PlusSquare className="w-4 h-4 mr-2" />
+                약품 추가
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* 버튼 */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1 rounded-2xl h-12 font-bold"
+              disabled={isSubmitting}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={(e) => {
+                console.log("버튼 클릭 이벤트 발생!", e);
+                handleSubmit();
+              }}
+              className="flex-1 bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-2xl h-12"
+              disabled={isSubmitting}
+            >
+              <CheckCircle className="w-5 h-5 mr-2" />
+              {isSubmitting
+                ? existingPrescription
+                  ? "수정 중..."
+                  : "발급 중..."
+                : existingPrescription
+                ? "처방전 수정"
+                : "처방전 발급"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

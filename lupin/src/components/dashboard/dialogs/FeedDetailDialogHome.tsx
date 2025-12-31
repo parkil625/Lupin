@@ -880,7 +880,7 @@ export default function FeedDetailDialogHome({
             md:max-w-[calc(100vw-32px)] md:h-[95vh] md:max-h-[95vh]
             ${
               showComments
-                ? "h-[100dvh] max-h-[100dvh] w-screen max-w-none md:!w-[825px] md:!max-w-[825px]" // [수정] 댓글 열림 시 모바일 전체 화면 꽉 채움
+                ? "h-[calc(100dvh-65px)] max-h-[calc(100dvh-65px)] mb-[65px] w-screen max-w-none md:mb-0 md:!w-[825px] md:!max-w-[825px]" // [수정] 모바일 하단 메뉴바 공간(65px) 확보
                 : "h-[calc(100vh-130px)] max-h-[calc(100vh-130px)] w-fit max-w-none md:!w-[475px] md:!max-w-[475px]" // 기본 상태
             }`}
           onPointerDownOutside={(e) => {

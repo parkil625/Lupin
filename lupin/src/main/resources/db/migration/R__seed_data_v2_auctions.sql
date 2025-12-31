@@ -17,12 +17,12 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- 경매가 다른 테이블(예: auction_bids)이 FK로 물려있다면,
 -- 그 테이블도 먼저 지워야 함. (아래는 예시)
--- DELETE FROM auction_bids;
-
+DELETE FROM auction_bids;
 DELETE FROM auction_items;
 DELETE FROM auctions;
 
 -- AUTO_INCREMENT 초기화 (TRUNCATE 대체)
+ALTER TABLE auction_bids AUTO_INCREMENT = 1;
 ALTER TABLE auction_items AUTO_INCREMENT = 1;
 ALTER TABLE auctions AUTO_INCREMENT = 1;
 
@@ -54,7 +54,7 @@ INSERT INTO auctions (
 ) VALUES (
              0,
              @now - INTERVAL 1 DAY,
-             @now + INTERVAL 8 HOUR,
+             @now + INTERVAL 1 DAY,
              false,
              30,
              'ACTIVE',
@@ -88,8 +88,8 @@ INSERT INTO auctions (
     winning_bid
 ) VALUES (
              0,
-             @now + INTERVAL 8 DAY,
-             @now + INTERVAL 9 DAY,
+             @now + INTERVAL 3 DAY,
+             @now + INTERVAL 4 DAY,
              false,
              30,
              'SCHEDULED',
@@ -123,8 +123,8 @@ INSERT INTO auctions (
     winning_bid
 ) VALUES (
              0,
-             @now + INTERVAL 9 DAY,
-             @now + INTERVAL 10 DAY,
+             @now + INTERVAL 4 DAY,
+             @now + INTERVAL 5 DAY,
              false,
              30,
              'SCHEDULED',

@@ -19,9 +19,12 @@ import java.util.Set;
  * - Hot Write 문제 해결: DB 락 경합 최소화
  * - JDBC Batch Update: N번 쿼리 → 1번 배치 쿼리로 최적화
  */
+import org.springframework.context.annotation.Profile;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Profile("!test") // [수정됨] 테스트 환경에서는 스케줄러 실행 방지
 public class LikeCountSyncScheduler {
 
     private final RedisTemplate<String, String> redisTemplate;

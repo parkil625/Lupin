@@ -48,7 +48,13 @@ public class UserService {
     }
 
     public List<UserRankingResponse> getTopUsersByPoints(int limit) {
-        List<Object[]> results = pointLogRepository.findAllUsersWithPointsRanked(PageRequest.of(0, limit));
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime start = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime end = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        log.info(">>> [UserService] Fetching Top {} Users for Month: {}, Range: {} ~ {}", limit, currentMonth, start, end);
+
+        List<Object[]> results = pointLogRepository.findAllUsersWithPointsRanked(start, end, PageRequest.of(0, limit));
         List<UserRankingResponse> rankings = new ArrayList<>();
         int rank = 1;
         for (Object[] row : results) {
@@ -60,11 +66,19 @@ public class UserService {
             
             rankings.add(UserRankingResponse.of(user, displayPoints, rank++));
         }
+        
+        log.info(">>> [UserService] Fetched {} rankers.", rankings.size());
         return rankings;
     }
 
     public List<UserRankingResponse> getUserRankingContext(Long userId) {
-        List<Object[]> results = pointLogRepository.findUserRankingContext(userId);
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime start = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime end = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        log.info(">>> [UserService] Fetching Ranking Context for userId: {}, Range: {} ~ {}", userId, start, end);
+
+        List<Object[]> results = pointLogRepository.findUserRankingContext(userId, start, end);
         return results.stream()
                 .map(UserRankingResponse::fromNativeQuery)
                 .toList();
@@ -83,8 +97,15 @@ public class UserService {
     }
 
     public long getAveragePoints() {
-        Double avg = pointLogRepository.getAveragePointsPerUser();
-        return avg != null ? Math.round(avg) : 0L;
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime start = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime end = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        Double avg = pointLogRepository.getAveragePointsPerUser(start, end);
+        long result = avg != null ? Math.round(avg) : 0L;
+        
+        log.info(">>> [UserService] Average points for {}: {}", currentMonth, result);
+        return result;
     }
 
     public UserStatsResponse getUserStats(Long userId) {

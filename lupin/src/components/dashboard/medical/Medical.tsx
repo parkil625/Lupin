@@ -469,10 +469,16 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         // 처방전 발급 메시지인 경우 처방전 목록 새로고침
         if (message.content.includes("처방전")) {
           try {
+            // [중요] DB 저장 완료까지 0.5초 대기 후 조회 (Race Condition 방지)
+            await new Promise((resolve) => setTimeout(resolve, 500));
+
             const data = await prescriptionApi.getPatientPrescriptions(
               currentPatientId
             );
             setPrescriptions(data);
+
+            // 알림 강화
+            toast.success("📋 처방전이 도착했습니다! 확인해보세요.");
           } catch {
             // 에러 무시 (조용히 처리)
             setPrescriptions([]);

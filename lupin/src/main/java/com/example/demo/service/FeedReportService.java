@@ -42,6 +42,7 @@ public class FeedReportService {
     private final ApplicationEventPublisher eventPublisher;
     private final UserPenaltyService userPenaltyService;
     private final EntityManager entityManager;
+    private final PointService pointService;
 
     @Transactional
     public boolean toggleReport(User reporter, Long feedId) {
@@ -129,6 +130,11 @@ public class FeedReportService {
         Feed targetFeed = feedRepository.findById(Long.parseLong(feedIdStr))
                 .orElseThrow(() -> new BusinessException(ErrorCode.FEED_NOT_FOUND));
         
+        // [추가] 신고 삭제 시 포인트 회수 로직
+        if (targetFeed.getPoints() > 0) {
+            log.info(">>> [신고 디버깅] 신고 삭제로 인한 포인트 회수: userId={}, points={}", targetFeed.getWriter().getId(), targetFeed.getPoints());
+            pointService.deductPoints(targetFeed.getWriter(), targetFeed.getPoints());
+        }
 
         feedRepository.delete(targetFeed);
     }

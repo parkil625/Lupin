@@ -51,8 +51,12 @@ export const useWebSocket = ({
       console.error = (...args: unknown[]) => {
         // WebSocket connection failed 에러만 무시
         const firstArg = args[0];
-        if (firstArg && typeof firstArg === 'object' && 'toString' in firstArg) {
-          if (firstArg.toString().includes('WebSocket connection')) {
+        if (
+          firstArg &&
+          typeof firstArg === "object" &&
+          "toString" in firstArg
+        ) {
+          if (firstArg.toString().includes("WebSocket connection")) {
             return;
           }
         }
@@ -63,8 +67,8 @@ export const useWebSocket = ({
     const client = new Client({
       webSocketFactory: () =>
         new SockJS(socketUrl, null, {
-          // 로컬: WebSocket만 사용, 배포: 모든 폴백 허용
-          transports: isLocal ? ["websocket"] : undefined,
+          // [수정] 배포 환경에서도 WebSocket만 사용하도록 강제하여 iframe 폴백으로 인한 404/보안 에러 방지
+          transports: ["websocket"],
         }),
       debug: () => {
         // 프로덕션 환경에서는 debug 로그 비활성화

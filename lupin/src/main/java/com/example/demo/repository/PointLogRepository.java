@@ -46,14 +46,19 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
             "ORDER BY rankingScore DESC, u.id ASC")
     List<Object[]> findAllUsersRankedByPoints();
 
-    // [수정 3] 중복된 메서드도 동일하게 수정
+    // [수정 3] 기간별 랭킹 조회 (이번 달 기준)
     @Query("SELECT u, COALESCE(SUM(p.points), 0) as rankingScore " +
             "FROM User u " +
             "LEFT JOIN PointLog p ON u.id = p.user.id " +
             "AND p.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
+            "AND p.createdAt BETWEEN :start AND :end " + // [추가] 기간 필터링
             "GROUP BY u.id " +
             "ORDER BY rankingScore DESC, u.id ASC")
-    List<Object[]> findAllUsersWithPointsRanked(Pageable pageable);
+    List<Object[]> findAllUsersWithPointsRanked(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            Pageable pageable
+    );
 
     // [수정 4] 중복된 메서드도 동일하게 수정
     @Query("SELECT u, COALESCE(SUM(p.points), 0) as rankingScore " +
@@ -68,26 +73,27 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
     @Query("SELECT COUNT(DISTINCT p.user) FROM PointLog p WHERE p.createdAt BETWEEN :startDateTime AND :endDateTime")
     Long countActiveUsersThisMonth(@Param("startDateTime") LocalDateTime startDateTime, @Param("endDateTime") LocalDateTime endDateTime);
 
-    // [수정 5] 전체 유저 평균 포인트 (랭킹 점수 기준)
-    // 기존 User.current_points 대신 로그 합산 평균 사용
+    // [수정 5] 기간별 전체 유저 평균 포인트
     @Query(value = """
         SELECT COALESCE(AVG(sub.score), 0) 
         FROM (
-            SELECT COALESCE(SUM(CASE WHEN pl.type IN ('EARN', 'DEDUCT') THEN pl.points ELSE 0 END), 0) as score
+            SELECT COALESCE(SUM(CASE WHEN pl.type IN ('EARN', 'DEDUCT') AND pl.created_at BETWEEN :start AND :end THEN pl.points ELSE 0 END), 0) as score
             FROM users u 
             LEFT JOIN point_logs pl ON u.id = pl.user_id 
             GROUP BY u.id
         ) sub
         """, nativeQuery = true)
-    Double getAveragePointsPerUser();
+    Double getAveragePointsPerUser(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 
-    // [수정 6] 내 랭킹 및 앞뒤 유저 조회 (Native Query 수정)
-    // USE 타입을 제외하고 점수를 계산하도록 CTE(ranking_calc) 추가
+    // [수정 6] 기간별 내 랭킹 및 앞뒤 유저 조회
     @Query(value = """
         WITH ranking_calc AS (
             SELECT
                 u.id,
-                COALESCE(SUM(CASE WHEN pl.type IN ('EARN', 'DEDUCT') THEN pl.points ELSE 0 END), 0) as score
+                COALESCE(SUM(CASE WHEN pl.type IN ('EARN', 'DEDUCT') AND pl.created_at BETWEEN :start AND :end THEN pl.points ELSE 0 END), 0) as score
             FROM users u
             LEFT JOIN point_logs pl ON u.id = pl.user_id
             GROUP BY u.id
@@ -113,5 +119,9 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
         WHERE r.user_rank BETWEEN GREATEST(1, t.target_rank - 1) AND t.target_rank + 1
         ORDER BY r.user_rank
         """, nativeQuery = true)
-    List<Object[]> findUserRankingContext(@Param("userId") Long userId);
+    List<Object[]> findUserRankingContext(
+            @Param("userId") Long userId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }

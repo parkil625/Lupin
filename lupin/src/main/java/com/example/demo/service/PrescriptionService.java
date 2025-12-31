@@ -162,11 +162,11 @@ public class PrescriptionService {
                     .medicines(new ArrayList<>())
                     .build();
 
-            // [핵심 수정] 부모 엔티티를 먼저 저장하여 ID를 확보합니다. (Transient -> Persistent)
+            // [핵심] 부모 엔티티를 먼저 저장하여 ID를 확보합니다. (Transient -> Persistent)
             Prescription savedPrescription = prescriptionRepository.save(prescription);
             System.out.println("✓ 처방전 기본 정보 저장 완료 (ID: " + savedPrescription.getId() + ")");
 
-            // 6. 약품 추가 (저장된 처방전 객체 사용)
+            // 6. 약품 추가
             if (request.getMedicines() == null || request.getMedicines().isEmpty()) {
                 throw new IllegalArgumentException("처방할 약품이 없습니다.");
             }
@@ -181,25 +181,34 @@ public class PrescriptionService {
                             .orElseThrow(() -> new IllegalArgumentException("약품명으로 찾을 수 없습니다: " + item.getMedicineName()));
                 }
 
-                // 저장된 부모 엔티티(savedPrescription)를 주입하여 FK 오류 방지
+                // 저장된 부모 엔티티(savedPrescription)를 주입
                 PrescriptionMedicine pm = PrescriptionMedicine.builder()
                         .medicine(medicine)
                         .instructions(item.getInstructions())
-                        .prescription(savedPrescription) // ★ ID가 존재하는 영속 객체 참조
+                        .prescription(savedPrescription) // ID가 존재하는 영속 객체 참조
                         .build();
                 
+                // [핵심] EntityManager로 자식 엔티티를 직접 저장 (Cascade 설정 문제 회피)
+                entityManager.persist(pm);
+                
+                // 메모리 객체 동기화 (응답값용)
                 savedPrescription.addMedicine(pm);
-                System.out.println("   - 약품 추가: " + medicine.getName() + " (ID: " + medicine.getId() + ")");
+                System.out.println("   - 약품 저장 완료: " + medicine.getName());
             }
 
             // 7. 예약 상태 완료로 변경
             appointment.complete();
-            System.out.println("✓ 예약 상태 '완료'로 변경됨");
+            
+            // 8. 최종 반영 (Flush)
+            entityManager.flush();
+            entityManager.clear(); // 영속성 컨텍스트 초기화 (데이터 무결성 보장)
 
-            // 8. 최종 저장 (약품 정보 포함하여 업데이트 및 Flush)
-            // 이미 영속화된 엔티티이므로 변경사항이 DB에 반영됩니다.
-            savedPrescription = prescriptionRepository.saveAndFlush(savedPrescription);
-            System.out.println("✓ 처방전 DB 저장 성공 (ID: " + savedPrescription.getId() + ")");
+            // 저장된 데이터를 다시 조회하여 완전한 상태로 반환
+            Prescription savedPrescriptionResult = prescriptionRepository.findById(savedPrescription.getId())
+                    .orElseThrow(() -> new IllegalStateException("처방전 저장 후 조회 실패"));
+            
+            // 변수명 일치를 위해 대입
+            savedPrescription = savedPrescriptionResult;
             System.out.println("========================================");
 
             return PrescriptionResponse.from(savedPrescription);

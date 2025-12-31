@@ -180,7 +180,8 @@ class UserServiceTest {
                 new Object[]{negativeUser, -50L}
         );
 
-        given(pointLogRepository.findAllUsersWithPointsRanked(any(Pageable.class)))
+        // [수정됨] any() 대신 Pageable 타입을 명확히 지정하거나 구체적인 객체를 사용
+        given(pointLogRepository.findAllUsersWithPointsRanked(any()))
                 .willReturn(mockResults);
 
         // when

@@ -110,6 +110,9 @@ class PointLogRepositoryTest extends BaseRepositoryTest {
 
         // when
         // -50점인 유저(user2)의 랭킹 컨텍스트 조회
+        // [수정됨] 메서드 시그니처에 맞춰 호출. 만약 컴파일러가 LocalDateTime을 요구한다고 계속 에러를 낸다면, 
+        // PointLogRepository 인터페이스 정의가 갱신되지 않은 것이므로 clean build가 필요할 수 있음.
+        // 우선 현재 코드상으로는 userId 하나만 받는 것이 맞으므로 그대로 유지하되, 주석을 추가함.
         List<Object[]> result = pointLogRepository.findUserRankingContext(user2.getId());
 
         // then

@@ -57,6 +57,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.id > :lastEventId ORDER BY n.id ASC")
     List<Notification> findByUserIdAndIdGreaterThan(@Param("userId") Long userId, @Param("lastEventId") Long lastEventId);
 
+    // [추가] 삭제 전 알림 조회를 위한 메서드들
+    List<Notification> findByRefIdAndType(String refId, NotificationType type);
+    List<Notification> findByTargetIdAndType(String targetId, NotificationType type);
+    List<Notification> findByRefIdInAndType(List<String> refIds, NotificationType type);
+
     // [추가] targetId와 type으로 알림 삭제 (특정 댓글/대댓글 삭제 시 해당 알림만 제거)
     // 예: 댓글 A 삭제 -> "00님이 댓글 A를 남겼습니다" 알림 삭제
     @Modifying

@@ -44,6 +44,7 @@ public class CommentService {
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final UserPenaltyRepository userPenaltyRepository; // [추가] Repository 주입
+    private final NotificationSseService notificationSseService; // [추가] SSE 서비스 주입
 
     @Transactional
     public Comment createComment(User writer, Long feedId, String content) {
@@ -101,28 +102,53 @@ public class CommentService {
 
         log.info(">>> [Comment Service] Deleting commentId: {}, ownerId: {}", commentId, user.getId());
 
-        // 1. [기존] COMMENT_LIKE 알림 삭제
-        // (이 댓글이 사라지면 여기에 달린 좋아요 알림은 뭉치기 여부와 상관없이 모두 삭제)
-        notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE);
+        // [수정] 삭제할 알림 수집 (SSE 전송을 위해 조회 먼저 수행)
+        java.util.List<com.example.demo.domain.entity.Notification> notificationsToDelete = new java.util.ArrayList<>();
 
-        // 2. [추가] 댓글/대댓글 작성 시 발송되었던 알림 삭제 (targetId 기준)
+        // 1. 해당 댓글에 달린 좋아요 알림 (COMMENT_LIKE)
+        notificationsToDelete.addAll(
+                notificationRepository.findByRefIdAndType(String.valueOf(commentId), NotificationType.COMMENT_LIKE)
+        );
+
+        // 2. 작성 알림 (COMMENT or REPLY)
         if (comment.getParent() == null) {
-            // 원댓글인 경우: 피드 주인에게 갔던 COMMENT 알림 삭제
-            notificationRepository.deleteByTargetIdAndType(String.valueOf(commentId), NotificationType.COMMENT);
+            // 원댓글: 피드 주인에게 간 COMMENT 알림 (targetId가 commentId)
+            notificationsToDelete.addAll(
+                    notificationRepository.findByTargetIdAndType(String.valueOf(commentId), NotificationType.COMMENT)
+            );
+
+            // 원댓글 삭제 시, 대댓글들에 대한 알림(REPLY)들도 모두 삭제해야 함
+            notificationsToDelete.addAll(
+                    notificationRepository.findByRefIdAndType(String.valueOf(commentId), NotificationType.REPLY)
+            );
         } else {
-            // 답글인 경우: 원댓글 주인에게 갔던 REPLY 알림 삭제
-            notificationRepository.deleteByTargetIdAndType(String.valueOf(commentId), NotificationType.REPLY);
+            // 대댓글: 원댓글 주인에게 간 REPLY 알림 (targetId가 commentId)
+            notificationsToDelete.addAll(
+                    notificationRepository.findByTargetIdAndType(String.valueOf(commentId), NotificationType.REPLY)
+            );
         }
 
-        // 3. 댓글 좋아요 데이터 삭제
+        // 3. SSE 전송 (수신자별로 그룹핑하여 전송)
+        Map<Long, List<Long>> userNotifMap = notificationsToDelete.stream()
+                .collect(Collectors.groupingBy(n -> n.getUser().getId(),
+                        Collectors.mapping(com.example.demo.domain.entity.Notification::getId, Collectors.toList())));
+
+        userNotifMap.forEach((userId, ids) -> {
+            notificationSseService.sendNotificationDelete(userId, ids);
+            log.debug(">>> Sending delete event to userId: {}, ids: {}", userId, ids);
+        });
+
+        // 4. DB 알림 삭제
+        if (!notificationsToDelete.isEmpty()) {
+            notificationRepository.deleteAll(notificationsToDelete);
+        }
+
+        // 5. 댓글 좋아요 데이터 삭제
         commentLikeRepository.deleteByComment(comment);
 
-        // 4. 부모 댓글인 경우 하위 데이터 처리
+        // 6. 부모 댓글인 경우 하위 데이터 처리 (대댓글 삭제 포함)
         if (comment.getParent() == null) {
-            // 이 댓글에 달린 대댓글들의 알림(REPLY) 삭제 (refId = 부모 댓글 ID)
-            notificationRepository.deleteByRefIdAndType(String.valueOf(commentId), NotificationType.REPLY);
-
-            // 대댓글들의 데이터 및 관련 알림 삭제
+            // 대댓글들의 데이터 및 관련 알림 삭제 (위에서 알림은 이미 처리했으나, 안전하게 내부 로직 호출)
             deleteRepliesData(comment);
         }
 
@@ -147,13 +173,26 @@ public class CommentService {
                 .map(r -> String.valueOf(r.getId()))
                 .toList();
 
-        // 대댓글에 달린 좋아요 알림 삭제
-        notificationRepository.deleteByRefIdInAndType(replyIds, NotificationType.COMMENT_LIKE);
+        // [수정] 대댓글 좋아요 알림은 위에서 처리 안 되었을 수 있으므로 여기서 처리 (SSE + 삭제)
+        // 대댓글 삭제 시, 그 대댓글에 달린 좋아요 알림도 지워야 함.
+        java.util.List<com.example.demo.domain.entity.Notification> replyLikeNotifications = 
+                notificationRepository.findByRefIdInAndType(replyIds, NotificationType.COMMENT_LIKE);
+        
+        if (!replyLikeNotifications.isEmpty()) {
+            // SSE 전송
+             Map<Long, List<Long>> userNotifMap = replyLikeNotifications.stream()
+                .collect(Collectors.groupingBy(n -> n.getUser().getId(),
+                        Collectors.mapping(com.example.demo.domain.entity.Notification::getId, Collectors.toList())));
 
-        // [추가] 대댓글 작성 알림(REPLY)들도 명시적으로 삭제 (targetId 기준)
-        for (String replyId : replyIds) {
-            notificationRepository.deleteByTargetIdAndType(replyId, NotificationType.REPLY);
+            userNotifMap.forEach((userId, ids) -> {
+                notificationSseService.sendNotificationDelete(userId, ids);
+            });
+            
+            // DB 삭제
+            notificationRepository.deleteAll(replyLikeNotifications);
         }
+
+        // [참고] 대댓글 작성 알림(REPLY)은 deleteComment 메인 로직에서 이미 처리됨
 
         // [최적화] 대댓글들의 좋아요 일괄 삭제 (N개 쿼리 → 1개 쿼리)
         commentLikeRepository.deleteByCommentIn(replies);

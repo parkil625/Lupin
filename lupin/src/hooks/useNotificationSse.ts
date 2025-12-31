@@ -3,11 +3,14 @@ import { Notification } from "@/types/dashboard.types";
 
 interface UseNotificationSseProps {
   onNotificationReceived: (notification: Notification) => void;
+  // [추가] 알림 삭제 이벤트를 처리할 콜백 (삭제된 ID 목록을 받음)
+  onNotificationDeleted: (notificationIds: number[]) => void;
   enabled?: boolean;
 }
 
 export const useNotificationSse = ({
   onNotificationReceived,
+  onNotificationDeleted, // [추가]
   enabled = true,
 }: UseNotificationSseProps) => {
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -23,11 +26,14 @@ export const useNotificationSse = ({
 
   // 콜백을 ref로 저장하여 의존성 문제 해결
   const onNotificationReceivedRef = useRef(onNotificationReceived);
+  // [추가] 삭제 콜백 ref
+  const onNotificationDeletedRef = useRef(onNotificationDeleted);
 
   // 콜백이 변경되면 ref 업데이트 (리렌더링 유발 없음)
   useEffect(() => {
     onNotificationReceivedRef.current = onNotificationReceived;
-  }, [onNotificationReceived]);
+    onNotificationDeletedRef.current = onNotificationDeleted; // [추가] 최신화
+  }, [onNotificationReceived, onNotificationDeleted]);
 
   const connectInternal = useCallback(() => {
     if (!enabled) return;
@@ -106,6 +112,21 @@ export const useNotificationSse = ({
         onNotificationReceivedRef.current(notification);
       } catch (error) {
         console.error("[SSE] Notification 이벤트 파싱 에러:", error);
+      }
+    });
+
+    // [신규] 알림 삭제 이벤트 수신 (백엔드에서 notification-delete 이벤트 전송 시)
+    eventSource.addEventListener("notification-delete", (event) => {
+      try {
+        // 백엔드에서 삭제된 알림 ID 배열을 보냄 (예: [10, 11])
+        const deletedIds: number[] = JSON.parse(event.data);
+        console.log("[SSE] 알림 삭제 이벤트 수신:", deletedIds);
+
+        if (deletedIds && deletedIds.length > 0) {
+          onNotificationDeletedRef.current(deletedIds);
+        }
+      } catch (error) {
+        console.error("[SSE] 삭제 이벤트 파싱 에러:", error);
       }
     });
 

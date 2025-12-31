@@ -25,6 +25,7 @@ public class FeedLikeService {
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final LikeCountCacheService likeCountCacheService;
+    private final NotificationSseService notificationSseService; // [추가] 주입
 
     @Transactional
     public FeedLike likeFeed(User user, Long feedId) {
@@ -81,8 +82,25 @@ public class FeedLikeService {
         long remainingLikes = feedLikeRepository.countByFeedId(feedId);
 
         if (remainingLikes == 0) {
-            // 남은 좋아요가 없으면 알림도 깔끔하게 삭제
-            notificationRepository.deleteByRefIdAndType(String.valueOf(feedId), NotificationType.FEED_LIKE);
+            // [수정] 남은 좋아요가 없으면 알림 조회 -> SSE 전송 -> 삭제
+            String refId = String.valueOf(feedId);
+
+            // 1. 삭제할 알림 조회 (피드 주인에게 간 알림)
+            java.util.List<com.example.demo.domain.entity.Notification> targets = notificationRepository.findByRefIdAndType(refId, NotificationType.FEED_LIKE);
+
+            if (!targets.isEmpty()) {
+                // 2. 알림 수신자(피드 주인)에게 삭제 이벤트 전송
+                Long receiverId = targets.get(0).getUser().getId();
+                java.util.List<Long> ids = targets.stream().map(com.example.demo.domain.entity.Notification::getId).toList();
+
+                // SSE로 "이 알림 지워라" 명령 전송
+                notificationSseService.sendNotificationDelete(receiverId, ids);
+                // [디버깅]
+                // log.debug("Sending delete event for feed like notifications: userId={}, ids={}", receiverId, ids);
+
+                // 3. DB 삭제
+                notificationRepository.deleteAll(targets);
+            }
         } else {
             // 남은 좋아요가 있다면, 가장 최근에 누른 사람을 찾아 알림 갱신 이벤트 발행
             feedLikeRepository.findTopByFeedIdOrderByCreatedAtDesc(feedId)

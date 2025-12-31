@@ -36,16 +36,21 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory,
             MessageListenerAdapter auctionListenerAdapter,
             MessageListenerAdapter notificationListenerAdapter,
-            MessageListenerAdapter chatListenerAdapter, 
+            MessageListenerAdapter chatListenerAdapter,
+            MessageListenerAdapter notificationDeleteListenerAdapter, // [추가]
             ChannelTopic auctionTopic,
             ChannelTopic notificationTopic,
-            ChannelTopic chatTopic) {
+            ChannelTopic chatTopic,
+            ChannelTopic notificationDeleteTopic // [추가]
+    ) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         // "auction-update" 채널 리스너
         container.addMessageListener(auctionListenerAdapter, auctionTopic);
         // "notification-update" 채널 리스너
         container.addMessageListener(notificationListenerAdapter, notificationTopic);
+        // "notification-delete" 채널 리스너 [추가]
+        container.addMessageListener(notificationDeleteListenerAdapter, notificationDeleteTopic);
 
         container.addMessageListener(chatListenerAdapter, chatTopic);
         return container;
@@ -63,6 +68,13 @@ public class RedisConfig {
     @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
     public MessageListenerAdapter notificationListenerAdapter(@Lazy NotificationSseService notificationSseService) {
         return new MessageListenerAdapter(notificationSseService, "handleMessage");
+    }
+
+    // ▼ [추가] 알림 삭제 메시지 리스너 어댑터
+    @Bean
+    @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
+    public MessageListenerAdapter notificationDeleteListenerAdapter(@Lazy NotificationSseService notificationSseService) {
+        return new MessageListenerAdapter(notificationSseService, "handleDeleteMessage");
     }
 
     @Bean
@@ -84,6 +96,13 @@ public class RedisConfig {
     @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
     public ChannelTopic notificationTopic() {
         return new ChannelTopic("notification-update");
+    }
+
+    // ▼ [추가] 알림 삭제 Pub/Sub 채널
+    @Bean
+    @ConditionalOnProperty(name="app.redis.pubsub.enabled", havingValue="true", matchIfMissing = true)
+    public ChannelTopic notificationDeleteTopic() {
+        return new ChannelTopic("notification-delete");
     }
 
     // ▼ chat Pub/Sub 채널

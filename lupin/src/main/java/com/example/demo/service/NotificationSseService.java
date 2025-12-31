@@ -34,6 +34,7 @@ public class NotificationSseService {
     private final NotificationRepository notificationRepository;
 
     private static final String NOTIFICATION_CHANNEL = "notification-update";
+    private static final String NOTIFICATION_DELETE_CHANNEL = "notification-delete"; // [추가] 채널명
 
     // userId -> SseEmitter 매핑
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -220,6 +221,66 @@ public class NotificationSseService {
         } catch (JsonProcessingException e) {
             log.error("알림 역직렬화 실패: {}", message, e);
         }
+    }
+
+    /**
+     * [추가] 알림 삭제 이벤트 발행 (Redis -> SSE)
+     */
+    public void sendNotificationDelete(Long userId, List<Long> notificationIds) {
+        if (notificationIds == null || notificationIds.isEmpty()) return;
+        try {
+            NotificationDeleteMessage message = new NotificationDeleteMessage(userId, notificationIds);
+            String json = objectMapper.writeValueAsString(message);
+
+            // Redis로 발행 (다중 서버 환경 대응)
+            redisTemplate.convertAndSend(NOTIFICATION_DELETE_CHANNEL, json);
+            log.info("Redis Pub/Sub 알림 삭제 발행: userId={}, count={}", userId, notificationIds.size());
+        } catch (JsonProcessingException e) {
+            log.error("알림 삭제 메시지 발행 실패", e);
+        }
+    }
+
+    /**
+     * [추가] Redis 알림 삭제 메시지 수신 핸들러
+     * (RedisConfig에서 notificationDeleteListenerAdapter가 이 메서드를 호출)
+     */
+    public void handleDeleteMessage(String message) {
+        try {
+            NotificationDeleteMessage deleteMsg = objectMapper.readValue(message, NotificationDeleteMessage.class);
+            deliverDeleteToLocalEmitter(deleteMsg.getUserId(), deleteMsg.getNotificationIds());
+        } catch (Exception e) {
+            log.error("알림 삭제 메시지 처리 실패", e);
+        }
+    }
+
+    /**
+     * [추가] 로컬 Emitter로 삭제 이벤트 전송
+     */
+    private void deliverDeleteToLocalEmitter(Long userId, List<Long> notificationIds) {
+        SseEmitter emitter = emitters.get(userId);
+        if (emitter == null) return;
+
+        synchronized (emitter) {
+            try {
+                // 이벤트명: "notification-delete", 데이터: ID 리스트
+                emitter.send(SseEmitter.event()
+                        .name("notification-delete")
+                        .data(notificationIds));
+                log.info("SSE 알림 삭제 전송 성공: userId={}, ids={}", userId, notificationIds);
+            } catch (IOException e) {
+                log.error("SSE 알림 삭제 전송 실패: userId={}", userId, e);
+                emitters.remove(userId);
+            }
+        }
+    }
+
+    // [추가] 삭제 메시지 DTO
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    private static class NotificationDeleteMessage {
+        private Long userId;
+        private List<Long> notificationIds;
     }
 
     /**

@@ -31,6 +31,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 import { prescriptionApi } from "@/api/prescriptionApi";
 import { appointmentApi } from "@/api/appointmentApi";
+import { userApi } from "@/api/userApi";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 interface MedicineQuantity {
@@ -91,6 +92,9 @@ export default function DoctorChatPage() {
   const [chatMessage, setChatMessage] = useState("");
   const [showMedicineDialog, setShowMedicineDialog] = useState(false);
 
+  // 환자 프로필 아바타 저장 (patientId -> avatarUrl)
+  const [patientAvatars, setPatientAvatars] = useState<Record<number, string>>({});
+
   // 스크롤 제어용 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -130,6 +134,22 @@ export default function DoctorChatPage() {
         }
       );
       setChatRooms(sortedRooms);
+
+      // 각 환자의 아바타 로드
+      const avatars: Record<number, string> = {};
+      await Promise.all(
+        sortedRooms.map(async (room: ChatRoomResponse) => {
+          try {
+            const patient = await userApi.getUserById(room.patientId);
+            if (patient.avatar) {
+              avatars[room.patientId] = patient.avatar;
+            }
+          } catch (error) {
+            console.error(`환자 ${room.patientId} 프로필 로드 실패:`, error);
+          }
+        })
+      );
+      setPatientAvatars(avatars);
     } catch (error) {
       console.error("채팅방 목록 로드 실패:", error);
     }
@@ -558,11 +578,12 @@ export default function DoctorChatPage() {
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">
-                              <Avatar className="w-10 h-10">
-                                <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-sm">
-                                  {displayName.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
+                              <UserHoverCard
+                                name={displayName}
+                                department="환자"
+                                size="sm"
+                                avatarUrl={patientAvatars[room.patientId]}
+                              />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-1">
                                   <div className="font-bold text-sm text-gray-900">

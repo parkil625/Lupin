@@ -33,7 +33,7 @@ import { appointmentApi } from "@/api/appointmentApi";
 import { userApi } from "@/api/userApi";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
-interface MedicineQuantity {
+interface Medicine {
   id: number;
   code: string;
   name: string;
@@ -41,17 +41,7 @@ interface MedicineQuantity {
   precautions?: string;
 }
 
-interface MedicineSearchResult {
-  id: number;
-  code: string;
-  name: string;
-  description?: string;
-  precautions?: string;
-}
-
-// 🔧 제거: ReadNotification (REST API로만 처리)
-
-// 시간 포맷 함수 (카톡 스타일)-
+// 시간 포맷 함수 (카톡 스타일)
 const formatChatTime = (timeString?: string) => {
   if (!timeString) return "";
 
@@ -105,15 +95,11 @@ export default function DoctorChatPage() {
   );
   const [diagnosis, setDiagnosis] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [selectedMedicines, setSelectedMedicines] = useState<
-    MedicineQuantity[]
-  >([]);
+  const [selectedMedicines, setSelectedMedicines] = useState<Medicine[]>([]);
 
   // 약품 검색 관련 상태
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MedicineSearchResult[]>(
-    []
-  );
+  const [searchResults, setSearchResults] = useState<Medicine[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   // 채팅방 목록 로드 함수 (재사용 가능하도록 별도 함수로 분리)
@@ -379,7 +365,7 @@ export default function DoctorChatPage() {
   };
 
   // 약품 추가 (클릭 또는 엔터)
-  const handleAddMedicine = (medicine: MedicineSearchResult) => {
+  const handleAddMedicine = (medicine: Medicine) => {
     // 이미 추가된 약품인지 확인
     const existing = selectedMedicines.find((m) => m.id === medicine.id);
 
@@ -533,11 +519,6 @@ export default function DoctorChatPage() {
                           room.status === "SCHEDULED"
                       )
                       .map((room) => {
-                        const isMyNameInList = room.patientName === "김민준";
-                        const displayName = isMyNameInList
-                          ? "김강민"
-                          : room.patientName;
-
                         // activeRoomId로 선택 여부 판단
                         const isSelected = activeRoomId === room.roomId;
 
@@ -561,19 +542,18 @@ export default function DoctorChatPage() {
                               setActiveRoomId(room.roomId);
 
                               // 선택된 멤버 정보 업데이트
-                              const newMember: Member = {
+                              setSelectedChatMember({
                                 id: room.patientId,
-                                name: displayName,
-                                avatar: patientAvatars[room.patientId] || displayName.charAt(0),
+                                name: room.patientName,
+                                avatar: patientAvatars[room.patientId] || room.patientName.charAt(0),
                                 age: 0,
                                 gender: "",
-                                lastVisit: "정보 없음",
-                                condition: "양호",
+                                lastVisit: "",
+                                condition: "",
                                 status: "in-progress",
-                              };
+                              });
 
                               // 메시지 초기화
-                              setSelectedChatMember(newMember);
                               setMessages([]);
                             }}
                             className={`p-3 rounded-xl border-2 transition-all ${
@@ -586,7 +566,7 @@ export default function DoctorChatPage() {
                           >
                             <div className="flex items-center gap-3 mb-2">
                               <UserHoverCard
-                                name={displayName}
+                                name={room.patientName}
                                 department="환자"
                                 size="sm"
                                 avatarUrl={patientAvatars[room.patientId]}
@@ -595,7 +575,7 @@ export default function DoctorChatPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-1">
                                   <div className="font-bold text-sm text-gray-900">
-                                    {displayName}
+                                    {room.patientName}
                                   </div>
                                   <div className="text-xs text-gray-500">
                                     {formatChatTime(room.lastMessageTime)}
@@ -605,7 +585,7 @@ export default function DoctorChatPage() {
                                   <div className="flex items-center gap-2 mb-1">
                                     <div
                                       className={`text-xs font-semibold ${
-                                        isSelected ? "text-blue-600" : "text-[#C93831]"
+                                        canEnter ? "text-[#C93831]" : "text-blue-600"
                                       }`}
                                     >
                                       예약시간 :{" "}

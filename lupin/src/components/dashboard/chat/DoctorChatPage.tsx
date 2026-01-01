@@ -31,6 +31,8 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 import { prescriptionApi } from "@/api/prescriptionApi";
 import { appointmentApi } from "@/api/appointmentApi";
+import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
+import { userApi } from "@/api";
 
 interface MedicineQuantity {
   id: number;
@@ -659,10 +661,6 @@ export default function DoctorChatPage() {
                             "알 수 없음";
                         }
 
-                        const senderInitial = isMine
-                          ? "의"
-                          : senderDisplayName.charAt(0);
-
                         return (
                           <div
                             key={msg.id}
@@ -671,11 +669,12 @@ export default function DoctorChatPage() {
                             }`}
                           >
                             {!isMine && (
-                              <Avatar className="w-8 h-8">
-                                <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-xs">
-                                  {senderInitial}
-                                </AvatarFallback>
-                              </Avatar>
+                              <UserHoverCard
+                                name={senderDisplayName}
+                                department="환자"
+                                size="sm"
+                                avatarUrl={selectedChatMember?.id ? `/api/users/${selectedChatMember.id}/profile-image` : undefined}
+                              />
                             )}
                             <div
                               className={`rounded-2xl p-3 max-w-md ${

@@ -12,6 +12,7 @@ import PrescriptionModal from "../dialogs/PrescriptionModal"; // [수정] 경로
 import { prescriptionApi, PrescriptionResponse } from "@/api/prescriptionApi"; // [수정] 타입 Import 수정
 import { toast } from "sonner"; // [추가] 알림용
 import apiClient from "@/api/client";
+import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 interface ChatRoomProps {
   open: boolean;
@@ -239,11 +240,12 @@ export default function ChatRoom({
                     className={`flex gap-3 ${isMine ? "justify-end" : ""}`}
                   >
                     {!isMine && (
-                      <Avatar className="w-8 h-8">
-                        <AvatarFallback className="bg-blue-500 text-white font-black text-xs">
-                          {msg.senderName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserHoverCard
+                        name={msg.senderName || targetUser.name}
+                        department={currentUser.role === "DOCTOR" ? "환자" : "의사"}
+                        size="sm"
+                        avatarUrl={targetUser.id ? `/api/users/${targetUser.id}/profile-image` : undefined}
+                      />
                     )}
                     <div
                       className={`rounded-2xl p-3 max-w-md ${

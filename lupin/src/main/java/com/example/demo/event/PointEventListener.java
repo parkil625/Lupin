@@ -55,13 +55,15 @@ public class PointEventListener {
             // 점수 업데이트 (없으면 자동 생성됨)
             Double newScore = redisTemplate.opsForZSet().incrementScore(rankingKey, userIdStr, event.amount());
             
-            // 점수가 0 이하면 랭킹에서 제거
-            if (newScore != null && newScore <= 0) {
-                redisTemplate.opsForZSet().remove(rankingKey, userIdStr);
-            } else {
-                // 키 만료 시간 연장 (40일)
-                redisTemplate.expire(rankingKey, java.time.Duration.ofDays(40));
+            // [수정] 점수가 0 이하가 되어도 랭킹에서 제거하지 않음 (0점 유저 노출 보장)
+            // 오히려 음수가 되면 0점으로 보정하여 저장
+            if (newScore != null && newScore < 0) {
+                redisTemplate.opsForZSet().add(rankingKey, userIdStr, 0);
+                log.debug(">>> [Ranking] User {} score adjusted from {} to 0 (Negative points).", userIdStr, newScore);
             }
+            
+            // 키 만료 시간 연장 (40일)
+            redisTemplate.expire(rankingKey, java.time.Duration.ofDays(40));
             
             log.debug(">>> [Ranking] User {} updated. Delta: {}, NewScore: {}", userIdStr, event.amount(), newScore);
 

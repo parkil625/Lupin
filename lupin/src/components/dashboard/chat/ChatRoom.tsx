@@ -253,7 +253,7 @@ export default function ChatRoom({
           </DialogHeader>
 
           {/* 메시지 목록 */}
-          <ScrollArea className="flex-1 px-6">
+          <ScrollArea className="flex-1 px-6 custom-scrollbar">
             <div className="space-y-4 py-4">
               {messages.map((msg, idx) => {
                 const isMine = msg.senderId === currentUser.id;

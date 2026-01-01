@@ -79,6 +79,7 @@ const formatChatTime = (timeString?: string) => {
 
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
+  const currentUserName = localStorage.getItem("userName") || "의사";
 
   // 현재 활성화된 roomId를 명시적으로 관리
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
@@ -702,6 +703,14 @@ export default function DoctorChatPage() {
                                 )}
                               </div>
                             </div>
+                            {isMine && (
+                              <UserHoverCard
+                                name={currentUserName}
+                                department="의사"
+                                size="sm"
+                                avatarUrl={`/api/users/${currentUserId}/profile-image`}
+                              />
+                            )}
                           </div>
                         );
                       })}

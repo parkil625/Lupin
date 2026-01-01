@@ -269,6 +269,14 @@ export default function ChatRoom({
                         })}
                       </div>
                     </div>
+                    {isMine && (
+                      <UserHoverCard
+                        name={currentUser.name}
+                        department={currentUser.role === "DOCTOR" ? "의사" : "환자"}
+                        size="sm"
+                        avatarUrl={`/api/users/${currentUser.id}/profile-image`}
+                      />
+                    )}
                   </div>
                 );
               })}

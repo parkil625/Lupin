@@ -124,7 +124,7 @@ function CommentPanel({
         if (userData && userData.hasCommentPenalty) {
           setHasCommentPenalty(true);
         }
-      } catch (error) {
+      } catch {
         // 사용자 정보 로드 실패 (조용히 무시)
       }
     };
@@ -235,7 +235,7 @@ function CommentPanel({
           }
         );
         setCommentLikes(likesState);
-      } catch (error) {
+      } catch {
         setComments([]);
       }
     };
@@ -367,7 +367,7 @@ function CommentPanel({
       setCommentText("");
       // [추가] 피드 카드 댓글 수 +1
       adjustCommentCount(feedId, 1);
-    } catch (error) {
+    } catch {
       toast.error("댓글 작성에 실패했습니다.");
     } finally {
       setIsSubmitting(false); // [수정] 잠금 해제 (반드시 실행)
@@ -415,7 +415,7 @@ function CommentPanel({
       setReplyingTo(null);
       // [추가] 피드 카드 댓글 수 +1
       adjustCommentCount(feedId, 1);
-    } catch (error) {
+    } catch {
       toast.error("답글 작성에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
@@ -436,7 +436,7 @@ function CommentPanel({
       });
       // [추가] 피드 카드 댓글 수 -1
       adjustCommentCount(feedId, -1);
-    } catch (error) {
+    } catch {
       toast.error("댓글 삭제에 실패했습니다.");
     }
   };

@@ -258,7 +258,7 @@ export default function CreateFeedDialog({
       setVerificationStatus("none");
 
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       toast.error("피드 작성 중 오류가 발생했습니다.");
     } finally {
       setIsUploading(false); // 로딩 끝
@@ -289,7 +289,7 @@ export default function CreateFeedDialog({
       // 2. 압축된 파일 업로드
       const s3Url = await imageApi.uploadFeedImage(compressedFile);
       setter(s3Url);
-    } catch (error) {
+    } catch {
       toast.error("이미지 업로드 실패 (용량을 확인해주세요)");
     } finally {
       // 해당 박스 로딩 끄기
@@ -310,7 +310,7 @@ export default function CreateFeedDialog({
           return new Date(dateTime);
         }
       }
-    } catch (error) {
+    } catch {
       // EXIF 추출 실패 무시
     }
     return null;

@@ -274,7 +274,7 @@ export default function EditFeedDialog({
           return new Date(dateTime);
         }
       }
-    } catch (error) {
+    } catch {
       // EXIF 추출 실패 무시
     }
     return null;

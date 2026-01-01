@@ -286,6 +286,12 @@ export default function PrescriptionDialog({
               className="rounded-xl border border-white"
               value={diagnosis}
               onChange={(e) => setDiagnosis(e.target.value)}
+              onFocus={(e) => {
+                e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow = '';
+              }}
             />
           </div>
 
@@ -338,12 +344,16 @@ export default function PrescriptionDialog({
                             );
                             handleSearchMedicine(e.target.value);
                           }}
-                          onFocus={() => {
+                          onFocus={(e) => {
                             setSelectedMedicineIndex(index);
                             setSearchQuery(medicine.medicineName);
                             if (medicine.medicineName.length >= 2) {
                               handleSearchMedicine(medicine.medicineName);
                             }
+                            e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.boxShadow = '';
                           }}
                         />
                         {index === selectedMedicineIndex &&

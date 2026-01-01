@@ -32,7 +32,6 @@ import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 import { prescriptionApi } from "@/api/prescriptionApi";
 import { appointmentApi } from "@/api/appointmentApi";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
-import { userApi } from "@/api";
 
 interface MedicineQuantity {
   id: number;

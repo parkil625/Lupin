@@ -1,3 +1,5 @@
+// src/components/dashboard/auction/BiddingPanel.tsx
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,10 @@ export const BiddingPanel = ({
   isBidding,
 }: BiddingPanelProps) => {
     const currentUserId = Number(localStorage.getItem("userId"));
+
+    // ✅ [핵심 수정] 데이터를 받자마자 금액 내림차순으로 '줄 세우기'를 먼저 합니다.
+    // 원본 배열을 건드리지 않기 위해 [...bidHistory]로 복사 후 정렬합니다.
+    const sortedHistory = [...bidHistory].sort((a, b) => b.bidAmount - a.bidAmount);
 
     const addAmount = (amountToAdd: number) => {
         const current = parseInt(bidAmount.replace(/[^0-9]/g, "")) || 0;
@@ -98,11 +104,11 @@ export const BiddingPanel = ({
 
             <Button
                 onClick={onPlaceBid}
-                disabled={isBidding} // [중요] 로딩 중 클릭 방지 추가!
+                disabled={isBidding} // 로딩 중 클릭 방지
                 className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold hover:shadow-lg disabled:opacity-70"
             >
                 {isBidding ? (
-                    <span className="animate-spin mr-2">⏳</span> // 로딩 아이콘
+                    <span className="animate-spin mr-2">⏳</span>
                 ) : (
                     <TrendingUp className="w-4 h-4 mr-2" />
                 )}
@@ -117,10 +123,11 @@ export const BiddingPanel = ({
           <CardTitle className="text-lg font-black">입찰 내역</CardTitle>
         </CardHeader>
         <CardContent>
-          {bidHistory.length > 0 ? (
+          {sortedHistory.length > 0 ? (
             <ScrollArea className="h-[300px] pr-4">
               <div className="space-y-3">
-                {bidHistory.map((bid) => (
+                {/* ✅ [수정] 정렬된 sortedHistory를 사용합니다. */}
+                {sortedHistory.map((bid, index) => (
                   <div
                     key={bid.id}
                     className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0"
@@ -140,7 +147,9 @@ export const BiddingPanel = ({
                       <p className="text-lg font-black text-[#C93831]">
                         {bid.bidAmount.toLocaleString()}P
                       </p>
-                      {bid.status === "ACTIVE" && (
+
+                      {/* ✅ [수정] 서버 상태를 무시하고, 정렬된 목록의 첫 번째(1등)에게만 배지를 줍니다. */}
+                      {index === 0 && (
                         <Badge className="bg-green-500 text-white text-xs border-0 font-bold">
                           최고가
                         </Badge>

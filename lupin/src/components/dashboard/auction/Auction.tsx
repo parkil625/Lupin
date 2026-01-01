@@ -233,7 +233,7 @@ export default function Auction() {
         if (selectedAuction?.currentPrice) {
             setBidAmount((selectedAuction.currentPrice + 1).toString());
         }
-    }, [selectedAuction?.currentPrice]);
+    }, [selectedAuction]);
 
 
     /**
@@ -263,7 +263,11 @@ export default function Auction() {
             await placeBid(selectedAuction.auctionId, amount);
 
             toast.success("입찰에 성공했습니다! 🎉", {
-                description: `${amount.toLocaleString()}P 입찰 완료`,
+                description: (
+                                <span className="text-black font-black text-sm">
+                                    {amount.toLocaleString()}P 입찰 완료
+                                </span>
+                            ),
                 duration: 2000,
             });
 

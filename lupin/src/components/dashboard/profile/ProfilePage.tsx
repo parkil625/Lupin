@@ -300,7 +300,7 @@ const BasicInfoForm = memo(
           if (userData.gender)
             localStorage.setItem("userGender", userData.gender);
         } catch (error) {
-          console.error("정보 불러오기 실패:", error);
+          // 정보 불러오기 실패 무시
         }
       };
       fetchMyInfo();
@@ -437,7 +437,7 @@ const OAuthSection = memo(() => {
     try {
       setConnections(await oauthApi.getConnections());
     } catch (e) {
-      console.error(e);
+      // 연결 목록 로드 실패 무시
     } finally {
       setIsLoading(false);
     }
@@ -733,7 +733,6 @@ export default function ProfilePage({
 
         toast.success("프로필이 저장되었습니다.");
       } catch (error) {
-        console.error(error);
         toast.error("저장에 실패했습니다.");
       } finally {
         setIsSubmitting(false); // [수정] 잠금 해제

@@ -125,7 +125,7 @@ function CommentPanel({
           setHasCommentPenalty(true);
         }
       } catch (error) {
-        console.error("사용자 정보 로드 실패:", error);
+        // 사용자 정보 로드 실패 (조용히 무시)
       }
     };
     checkPenalty();
@@ -207,9 +207,6 @@ function CommentPanel({
 
         // [추가] 실제 댓글 수를 세서 피드 정보(버튼 숫자)를 강제로 동기화!
         const realCount = countAllComments(commentsWithReplies);
-        console.log(
-          `[Sync] Feed ${feedId}: DB says ${commentsWithReplies.length} comments (replies included in calculation)`
-        );
         updateFeed(feedId, { comments: realCount });
 
         // commentLikes 상태 초기화 (likeCount, isLiked 반영)
@@ -239,7 +236,6 @@ function CommentPanel({
         );
         setCommentLikes(likesState);
       } catch (error) {
-        console.error("댓글 로드 실패:", error);
         setComments([]);
       }
     };
@@ -346,12 +342,10 @@ function CommentPanel({
   const handleSendComment = async () => {
     // [수정] 이미 제출 중이거나 내용이 없으면 즉시 중단
     if (isSubmitting || !commentText.trim()) {
-      console.log("[CommentPanel] 댓글 작성 중복 호출 방지됨");
       return;
     }
 
     setIsSubmitting(true); // [수정] 잠금 설정
-    console.log(`[CommentPanel] 댓글 작성 시작 - Content: ${commentText}`);
 
     try {
       const response = await commentApi.createComment({
@@ -359,7 +353,6 @@ function CommentPanel({
         feedId: feedId,
         writerId: currentUserId,
       });
-      console.log(`[CommentPanel] 댓글 작성 API 성공 - ID: ${response.id}`);
 
       const authorName = response.writerName || currentUserName;
       const newComment: Comment = {
@@ -375,11 +368,9 @@ function CommentPanel({
       // [추가] 피드 카드 댓글 수 +1
       adjustCommentCount(feedId, 1);
     } catch (error) {
-      console.error("[CommentPanel] 댓글 작성 실패:", error);
       toast.error("댓글 작성에 실패했습니다.");
     } finally {
       setIsSubmitting(false); // [수정] 잠금 해제 (반드시 실행)
-      console.log("[CommentPanel] 댓글 작성 로직 종료 및 잠금 해제");
     }
   };
 
@@ -390,7 +381,6 @@ function CommentPanel({
     }
 
     setIsSubmitting(true);
-    console.log(`[CommentPanel] 답글 작성 시작 - ParentId: ${replyingTo}`);
 
     try {
       const response = await commentApi.createComment({
@@ -399,7 +389,6 @@ function CommentPanel({
         writerId: currentUserId,
         parentId: replyingTo,
       });
-      console.log(`[CommentPanel] 답글 API 성공 - ID: ${response.id}`);
 
       const replyAuthorName = response.writerName || currentUserName;
       const newReply: Comment = {
@@ -427,11 +416,9 @@ function CommentPanel({
       // [추가] 피드 카드 댓글 수 +1
       adjustCommentCount(feedId, 1);
     } catch (error) {
-      console.error("[CommentPanel] 답글 작성 실패:", error);
       toast.error("답글 작성에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
-      console.log("[CommentPanel] 답글 작성 잠금 해제");
     }
   };
 
@@ -450,7 +437,6 @@ function CommentPanel({
       // [추가] 피드 카드 댓글 수 -1
       adjustCommentCount(feedId, -1);
     } catch (error) {
-      console.error("댓글 삭제 실패:", error);
       toast.error("댓글 삭제에 실패했습니다.");
     }
   };
@@ -1274,14 +1260,9 @@ export default function FeedView({
     return () => clearTimeout(timer);
   }, [searchQuery, loadFeeds]);
 
-  // [Debug] 필터링된 피드 데이터 변경 감지
+  // [Debug] 필터링된 피드 데이터 변경 감지 (로그 제거됨)
   useEffect(() => {
-    console.log(
-      `[FeedView] filteredFeeds updated. Count: ${filteredFeeds.length}, SearchQuery: "${searchQuery}"`
-    );
-    if (filteredFeeds.length > 0) {
-      console.log(`[FeedView] First feed ID: ${filteredFeeds[0].id}`);
-    }
+    // 필터링 상태 변경 시 로직이 필요하다면 여기에 작성
   }, [filteredFeeds, searchQuery]);
 
   useEffect(() => {

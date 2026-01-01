@@ -149,7 +149,7 @@ export default function CreateFeedDialog({
           setWorkoutType(draft.workoutType || "헬스");
           setContent(draft.content || "");
         } catch {
-          console.log("Failed to load draft");
+          // 임시 저장 로드 실패 무시
         }
       }
     }
@@ -259,7 +259,7 @@ export default function CreateFeedDialog({
 
       onOpenChange(false);
     } catch (error) {
-      console.error(error);
+      toast.error("피드 작성 중 오류가 발생했습니다.");
     } finally {
       setIsUploading(false); // 로딩 끝
     }
@@ -290,7 +290,6 @@ export default function CreateFeedDialog({
       const s3Url = await imageApi.uploadFeedImage(compressedFile);
       setter(s3Url);
     } catch (error) {
-      console.error(error);
       toast.error("이미지 업로드 실패 (용량을 확인해주세요)");
     } finally {
       // 해당 박스 로딩 끄기
@@ -312,7 +311,7 @@ export default function CreateFeedDialog({
         }
       }
     } catch (error) {
-      console.log("EXIF 추출 실패:", error);
+      // EXIF 추출 실패 무시
     }
     return null;
   };

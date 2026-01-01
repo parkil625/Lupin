@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
             });
           }
         } catch (error) {
-          console.error("Logout API error:", error);
+          // 로그아웃 API 에러 무시
         } finally {
           // [수정] 모든 개인정보 관련 키 삭제 (잔존 데이터 방지)
           localStorage.removeItem("accessToken");

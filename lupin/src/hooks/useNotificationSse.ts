@@ -63,15 +63,12 @@ export const useNotificationSse = ({
     const scheduleReconnect = () => {
       // [최종 수정] 딜레이 없는 즉시 재연결 (5초 -> 0.1초)
       // 사용자가 연결 끊김을 느끼지 못하게 즉시 다시 붙습니다.
-      console.log("[SSE] 연결 끊김 감지 - 즉시 재연결 시도");
-
       reconnectTimeoutRef.current = setTimeout(() => {
         connectRef.current();
       }, 100); // 100ms (0.1초)
     };
 
     eventSource.addEventListener("connect", () => {
-      console.log("[SSE] 연결 성공 (Event: connect)");
       isConnectedRef.current = true;
       reconnectAttemptsRef.current = 0;
       lastConnectTimeRef.current = Date.now();
@@ -79,7 +76,7 @@ export const useNotificationSse = ({
 
     // Heartbeat 이벤트
     eventSource.addEventListener("heartbeat", () => {
-      console.log("[SSE] Heartbeat 수신");
+      // Heartbeat 수신됨
     });
 
     // [핵심] 기본 메시지(message) 이벤트 수신 추가
@@ -91,10 +88,9 @@ export const useNotificationSse = ({
         }
 
         const notification: Notification = JSON.parse(event.data);
-        console.log("[SSE] 기본 메시지 수신 (onmessage):", notification);
         onNotificationReceivedRef.current(notification);
       } catch (error) {
-        console.error("[SSE] 기본 메시지 파싱 에러:", error, event.data);
+        // 파싱 에러 무시
       }
     };
 
@@ -102,10 +98,9 @@ export const useNotificationSse = ({
     eventSource.addEventListener("notification", (event) => {
       try {
         const notification: Notification = JSON.parse(event.data);
-        console.log("[SSE] Named Event(notification) 수신:", notification);
         onNotificationReceivedRef.current(notification);
       } catch (error) {
-        console.error("[SSE] Notification 이벤트 파싱 에러:", error);
+        // 파싱 에러 무시
       }
     });
 
@@ -114,13 +109,12 @@ export const useNotificationSse = ({
       try {
         // 백엔드에서 삭제된 알림 ID 배열을 보냄 (예: [10, 11])
         const deletedIds: number[] = JSON.parse(event.data);
-        console.log("[SSE] 알림 삭제 이벤트 수신:", deletedIds);
 
         if (deletedIds && deletedIds.length > 0) {
           onNotificationDeletedRef.current(deletedIds);
         }
       } catch (error) {
-        console.error("[SSE] 삭제 이벤트 파싱 에러:", error);
+        // 파싱 에러 무시
       }
     });
 
@@ -169,7 +163,6 @@ export const useNotificationSse = ({
     // [추가] 25분마다 재연결 (토큰 만료 30분 전에 갱신된 토큰으로 재연결)
     const tokenRefreshInterval = setInterval(() => {
       if (enabled && localStorage.getItem("accessToken")) {
-        console.log("[SSE] 토큰 갱신 주기 - SSE 재연결");
         connectInternal();
       }
     }, 25 * 60 * 1000); // 25분

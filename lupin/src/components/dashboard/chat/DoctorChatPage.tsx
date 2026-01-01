@@ -11,7 +11,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -557,7 +556,7 @@ export default function DoctorChatPage() {
                               const newMember: Member = {
                                 id: room.patientId,
                                 name: displayName,
-                                avatar: displayName.charAt(0),
+                                avatar: patientAvatars[room.patientId] || displayName.charAt(0),
                                 age: 0,
                                 gender: "",
                                 lastVisit: "정보 없음",
@@ -574,7 +573,7 @@ export default function DoctorChatPage() {
                                 ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
                                 : isSelected
                                 ? "bg-blue-50 border-white cursor-pointer hover:shadow-lg"
-                                : "bg-white/80 border-white cursor-pointer hover:shadow-lg"
+                                : "bg-white border-white cursor-pointer hover:shadow-lg"
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">
@@ -639,11 +638,12 @@ export default function DoctorChatPage() {
                 <>
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4 flex-shrink-0">
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black">
-                          {selectedChatMember.avatar}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserHoverCard
+                        name={selectedChatMember.name}
+                        department="환자"
+                        size="md"
+                        avatarUrl={selectedChatMember.avatar}
+                      />
                       <div>
                         <div className="font-bold text-gray-900">
                           {selectedChatMember.name}
@@ -700,7 +700,7 @@ export default function DoctorChatPage() {
                               className={`rounded-2xl p-3 max-w-md ${
                                 isMine
                                   ? "bg-[#C93831] text-white"
-                                  : "bg-gray-100"
+                                  : "bg-white border border-gray-200"
                               }`}
                             >
                               {!isMine && (
@@ -796,7 +796,7 @@ export default function DoctorChatPage() {
                           value={diagnosis}
                           onChange={(e) => setDiagnosis(e.target.value)}
                           placeholder="예: 급성 상기도 감염"
-                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831]"
+                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-[#C93831] focus-visible:border-[#C93831]"
                         />
                       </div>
 
@@ -829,7 +829,7 @@ export default function DoctorChatPage() {
                           value={instructions}
                           onChange={(e) => setInstructions(e.target.value)}
                           placeholder="하루 3회, 식후 30분에 복용하세요."
-                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831]"
+                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-[#C93831] focus-visible:border-[#C93831]"
                           rows={4}
                         />
                       </div>
@@ -879,7 +879,7 @@ export default function DoctorChatPage() {
                     handleAddMedicine(searchResults[0]);
                   }
                 }}
-                className="rounded-xl border border-gray-300 placeholder:text-gray-400 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831]"
+                className="rounded-xl border border-gray-300 placeholder:text-gray-400 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-[#C93831] focus-visible:border-[#C93831]"
                 autoFocus
               />
             </div>

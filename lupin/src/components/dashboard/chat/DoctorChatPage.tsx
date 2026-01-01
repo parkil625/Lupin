@@ -347,8 +347,7 @@ export default function DoctorChatPage() {
   };
 
   // 입력창 포커스 시 읽음 처리
-  const handleInputFocus = async (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+  const handleInputFocus = async () => {
     if (activeRoomId) {
       try {
         await chatApi.markAsRead(activeRoomId, currentUserId);
@@ -357,11 +356,6 @@ export default function DoctorChatPage() {
         console.error("❌ 읽음 처리 실패:", error);
       }
     }
-  };
-
-  // 입력창 블러 시 그림자 제거
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.boxShadow = '';
   };
 
   // 약품 검색
@@ -584,10 +578,10 @@ export default function DoctorChatPage() {
                             }}
                             className={`p-3 rounded-xl border-2 transition-all ${
                               !canEnter
-                              ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
-                              : isSelected
-                              ? "bg-blue-50 border-transparent cursor-pointer hover:shadow-lg"
-                              : "bg-white border-gray-200 cursor-pointer hover:shadow-lg"
+                                ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
+                                : isSelected
+                                ? "bg-gray-200 border-transparent cursor-pointer"
+                                : "bg-white border-transparent hover:bg-gray-50 cursor-pointer"
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">
@@ -675,8 +669,7 @@ export default function DoctorChatPage() {
                     </div>
                     <Button
                       onClick={handleFinishConsultation}
-                      variant="outline"
-                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold active:text-white"
+                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       진료 종료
@@ -752,11 +745,10 @@ export default function DoctorChatPage() {
                   <div className="flex gap-2 flex-shrink-0">
                     <Input
                       placeholder="메시지 입력..."
-                      className="rounded-xl border border-gray-300 focus-visible:ring-0 focus:border-2 focus:border-[#C93831] transition-all duration-300 placeholder:text-gray-400"
+                      className="rounded-xl border-2 border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
                       onFocus={handleInputFocus}
-                      onBlur={handleInputBlur}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           handleSendDoctorChat();
@@ -794,7 +786,7 @@ export default function DoctorChatPage() {
                         <Input
                           value={prescriptionDate}
                           disabled
-                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border border-gray-300"
+                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border-2 border-gray-300"
                         />
                       </div>
 
@@ -805,7 +797,7 @@ export default function DoctorChatPage() {
                         <Input
                           value={localStorage.getItem("userName") || "의료진"}
                           disabled
-                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border border-gray-300"
+                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border-2 border-gray-300"
                         />
                       </div>
 
@@ -862,7 +854,7 @@ export default function DoctorChatPage() {
                   <div className="mt-4 pt-4 border-t flex-shrink-0">
                     <Button
                       onClick={handleSavePrescription}
-                      className="w-full h-14 text-lg font-bold bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl"
+                      className="w-full h-14 text-lg font-bold bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white"
                     >
                       처방전 저장
                     </Button>

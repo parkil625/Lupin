@@ -31,6 +31,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 import { prescriptionApi } from "@/api/prescriptionApi";
 import { appointmentApi } from "@/api/appointmentApi";
+import { userApi } from "@/api/userApi";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 interface MedicineQuantity {
@@ -80,6 +81,7 @@ const formatChatTime = (timeString?: string) => {
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
   const currentUserName = localStorage.getItem("userName") || "의사";
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string>("");
 
   // 현재 활성화된 roomId를 명시적으로 관리
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
@@ -169,6 +171,21 @@ export default function DoctorChatPage() {
   useEffect(() => {
     loadChatRooms();
   }, [loadChatRooms]);
+
+  // 현재 사용자 프로필 이미지 로드
+  useEffect(() => {
+    const loadCurrentUserProfile = async () => {
+      try {
+        const user = await userApi.getCurrentUser();
+        if (user.avatar) {
+          setCurrentUserAvatar(user.avatar);
+        }
+      } catch (error) {
+        console.error("현재 사용자 프로필 로드 실패:", error);
+      }
+    };
+    loadCurrentUserProfile();
+  }, []);
 
   // 1분마다 채팅방 목록을 갱신하여 5분 전 입장 가능한 방을 자동으로 표시
   useEffect(() => {
@@ -673,7 +690,7 @@ export default function DoctorChatPage() {
                                 name={senderDisplayName}
                                 department="환자"
                                 size="sm"
-                                avatarUrl={selectedChatMember?.id ? `/api/users/${selectedChatMember.id}/profile-image` : undefined}
+                                avatarUrl={selectedChatMember?.avatar}
                               />
                             )}
                             <div
@@ -708,7 +725,7 @@ export default function DoctorChatPage() {
                                 name={currentUserName}
                                 department="의사"
                                 size="sm"
-                                avatarUrl={`/api/users/${currentUserId}/profile-image`}
+                                avatarUrl={currentUserAvatar}
                               />
                             )}
                           </div>

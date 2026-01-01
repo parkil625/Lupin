@@ -283,7 +283,7 @@ export default function PrescriptionDialog({
             <Label className="text-base font-black mb-2 block">진단명 *</Label>
             <Input
               placeholder="진단명을 입력하세요 (예: 급성 상기도 감염)"
-              className="rounded-xl"
+              className="rounded-xl border border-white"
               value={diagnosis}
               onChange={(e) => setDiagnosis(e.target.value)}
             />
@@ -296,7 +296,7 @@ export default function PrescriptionDialog({
             </Label>
             <Input
               placeholder="예: 식후 30분, 하루 3회 복용"
-              className="rounded-xl"
+              className="rounded-xl border border-white"
               value={additionalInstructions}
               onChange={(e) => setAdditionalInstructions(e.target.value)}
             />
@@ -322,7 +322,7 @@ export default function PrescriptionDialog({
                       <div className="flex-1 relative">
                         <Input
                           placeholder="약품명으로 검색 (타이레놀, 부루펜 등)"
-                          className="rounded-xl"
+                          className="rounded-xl border border-white"
                           value={
                             index === selectedMedicineIndex
                               ? searchQuery

@@ -209,22 +209,35 @@ public class UserService {
         List<Object[]> summaries = pointLogRepository.sumPointsPerUser(start, end);
 
         if (summaries.isEmpty()) {
+            log.info(">>> [Ranking] No point logs found for this month.");
             return;
         }
 
+        log.info(">>> [Ranking] Found {} user point summaries from DB.", summaries.size());
+
+        int addedCount = 0;
         // Redis ZSet에 일괄 삽입
         for (Object[] row : summaries) {
             Long userId = (Long) row[0];
             Long totalPoints = ((Number) row[1]).longValue();
             
-            if (totalPoints > 0) {
-                redisTemplate.opsForZSet().add(key, String.valueOf(userId), totalPoints);
+            // [수정] 합계가 음수면 0점으로 처리하여 랭킹에 포함 (경매 USE는 쿼리에서 이미 제외됨)
+            long score = Math.max(0, totalPoints);
+            
+            redisTemplate.opsForZSet().add(key, String.valueOf(userId), score);
+            addedCount++;
+
+            // 디버깅용: 점수 보정 여부 확인
+            if (totalPoints < 0) {
+                log.debug(">>> [Ranking] User {} point adjusted from {} to 0 (Negative points).", userId, totalPoints);
+            } else if (score == 0) {
+                log.debug(">>> [Ranking] Added user {} with 0 points.", userId);
             }
         }
         
         // 키 만료 시간 설정 (약 40일)
         redisTemplate.expire(key, java.time.Duration.ofDays(40));
         
-        log.info(">>> [Ranking] Recovered {} users into Redis.", summaries.size());
+        log.info(">>> [Ranking] Recovered {} users into Redis (Total found: {}).", addedCount, summaries.size());
     }
 }

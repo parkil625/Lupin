@@ -3,7 +3,6 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { ChatMessageResponse, chatApi } from "@/api/chatApi";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, FileText, CheckCircle2 } from "lucide-react";
@@ -44,11 +43,13 @@ export default function ChatRoom({
 
   // 프로필 이미지 state
   const [targetUserAvatar, setTargetUserAvatar] = useState<string>("");
+  // 상대방 활동일 state
+  const [targetUserActiveDays, setTargetUserActiveDays] = useState<number>();
 
   // roomId는 예약 건별로 생성 (appointment_ID 형식)
   const roomId = `appointment_${appointmentId}`;
 
-  // 프로필 이미지 로드
+  // 프로필 이미지 및 활동일 로드
   useEffect(() => {
     const loadProfiles = async () => {
       try {
@@ -56,6 +57,16 @@ export default function ChatRoom({
         const targetUserData = await userApi.getUserById(targetUser.id);
         if (targetUserData.avatar) {
           setTargetUserAvatar(targetUserData.avatar);
+        }
+
+        // 상대방 활동일 정보 가져오기
+        try {
+          const stats = await userApi.getUserStats(targetUser.id);
+          if (stats.activeDays !== undefined) {
+            setTargetUserActiveDays(stats.activeDays);
+          }
+        } catch (statsError) {
+          console.error("상대방 통계 로드 실패:", statsError);
         }
       } catch (error) {
         console.error("프로필 이미지 로드 실패:", error);
@@ -194,11 +205,13 @@ export default function ChatRoom({
           <DialogHeader className="px-6 py-4 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Avatar className="w-10 h-10 bg-blue-100">
-                  <AvatarFallback className="bg-blue-500 text-white font-bold">
-                    {targetUser.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <UserHoverCard
+                  name={targetUser.name}
+                  department={currentUser.role === "DOCTOR" ? "환자" : "의사"}
+                  size="md"
+                  avatarUrl={targetUserAvatar}
+                  activeDays={targetUserActiveDays}
+                />
 
                 <div className="flex flex-col">
                   <div className="flex items-center gap-6">
@@ -268,6 +281,7 @@ export default function ChatRoom({
                         department={currentUser.role === "DOCTOR" ? "환자" : "의사"}
                         size="sm"
                         avatarUrl={targetUserAvatar}
+                        activeDays={targetUserActiveDays}
                       />
                     )}
                     <div

@@ -124,4 +124,14 @@ public interface PointLogRepository extends JpaRepository<PointLog, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    // [추가] 랭킹 복구를 위한 월간 포인트 집계 쿼리 (User 기준 LEFT JOIN으로 변경하여 0점 유저도 포함)
+    @Query("SELECT u.id, COALESCE(SUM(pl.points), 0) " +
+           "FROM User u " +
+           "LEFT JOIN PointLog pl ON u.id = pl.user.id " +
+           "AND pl.createdAt BETWEEN :start AND :end " +
+           "AND pl.type IN (com.example.demo.domain.enums.PointType.EARN, com.example.demo.domain.enums.PointType.DEDUCT) " +
+           "GROUP BY u.id")
+    List<Object[]> sumPointsPerUser(@Param("start") LocalDateTime start, 
+                                    @Param("end") LocalDateTime end);
 }

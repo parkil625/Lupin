@@ -10,8 +10,18 @@ public final class RedisKeyUtils {
     private static final String BLACKLIST_PREFIX = "blacklist:";
     private static final String FEED_LIKE_COUNT_PREFIX = "feed:like:";
     private static final String FEED_LIKE_DIRTY_SET = "feed:like:dirty";
+    private static final String RANKING_MONTHLY_PREFIX = "ranking:monthly:";
 
     private RedisKeyUtils() {
+    }
+
+    /**
+     * 월간 랭킹 ZSet 키 생성
+     * @param yearMonth "yyyy-MM" 형식의 문자열 (예: YearMonth.now().toString())
+     * @return "ranking:monthly:{yearMonth}"
+     */
+    public static String rankingKey(String yearMonth) {
+        return RANKING_MONTHLY_PREFIX + yearMonth;
     }
 
     /**

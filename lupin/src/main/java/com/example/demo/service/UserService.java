@@ -22,6 +22,14 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import com.example.demo.util.RedisKeyUtils; // [추가]
+import org.springframework.data.redis.core.RedisTemplate; // [추가]
+import org.springframework.data.redis.core.ZSetOperations; // [추가]
+
+import java.util.Map; // [추가]
+import java.util.Set; // [추가]
+import java.util.function.Function; // [추가]
+import java.util.stream.Collectors; // [추가]
 
 @Slf4j
 @Service
@@ -35,6 +43,7 @@ public class UserService {
     private final FeedRepository feedRepository;
     private final CommentRepository commentRepository;
     private final PointLogRepository pointLogRepository;
+    private final RedisTemplate<String, String> redisTemplate; // [추가]
 
     public User getUserInfo(Long userId) {
         return userRepository.findById(userId)
@@ -48,40 +57,98 @@ public class UserService {
     }
 
     public List<UserRankingResponse> getTopUsersByPoints(int limit) {
-        YearMonth currentMonth = YearMonth.now();
-        LocalDateTime start = currentMonth.atDay(1).atStartOfDay();
-        LocalDateTime end = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+        String key = RedisKeyUtils.rankingKey(YearMonth.now().toString());
 
-        log.info(">>> [UserService] Fetching Top {} Users for Month: {}, Range: {} ~ {}", limit, currentMonth, start, end);
-
-        List<Object[]> results = pointLogRepository.findAllUsersWithPointsRanked(start, end, PageRequest.of(0, limit));
-        List<UserRankingResponse> rankings = new ArrayList<>();
-        int rank = 1;
-        for (Object[] row : results) {
-            User user = (User) row[0];
-            Long points = (Long) row[1];
-            
-            // 랭킹 페이지: 포인트가 음수(빚)인 경우 0으로 표기
-            long displayPoints = (points != null) ? Math.max(0, points) : 0L;
-            
-            rankings.add(UserRankingResponse.of(user, displayPoints, rank++));
+        // [Fix] Redis 데이터가 없으면 DB 동기화 실행 (Lazy Loading)
+        if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
+            refreshMonthlyRanking(key);
         }
         
-        log.info(">>> [UserService] Fetched {} rankers.", rankings.size());
+        // 1. Redis에서 상위 랭커 조회 (점수 포함)
+        Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
+                .reverseRangeWithScores(key, 0, limit - 1);
+
+        if (tuples == null || tuples.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 2. User 상세 정보 조회를 위해 ID 리스트 추출
+        List<Long> userIds = tuples.stream()
+                .map(tuple -> Long.parseLong(tuple.getValue()))
+                .toList();
+
+        // 3. DB에서 한 번에 User 정보 조회 (Map으로 변환하여 매핑 최적화)
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        // 4. Redis 순서대로 응답 조합
+        List<UserRankingResponse> rankings = new ArrayList<>();
+        int rank = 1;
+        
+        for (ZSetOperations.TypedTuple<String> tuple : tuples) {
+            Long userId = Long.parseLong(tuple.getValue());
+            User user = userMap.get(userId);
+            
+            if (user != null) {
+                long points = tuple.getScore().longValue();
+                // 포인트가 음수일 경우 0으로 표기
+                long displayPoints = Math.max(0, points);
+                rankings.add(UserRankingResponse.of(user, displayPoints, rank));
+            }
+            rank++;
+        }
+        
         return rankings;
     }
 
     public List<UserRankingResponse> getUserRankingContext(Long userId) {
-        YearMonth currentMonth = YearMonth.now();
-        LocalDateTime start = currentMonth.atDay(1).atStartOfDay();
-        LocalDateTime end = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+        String key = RedisKeyUtils.rankingKey(YearMonth.now().toString());
 
-        log.info(">>> [UserService] Fetching Ranking Context for userId: {}, Range: {} ~ {}", userId, start, end);
+        // [Fix] Redis 데이터가 없으면 DB 동기화 실행
+        if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
+            refreshMonthlyRanking(key);
+        }
 
-        List<Object[]> results = pointLogRepository.findUserRankingContext(userId, start, end);
-        return results.stream()
-                .map(UserRankingResponse::fromNativeQuery)
+        // 1. 내 등수 확인 (0부터 시작하므로 +1 필요)
+        Long myRankIndex = redisTemplate.opsForZSet().reverseRank(key, String.valueOf(userId));
+        if (myRankIndex == null) {
+            return new ArrayList<>(); // 랭킹에 없는 경우
+        }
+
+        // 2. 앞뒤 유저 범위 계산 (예: 1등이면 0~1, 중간이면 -1~+1)
+        long start = Math.max(0, myRankIndex - 1);
+        long end = myRankIndex + 1;
+
+        // 3. Redis 범위 조회
+        Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
+                .reverseRangeWithScores(key, start, end);
+
+        if (tuples == null || tuples.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 4. DB 정보 매핑 및 결과 생성 (위와 동일한 로직 재사용 가능)
+        List<Long> userIds = tuples.stream()
+                .map(tuple -> Long.parseLong(tuple.getValue()))
                 .toList();
+                
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        List<UserRankingResponse> responses = new ArrayList<>();
+        // start 등수부터 시작
+        int currentRank = (int) start + 1; 
+
+        for (ZSetOperations.TypedTuple<String> tuple : tuples) {
+            Long uid = Long.parseLong(tuple.getValue());
+            User user = userMap.get(uid);
+            if (user != null) {
+                long points = tuple.getScore().longValue();
+                responses.add(UserRankingResponse.of(user, Math.max(0, points), currentRank));
+            }
+            currentRank++;
+        }
+        return responses;
     }
 
     public long getTotalUserCount() {
@@ -126,5 +193,51 @@ public class UserService {
      */
     public List<User> getDoctorsByDepartment(String department) {
         return userRepository.findByRoleAndDepartment(Role.DOCTOR, department);
+    }
+
+    /**
+     * [Fix] Redis 캐시 미스 시 DB 데이터를 기반으로 랭킹 복구
+     */
+    private void refreshMonthlyRanking(String key) {
+        log.info(">>> [Ranking] Cache miss. Recovering ranking data from DB...");
+        
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime start = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime end = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        // DB에서 이번 달 유저별 합계 조회 (Repository에 추가한 쿼리 사용)
+        List<Object[]> summaries = pointLogRepository.sumPointsPerUser(start, end);
+
+        if (summaries.isEmpty()) {
+            log.info(">>> [Ranking] No point logs found for this month.");
+            return;
+        }
+
+        log.info(">>> [Ranking] Found {} user point summaries from DB.", summaries.size());
+
+        int addedCount = 0;
+        // Redis ZSet에 일괄 삽입
+        for (Object[] row : summaries) {
+            Long userId = (Long) row[0];
+            Long totalPoints = ((Number) row[1]).longValue();
+            
+            // [수정] 합계가 음수면 0점으로 처리하여 랭킹에 포함 (경매 USE는 쿼리에서 이미 제외됨)
+            long score = Math.max(0, totalPoints);
+            
+            redisTemplate.opsForZSet().add(key, String.valueOf(userId), score);
+            addedCount++;
+
+            // 디버깅용: 점수 보정 여부 확인
+            if (totalPoints < 0) {
+                log.debug(">>> [Ranking] User {} point adjusted from {} to 0 (Negative points).", userId, totalPoints);
+            } else if (score == 0) {
+                log.debug(">>> [Ranking] Added user {} with 0 points.", userId);
+            }
+        }
+        
+        // 키 만료 시간 설정 (약 40일)
+        redisTemplate.expire(key, java.time.Duration.ofDays(40));
+        
+        log.info(">>> [Ranking] Recovered {} users into Redis (Total found: {}).", addedCount, summaries.size());
     }
 }

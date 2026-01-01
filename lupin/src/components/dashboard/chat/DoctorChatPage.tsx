@@ -794,7 +794,7 @@ export default function DoctorChatPage() {
                         </div>
                         <div
                           onClick={handleOpenMedicineDialog}
-                          className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 hover:border-[#C93831]/50 hover:shadow-md transition-all duration-300"
+                          className="min-h-[90px] p-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-[#C93831] transition-all duration-300"
                         >
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">
                             {getMedicinesText()}

@@ -31,7 +31,6 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 import { prescriptionApi } from "@/api/prescriptionApi";
 import { appointmentApi } from "@/api/appointmentApi";
-import { userApi } from "@/api/userApi";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 interface MedicineQuantity {
@@ -80,8 +79,6 @@ const formatChatTime = (timeString?: string) => {
 
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
-  const currentUserName = localStorage.getItem("userName") || "의사";
-  const [currentUserAvatar, setCurrentUserAvatar] = useState<string>("");
 
   // 현재 활성화된 roomId를 명시적으로 관리
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
@@ -171,21 +168,6 @@ export default function DoctorChatPage() {
   useEffect(() => {
     loadChatRooms();
   }, [loadChatRooms]);
-
-  // 현재 사용자 프로필 이미지 로드
-  useEffect(() => {
-    const loadCurrentUserProfile = async () => {
-      try {
-        const user = await userApi.getCurrentUser();
-        if (user.avatar) {
-          setCurrentUserAvatar(user.avatar);
-        }
-      } catch (error) {
-        console.error("현재 사용자 프로필 로드 실패:", error);
-      }
-    };
-    loadCurrentUserProfile();
-  }, []);
 
   // 1분마다 채팅방 목록을 갱신하여 5분 전 입장 가능한 방을 자동으로 표시
   useEffect(() => {
@@ -720,14 +702,6 @@ export default function DoctorChatPage() {
                                 )}
                               </div>
                             </div>
-                            {isMine && (
-                              <UserHoverCard
-                                name={currentUserName}
-                                department="의사"
-                                size="sm"
-                                avatarUrl={currentUserAvatar}
-                              />
-                            )}
                           </div>
                         );
                       })}
@@ -801,7 +775,7 @@ export default function DoctorChatPage() {
                           value={diagnosis}
                           onChange={(e) => setDiagnosis(e.target.value)}
                           placeholder="예: 급성 상기도 감염"
-                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831] focus:shadow-[0_0_20px_5px_rgba(201,56,49,0.35)]"
+                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831]"
                         />
                       </div>
 
@@ -820,7 +794,7 @@ export default function DoctorChatPage() {
                         </div>
                         <div
                           onClick={handleOpenMedicineDialog}
-                          className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 hover:border-[#C93831]/50 hover:shadow-md transition-all duration-300"
+                          className="min-h-[90px] p-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-[#C93831] transition-all duration-300"
                         >
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">
                             {getMedicinesText()}
@@ -834,7 +808,7 @@ export default function DoctorChatPage() {
                           value={instructions}
                           onChange={(e) => setInstructions(e.target.value)}
                           placeholder="하루 3회, 식후 30분에 복용하세요."
-                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831] focus:shadow-[0_0_20px_5px_rgba(201,56,49,0.35)]"
+                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831]"
                           rows={4}
                         />
                       </div>
@@ -884,7 +858,7 @@ export default function DoctorChatPage() {
                     handleAddMedicine(searchResults[0]);
                   }
                 }}
-                className="rounded-xl border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831] focus:shadow-[0_0_20px_5px_rgba(201,56,49,0.35)] placeholder:text-gray-400"
+                className="rounded-xl border border-gray-300 placeholder:text-gray-400 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831]"
                 autoFocus
               />
             </div>

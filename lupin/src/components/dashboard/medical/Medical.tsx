@@ -11,7 +11,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,6 +27,7 @@ import { appointmentApi, AppointmentResponse } from "@/api/appointmentApi";
 import { userApi } from "@/api/userApi";
 import { prescriptionApi, PrescriptionResponse } from "@/api/prescriptionApi";
 import { toast } from "sonner";
+import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 interface MedicalProps {
   setShowChat: (show: boolean) => void;
@@ -47,6 +47,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   const [prescriptions, setPrescriptions] = useState<PrescriptionResponse[]>(
     []
   );
+
+  // 의사 프로필 정보 저장 (doctorId -> { avatar, activeDays })
+  const [doctorProfiles, setDoctorProfiles] = useState<Record<number, { avatar?: string; activeDays?: number }>>({});
 
   // -------------------------------------------------------------------------
   // [HEAD] 예약 관련 상태 및 로직 (인라인 예약 기능을 위해 복구)
@@ -558,6 +561,24 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         );
         setAppointments(data);
 
+        // 의사 프로필 로드 (고유한 doctorId만)
+        const uniqueDoctorIds = [...new Set(data.map(apt => apt.doctorId))];
+        for (const doctorId of uniqueDoctorIds) {
+          try {
+            const profile = await userApi.getUserById(doctorId);
+            const stats = await userApi.getUserStats(doctorId);
+            setDoctorProfiles(prev => ({
+              ...prev,
+              [doctorId]: {
+                avatar: profile.avatar,
+                activeDays: stats.activeDays,
+              }
+            }));
+          } catch (error) {
+            console.error(`의사 프로필 로드 실패 (ID: ${doctorId}):`, error);
+          }
+        }
+
         // 예약이 있으면 LIST 뷰를 우선 표시 (초기 마운트 시에만)
         if (
           !skipViewChange &&
@@ -935,11 +956,13 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                 <>
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black">
-                          {activeAppointment?.doctorName?.charAt(0) || "의"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserHoverCard
+                        name={activeAppointment?.doctorName || "알 수 없음"}
+                        department="의사"
+                        size="md"
+                        avatarUrl={activeAppointment?.doctorId ? doctorProfiles[activeAppointment.doctorId]?.avatar : undefined}
+                        activeDays={activeAppointment?.doctorId ? doctorProfiles[activeAppointment.doctorId]?.activeDays : undefined}
+                      />
                       <div>
                         <div className="font-bold text-gray-900">
                           {activeAppointment?.doctorName || "알 수 없음"} 의사
@@ -974,9 +997,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isMine = msg.senderId === currentUserId;
-                        const senderInitial = isMine
-                          ? "김"
-                          : msg.senderName.charAt(0);
 
                         return (
                           <div
@@ -986,11 +1006,13 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             }`}
                           >
                             {!isMine && (
-                              <Avatar className="w-8 h-8">
-                                <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black text-xs">
-                                  {senderInitial}
-                                </AvatarFallback>
-                              </Avatar>
+                              <UserHoverCard
+                                name={msg.senderName}
+                                department="의사"
+                                size="sm"
+                                avatarUrl={activeAppointment?.doctorId ? doctorProfiles[activeAppointment.doctorId]?.avatar : undefined}
+                                activeDays={activeAppointment?.doctorId ? doctorProfiles[activeAppointment.doctorId]?.activeDays : undefined}
+                              />
                             )}
                             <div
                               className={`rounded-2xl p-3 max-w-md ${
@@ -1201,7 +1223,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 {isInProgress && (
                                   <Button
                                     onClick={() => handleAppointmentClick(apt)}
-                                    className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm border-0"
+                                    className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm border-0 shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
                                   >
                                     채팅 시작
                                   </Button>
@@ -1251,8 +1273,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                             );
                                           }
                                         }}
-                                        variant="outline"
-                                        className="rounded-xl h-10 border-2 border-[#C93831] text-[#C93831] hover:bg-[#C93831] hover:text-white font-bold text-sm"
+                                        className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0"
                                       >
                                         예약 변경
                                       </Button>
@@ -1291,7 +1312,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         value={selectedDepartment}
                         onValueChange={setSelectedDepartment}
                       >
-                        <SelectTrigger className="rounded-xl cursor-pointer">
+                        <SelectTrigger className="rounded-xl cursor-pointer border border-gray-300 hover:border-[#C93831] focus:border-[#C93831] focus:ring-0 focus:ring-offset-0 transition-colors">
                           <SelectValue placeholder="진료과를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>

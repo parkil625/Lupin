@@ -53,6 +53,10 @@ class CommentIntegrationTest {
     @Autowired
     private CommentLikeRepository commentLikeRepository;
 
+    // [추가]
+    @Autowired
+    private jakarta.persistence.EntityManager em;
+
     private User testUser;
     private User otherUser;
     private Feed testFeed;
@@ -130,6 +134,10 @@ class CommentIntegrationTest {
         // 3. 댓글 삭제
         mockMvc.perform(delete("/api/comments/" + comment.getId()))
                 .andExpect(status().isOk());
+
+        // [추가] 캐시 초기화
+        em.flush();
+        em.clear();
 
         // 4. 삭제 확인
         assertThat(commentRepository.findById(comment.getId())).isEmpty();

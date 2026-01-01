@@ -67,6 +67,10 @@ class FeedE2ETest {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    // [추가]
+    @Autowired
+    private jakarta.persistence.EntityManager em;
+
     @org.springframework.boot.test.mock.mockito.MockBean
     private ImageMetadataService imageMetadataService;
 
@@ -188,6 +192,10 @@ class FeedE2ETest {
         mockMvc.perform(delete("/api/feeds/" + feedId))
                 .andExpect(status().isOk());
 
+        // [추가] 캐시 초기화
+        em.flush();
+        em.clear();
+
         // 11. 삭제 확인
         assertThat(feedRepository.findById(feedId)).isEmpty();
     }
@@ -297,6 +305,10 @@ class FeedE2ETest {
         // 5. 댓글 삭제
         mockMvc.perform(delete("/api/comments/" + savedComment.getId()))
                 .andExpect(status().isOk());
+
+        // [추가] 캐시 초기화
+        em.flush();
+        em.clear();
 
         assertThat(commentRepository.findById(savedComment.getId())).isEmpty();
     }

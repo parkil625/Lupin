@@ -163,7 +163,11 @@ class CommentServiceTest {
         // then
         verify(commentRepository).findById(commentId);
         verify(commentLikeRepository).deleteByComment(existingComment);
-        verify(commentRepository).delete(existingComment);
+        // [수정] repository.delete() 대신 엔티티 상태 변경(Soft Delete)을 수행하므로 검증 제거
+        // verify(commentRepository).delete(existingComment); 
+        
+        // 상태 변경 확인 (POJO 검증)
+        assertThat(existingComment.getDeletedAt()).isNotNull();
     }
 
     @Test
@@ -553,6 +557,9 @@ class CommentServiceTest {
         // 로직 흐름상 알림 수집 로직이 실행되었는지가 중요함.
         
         verify(commentLikeRepository).deleteByComment(comment);
-        verify(commentRepository).delete(comment);
+        // [수정] Soft Delete로 변경되어 delete 호출 검증 제거
+        // verify(commentRepository).delete(comment);
+        
+        assertThat(comment.getDeletedAt()).isNotNull();
     }
 }

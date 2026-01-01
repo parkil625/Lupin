@@ -35,15 +35,17 @@ export const useWebSocket = ({
     }
 
     // ----------------------------------------------------
-    // [업그레이드] 도메인 자동 감지 로직
+    // [수정] 도메인 자동 감지 로직
+    // Vercel은 WebSocket 프록시를 지원하지 않으므로
+    // 프로덕션 환경에서는 백엔드 도메인으로 직접 연결
     // ----------------------------------------------------
     const isLocal = window.location.hostname === "localhost";
 
     // 로컬이면 백엔드 포트(8081)로,
-    // 배포 환경이면 '현재 접속한 도메인' 뒤에 /ws를 붙여서 연결 (CORS 회피)
+    // 배포 환경이면 백엔드 도메인(api.lupin-care.com)으로 직접 연결
     const socketUrl = isLocal
       ? "http://localhost:8081/ws"
-      : `${window.location.protocol}//${window.location.host}/ws`;
+      : "https://api.lupin-care.com/ws";
 
     // WebSocket 에러를 무시하기 위한 원본 console.error 백업
     const originalConsoleError = console.error;

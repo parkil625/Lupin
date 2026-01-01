@@ -260,7 +260,7 @@ export default function AppointmentsPage({
             )}
             <div className="min-w-[200px]">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="rounded-xl h-11 bg-white border border-gray-300 shadow-sm cursor-pointer hover:border-[#C93831] focus:border-[#C93831] focus:ring-0 focus:ring-offset-0 transition-colors">
+                <SelectTrigger className="rounded-xl h-11 bg-white border border-gray-300 shadow-sm cursor-pointer hover:bg-gray-100 hover:border-[#C93831] focus:border-[#C93831] focus:ring-0 focus:ring-offset-0 transition-colors">
                   <SelectValue placeholder="전체 예약" />
                 </SelectTrigger>
                 <SelectContent>

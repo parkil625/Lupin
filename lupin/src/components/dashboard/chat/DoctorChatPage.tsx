@@ -521,7 +521,7 @@ export default function DoctorChatPage() {
               <h3 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2 flex-shrink-0">
                 대화 목록
               </h3>
-              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="space-y-3 pr-2">
                   {chatRooms.filter(
                     (room) =>
@@ -787,7 +787,7 @@ export default function DoctorChatPage() {
 
               {selectedChatMember ? (
                 <>
-                  <div className="flex-1 overflow-y-auto pr-2">
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                     <div className="space-y-4">
                       <div>
                         <Label className="text-sm font-bold">처방일</Label>
@@ -909,7 +909,7 @@ export default function DoctorChatPage() {
 
             {/* 검색 결과 */}
             {searchQuery && (
-              <div className="border rounded-xl p-2 max-h-[200px] overflow-y-auto">
+              <div className="border rounded-xl p-2 max-h-[200px] overflow-y-auto custom-scrollbar">
                 {isSearching ? (
                   <div className="text-center py-4 text-gray-500">
                     검색 중...
@@ -946,7 +946,7 @@ export default function DoctorChatPage() {
               <Label className="text-sm font-bold mb-2 block">
                 선택된 약품 ({selectedMedicines.length}개)
               </Label>
-              <div className="border rounded-xl p-3 min-h-[150px] max-h-[400px] overflow-y-auto space-y-3">
+              <div className="border rounded-xl p-3 min-h-[150px] max-h-[400px] overflow-y-auto custom-scrollbar space-y-3">
                 {selectedMedicines.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     선택된 약품이 없습니다

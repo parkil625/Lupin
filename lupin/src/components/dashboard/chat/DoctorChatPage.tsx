@@ -9,7 +9,7 @@
  *    - chatRooms에서 올바른 roomId를 가져와 사용
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse, ChatRoomResponse } from "@/api/chatApi";
 import { prescriptionApi } from "@/api/prescriptionApi";
 import { appointmentApi } from "@/api/appointmentApi";
+import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 interface MedicineQuantity {
   id: number;
@@ -313,7 +314,8 @@ export default function DoctorChatPage() {
   };
 
   // 입력창 포커스 시 읽음 처리
-  const handleInputFocus = async () => {
+  const handleInputFocus = async (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
     if (activeRoomId) {
       try {
         await chatApi.markAsRead(activeRoomId, currentUserId);
@@ -322,6 +324,11 @@ export default function DoctorChatPage() {
         console.error("❌ 읽음 처리 실패:", error);
       }
     }
+  };
+
+  // 입력창 블러 시 그림자 제거
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.boxShadow = '';
   };
 
   // 약품 검색
@@ -546,8 +553,8 @@ export default function DoctorChatPage() {
                               !canEnter
                                 ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
                                 : isSelected
-                                ? "bg-blue-50 border-blue-300 cursor-pointer hover:shadow-lg"
-                                : "bg-white/80 border-gray-200 cursor-pointer hover:shadow-lg"
+                                ? "bg-blue-50 border-white cursor-pointer hover:shadow-lg"
+                                : "bg-white/80 border-white cursor-pointer hover:shadow-lg"
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">
@@ -568,7 +575,7 @@ export default function DoctorChatPage() {
                                 {room.appointmentTime && (
                                   <div className="flex items-center gap-2 mb-1">
                                     <div className="text-xs text-[#C93831] font-semibold">
-                                      📅{" "}
+                                      예약시간 :{" "}
                                       {new Date(
                                         room.appointmentTime
                                       ).toLocaleString("ko-KR", {
@@ -653,10 +660,6 @@ export default function DoctorChatPage() {
                             "알 수 없음";
                         }
 
-                        const senderInitial = isMine
-                          ? "의"
-                          : senderDisplayName.charAt(0);
-
                         return (
                           <div
                             key={msg.id}
@@ -665,11 +668,12 @@ export default function DoctorChatPage() {
                             }`}
                           >
                             {!isMine && (
-                              <Avatar className="w-8 h-8">
-                                <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white font-black text-xs">
-                                  {senderInitial}
-                                </AvatarFallback>
-                              </Avatar>
+                              <UserHoverCard
+                                name={senderDisplayName}
+                                department="환자"
+                                size="sm"
+                                avatarUrl={selectedChatMember?.id ? `/api/users/${selectedChatMember.id}/profile-image` : undefined}
+                              />
                             )}
                             <div
                               className={`rounded-2xl p-3 max-w-md ${
@@ -712,6 +716,7 @@ export default function DoctorChatPage() {
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
                       onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           handleSendDoctorChat();

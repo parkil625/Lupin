@@ -287,6 +287,12 @@ export default function ChatRoom({
                     handleSend();
                   }
                 }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow = '';
+                }}
                 disabled={!isConnected}
               />
               <Button

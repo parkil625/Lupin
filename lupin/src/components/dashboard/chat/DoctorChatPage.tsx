@@ -313,7 +313,8 @@ export default function DoctorChatPage() {
   };
 
   // 입력창 포커스 시 읽음 처리
-  const handleInputFocus = async () => {
+  const handleInputFocus = async (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
     if (activeRoomId) {
       try {
         await chatApi.markAsRead(activeRoomId, currentUserId);
@@ -322,6 +323,11 @@ export default function DoctorChatPage() {
         console.error("❌ 읽음 처리 실패:", error);
       }
     }
+  };
+
+  // 입력창 블러 시 그림자 제거
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.boxShadow = '';
   };
 
   // 약품 검색
@@ -712,6 +718,7 @@ export default function DoctorChatPage() {
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
                       onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           handleSendDoctorChat();

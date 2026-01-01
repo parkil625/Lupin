@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
 import { PrescriptionResponse } from "@/api/prescriptionApi";
+import { generatePrescriptionPDF } from "@/utils/prescriptionPdfGenerator";
 
 interface PrescriptionModalProps {
   prescription: PrescriptionResponse | null;
@@ -106,7 +107,13 @@ export default function PrescriptionModal({
           </div>
 
           <Button
-            onClick={() => onDownload(prescription)}
+            onClick={() => {
+              console.log(
+                "[PrescriptionModal] 처방전 PDF 다운로드 시작:",
+                prescription
+              );
+              generatePrescriptionPDF(prescription);
+            }}
             className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold rounded-2xl h-12"
           >
             <Download className="w-5 h-5 mr-2" />

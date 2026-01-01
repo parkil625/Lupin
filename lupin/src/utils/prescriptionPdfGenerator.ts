@@ -25,10 +25,10 @@ export const generatePrescriptionPDF = async (
         <head>
           <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
           <style>
-            body { 
-              margin: 0; 
-              padding: 40px; 
-              font-family: 'Noto Sans KR', sans-serif; 
+            body {
+              margin: 0;
+              padding: 40px;
+              font-family: 'Noto Sans KR', sans-serif;
               background-color: white;
               width: 210mm;
               min-height: 297mm;
@@ -38,13 +38,13 @@ export const generatePrescriptionPDF = async (
           </style>
         </head>
         <body>
-          <div style="border: 2px solid #000; padding: 20px; height: 100%; position: relative;">
-            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
+          <div style="border: 2px solid #000; padding: 20px;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
               <h1 style="font-size: 32px; font-weight: 900; margin: 0; color: #1a1a1a;">처 방 전</h1>
               <span style="font-size: 14px; color: #666;">(Prescription)</span>
             </div>
 
-            <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
               <div style="flex: 1; margin-right: 10px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
@@ -77,8 +77,8 @@ export const generatePrescriptionPDF = async (
               </div>
             </div>
 
-            <div style="margin-bottom: 30px;">
-              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; color: #000;">환자 정보</h3>
+            <div style="margin-bottom: 20px;">
+              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 12px; color: #000;">환자 정보</h3>
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="border: 1px solid #ddd; padding: 10px; background-color: #f8f9fa; font-weight: bold; width: 120px;">성명</td>
@@ -93,8 +93,8 @@ export const generatePrescriptionPDF = async (
               </table>
             </div>
 
-            <div style="margin-bottom: 30px;">
-              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; color: #000;">처방 의약품</h3>
+            <div style="margin-bottom: 20px;">
+              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 12px; color: #000;">처방 의약품</h3>
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
                   <tr style="background-color: #f1f3f5;">
@@ -113,7 +113,7 @@ export const generatePrescriptionPDF = async (
                       <td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; font-size: 14px;">${
                         med.name
                       }</td>
-                      <td style="border: 1px solid #ddd; padding: 12px; color: #d35400; font-size: 14px;">${
+                      <td style="border: 1px solid #ddd; padding: 12px; color: #d35400; font-size: 14px; word-wrap: break-word; white-space: normal; overflow-wrap: break-word;">${
                         med.precautions || "-"
                       }</td>
                     </tr>
@@ -126,8 +126,8 @@ export const generatePrescriptionPDF = async (
               </table>
             </div>
 
-            <div style="margin-bottom: 40px;">
-              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; color: #000;">복용 지도 및 참고사항</h3>
+            <div style="margin-bottom: 20px;">
+              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 12px; color: #000;">복용 지도 및 참고사항</h3>
               <div style="border: 1px solid #ddd; padding: 20px; min-height: 100px; background-color: #f8f9fa; border-radius: 8px;">
                 <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #333;">${
                   prescription.instructions || "특이사항 없음"
@@ -135,9 +135,9 @@ export const generatePrescriptionPDF = async (
               </div>
             </div>
 
-            <div style="text-align: center; margin-top: 50px; color: #888; font-size: 12px; position: absolute; bottom: 20px; width: 100%; left: 0;">
-              <p>본 처방전은 Lupin 헬스케어 플랫폼에서 발급되었습니다.</p>
-              <p>© 2025 Lupin All Rights Reserved.</p>
+            <div style="text-align: center; margin-top: 60px; color: #888; font-size: 12px; padding-top: 30px;">
+              <p style="margin: 5px 0;">본 처방전은 Lupin 헬스케어 플랫폼에서 발급되었습니다.</p>
+              <p style="margin: 5px 0;">© 2025 Lupin All Rights Reserved.</p>
             </div>
           </div>
         </body>

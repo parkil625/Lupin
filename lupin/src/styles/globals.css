@@ -227,3 +227,12 @@ html {
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.5);
 }
+
+/* 달력 날짜 버튼에만 커서 포인터 추가 */
+.rdp button.rdp-day:not([disabled]) {
+  cursor: pointer;
+}
+
+.rdp button.rdp-day[disabled] {
+  cursor: not-allowed;
+}

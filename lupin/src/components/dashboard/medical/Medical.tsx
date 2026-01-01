@@ -774,10 +774,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     예약 내역
                   </h3>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[130px] h-8 text-xs cursor-pointer">
+                    <SelectTrigger className="w-[130px] h-8 text-xs cursor-pointer border border-gray-300">
                       <SelectValue placeholder="전체" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="ALL" className="cursor-pointer">
                         전체
                       </SelectItem>
@@ -885,12 +885,11 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                           </div>
                           {isScheduled && (
                             <Button
-                              variant="outline"
                               size="sm"
                               onClick={(e) =>
                                 handleCancelAppointment(apt.id, e)
                               }
-                              className="w-full rounded-lg text-xs bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white border-0"
+                              className="w-full rounded-lg text-xs bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white border-0 cursor-pointer"
                             >
                               <XCircle className="w-3 h-3 mr-1" />
                               취소
@@ -935,7 +934,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full rounded-lg text-xs"
+                          className="w-full rounded-lg text-xs cursor-pointer border border-gray-300 hover:border-[#C93831] hover:bg-gray-50"
                           onClick={() => setSelectedPrescription(pres)}
                         >
                           상세보기
@@ -986,7 +985,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                           setIsChatEnded(false);
                           setViewState("LIST");
                         }}
-                        className="rounded-full hover:bg-gray-200"
+                        className="rounded-full hover:bg-gray-200 cursor-pointer"
                       >
                         <XCircle className="w-5 h-5 text-gray-600" />
                       </Button>
@@ -1018,7 +1017,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                               className={`rounded-2xl p-3 max-w-md ${
                                 isMine
                                   ? "bg-[#C93831] text-white"
-                                  : "bg-gray-100"
+                                  : "bg-white"
                               }`}
                             >
                               {!isMine && (
@@ -1062,7 +1061,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     />
                     <Button
                       onClick={handleSendMessage}
-                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white rounded-xl border-0"
+                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white rounded-xl border-0 cursor-pointer"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
@@ -1150,7 +1149,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                       </h2>
                       <Button
                         onClick={() => setViewState("FORM")}
-                        className="rounded-xl bg-[#C93831] hover:bg-[#B02F28] text-white font-bold px-6"
+                        className="rounded-xl bg-[#C93831] hover:bg-[#B02F28] text-white font-bold px-6 active:scale-[0.98] cursor-pointer"
                       >
                         예약하기
                       </Button>
@@ -1223,7 +1222,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 {isInProgress && (
                                   <Button
                                     onClick={() => handleAppointmentClick(apt)}
-                                    className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm border-0 shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+                                    className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm border-0 shadow-md hover:shadow-lg transition-all cursor-pointer"
                                   >
                                     채팅 시작
                                   </Button>
@@ -1273,7 +1272,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                             );
                                           }
                                         }}
-                                        className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0"
+                                        className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0 cursor-pointer"
                                       >
                                         예약 변경
                                       </Button>
@@ -1281,7 +1280,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                         onClick={(e) =>
                                           handleCancelAppointment(apt.id, e)
                                         }
-                                        className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0"
+                                        className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0 cursor-pointer"
                                       >
                                         예약 취소
                                       </Button>
@@ -1365,7 +1364,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             color: "#C93831",
                           },
                         }}
-                        className="rounded-xl border cursor-pointer"
+                        className="rounded-xl border"
                       />
                       <p className="text-xs text-gray-600 mt-2">
                         * 빨간색 날짜는 공휴일입니다 (선택 불가)
@@ -1428,7 +1427,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         !selectedTime ||
                         bookedTimes.includes(selectedTime)
                       }
-                      className="w-full bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold rounded-xl h-12 border-0"
+                      className="w-full bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold rounded-xl h-12 border-0 cursor-pointer disabled:cursor-not-allowed"
                       onClick={handleConfirmAppointment}
                     >
                       예약하기

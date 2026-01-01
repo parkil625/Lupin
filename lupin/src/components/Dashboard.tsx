@@ -54,9 +54,6 @@ const PrescriptionModal = lazy(
   () => import("./dashboard/dialogs/PrescriptionModal")
 );
 const ChatDialog = lazy(() => import("./dashboard/dialogs/ChatDialog"));
-const PrescriptionFormDialog = lazy(
-  () => import("./dashboard/dialogs/PrescriptionFormDialog")
-);
 
 const NotFoundPage = lazy(() => import("./errors/NotFoundPage"));
 
@@ -64,7 +61,6 @@ const NotFoundPage = lazy(() => import("./errors/NotFoundPage"));
 import {
   Feed,
   Notification,
-  Member,
   ChatMessage,
 } from "@/types/dashboard.types";
 import { PrescriptionResponse } from "@/api/prescriptionApi";
@@ -343,14 +339,10 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   // Medical Logic States (Chat only - appointment logic moved to Medical.tsx)
   const [medicalState, setMedicalState] = useState({
     showChat: false,
-    showPrescriptionForm: false,
     chatMessage: "",
   });
   const [selectedPrescription, setSelectedPrescription] =
     useState<PrescriptionResponse | null>(null);
-  const [prescriptionMember, setPrescriptionMember] = useState<Member | null>(
-    null
-  );
   const [medicalChatMessages, setMedicalChatMessages] = useState<ChatMessage[]>(
     []
   );
@@ -874,22 +866,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
                 ]);
                 setMedicalState((p) => ({ ...p, chatMessage: "" }));
               }
-            }}
-          />
-        )}
-
-        {medicalState.showPrescriptionForm && (
-          <PrescriptionFormDialog
-            open={medicalState.showPrescriptionForm}
-            onOpenChange={(v) => {
-              setMedicalState((p) => ({ ...p, showPrescriptionForm: v }));
-              if (!v) setPrescriptionMember(null);
-            }}
-            member={prescriptionMember}
-            onSubmit={() => {
-              toast.success("처방전이 저장되었습니다.");
-              setMedicalState((p) => ({ ...p, showPrescriptionForm: false }));
-              setPrescriptionMember(null);
             }}
           />
         )}

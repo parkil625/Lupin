@@ -12,6 +12,7 @@ import PrescriptionModal from "../dialogs/PrescriptionModal"; // [수정] 경로
 import { prescriptionApi, PrescriptionResponse } from "@/api/prescriptionApi"; // [수정] 타입 Import 수정
 import { toast } from "sonner"; // [추가] 알림용
 import apiClient from "@/api/client";
+import { userApi } from "@/api/userApi";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 interface ChatRoomProps {
@@ -41,8 +42,37 @@ export default function ChatRoom({
   const [isEndingConsultation, setIsEndingConsultation] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // 프로필 이미지 state
+  const [currentUserAvatar, setCurrentUserAvatar] = useState<string>("");
+  const [targetUserAvatar, setTargetUserAvatar] = useState<string>("");
+
   // roomId는 예약 건별로 생성 (appointment_ID 형식)
   const roomId = `appointment_${appointmentId}`;
+
+  // 프로필 이미지 로드
+  useEffect(() => {
+    const loadProfiles = async () => {
+      try {
+        // 현재 사용자 프로필
+        const currentUserData = await userApi.getUserById(currentUser.id);
+        if (currentUserData.avatar) {
+          setCurrentUserAvatar(currentUserData.avatar);
+        }
+
+        // 상대방 프로필
+        const targetUserData = await userApi.getUserById(targetUser.id);
+        if (targetUserData.avatar) {
+          setTargetUserAvatar(targetUserData.avatar);
+        }
+      } catch (error) {
+        console.error("프로필 이미지 로드 실패:", error);
+      }
+    };
+
+    if (open) {
+      loadProfiles();
+    }
+  }, [open, currentUser.id, targetUser.id]);
 
   // 1. 이전 채팅 기록 불러오기
   useEffect(() => {
@@ -244,7 +274,7 @@ export default function ChatRoom({
                         name={msg.senderName || targetUser.name}
                         department={currentUser.role === "DOCTOR" ? "환자" : "의사"}
                         size="sm"
-                        avatarUrl={targetUser.id ? `/api/users/${targetUser.id}/profile-image` : undefined}
+                        avatarUrl={targetUserAvatar}
                       />
                     )}
                     <div
@@ -269,6 +299,14 @@ export default function ChatRoom({
                         })}
                       </div>
                     </div>
+                    {isMine && (
+                      <UserHoverCard
+                        name={currentUser.name}
+                        department={currentUser.role === "DOCTOR" ? "의사" : "환자"}
+                        size="sm"
+                        avatarUrl={currentUserAvatar}
+                      />
+                    )}
                   </div>
                 );
               })}
@@ -281,7 +319,7 @@ export default function ChatRoom({
             <div className="flex gap-2">
               <Input
                 placeholder="메시지 입력..."
-                className="rounded-xl"
+                className="rounded-xl bg-white/40 backdrop-blur-xl border-2 border-gray-300 focus-visible:ring-0 focus-visible:border-[#C93831] transition-all duration-300"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => {
@@ -290,9 +328,11 @@ export default function ChatRoom({
                   }
                 }}
                 onFocus={(e) => {
+                  // [기존 코드 유지] 포커스 시 그림자 효과
                   e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
                 }}
                 onBlur={(e) => {
+                  // [기존 코드 유지] 포커스 해제 시 그림자 제거
                   e.target.style.boxShadow = '';
                 }}
                 disabled={!isConnected}

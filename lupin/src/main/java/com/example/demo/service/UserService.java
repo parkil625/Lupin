@@ -58,6 +58,11 @@ public class UserService {
 
     public List<UserRankingResponse> getTopUsersByPoints(int limit) {
         String key = RedisKeyUtils.rankingKey(YearMonth.now().toString());
+
+        // [Fix] Redis 데이터가 없으면 DB 동기화 실행 (Lazy Loading)
+        if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
+            refreshMonthlyRanking(key);
+        }
         
         // 1. Redis에서 상위 랭커 조회 (점수 포함)
         Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
@@ -98,6 +103,11 @@ public class UserService {
 
     public List<UserRankingResponse> getUserRankingContext(Long userId) {
         String key = RedisKeyUtils.rankingKey(YearMonth.now().toString());
+
+        // [Fix] Redis 데이터가 없으면 DB 동기화 실행
+        if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
+            refreshMonthlyRanking(key);
+        }
 
         // 1. 내 등수 확인 (0부터 시작하므로 +1 필요)
         Long myRankIndex = redisTemplate.opsForZSet().reverseRank(key, String.valueOf(userId));
@@ -183,5 +193,38 @@ public class UserService {
      */
     public List<User> getDoctorsByDepartment(String department) {
         return userRepository.findByRoleAndDepartment(Role.DOCTOR, department);
+    }
+
+    /**
+     * [Fix] Redis 캐시 미스 시 DB 데이터를 기반으로 랭킹 복구
+     */
+    private void refreshMonthlyRanking(String key) {
+        log.info(">>> [Ranking] Cache miss. Recovering ranking data from DB...");
+        
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime start = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime end = currentMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        // DB에서 이번 달 유저별 합계 조회 (Repository에 추가한 쿼리 사용)
+        List<Object[]> summaries = pointLogRepository.sumPointsPerUser(start, end);
+
+        if (summaries.isEmpty()) {
+            return;
+        }
+
+        // Redis ZSet에 일괄 삽입
+        for (Object[] row : summaries) {
+            Long userId = (Long) row[0];
+            Long totalPoints = ((Number) row[1]).longValue();
+            
+            if (totalPoints > 0) {
+                redisTemplate.opsForZSet().add(key, String.valueOf(userId), totalPoints);
+            }
+        }
+        
+        // 키 만료 시간 설정 (약 40일)
+        redisTemplate.expire(key, java.time.Duration.ofDays(40));
+        
+        log.info(">>> [Ranking] Recovered {} users into Redis.", summaries.size());
     }
 }

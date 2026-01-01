@@ -28,12 +28,12 @@ public class PointEventListener {
     private final UserRepository userRepository;
     private final RedisTemplate<String, String> redisTemplate; // [추가] RedisTemplate 주입
 
+    @org.springframework.scheduling.annotation.Async // [추가] 비동기 처리
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePointChangedEvent(PointChangedEvent event) {
         try {
-            // 1. DB 업데이트 (기존 로직 유지)
-            // 비관적 락으로 동시성 제어 - 동시 포인트 변경 시 lost update 방지
+            // 1. DB 업데이트
             User user = userRepository.findByIdForUpdate(event.userId())
                     .orElse(null);
             if (user == null) {
@@ -46,22 +46,27 @@ public class PointEventListener {
             } else if (event.amount() < 0) {
                 user.deductPoints(-event.amount());
             }
-
             userRepository.save(user);
-            log.debug("User points updated: userId={}, delta={}, newTotal={}",
-                    event.userId(), event.amount(), user.getTotalPoints());
 
-            // 2. [추가] Redis 랭킹 점수 업데이트 (ZSet)
-            // 이번 달 랭킹 키 생성 (예: ranking:monthly:2024-01)
+            // 2. Redis 랭킹 실시간 업데이트
             String rankingKey = RedisKeyUtils.rankingKey(YearMonth.now().toString());
+            String userIdStr = String.valueOf(event.userId());
             
-            // ZINCRBY: 해당 유저의 점수를 delta만큼 증가 (음수면 감소)
-            redisTemplate.opsForZSet().incrementScore(rankingKey, String.valueOf(event.userId()), event.amount());
+            // 점수 업데이트 (없으면 자동 생성됨)
+            Double newScore = redisTemplate.opsForZSet().incrementScore(rankingKey, userIdStr, event.amount());
             
-            log.debug("Redis ranking updated: key={}, userId={}, delta={}", rankingKey, event.userId(), event.amount());
+            // 점수가 0 이하면 랭킹에서 제거
+            if (newScore != null && newScore <= 0) {
+                redisTemplate.opsForZSet().remove(rankingKey, userIdStr);
+            } else {
+                // 키 만료 시간 연장 (40일)
+                redisTemplate.expire(rankingKey, java.time.Duration.ofDays(40));
+            }
+            
+            log.debug(">>> [Ranking] User {} updated. Delta: {}, NewScore: {}", userIdStr, event.amount(), newScore);
 
         } catch (Exception e) {
-            log.error("Failed to update user points: {}", event, e);
+            log.error("Failed to update user points or ranking: {}", event, e);
         }
     }
 }

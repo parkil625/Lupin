@@ -774,7 +774,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     예약 내역
                   </h3>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[130px] h-8 text-xs cursor-pointer border border-gray-300">
+                    <SelectTrigger className="w-[130px] h-8 text-xs cursor-pointer border border-gray-300 bg-white hover:bg-gray-100 transition-colors">
                       <SelectValue placeholder="전체" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
@@ -1132,7 +1132,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         setViewState("LIST");
                         setLastCreatedAppointment(null);
                       }}
-                      className="w-full rounded-xl h-12 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold border-0"
+                      className="w-full rounded-xl h-12 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold border-0 cursor-pointer"
                     >
                       예약 목록으로 가기
                     </Button>
@@ -1363,7 +1363,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             color: "#C93831",
                           },
                         }}
-                        className="rounded-xl border"
+                        className="rounded-xl border [&_button]:cursor-pointer"
                       />
                       <p className="text-xs text-gray-600 mt-2">
                         * 빨간색 날짜는 공휴일입니다 (선택 불가)

@@ -43,7 +43,6 @@ export default function ChatRoom({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 프로필 이미지 state
-  const [currentUserAvatar, setCurrentUserAvatar] = useState<string>("");
   const [targetUserAvatar, setTargetUserAvatar] = useState<string>("");
 
   // roomId는 예약 건별로 생성 (appointment_ID 형식)
@@ -53,12 +52,6 @@ export default function ChatRoom({
   useEffect(() => {
     const loadProfiles = async () => {
       try {
-        // 현재 사용자 프로필
-        const currentUserData = await userApi.getUserById(currentUser.id);
-        if (currentUserData.avatar) {
-          setCurrentUserAvatar(currentUserData.avatar);
-        }
-
         // 상대방 프로필
         const targetUserData = await userApi.getUserById(targetUser.id);
         if (targetUserData.avatar) {
@@ -72,7 +65,7 @@ export default function ChatRoom({
     if (open) {
       loadProfiles();
     }
-  }, [open, currentUser.id, targetUser.id]);
+  }, [open, targetUser.id]);
 
   // 1. 이전 채팅 기록 불러오기
   useEffect(() => {
@@ -299,14 +292,6 @@ export default function ChatRoom({
                         })}
                       </div>
                     </div>
-                    {isMine && (
-                      <UserHoverCard
-                        name={currentUser.name}
-                        department={currentUser.role === "DOCTOR" ? "의사" : "환자"}
-                        size="sm"
-                        avatarUrl={currentUserAvatar}
-                      />
-                    )}
                   </div>
                 );
               })}

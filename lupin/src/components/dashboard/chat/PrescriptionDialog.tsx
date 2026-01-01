@@ -283,9 +283,15 @@ export default function PrescriptionDialog({
             <Label className="text-base font-black mb-2 block">진단명 *</Label>
             <Input
               placeholder="진단명을 입력하세요 (예: 급성 상기도 감염)"
-              className="rounded-xl"
+              className="rounded-xl border-2 border-gray-300 focus:border-[#C93831] transition-all duration-300"
               value={diagnosis}
               onChange={(e) => setDiagnosis(e.target.value)}
+              onFocus={(e) => {
+                e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow = '';
+              }}
             />
           </div>
 
@@ -296,9 +302,15 @@ export default function PrescriptionDialog({
             </Label>
             <Input
               placeholder="예: 식후 30분, 하루 3회 복용"
-              className="rounded-xl"
+              className="rounded-xl border-2 border-gray-300 focus:border-[#C93831] transition-all duration-300"
               value={additionalInstructions}
               onChange={(e) => setAdditionalInstructions(e.target.value)}
+              onFocus={(e) => {
+                e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow = '';
+              }}
             />
             <p className="text-xs text-gray-500 mt-1 ml-1">
               💊 기본 복용: 1정, 1일 3회, 3일간 (추가 지침사항을 입력하세요)
@@ -322,7 +334,7 @@ export default function PrescriptionDialog({
                       <div className="flex-1 relative">
                         <Input
                           placeholder="약품명으로 검색 (타이레놀, 부루펜 등)"
-                          className="rounded-xl"
+                          className="rounded-xl border-2 border-gray-300 focus:border-[#C93831] transition-all duration-300"
                           value={
                             index === selectedMedicineIndex
                               ? searchQuery
@@ -338,12 +350,16 @@ export default function PrescriptionDialog({
                             );
                             handleSearchMedicine(e.target.value);
                           }}
-                          onFocus={() => {
+                          onFocus={(e) => {
                             setSelectedMedicineIndex(index);
                             setSearchQuery(medicine.medicineName);
                             if (medicine.medicineName.length >= 2) {
                               handleSearchMedicine(medicine.medicineName);
                             }
+                            e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.boxShadow = '';
                           }}
                         />
                         {index === selectedMedicineIndex &&

@@ -23,7 +23,7 @@ import java.util.Optional;
     @Index(name = "idx_writer_created", columnList = "writer_id, created_at DESC")
 })
 @EntityListeners(AuditingEntityListener.class)
-@SQLDelete(sql = "UPDATE feeds SET deleted_at = NOW() WHERE id = ?")
+// [수정] @SQLDelete 제거 (DB 시간 대신 Java의 KST 시간을 사용하기 위해 삭제)
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -131,6 +131,11 @@ public class Feed {
 
     public void updateThumbnail(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
+    }
+
+    // [추가] Soft Delete 처리를 위한 엔티티 비즈니스 메서드 (Java 시간 사용)
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
     }
 
     public Optional<FeedImage> getStartImage() {

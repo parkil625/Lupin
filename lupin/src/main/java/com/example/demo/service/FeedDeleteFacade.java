@@ -61,14 +61,18 @@ public class FeedDeleteFacade {
                 ? feed.getImages().stream().map(FeedImage::getS3Key).toList() 
                 : Collections.emptyList();
 
-        // Soft Delete (실제 삭제는 이벤트 리스너에서 처리)
-        feedRepository.delete(feed);
+        // [수정] Soft Delete 로직 변경: Repository 삭제 -> 엔티티 상태 변경 (Dirty Checking)
+        log.info(">>> [FeedDelete] Deleting feedId={}, current time(KST)={}", feedId, LocalDateTime.now());
+        
+        feed.delete(); // 엔티티의 deletedAt 필드를 현재 시간으로 업데이트
+        
+        // feedRepository.delete(feed); // [삭제] 기존 하드 코딩된 SQLDelete 호출 방지
 
         // 트랜잭션 커밋 후 각 도메인별 리스너가 자신의 데이터 정리
         // [수정] imageUrls 파라미터 추가
         eventPublisher.publishEvent(FeedDeletedEvent.of(feedId, writerId, parentCommentIds, allCommentIds, imageUrls));
 
-        log.info("Feed deleted: feedId={}, userId={}", feedId, user.getId());
+        log.info(">>> [FeedDelete] Complete. feedId={}, userId={}, deletedAt={}", feedId, user.getId(), feed.getDeletedAt());
     }
 
     private void validateOwnership(Feed feed, User user) {

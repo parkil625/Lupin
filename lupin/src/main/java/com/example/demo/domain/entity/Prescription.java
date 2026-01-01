@@ -3,7 +3,12 @@ package com.example.demo.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +22,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Prescription {
 
     @Id
@@ -49,7 +55,13 @@ public class Prescription {
     @Builder.Default
     private List<PrescriptionMedicine> medicines = new ArrayList<>();
 
-    // 생성일, 수정일 등은 필요하다면 BaseEntity 상속 또는 별도 추가
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     public void updateDiagnosis(String diagnosis) {
         this.diagnosis = diagnosis;

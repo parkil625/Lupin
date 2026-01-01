@@ -129,92 +129,114 @@ export default function Auction() {
     }, []);
 
     // ▼ [SSE 연결 로직]
-    useEffect(() => {
-        if (!selectedAuction?.auctionId) return;
+    // ▼ [SSE 연결 및 이벤트 처리 로직 수정]
+        useEffect(() => {
+            if (!selectedAuction?.auctionId) return;
 
-        const isLocal = window.location.hostname === 'localhost';
-        const baseUrl = isLocal ? 'http://localhost:8081' : window.location.origin;
+            const isLocal = window.location.hostname === 'localhost';
+            const baseUrl = isLocal ? 'http://localhost:8081' : window.location.origin;
 
-        const sseUrl = `${baseUrl}/api/auction/stream/${selectedAuction.auctionId}`;
-        const eventSource = new EventSource(sseUrl);
+            const sseUrl = `${baseUrl}/api/auction/stream/${selectedAuction.auctionId}`;
+            const eventSource = new EventSource(sseUrl);
 
-        eventSource.addEventListener("refresh", (e: MessageEvent) => {
-            try {
-                const data = JSON.parse(e.data);
+            eventSource.addEventListener("refresh", (e: MessageEvent) => {
+                try {
+                    const data = JSON.parse(e.data);
 
-                // 1. 현재 선택된 경매 상태 업데이트
-                if (selectedAuction && selectedAuction.auctionId === data.auctionId) {
-                    setSelectedAuction((prev) => {
-                        if (!prev) return null;
-                        const now = new Date();
-                        const regularEnd = new Date(prev.regularEndTime);
-                        const isActuallyOvertime = prev.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
-
-                        return {
-                            ...prev,
-                            currentPrice: data.currentPrice,
-                            totalBids: data.totalBids,
-                            regularEndTime: prev.regularEndTime,
-                            overtimeEndTime: data.newEndTime || prev.overtimeEndTime,
-                            overtimeStarted: isActuallyOvertime
-                        };
-                    });
-                }
-
-                setAuctions((prevAuctions) =>
-                    prevAuctions.map((item) => {
-                        if (item.auctionId === data.auctionId) {
+                    // 1. 현재 선택된 경매 상태 업데이트 (기존 로직 유지)
+                    if (selectedAuction && selectedAuction.auctionId === data.auctionId) {
+                        setSelectedAuction((prev) => {
+                            if (!prev) return null;
                             const now = new Date();
-                            const regularEnd = new Date(item.regularEndTime);
-                            const isActuallyOvertime = item.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
+                            const regularEnd = new Date(prev.regularEndTime);
+                            const isActuallyOvertime = prev.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
 
                             return {
-                                ...item,
-                                totalBids: data.totalBids,
+                                ...prev,
                                 currentPrice: data.currentPrice,
-                                overtimeEndTime: data.newEndTime || item.overtimeEndTime,
+                                totalBids: data.totalBids,
+                                regularEndTime: prev.regularEndTime,
+                                overtimeEndTime: data.newEndTime || prev.overtimeEndTime,
                                 overtimeStarted: isActuallyOvertime
                             };
-                        }
-                        return item;
-                    })
-                );
+                        });
+                    }
 
-                // SSE로 입찰 내역 즉시 추가 (API 호출 없이 UI 반응성 향상)
-                const newBidLog: BidHistory = {
-                    id: Date.now(),
-                    userId: 0,
-                    userName: data.bidderName,
-                    bidAmount: data.currentPrice,
-                    bidTime: data.bidTime,
-                    status: "ACTIVE"
-                };
+                    // 2. 경매 리스트 업데이트 (기존 로직 유지)
+                    setAuctions((prevAuctions) =>
+                        prevAuctions.map((item) => {
+                            if (item.auctionId === data.auctionId) {
+                                const now = new Date();
+                                const regularEnd = new Date(item.regularEndTime);
+                                const isActuallyOvertime = item.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
 
-                setBidHistory((prev) => {
-                    const updatedPrev = prev.map((bid) =>
-                        bid.status === "ACTIVE"
-                            ? { ...bid, status: "OUTBID" as const }
-                            : bid
+                                return {
+                                    ...item,
+                                    totalBids: data.totalBids,
+                                    currentPrice: data.currentPrice,
+                                    overtimeEndTime: data.newEndTime || item.overtimeEndTime,
+                                    overtimeStarted: isActuallyOvertime
+                                };
+                            }
+                            return item;
+                        })
                     );
-                    return [newBidLog, ...updatedPrev];
-                });
-                // 포인트는 내 포인트가 깎였을 수도 있으므로 갱신
-                fetchUserPoints();
 
-            } catch (err) {
-                console.error("SSE 파싱 에러:", err);
-            }
-        });
+                    // ------------------------------------------------------------------
+                    //  [핵심 수정] 입찰 내역 리스트 처리 (중복 방지 & 정렬 & 상태 재계산)
+                    // ------------------------------------------------------------------
 
-        eventSource.onerror = (err) => {
-            console.error("SSE 연결 오류", err);
-            eventSource.close();
-        };
+                    // [수정 1] 고유 ID 생성 (Date.now()만 쓰면 중복될 수 있으므로 랜덤값 추가)
+                    const uniqueId = Number(`${Date.now()}${Math.floor(Math.random() * 10000)}`);
 
-        return () => {
-            eventSource.close();
-        };
-    }, [selectedAuction?.auctionId, fetchUserPoints]);
+                    const newBidLog: BidHistory = {
+                        id: uniqueId,
+                        userId: 0,
+                        userName: data.bidderName,
+                        bidAmount: data.currentPrice,
+                        bidTime: data.bidTime,
+                        status: "ACTIVE" // 일단 ACTIVE로 생성하지만 아래에서 다시 계산합니다.
+                    };
+
+                    setBidHistory((prev) => {
+                        // (1) 기존 목록에 새 데이터를 합칩니다.
+                        const combinedHistory = [newBidLog, ...prev];
+
+                        // (2) [수정 2] 무조건 금액 내림차순으로 다시 정렬합니다.
+                        // (네트워크 지연으로 11000원이 12000원보다 늦게 와도 순서가 보장됩니다)
+                        combinedHistory.sort((a, b) => {
+                            if (b.bidAmount !== a.bidAmount) {
+                                return b.bidAmount - a.bidAmount; // 금액 높은 순
+                            }
+                            // 금액이 같다면 시간 최신 순
+                            return new Date(b.bidTime).getTime() - new Date(a.bidTime).getTime();
+                        });
+
+                        // (3) [수정 3] 정렬 후, 가장 첫 번째 요소(1등)만 'ACTIVE', 나머지는 'OUTBID'로 재설정
+                        // (이렇게 해야 화면에서 초록색 배지가 딱 하나만 나옵니다)
+                        return combinedHistory.map((bid, index) => ({
+                            ...bid,
+                            status: index === 0 ? "ACTIVE" : "OUTBID"
+                        }));
+                    });
+
+                    // 내 포인트 정보 갱신
+                    fetchUserPoints();
+
+                } catch (err) {
+                    console.error("SSE 파싱 에러:", err);
+                }
+            });
+
+            eventSource.onerror = (err) => {
+                console.error("SSE 연결 오류", err);
+                eventSource.close();
+            };
+
+            return () => {
+                eventSource.close();
+            };
+        }, [selectedAuction?.auctionId, fetchUserPoints]);
 
     // 초기 데이터 로드 (첫 로딩이므로 로딩바 표시)
     useEffect(() => {

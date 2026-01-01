@@ -115,7 +115,7 @@ export default function PrescriptionModal({
               generatePrescriptionPDF(prescription);
               onDownload(prescription); // [Fix] 부모 컴포넌트 알림 & 에러 해결
             }}
-            className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold rounded-2xl h-12"
+            className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] hover:from-[#B02F28] hover:to-[#C93831] text-white font-bold rounded-2xl h-12 cursor-pointer"
           >
             <Download className="w-5 h-5 mr-2" />
             처방전 PDF 다운로드

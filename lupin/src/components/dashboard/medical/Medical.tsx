@@ -779,7 +779,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                   </Select>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0">
+              <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0 custom-scrollbar">
                 <div className="space-y-2">
                   {appointments
                     .filter((apt) => {
@@ -890,7 +890,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                   처방전
                 </h3>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 pb-4">
+              <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
                 <div className="space-y-2">
                   {prescriptions.length === 0 ? (
                     <div className="text-center py-8 text-gray-500 text-sm">
@@ -970,7 +970,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto mb-4 pr-2">
+                  <div className="flex-1 overflow-y-auto mb-4 pr-2 custom-scrollbar">
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isMine = msg.senderId === currentUserId;
@@ -1048,7 +1048,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                 </>
               ) : viewState === "SUCCESS" && lastCreatedAppointment ? (
                 // 예약 성공 화면
-                <div className="h-full overflow-y-auto flex flex-col items-center justify-center">
+                <div className="h-full overflow-y-auto custom-scrollbar flex flex-col items-center justify-center">
                   <div className="w-[400px] bg-white rounded-2xl shadow-lg p-8">
                     <div className="text-center mb-6">
                       <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1120,7 +1120,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                 </div>
               ) : viewState === "LIST" ? (
                 // 예약 목록 상세 화면
-                <div className="h-full overflow-y-auto px-6 pt-8">
+                <div className="h-full overflow-y-auto custom-scrollbar px-6 pt-8">
                   <div className="max-w-4xl mx-auto">
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="text-2xl font-black text-gray-900">
@@ -1277,7 +1277,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                 </div>
               ) : (
                 // 인라인 예약 화면 (FORM 상태)
-                <div className="h-full overflow-y-auto flex flex-col items-center justify-center">
+                <div className="h-full overflow-y-auto custom-scrollbar flex flex-col items-center justify-center">
                   <div className="w-[320px]">
                     <h2 className="text-2xl font-black text-gray-900 mb-4 text-center">
                       진료 예약

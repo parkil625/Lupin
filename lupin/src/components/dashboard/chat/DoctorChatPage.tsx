@@ -9,7 +9,7 @@
  *    - chatRooms에서 올바른 roomId를 가져와 사용
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -347,8 +347,7 @@ export default function DoctorChatPage() {
   };
 
   // 입력창 포커스 시 읽음 처리
-  const handleInputFocus = async (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+  const handleInputFocus = async () => {
     if (activeRoomId) {
       try {
         await chatApi.markAsRead(activeRoomId, currentUserId);
@@ -357,11 +356,6 @@ export default function DoctorChatPage() {
         console.error("❌ 읽음 처리 실패:", error);
       }
     }
-  };
-
-  // 입력창 블러 시 그림자 제거
-  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.boxShadow = '';
   };
 
   // 약품 검색
@@ -521,7 +515,7 @@ export default function DoctorChatPage() {
               <h3 className="text-xl font-black text-gray-900 mb-4 flex items-center gap-2 flex-shrink-0">
                 대화 목록
               </h3>
-              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="space-y-3 pr-2">
                   {chatRooms.filter(
                     (room) =>
@@ -584,10 +578,10 @@ export default function DoctorChatPage() {
                             }}
                             className={`p-3 rounded-xl border-2 transition-all ${
                               !canEnter
-                              ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
-                              : isSelected
-                              ? "bg-blue-50 border-transparent cursor-pointer hover:shadow-lg"
-                              : "bg-white border-gray-200 cursor-pointer hover:shadow-lg"
+                                ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
+                                : isSelected
+                                ? "bg-gray-200 border-transparent cursor-pointer"
+                                : "bg-white border-transparent hover:bg-gray-50 cursor-pointer"
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">
@@ -675,8 +669,7 @@ export default function DoctorChatPage() {
                     </div>
                     <Button
                       onClick={handleFinishConsultation}
-                      variant="outline"
-                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold active:text-white"
+                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       진료 종료
@@ -752,11 +745,10 @@ export default function DoctorChatPage() {
                   <div className="flex gap-2 flex-shrink-0">
                     <Input
                       placeholder="메시지 입력..."
-                      className="rounded-xl border border-gray-300 focus-visible:ring-0 focus:border-2 focus:border-[#C93831] transition-all duration-300 placeholder:text-gray-400"
+                      className="rounded-xl border-2 border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
                       onFocus={handleInputFocus}
-                      onBlur={handleInputBlur}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           handleSendDoctorChat();
@@ -787,14 +779,14 @@ export default function DoctorChatPage() {
 
               {selectedChatMember ? (
                 <>
-                  <div className="flex-1 overflow-y-auto pr-2">
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                     <div className="space-y-4">
                       <div>
                         <Label className="text-sm font-bold">처방일</Label>
                         <Input
                           value={prescriptionDate}
                           disabled
-                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border border-gray-300"
+                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border-2 border-gray-300"
                         />
                       </div>
 
@@ -805,7 +797,7 @@ export default function DoctorChatPage() {
                         <Input
                           value={localStorage.getItem("userName") || "의료진"}
                           disabled
-                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border border-gray-300"
+                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border-2 border-gray-300"
                         />
                       </div>
 
@@ -862,7 +854,7 @@ export default function DoctorChatPage() {
                   <div className="mt-4 pt-4 border-t flex-shrink-0">
                     <Button
                       onClick={handleSavePrescription}
-                      className="w-full h-14 text-lg font-bold bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl"
+                      className="w-full h-14 text-lg font-bold bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white"
                     >
                       처방전 저장
                     </Button>
@@ -909,7 +901,7 @@ export default function DoctorChatPage() {
 
             {/* 검색 결과 */}
             {searchQuery && (
-              <div className="border rounded-xl p-2 max-h-[200px] overflow-y-auto">
+              <div className="border rounded-xl p-2 max-h-[200px] overflow-y-auto custom-scrollbar">
                 {isSearching ? (
                   <div className="text-center py-4 text-gray-500">
                     검색 중...
@@ -946,7 +938,7 @@ export default function DoctorChatPage() {
               <Label className="text-sm font-bold mb-2 block">
                 선택된 약품 ({selectedMedicines.length}개)
               </Label>
-              <div className="border rounded-xl p-3 min-h-[150px] max-h-[400px] overflow-y-auto space-y-3">
+              <div className="border rounded-xl p-3 min-h-[150px] max-h-[400px] overflow-y-auto custom-scrollbar space-y-3">
                 {selectedMedicines.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     선택된 약품이 없습니다

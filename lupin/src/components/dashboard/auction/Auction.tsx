@@ -1,12 +1,13 @@
 /**
  * Auction.tsx
  *
- * 경매 페이지 메인 컴포넌트
- * - 리팩토링됨: 타이머 로직을 자식 컴포넌트(AuctionCard/AuctionTimer)로 위임하여
- * 1초마다 발생하는 전체 리렌더링 문제를 해결했습니다.
+ * 주요 수정 사항:
+ * 1. fetchAuctions 함수가 '배경 업데이트' 모드를 지원하도록 수정 (silentRefresh 파라미터 추가)
+ * -> 입찰 후 데이터 갱신 시 로딩 스켈레톤이 뜨지 않아 깜빡임이 사라집니다.
+ * 2. useCallback을 사용하여 함수 재생성 방지
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Clock, Trophy } from "lucide-react";
@@ -19,9 +20,7 @@ import {
     getBidHistory,
     getEndedAuctions
 } from "@/api/auctionApi";
-// 분리된 컴포넌트 및 훅 import
 import { AuctionData, BidHistory } from "@/types/auction.types";
-// import { useAuctionTimer } from "@/hooks/useAuctionTimer"; // ❌ 제거됨: 이제 여기서 타이머를 쓰지 않습니다.
 import { AuctionCard } from "./AuctionCard";
 import { BiddingPanel } from "./BiddingPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,121 +37,10 @@ export default function Auction() {
     const [isLoading, setIsLoading] = useState(true);
     const [isBidding, setIsBidding] = useState(false);
 
-    // ▼ [SSE 연결 로직]
-    useEffect(() => {
-        if (!selectedAuction?.auctionId) return;
-
-        const isLocal = window.location.hostname === 'localhost';
-        const baseUrl = isLocal ? 'http://localhost:8081' : window.location.origin;
-
-        const sseUrl = `${baseUrl}/api/auction/stream/${selectedAuction.auctionId}`;
-        const eventSource = new EventSource(sseUrl);
-
-        eventSource.addEventListener("refresh", (e: MessageEvent) => {
-            try {
-                const data = JSON.parse(e.data);
-                console.log("SSE 데이터 도착:", data);
-
-                // 1. 현재 선택된 경매 상태 업데이트 (기존 유지)
-                if (selectedAuction && selectedAuction.auctionId === data.auctionId) {
-                    setSelectedAuction((prev) => {
-                        if (!prev) return null;
-                        const now = new Date();
-                        const regularEnd = new Date(prev.regularEndTime);
-                        const isActuallyOvertime = prev.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
-
-                        return {
-                            ...prev,
-                            currentPrice: data.currentPrice,
-                            totalBids: data.totalBids,
-                            regularEndTime: prev.regularEndTime,
-                            overtimeEndTime: data.newEndTime || prev.overtimeEndTime,
-                            overtimeStarted: isActuallyOvertime
-                        };
-                    });
-                }
-
-                setAuctions((prevAuctions) =>
-                    prevAuctions.map((item) => {
-                        if (item.auctionId === data.auctionId) {
-                            // 초읽기 여부 판별 로직 (item 기준)
-                            const now = new Date();
-                            const regularEnd = new Date(item.regularEndTime);
-                            const isActuallyOvertime = item.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
-
-                            return {
-                                ...item,
-                                totalBids: data.totalBids,
-                                currentPrice: data.currentPrice,
-                                // ✅ 주석 해제 및 로직 추가: 시간과 상태도 같이 갱신
-                                overtimeEndTime: data.newEndTime || item.overtimeEndTime,
-                                overtimeStarted: isActuallyOvertime
-                            };
-                        }
-                        return item;
-                    })
-                );
-
-                const newBidLog: BidHistory = {
-                    id: Date.now(),
-                    userId: 0,
-                    userName: data.bidderName,
-                    bidAmount: data.currentPrice,
-                    bidTime: data.bidTime,
-                    status: "ACTIVE"
-                };
-
-                setBidHistory((prev) => {
-                    const updatedPrev = prev.map((bid) =>
-                        bid.status === "ACTIVE"
-                            ? { ...bid, status: "OUTBID" as const }
-                            : bid
-                    );
-                    return [newBidLog, ...updatedPrev];
-                });
-                fetchUserPoints();
-
-            } catch (err) {
-                console.error("SSE 파싱 에러:", err);
-            }
-        });
-
-        eventSource.onerror = (err) => {
-            console.error("SSE 연결 오류", err);
-            eventSource.close();
-        };
-
-        return () => {
-            eventSource.close();
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedAuction?.auctionId]);
-
-    // 초기 데이터 로드
-    useEffect(() => {
-        fetchAuctions();
-        fetchUserPoints();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    // 경매 선택 시 입찰 기록 조회 및 금액 초기화
-    useEffect(() => {
-        if (selectedAuction?.auctionId) {
-            fetchBidHistory();
-        }
-    }, [selectedAuction?.auctionId]);
-
-    // 현재 가격이 변경될 때 입찰 할 금액(Input) 업데이트
-    useEffect(() => {
-        if (selectedAuction?.currentPrice) {
-            setBidAmount((selectedAuction.currentPrice + 1).toString());
-        }
-    }, [selectedAuction?.currentPrice]);
-
     /**
-     * 유저 포인트 조회
+     * 유저 포인트 조회 (메모이제이션)
      */
-    const fetchUserPoints = async () => {
+    const fetchUserPoints = useCallback(async () => {
         try {
             const data = await getUserPoints();
             if (data) {
@@ -160,16 +48,19 @@ export default function Auction() {
             }
         } catch (error) {
             console.error("포인트 조회 실패", error);
-            setUserPoints(0);
         }
-    };
+    }, []);
 
     /**
      * 경매 목록 조회 (진행 중 & 예정 & 종료)
+     * @param silentRefresh true일 경우 로딩 스피너를 보여주지 않음 (깜빡임 방지)
      */
-    const fetchAuctions = async () => {
+    const fetchAuctions = useCallback(async (silentRefresh = false) => {
         try {
-            setIsLoading(true);
+            // ✅ [핵심] 조용히 갱신할 때는 로딩 상태를 켜지 않음
+            if (!silentRefresh) {
+                setIsLoading(true);
+            }
 
             const [activeAuctionData, scheduledAuctionList, endedAuctionList] = await Promise.all([
                 getActiveAuction().catch(() => null),
@@ -194,9 +85,13 @@ export default function Auction() {
                     setSelectedAuction(null);
                 } else {
                     setAuctions([activeAuctionData]);
-                    if (!selectedAuction || selectedAuction.auctionId === activeAuctionData.auctionId) {
-                        setSelectedAuction(activeAuctionData);
-                    }
+                    // 이미 선택된 경매가 있다면 정보를 갱신하되, 선택 상태는 유지
+                    setSelectedAuction((prev) => {
+                         if (!prev || prev.auctionId === activeAuctionData.auctionId) {
+                             return activeAuctionData;
+                         }
+                         return prev;
+                    });
                 }
             } else {
                 setAuctions([]);
@@ -214,17 +109,16 @@ export default function Auction() {
         } catch (error) {
             console.error("경매 목록 조회 실패:", error);
         } finally {
-            setIsLoading(false);
+            if (!silentRefresh) {
+                setIsLoading(false);
+            }
         }
-    };
-
-    // ❌ 삭제됨: 부모 컴포넌트에서 타이머 훅을 사용하지 않습니다.
-    // const { countdown, isOvertime } = useAuctionTimer(selectedAuction, fetchAuctions);
+    }, [fetchUserPoints]);
 
     /**
      * 입찰 내역 조회
      */
-    const fetchBidHistory = async () => {
+    const fetchBidHistory = useCallback(async () => {
         try {
             const historyData = await getBidHistory();
             setBidHistory(historyData);
@@ -232,7 +126,115 @@ export default function Auction() {
             console.error("입찰 내역 조회 실패:", error);
             setBidHistory([]);
         }
-    };
+    }, []);
+
+    // ▼ [SSE 연결 로직]
+    useEffect(() => {
+        if (!selectedAuction?.auctionId) return;
+
+        const isLocal = window.location.hostname === 'localhost';
+        const baseUrl = isLocal ? 'http://localhost:8081' : window.location.origin;
+
+        const sseUrl = `${baseUrl}/api/auction/stream/${selectedAuction.auctionId}`;
+        const eventSource = new EventSource(sseUrl);
+
+        eventSource.addEventListener("refresh", (e: MessageEvent) => {
+            try {
+                const data = JSON.parse(e.data);
+
+                // 1. 현재 선택된 경매 상태 업데이트
+                if (selectedAuction && selectedAuction.auctionId === data.auctionId) {
+                    setSelectedAuction((prev) => {
+                        if (!prev) return null;
+                        const now = new Date();
+                        const regularEnd = new Date(prev.regularEndTime);
+                        const isActuallyOvertime = prev.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
+
+                        return {
+                            ...prev,
+                            currentPrice: data.currentPrice,
+                            totalBids: data.totalBids,
+                            regularEndTime: prev.regularEndTime,
+                            overtimeEndTime: data.newEndTime || prev.overtimeEndTime,
+                            overtimeStarted: isActuallyOvertime
+                        };
+                    });
+                }
+
+                setAuctions((prevAuctions) =>
+                    prevAuctions.map((item) => {
+                        if (item.auctionId === data.auctionId) {
+                            const now = new Date();
+                            const regularEnd = new Date(item.regularEndTime);
+                            const isActuallyOvertime = item.overtimeStarted || (now >= regularEnd && !!data.newEndTime);
+
+                            return {
+                                ...item,
+                                totalBids: data.totalBids,
+                                currentPrice: data.currentPrice,
+                                overtimeEndTime: data.newEndTime || item.overtimeEndTime,
+                                overtimeStarted: isActuallyOvertime
+                            };
+                        }
+                        return item;
+                    })
+                );
+
+                // SSE로 입찰 내역 즉시 추가 (API 호출 없이 UI 반응성 향상)
+                const newBidLog: BidHistory = {
+                    id: Date.now(),
+                    userId: 0,
+                    userName: data.bidderName,
+                    bidAmount: data.currentPrice,
+                    bidTime: data.bidTime,
+                    status: "ACTIVE"
+                };
+
+                setBidHistory((prev) => {
+                    const updatedPrev = prev.map((bid) =>
+                        bid.status === "ACTIVE"
+                            ? { ...bid, status: "OUTBID" as const }
+                            : bid
+                    );
+                    return [newBidLog, ...updatedPrev];
+                });
+                // 포인트는 내 포인트가 깎였을 수도 있으므로 갱신
+                fetchUserPoints();
+
+            } catch (err) {
+                console.error("SSE 파싱 에러:", err);
+            }
+        });
+
+        eventSource.onerror = (err) => {
+            console.error("SSE 연결 오류", err);
+            eventSource.close();
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [selectedAuction?.auctionId, fetchUserPoints]);
+
+    // 초기 데이터 로드 (첫 로딩이므로 로딩바 표시)
+    useEffect(() => {
+        fetchAuctions(false);
+    }, [fetchAuctions]);
+
+    // 경매 선택 시 입찰 기록 조회 및 금액 초기화
+    useEffect(() => {
+        if (selectedAuction?.auctionId) {
+            fetchBidHistory();
+        }
+    }, [selectedAuction?.auctionId, fetchBidHistory]);
+
+    // 현재 가격이 변경될 때 입찰 할 금액(Input) 업데이트
+    useEffect(() => {
+        if (selectedAuction?.currentPrice) {
+            setBidAmount((selectedAuction.currentPrice + 1).toString());
+        }
+    }, [selectedAuction?.currentPrice]);
+
 
     /**
      * 입찰 처리 핸들러
@@ -265,8 +267,11 @@ export default function Auction() {
                 duration: 2000,
             });
 
-            fetchAuctions();
-            fetchBidHistory();
+            // ✅ [수정] true를 전달하여 로딩바 없이(깜빡임 없이) 데이터 갱신
+            // SSE가 데이터를 주지만, 혹시 모를 동기화를 위해 백그라운드 갱신
+            fetchAuctions(true);
+
+            // fetchBidHistory(); // SSE가 처리하므로 굳이 즉시 호출 안해도 됨 (원하면 유지)
             fetchUserPoints();
 
         } catch (error) {
@@ -331,8 +336,8 @@ export default function Auction() {
                                                     auction={auction}
                                                     isSelected={selectedAuction?.auctionId === auction.auctionId}
                                                     onSelect={setSelectedAuction}
-                                                    // ✅ 수정됨: countdown, isOvertime 대신 onTimeEnd 전달
-                                                    onTimeEnd={fetchAuctions}
+                                                    // ✅ fetchAuctions는 이제 stable한 함수입니다.
+                                                    onTimeEnd={() => fetchAuctions(true)}
                                                 />
                                             ))}
                                         </div>
@@ -346,7 +351,7 @@ export default function Auction() {
                                     )}
                                 </div>
 
-                                {/* 2. 탭 영역 (예정된 경매 <-> 종료된 경매) */}
+                                {/* 2. 탭 영역 */}
                                 <div className="mt-8">
                                     <Tabs defaultValue="scheduled" className="w-full">
                                         <TabsList className="grid w-full grid-cols-2 mb-4 bg-gray-100 p-1 rounded-xl">
@@ -366,7 +371,6 @@ export default function Auction() {
                                             </TabsTrigger>
                                         </TabsList>
 
-                                        {/* 탭 1: 예정된 경매 */}
                                         <TabsContent value="scheduled" className="space-y-4">
                                             {scheduledAuctions.length > 0 ? (
                                                 scheduledAuctions.map((auction) => (
@@ -384,7 +388,6 @@ export default function Auction() {
                                             )}
                                         </TabsContent>
 
-                                        {/* 탭 2: 종료된 경매 */}
                                         <TabsContent value="ended" className="space-y-4">
                                             {endedAuctions.length > 0 ? (
                                                 endedAuctions.map((auction) => (

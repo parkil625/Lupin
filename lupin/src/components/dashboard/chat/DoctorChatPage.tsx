@@ -546,8 +546,8 @@ export default function DoctorChatPage() {
                               !canEnter
                                 ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
                                 : isSelected
-                                ? "bg-blue-50 border-blue-300 cursor-pointer hover:shadow-lg"
-                                : "bg-white/80 border-gray-200 cursor-pointer hover:shadow-lg"
+                                ? "bg-blue-50 border-white cursor-pointer hover:shadow-lg"
+                                : "bg-white/80 border-white cursor-pointer hover:shadow-lg"
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">

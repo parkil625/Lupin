@@ -129,9 +129,6 @@ export const feedApi = {
     }
   ) => {
     // [디버깅 로그] 요청 데이터 확인
-    console.log(
-      `[API] updateFeed 요청: ID=${feedId}, Changed=${data.imagesChanged}`
-    );
     const response = await apiClient.put(`/feeds/${feedId}`, data);
     return response.data;
   },

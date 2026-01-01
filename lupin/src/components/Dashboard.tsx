@@ -139,16 +139,9 @@ function useDashboardLogic(
   // SSE Setup
   useNotificationSse({
     onNotificationReceived: useCallback((n: Notification) => {
-      console.log("[Dashboard] 알림 수신 (Upsert/New):", n);
-
       setNotifications((prev) => {
         // [수정] 덮어쓰기 전략: 같은 ID가 있으면 삭제하고 새것(시간갱신됨)을 맨 위로 올림
         const filtered = prev.filter((existing) => existing.id !== n.id);
-
-        // 기존에 있었으면 콘솔 로그
-        if (filtered.length !== prev.length) {
-          console.log(`[Dashboard] 기존 알림(ID: ${n.id}) 갱신 및 상단 이동`);
-        }
 
         return [n, ...filtered];
       });
@@ -161,7 +154,6 @@ function useDashboardLogic(
     }, []),
     // [추가] 알림 삭제 이벤트 처리
     onNotificationDeleted: useCallback((ids: number[]) => {
-      console.log("[Dashboard] 알림 삭제 이벤트 수신:", ids);
       setNotifications((prev) => prev.filter((n) => !ids.includes(n.id)));
     }, []),
   });

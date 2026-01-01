@@ -275,7 +275,7 @@ export default function EditFeedDialog({
         }
       }
     } catch (error) {
-      console.log("EXIF 추출 실패:", error);
+      // EXIF 추출 실패 무시
     }
     return null;
   };
@@ -334,10 +334,6 @@ export default function EditFeedDialog({
       imagesChanged && startExifTime ? getLocalISOString(startExifTime) : null;
     const endAtIso =
       imagesChanged && endExifTime ? getLocalISOString(endExifTime) : null;
-
-    console.log(
-      `[EditFeedDialog] 저장 시도: ID=${feed.id}, imagesChanged=${imagesChanged}`
-    );
 
     // plain text로 저장
     onSave(

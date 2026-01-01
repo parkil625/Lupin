@@ -375,14 +375,12 @@ export default function FeedDetailDialogHome({
       showComments
     ) {
       const numTargetId = Number(targetCommentId);
-      console.log("[Highlight] 조건 충족, targetCommentId:", numTargetId);
 
       // targetCommentId가 답글인지 확인하고, 답글이면 부모 댓글 펼치기
       let parentIdToExpand: number | null = null;
       for (const comment of comments) {
         // 최상위 댓글인지 확인
         if (Number(comment.id) === numTargetId) {
-          console.log("[Highlight] 최상위 댓글 찾음");
           break; // 최상위 댓글이면 펼칠 필요 없음
         }
         // 답글인지 확인
@@ -392,7 +390,6 @@ export default function FeedDetailDialogHome({
           );
           if (reply) {
             parentIdToExpand = comment.id;
-            console.log("[Highlight] 답글 찾음, 부모:", parentIdToExpand);
             break;
           }
         }
@@ -414,11 +411,6 @@ export default function FeedDetailDialogHome({
       setTimeout(() => {
         const commentElements = document.querySelectorAll(
           `[id="comment-${targetCommentId}"]`
-        );
-        console.log(
-          "[Highlight] 요소 검색:",
-          `comment-${targetCommentId}`,
-          commentElements.length + "개 찾음"
         );
 
         commentElements.forEach((commentElement) => {

@@ -568,7 +568,7 @@ export default function DoctorChatPage() {
                                 {room.appointmentTime && (
                                   <div className="flex items-center gap-2 mb-1">
                                     <div className="text-xs text-[#C93831] font-semibold">
-                                      📅{" "}
+                                      예약시간 :{" "}
                                       {new Date(
                                         room.appointmentTime
                                       ).toLocaleString("ko-KR", {

@@ -28,7 +28,7 @@ const formatDate = (dateString: string) => {
 
 // ✅ [최적화 2] 변하지 않는 이미지 영역 (Memoization 적용)
 // props(imageUrl, itemName 등)가 변하지 않으면 리렌더링되지 않음
-const AuctionImage = memo(({ imageUrl, itemName, isScheduled }: { imageUrl: string, itemName: string, isScheduled: boolean }) => (
+const AuctionImage = memo(({ imageUrl, itemName, isScheduled }: { imageUrl?: string, itemName: string, isScheduled: boolean }) => (
     <div className="flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 bg-gray-100 rounded-lg overflow-hidden">
         <img
             src={imageUrl || "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400"}

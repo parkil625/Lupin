@@ -933,8 +933,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         </div>
                         <Button
                           size="sm"
-                          variant="outline"
-                          className="w-full rounded-lg text-xs cursor-pointer border border-gray-300 hover:border-[#C93831] hover:bg-gray-50"
+                          className="w-full rounded-lg text-xs cursor-pointer bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white border-0"
                           onClick={() => setSelectedPrescription(pres)}
                         >
                           상세보기
@@ -1314,7 +1313,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         <SelectTrigger className="rounded-xl cursor-pointer border border-gray-300 hover:border-[#C93831] focus:border-[#C93831] focus:ring-0 focus:ring-offset-0 transition-colors">
                           <SelectValue placeholder="진료과를 선택하세요" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           <SelectItem
                             value="internal"
                             className="cursor-pointer"

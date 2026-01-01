@@ -59,13 +59,6 @@ public class UserService {
     public List<UserRankingResponse> getTopUsersByPoints(int limit) {
         String key = RedisKeyUtils.rankingKey(YearMonth.now().toString());
 
-        // [긴급 수정] 0점 유저 미노출 해결을 위해, 요청 시마다 기존 캐시 삭제 후 재생성 (문제 해결 후 이 라인 삭제 권장)
-        // 만약 트래픽이 많다면 이 방식 대신 Redis CLI에서 키를 직접 삭제하는 것이 좋습니다.
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-             redisTemplate.delete(key);
-             log.info(">>> [Ranking] Force delete cache key: {} for update", key);
-        }
-
         // [Fix] Redis 데이터가 없으면 DB 동기화 실행 (Lazy Loading)
         if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
             refreshMonthlyRanking(key);

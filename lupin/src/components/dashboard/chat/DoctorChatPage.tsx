@@ -658,7 +658,6 @@ export default function DoctorChatPage() {
                         department="환자"
                         size="md"
                         avatarUrl={selectedChatMember.avatar}
-                        activeDays={patientActiveDays[selectedChatMember.id]}
                       />
                       <div>
                         <div className="font-bold text-gray-900">
@@ -681,7 +680,7 @@ export default function DoctorChatPage() {
                   </div>
 
                   {/* 채팅 메시지 영역 */}
-                  <div className="flex-1 overflow-y-auto mb-4 min-h-0 pr-2">
+                  <div className="flex-1 overflow-y-auto mb-4 min-h-0 pr-2 custom-scrollbar">
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isMine = msg.senderId === currentUserId;
@@ -710,7 +709,6 @@ export default function DoctorChatPage() {
                                 department="환자"
                                 size="sm"
                                 avatarUrl={selectedChatMember?.avatar}
-                                activeDays={selectedChatMember ? patientActiveDays[selectedChatMember.id] : undefined}
                               />
                             )}
                             <div
@@ -750,7 +748,7 @@ export default function DoctorChatPage() {
                   <div className="flex gap-2 flex-shrink-0">
                     <Input
                       placeholder="메시지 입력..."
-                      className="rounded-xl"
+                      className="rounded-xl border border-gray-300 focus-visible:ring-0 focus:border-2 focus:border-[#C93831] transition-all duration-300 placeholder:text-gray-400"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
                       onFocus={handleInputFocus}
@@ -824,7 +822,7 @@ export default function DoctorChatPage() {
                             size="sm"
                             variant="ghost"
                             onClick={handleOpenMedicineDialog}
-                            className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-[#C93831] transition-all duration-300"
+                            className="text-xs text-blue-600 hover:text-blue-700"
                           >
                             <Edit2 className="w-3 h-3 mr-1" />
                             약품 선택 ({selectedMedicines.length}개)
@@ -832,7 +830,7 @@ export default function DoctorChatPage() {
                         </div>
                         <div
                           onClick={handleOpenMedicineDialog}
-                          className="min-h-[90px] p-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-[#C93831] transition-all duration-300"
+                          className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-[#C93831] transition-all duration-300"
                         >
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">
                             {getMedicinesText()}
@@ -846,7 +844,7 @@ export default function DoctorChatPage() {
                           value={instructions}
                           onChange={(e) => setInstructions(e.target.value)}
                           placeholder="하루 3회, 식후 30분에 복용하세요."
-                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-[#C93831] focus-visible:border-[#C93831]"
+                          className="mt-1 rounded-xl placeholder:text-gray-400 border-2 border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                           rows={4}
                         />
                       </div>
@@ -896,7 +894,7 @@ export default function DoctorChatPage() {
                     handleAddMedicine(searchResults[0]);
                   }
                 }}
-                className="rounded-xl border border-gray-300 placeholder:text-gray-400 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-[#C93831] focus-visible:border-[#C93831]"
+                className="rounded-xl border border-gray-300 placeholder:text-gray-400 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                 autoFocus
               />
             </div>

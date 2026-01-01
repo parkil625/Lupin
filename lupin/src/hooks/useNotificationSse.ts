@@ -89,7 +89,7 @@ export const useNotificationSse = ({
 
         const notification: Notification = JSON.parse(event.data);
         onNotificationReceivedRef.current(notification);
-      } catch (error) {
+      } catch {
         // 파싱 에러 무시
       }
     };
@@ -99,7 +99,7 @@ export const useNotificationSse = ({
       try {
         const notification: Notification = JSON.parse(event.data);
         onNotificationReceivedRef.current(notification);
-      } catch (error) {
+      } catch {
         // 파싱 에러 무시
       }
     });
@@ -113,7 +113,7 @@ export const useNotificationSse = ({
         if (deletedIds && deletedIds.length > 0) {
           onNotificationDeletedRef.current(deletedIds);
         }
-      } catch (error) {
+      } catch {
         // 파싱 에러 무시
       }
     });

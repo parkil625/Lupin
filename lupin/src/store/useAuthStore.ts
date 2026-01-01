@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
               credentials: "include",
             });
           }
-        } catch (error) {
+        } catch {
           // 로그아웃 API 에러 무시
         } finally {
           // [수정] 모든 개인정보 관련 키 삭제 (잔존 데이터 방지)

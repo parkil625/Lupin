@@ -332,7 +332,7 @@ function useHomeData(myFeeds: Feed[], refreshTrigger: number | undefined) {
           hasFeedPenalty: userData.hasFeedPenalty === true,
         });
         setCanPost(postStatus);
-      } catch (e) {
+      } catch {
         // 홈 데이터 로드 실패 (조용히 처리)
       } finally {
         if (isMounted) setLoading(false);

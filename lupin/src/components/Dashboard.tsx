@@ -61,7 +61,6 @@ const NotFoundPage = lazy(() => import("./errors/NotFoundPage"));
 import {
   Feed,
   Notification,
-  Member,
   ChatMessage,
 } from "@/types/dashboard.types";
 import { PrescriptionResponse } from "@/api/prescriptionApi";

@@ -214,7 +214,7 @@ export default function Auction() {
         return () => {
             eventSource.close();
         };
-    }, [selectedAuction?.auctionId, fetchUserPoints]);
+    }, [selectedAuction, fetchUserPoints]);
 
     // 초기 데이터 로드 (첫 로딩이므로 로딩바 표시)
     useEffect(() => {

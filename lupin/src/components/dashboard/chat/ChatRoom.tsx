@@ -247,7 +247,7 @@ export default function ChatRoom({
                     )}
                     <div
                       className={`rounded-2xl p-3 max-w-md ${
-                        isMine ? "bg-[#C93831] text-white" : "bg-gray-100"
+                        isMine ? "bg-[#C93831] text-white" : "bg-gray-100 border border-white"
                       }`}
                     >
                       {!isMine && (

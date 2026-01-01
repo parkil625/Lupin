@@ -584,10 +584,10 @@ export default function DoctorChatPage() {
                             }}
                             className={`p-3 rounded-xl border-2 transition-all ${
                               !canEnter
-                                ? "bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed"
-                                : isSelected
-                                ? "bg-gray-200 border-gray-400 cursor-pointer shadow-sm"
-                                : "bg-transparent border-gray-300 cursor-pointer hover:bg-gray-100 hover:shadow-md"
+                              ? "bg-gray-50 border-gray-300 opacity-60 cursor-not-allowed"
+                              : isSelected
+                              ? "bg-blue-50 border-transparent cursor-pointer hover:shadow-lg"
+                              : "bg-white border-gray-200 cursor-pointer hover:shadow-lg"
                             }`}
                           >
                             <div className="flex items-center gap-3 mb-2">
@@ -609,7 +609,11 @@ export default function DoctorChatPage() {
                                 </div>
                                 {room.appointmentTime && (
                                   <div className="flex items-center gap-2 mb-1">
-                                    <div className="text-xs text-[#C93831] font-semibold">
+                                    <div
+                                      className={`text-xs font-semibold ${
+                                        isSelected ? "text-blue-600" : "text-[#C93831]"
+                                      }`}
+                                    >
                                       예약시간 :{" "}
                                       {new Date(
                                         room.appointmentTime
@@ -672,7 +676,7 @@ export default function DoctorChatPage() {
                     <Button
                       onClick={handleFinishConsultation}
                       variant="outline"
-                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold"
+                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold active:text-white"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       진료 종료
@@ -832,7 +836,11 @@ export default function DoctorChatPage() {
                           onClick={handleOpenMedicineDialog}
                           className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-[#C93831] transition-all duration-300"
                         >
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                          <p
+                            className={`text-sm whitespace-pre-wrap ${
+                              selectedMedicines.length === 0 ? "text-gray-400" : "text-gray-900"
+                            }`}
+                          >
                             {getMedicinesText()}
                           </p>
                         </div>
@@ -894,7 +902,7 @@ export default function DoctorChatPage() {
                     handleAddMedicine(searchResults[0]);
                   }
                 }}
-                className="rounded-xl border border-gray-300 placeholder:text-gray-400 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
+                className="rounded-xl border-2 border-gray-300 placeholder:text-gray-400 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                 autoFocus
               />
             </div>

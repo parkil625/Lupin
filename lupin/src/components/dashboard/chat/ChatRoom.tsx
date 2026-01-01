@@ -319,7 +319,7 @@ export default function ChatRoom({
             <div className="flex gap-2">
               <Input
                 placeholder="메시지 입력..."
-                className="rounded-xl"
+                className="rounded-xl bg-white/40 backdrop-blur-xl border-2 border-gray-300 focus-visible:ring-0 focus-visible:border-[#C93831] transition-all duration-300"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => {
@@ -328,9 +328,11 @@ export default function ChatRoom({
                   }
                 }}
                 onFocus={(e) => {
+                  // [기존 코드 유지] 포커스 시 그림자 효과
                   e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
                 }}
                 onBlur={(e) => {
+                  // [기존 코드 유지] 포커스 해제 시 그림자 제거
                   e.target.style.boxShadow = '';
                 }}
                 disabled={!isConnected}

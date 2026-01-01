@@ -780,18 +780,18 @@ export default function DoctorChatPage() {
                         <Input
                           value={prescriptionDate}
                           disabled
-                          className="mt-1 rounded-xl bg-gray-100"
+                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border border-gray-300"
                         />
                       </div>
 
                       <div>
-                        <Label className="text-sm font-bold text-gray-400">
+                        <Label className="text-sm font-bold">
                           담당 의사
                         </Label>
                         <Input
                           value={localStorage.getItem("userName") || "의료진"}
                           disabled
-                          className="mt-1 rounded-xl bg-gray-100 text-gray-400"
+                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border border-gray-300"
                         />
                       </div>
 
@@ -801,7 +801,7 @@ export default function DoctorChatPage() {
                           value={diagnosis}
                           onChange={(e) => setDiagnosis(e.target.value)}
                           placeholder="예: 급성 상기도 감염"
-                          className="mt-1 rounded-xl"
+                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831] focus:shadow-[0_0_20px_5px_rgba(201,56,49,0.35)]"
                         />
                       </div>
 
@@ -820,7 +820,7 @@ export default function DoctorChatPage() {
                         </div>
                         <div
                           onClick={handleOpenMedicineDialog}
-                          className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-all"
+                          className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:bg-gray-100 hover:border-[#C93831]/50 hover:shadow-md transition-all duration-300"
                         >
                           <p className="text-sm text-gray-700 whitespace-pre-wrap">
                             {getMedicinesText()}
@@ -834,7 +834,7 @@ export default function DoctorChatPage() {
                           value={instructions}
                           onChange={(e) => setInstructions(e.target.value)}
                           placeholder="하루 3회, 식후 30분에 복용하세요."
-                          className="mt-1 rounded-xl"
+                          className="mt-1 rounded-xl placeholder:text-gray-400 border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831] focus:shadow-[0_0_20px_5px_rgba(201,56,49,0.35)]"
                           rows={4}
                         />
                       </div>
@@ -844,7 +844,7 @@ export default function DoctorChatPage() {
                   <div className="mt-4 pt-4 border-t flex-shrink-0">
                     <Button
                       onClick={handleSavePrescription}
-                      className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12"
+                      className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold rounded-xl h-12 hover:shadow-[0_0_20px_5px_rgba(201,56,49,0.2)] transition-all duration-300"
                     >
                       처방전 저장
                     </Button>
@@ -884,7 +884,7 @@ export default function DoctorChatPage() {
                     handleAddMedicine(searchResults[0]);
                   }
                 }}
-                className="rounded-xl"
+                className="rounded-xl border border-gray-300 transition-all duration-300 focus-visible:ring-0 focus:border-[#C93831] focus:shadow-[0_0_20px_5px_rgba(201,56,49,0.35)] placeholder:text-gray-400"
                 autoFocus
               />
             </div>

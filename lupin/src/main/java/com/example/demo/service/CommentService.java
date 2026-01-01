@@ -155,8 +155,10 @@ public class CommentService {
             deleteRepliesData(comment);
         }
 
-        // 5. 댓글 삭제
-        commentRepository.delete(comment);
+        // 5. 댓글 삭제 (엔티티 상태 변경으로 처리)
+        log.info(">>> [Comment Service] Soft deleting commentId: {}, time: {}", comment.getId(), LocalDateTime.now());
+        comment.delete(); 
+        // commentRepository.delete(comment); // [삭제] 하드 딜리트 방지
 
         // 6. 피드 댓글 수 동기화
         // [삭제] 중복 코드를 제거하고 공통 메서드를 사용합니다.
@@ -206,7 +208,12 @@ public class CommentService {
 
         // [수정] 단순 감소 로직 제거 (상위 메서드에서 일괄 동기화)
         log.info(">>> [Comment Service] Soft deleting {} replies for parent comment ID: {}", replies.size(), parentComment.getId());
-        commentRepository.deleteAll(replies);
+        
+        // [수정] deleteAll()은 하드 딜리트가 발생하므로, 루프를 돌며 soft delete 처리 (Dirty Checking)
+        for (Comment reply : replies) {
+            reply.delete();
+        }
+        // commentRepository.deleteAll(replies); // [삭제]
     }
 
     public Comment getComment(Long commentId) {

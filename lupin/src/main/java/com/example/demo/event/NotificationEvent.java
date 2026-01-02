@@ -51,14 +51,14 @@ public class NotificationEvent {
 
     // 피드 삭제 알림
     public static NotificationEvent feedDeleted(Long targetUserId) {
-        // [수정] 파일명 변경 반영 (-v2)
-        return new NotificationEvent(NotificationType.FEED_DELETED, targetUserId, null, "Lupin System", "/icon-report-v2.webp", null, null, null);
+        // [수정] 다시 원본 파일명(/icon-report.webp)으로 변경
+        return new NotificationEvent(NotificationType.FEED_DELETED, targetUserId, null, "Lupin System", "/icon-report.webp", null, null, null);
     }
 
     // 댓글 삭제 알림
     public static NotificationEvent commentDeleted(Long targetUserId) {
-        // [수정] 파일명 변경 반영 (-v2)
-        return new NotificationEvent(NotificationType.COMMENT_DELETED, targetUserId, null, "Lupin System", "/icon-report-v2.webp", null, null, null);
+        // [수정] 다시 원본 파일명(/icon-report.webp)으로 변경
+        return new NotificationEvent(NotificationType.COMMENT_DELETED, targetUserId, null, "Lupin System", "/icon-report.webp", null, null, null);
     }
 
     /**

@@ -45,7 +45,7 @@ export default function PrescriptionModal({
             발급된 처방전의 상세 정보를 확인할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6">
+        <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="text-sm text-gray-600 font-bold">환자명</div>

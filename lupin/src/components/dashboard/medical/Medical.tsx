@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -583,7 +582,17 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         );
         setAppointments(data);
 
-        // 의사 프로필 로드 (고유한 doctorId만)
+        // 예약이 있으면 즉시 LIST 뷰로 전환 (초기 마운트 시에만)
+        if (
+          !skipViewChange &&
+          isInitialMount.current &&
+          data.length > 0 &&
+          viewState === "FORM"
+        ) {
+          setViewState("LIST");
+        }
+
+        // 의사 프로필 로드 (고유한 doctorId만) - 백그라운드에서 처리
         const uniqueDoctorIds = [...new Set(data.map(apt => apt.doctorId))];
         for (const doctorId of uniqueDoctorIds) {
           try {
@@ -599,16 +608,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           } catch (error) {
             console.error(`의사 프로필 로드 실패 (ID: ${doctorId}):`, error);
           }
-        }
-
-        // 예약이 있으면 LIST 뷰를 우선 표시 (초기 마운트 시에만)
-        if (
-          !skipViewChange &&
-          isInitialMount.current &&
-          data.length > 0 &&
-          viewState === "FORM"
-        ) {
-          setViewState("LIST");
         }
       } catch (error) {
         console.error("예약 목록 로드 실패:", error);
@@ -874,16 +873,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
               <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0 custom-scrollbar">
                 <div className="space-y-2">
                   {isLoadingAppointments ? (
-                    // 스켈레톤 UI
+                    // 스켈레톤 UI - 카드 전체 (랭킹과 동일한 색상)
                     <>
                       {[1, 2, 3].map((i) => (
-                        <div key={i} className="p-3 rounded-xl bg-white/40 border border-gray-200">
-                          <div className="flex items-center justify-between mb-2">
-                            <Skeleton className="h-4 w-20" />
-                            <Skeleton className="h-5 w-16 rounded-full" />
-                          </div>
-                          <Skeleton className="h-3 w-full mb-1" />
-                          <Skeleton className="h-3 w-3/4" />
+                        <div
+                          key={i}
+                          className="rounded-xl animate-pulse h-24"
+                          style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }}
+                        >
                         </div>
                       ))}
                     </>
@@ -998,14 +995,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
               <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
                 <div className="space-y-2">
                   {isLoadingPrescriptions ? (
-                    // 스켈레톤 UI
+                    // 스켈레톤 UI - 카드 전체 (랭킹과 동일한 색상)
                     <>
                       {[1, 2].map((i) => (
-                        <div key={i} className="p-3 rounded-xl bg-white/40 border border-gray-200">
-                          <Skeleton className="h-4 w-3/4 mb-2" />
-                          <Skeleton className="h-3 w-1/2 mb-1" />
-                          <Skeleton className="h-3 w-1/3 mb-2" />
-                          <Skeleton className="h-8 w-full rounded-lg" />
+                        <div
+                          key={i}
+                          className="rounded-xl animate-pulse h-28"
+                          style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }}
+                        >
                         </div>
                       ))}
                     </>
@@ -1253,22 +1250,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
                     <div className="space-y-4">
                       {isLoadingAppointments ? (
-                        // 스켈레톤 UI
+                        // 스켈레톤 UI - 카드 전체 (랭킹과 동일한 색상)
                         <>
                           {[1, 2, 3].map((i) => (
-                            <Card key={i} className="p-4 bg-white/80 rounded-xl">
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex-1">
-                                  <Skeleton className="h-5 w-32 mb-2" />
-                                  <Skeleton className="h-3 w-48 mb-1" />
-                                  <Skeleton className="h-3 w-40" />
-                                </div>
-                                <Skeleton className="h-6 w-20 rounded-full" />
-                              </div>
-                              <div className="flex gap-2 mt-4">
-                                <Skeleton className="h-10 flex-1 rounded-xl" />
-                                <Skeleton className="h-10 flex-1 rounded-xl" />
-                              </div>
+                            <Card
+                              key={i}
+                              className="rounded-xl animate-pulse h-40"
+                              style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }}
+                            >
                             </Card>
                           ))}
                         </>

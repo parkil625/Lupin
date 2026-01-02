@@ -362,7 +362,7 @@ export default function DoctorChatPage() {
     setSelectedChatMember(null);
     setActiveRoomId(null);
     setMessages([]);
-    toast.success(`${memberName}님의 진료를 종료합니다...`);
+    toast.success(`${memberName}님의 진료를 종료합니다.`);
 
     // API 호출은 백그라운드에서 처리
     try {

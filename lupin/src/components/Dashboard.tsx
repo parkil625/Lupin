@@ -697,9 +697,6 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           {selectedNav === "auction" && <AuctionView />}
           {selectedNav === "medical" && (
             <MedicalView
-              setShowChat={(v) =>
-                setMedicalState((p) => ({ ...p, showChat: v }))
-              }
               setSelectedPrescription={setSelectedPrescription}
             />
           )}

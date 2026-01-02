@@ -422,7 +422,7 @@ export const MedicalPage: Story = {
   name: "진료페이지",
   render: () => (
     <DashboardWrapper selectedNav="medical">
-      <Medical setShowChat={() => {}} setSelectedPrescription={() => {}} />
+      <Medical setSelectedPrescription={() => {}} />
     </DashboardWrapper>
   ),
 };

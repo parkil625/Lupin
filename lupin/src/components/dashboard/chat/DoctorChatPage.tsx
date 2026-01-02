@@ -103,7 +103,8 @@ export default function DoctorChatPage() {
   const [isSearching, setIsSearching] = useState(false);
 
   // 채팅방 목록 로드 함수 (재사용 가능하도록 별도 함수로 분리)
-  const loadChatRooms = useCallback(async () => {
+  // [최적화] 프로필 캐싱 추가 및 불필요한 API 호출 제거
+  const loadChatRooms = useCallback(async (forceReload = false) => {
     try {
       if (!currentUserId) return;
 
@@ -122,37 +123,52 @@ export default function DoctorChatPage() {
       );
       setChatRooms(sortedRooms);
 
-      // 각 환자의 아바타 및 활동일 로드
-      const avatars: Record<number, string> = {};
-      const activeDaysMap: Record<number, number> = {};
-      await Promise.all(
-        sortedRooms.map(async (room: ChatRoomResponse) => {
-          try {
-            const patient = await userApi.getUserById(room.patientId);
-            if (patient.avatar) {
-              avatars[room.patientId] = patient.avatar;
-            }
+      // [최적화] 캐싱된 프로필이 없는 환자만 로드
+      const newPatientIds = sortedRooms
+        .map((room: ChatRoomResponse) => room.patientId)
+        .filter((patientId: number) =>
+          forceReload || !patientAvatars[patientId]
+        );
 
-            // 활동일 정보 가져오기
+      if (newPatientIds.length === 0) return;
+
+      // [최적화] 병렬 처리 최대 5개씩 제한 (서버 부하 감소)
+      const batchSize = 5;
+      const avatars: Record<number, string> = { ...patientAvatars };
+      const activeDaysMap: Record<number, number> = { ...patientActiveDays };
+
+      for (let i = 0; i < newPatientIds.length; i += batchSize) {
+        const batch = newPatientIds.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map(async (patientId: number) => {
             try {
-              const stats = await userApi.getUserStats(room.patientId);
-              if (stats.activeDays !== undefined) {
-                activeDaysMap[room.patientId] = stats.activeDays;
+              const patient = await userApi.getUserById(patientId);
+              if (patient.avatar) {
+                avatars[patientId] = patient.avatar;
               }
-            } catch (statsError) {
-              console.error(`환자 ${room.patientId} 통계 로드 실패:`, statsError);
+
+              // 활동일 정보 가져오기
+              try {
+                const stats = await userApi.getUserStats(patientId);
+                if (stats.activeDays !== undefined) {
+                  activeDaysMap[patientId] = stats.activeDays;
+                }
+              } catch (statsError) {
+                console.error(`환자 ${patientId} 통계 로드 실패:`, statsError);
+              }
+            } catch (error) {
+              console.error(`환자 ${patientId} 프로필 로드 실패:`, error);
             }
-          } catch (error) {
-            console.error(`환자 ${room.patientId} 프로필 로드 실패:`, error);
-          }
-        })
-      );
+          })
+        );
+      }
+
       setPatientAvatars(avatars);
       setPatientActiveDays(activeDaysMap);
     } catch (error) {
       console.error("채팅방 목록 로드 실패:", error);
     }
-  }, [currentUserId]);
+  }, [currentUserId, patientAvatars, patientActiveDays]);
 
   const handleMessageReceived = useCallback(
     (message: ChatMessageResponse) => {
@@ -167,8 +183,8 @@ export default function DoctorChatPage() {
           toast.success("새 메시지가 도착했습니다");
         }
       }
-      // 메시지 수신 시 채팅방 목록 갱신
-      loadChatRooms();
+      // [최적화] 메시지 수신 시 프로필 재로드 안 함 (캐시 사용)
+      loadChatRooms(false);
     },
     [currentUserId, loadChatRooms, activeRoomId]
   );
@@ -188,13 +204,53 @@ export default function DoctorChatPage() {
     loadChatRooms();
   }, [loadChatRooms]);
 
-  // 1분마다 채팅방 목록을 갱신하여 5분 전 입장 가능한 방을 자동으로 표시
+  // [최적화] 3분마다 채팅방 목록 갱신 (1분 → 3분으로 변경하여 서버 부하 감소)
   useEffect(() => {
     const interval = setInterval(() => {
-      loadChatRooms();
-    }, 60000); // 1분마다 갱신
+      loadChatRooms(false); // 캐시된 프로필 사용
+    }, 180000); // 3분마다 갱신
 
     return () => clearInterval(interval);
+  }, [loadChatRooms]);
+
+  // [bfcache 최적화] 페이지 표시/숨김 이벤트 처리 + 스크롤 위치 복원
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // 페이지가 다시 보일 때 (뒤로가기 등) 캐시 사용하여 빠르게 로드
+        loadChatRooms(false);
+      }
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // bfcache에서 복원된 경우
+        loadChatRooms(false);
+
+        // 스크롤 위치 복원
+        const savedScrollPosition = sessionStorage.getItem('doctorChatScrollPosition');
+        if (savedScrollPosition) {
+          setTimeout(() => {
+            window.scrollTo(0, parseInt(savedScrollPosition, 10));
+          }, 100);
+        }
+      }
+    };
+
+    const handlePageHide = () => {
+      // 스크롤 위치 저장
+      sessionStorage.setItem('doctorChatScrollPosition', window.scrollY.toString());
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
   }, [loadChatRooms]);
 
   // 예약 시간 5분 전부터 입장 가능한지 확인하는 함수
@@ -264,7 +320,6 @@ export default function DoctorChatPage() {
 
     const loadMessages = async () => {
       try {
-        console.log("메시지 로드 시작 RoomID:", activeRoomId);
         const loadedMessages = await chatApi.getAllMessagesByRoomId(
           activeRoomId
         );
@@ -283,7 +338,6 @@ export default function DoctorChatPage() {
       const markMessagesAsRead = async () => {
         try {
           await chatApi.markAsRead(activeRoomId, currentUserId);
-          console.log("✅ 읽음 처리 완료:", activeRoomId);
           await loadChatRooms();
         } catch (error) {
           console.error("❌ 읽음 처리 실패:", error);
@@ -313,7 +367,6 @@ export default function DoctorChatPage() {
     // API 호출은 백그라운드에서 처리
     try {
       await appointmentApi.completeAppointment(appointmentId);
-      console.log("진료 종료 성공:", appointmentId);
 
       // 채팅방 목록 갱신 (백그라운드)
       loadChatRooms();
@@ -437,7 +490,6 @@ export default function DoctorChatPage() {
         additionalInstructions: instructions || "",
       };
 
-      console.log("처방전 전송 데이터:", requestData);
 
       // 4. API 호출
       await prescriptionApi.create(requestData);

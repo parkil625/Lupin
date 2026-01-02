@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -30,7 +31,6 @@ import { toast } from "sonner";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 
 interface MedicalProps {
-  setShowChat: (show: boolean) => void;
   setSelectedPrescription: (prescription: PrescriptionResponse | null) => void;
 }
 
@@ -43,6 +43,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
   const [appointments, setAppointments] = useState<AppointmentResponse[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("ALL"); // 예약 상태 필터
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
+  const [isLoadingPrescriptions, setIsLoadingPrescriptions] = useState(true);
 
   const [prescriptions, setPrescriptions] = useState<PrescriptionResponse[]>(
     []
@@ -187,6 +189,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           surgery: "외과",
           psychiatry: "신경정신과",
           dermatology: "피부과",
+          thoracic_surgery: "흉부외과",
+          obstetrics_gynecology: "산부인과",
         };
 
         const departmentKoreanName = departmentNames[selectedDepartment];
@@ -237,6 +241,23 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           );
           toast.error(lockMessage);
           return;
+        }
+
+        // 의사 프로필 정보 로드 (없는 경우에만)
+        if (!doctorProfiles[appointment.doctorId]) {
+          try {
+            const profile = await userApi.getUserById(appointment.doctorId);
+            const stats = await userApi.getUserStats(appointment.doctorId);
+            setDoctorProfiles(prev => ({
+              ...prev,
+              [appointment.doctorId]: {
+                avatar: profile.avatar,
+                activeDays: stats.activeDays,
+              }
+            }));
+          } catch (error) {
+            console.error(`의사 프로필 로드 실패 (ID: ${appointment.doctorId}):`, error);
+          }
         }
 
         setActiveAppointment({
@@ -309,6 +330,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       surgery: "외과",
       psychiatry: "신경정신과",
       dermatology: "피부과",
+      thoracic_surgery: "흉부외과",
+      obstetrics_gynecology: "산부인과",
     };
 
     const departmentKoreanName = departmentNames[selectedDepartment];
@@ -352,8 +375,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         doctorId: selectedDoctor.id,
         date: dateTimeStr,
       });
-
-      console.log("✅ 예약 생성 성공:", appointmentId);
 
       // 예약 정보 저장 (성공 화면에 표시용)
       setLastCreatedAppointment({
@@ -556,6 +577,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   const loadAppointments = useCallback(
     async (skipViewChange = false) => {
       try {
+        setIsLoadingAppointments(true);
         const data = await appointmentApi.getPatientAppointments(
           currentPatientId
         );
@@ -591,6 +613,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       } catch (error) {
         console.error("예약 목록 로드 실패:", error);
         toast.error("예약 목록을 불러오는데 실패했습니다.");
+      } finally {
+        setIsLoadingAppointments(false);
       }
     },
     [currentPatientId, viewState]
@@ -599,6 +623,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   // 처방전 로드 함수
   const loadPrescriptions = useCallback(async () => {
     try {
+      setIsLoadingPrescriptions(true);
       const data = await prescriptionApi.getPatientPrescriptions(
         currentPatientId
       );
@@ -606,6 +631,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     } catch {
       // 에러 발생 시 빈 배열로 설정 (500 에러 무시)
       setPrescriptions([]);
+    } finally {
+      setIsLoadingPrescriptions(false);
     }
   }, [currentPatientId]);
 
@@ -626,6 +653,33 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     }, 60000);
 
     return () => clearInterval(interval);
+  }, [loadAppointments, loadPrescriptions]);
+
+  // [bfcache 최적화] 페이지 표시/숨김 이벤트 처리
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // 페이지가 다시 보일 때 (뒤로가기 등) 데이터 갱신
+        void loadAppointments(true);
+        void loadPrescriptions();
+      }
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // bfcache에서 복원된 경우
+        void loadAppointments(true);
+        void loadPrescriptions();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
   }, [loadAppointments, loadPrescriptions]);
 
   // 처방전 발급 이벤트 처리 (처방전 목록 새로고침)
@@ -679,6 +733,23 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
             );
             toast.error(lockMessage);
             return;
+          }
+
+          // 의사 프로필 정보 로드 (없는 경우에만)
+          if (!doctorProfiles[appointment.doctorId]) {
+            try {
+              const profile = await userApi.getUserById(appointment.doctorId);
+              const stats = await userApi.getUserStats(appointment.doctorId);
+              setDoctorProfiles(prev => ({
+                ...prev,
+                [appointment.doctorId]: {
+                  avatar: profile.avatar,
+                  activeDays: stats.activeDays,
+                }
+              }));
+            } catch (error) {
+              console.error(`의사 프로필 로드 실패 (ID: ${appointment.doctorId}):`, error);
+            }
           }
 
           // 채팅방 열기
@@ -802,7 +873,21 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
               </div>
               <div className="flex-1 overflow-y-auto px-4 pb-4 min-h-0 custom-scrollbar">
                 <div className="space-y-2">
-                  {appointments
+                  {isLoadingAppointments ? (
+                    // 스켈레톤 UI
+                    <>
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="p-3 rounded-xl bg-white/40 border border-gray-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <Skeleton className="h-4 w-20" />
+                            <Skeleton className="h-5 w-16 rounded-full" />
+                          </div>
+                          <Skeleton className="h-3 w-full mb-1" />
+                          <Skeleton className="h-3 w-3/4" />
+                        </div>
+                      ))}
+                    </>
+                  ) : appointments
                     .filter((apt) => {
                       // 상태 필터 적용
                       if (
@@ -912,7 +997,19 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
               </div>
               <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
                 <div className="space-y-2">
-                  {prescriptions.length === 0 ? (
+                  {isLoadingPrescriptions ? (
+                    // 스켈레톤 UI
+                    <>
+                      {[1, 2].map((i) => (
+                        <div key={i} className="p-3 rounded-xl bg-white/40 border border-gray-200">
+                          <Skeleton className="h-4 w-3/4 mb-2" />
+                          <Skeleton className="h-3 w-1/2 mb-1" />
+                          <Skeleton className="h-3 w-1/3 mb-2" />
+                          <Skeleton className="h-8 w-full rounded-lg" />
+                        </div>
+                      ))}
+                    </>
+                  ) : prescriptions.length === 0 ? (
                     <div className="text-center py-8 text-gray-500 text-sm">
                       처방전이 없습니다
                     </div>
@@ -1155,7 +1252,27 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     </div>
 
                     <div className="space-y-4">
-                      {appointments
+                      {isLoadingAppointments ? (
+                        // 스켈레톤 UI
+                        <>
+                          {[1, 2, 3].map((i) => (
+                            <Card key={i} className="p-4 bg-white/80 rounded-xl">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                  <Skeleton className="h-5 w-32 mb-2" />
+                                  <Skeleton className="h-3 w-48 mb-1" />
+                                  <Skeleton className="h-3 w-40" />
+                                </div>
+                                <Skeleton className="h-6 w-20 rounded-full" />
+                              </div>
+                              <div className="flex gap-2 mt-4">
+                                <Skeleton className="h-10 flex-1 rounded-xl" />
+                                <Skeleton className="h-10 flex-1 rounded-xl" />
+                              </div>
+                            </Card>
+                          ))}
+                        </>
+                      ) : appointments
                         .filter(
                           (apt) =>
                             apt.status === "SCHEDULED" ||
@@ -1310,7 +1427,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         value={selectedDepartment}
                         onValueChange={setSelectedDepartment}
                       >
-                        <SelectTrigger className="rounded-xl cursor-pointer border border-gray-300 hover:border-[#C93831] focus:border-[#C93831] focus:ring-0 focus:ring-offset-0 transition-colors">
+                        <SelectTrigger className="rounded-xl cursor-pointer border border-gray-300 bg-white hover:bg-gray-100 focus:border-gray-300 focus:ring-0 focus:ring-offset-0 transition-colors">
                           <SelectValue placeholder="진료과를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent className="bg-white">
@@ -1337,6 +1454,18 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             className="cursor-pointer"
                           >
                             피부과
+                          </SelectItem>
+                          <SelectItem
+                            value="thoracic_surgery"
+                            className="cursor-pointer"
+                          >
+                            흉부외과
+                          </SelectItem>
+                          <SelectItem
+                            value="obstetrics_gynecology"
+                            className="cursor-pointer"
+                          >
+                            산부인과
                           </SelectItem>
                         </SelectContent>
                       </Select>

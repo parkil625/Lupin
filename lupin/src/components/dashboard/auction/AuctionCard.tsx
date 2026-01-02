@@ -103,7 +103,6 @@ export const AuctionCard = ({
         <Card
             className={`backdrop-blur-xl bg-white/60 border border-gray-200 shadow-lg transition-all
         ${isSelected ? "ring-2 ring-[#C93831]" : ""}
-        ${isScheduled ? "opacity-70 cursor-not-allowed" : "cursor-pointer"}
         ${isEnded ? "hover:shadow-md" : "hover:shadow-xl"}
       `}
             onClick={() => {

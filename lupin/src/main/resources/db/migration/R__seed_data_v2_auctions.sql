@@ -54,7 +54,7 @@ INSERT INTO auctions (
 ) VALUES (
              0,
              @now - INTERVAL 1 DAY,
-             @now + INTERVAL 1 DAY,
+             @now + INTERVAL 10 HOUR,
              false,
              30,
              'ACTIVE',
@@ -158,8 +158,8 @@ INSERT INTO auctions (
     winning_bid
 ) VALUES (
              100,
-             @now - INTERVAL 5 DAY,
-             @now - INTERVAL 4 DAY,
+             @now - INTERVAL 1 DAY,
+             @now - INTERVAL 23 HOUR,
              false,
              30,
              'ENDED',
@@ -193,8 +193,8 @@ INSERT INTO auctions (
     winning_bid
 ) VALUES (
              200,
-             @now - INTERVAL 11 DAY,
-             @now - INTERVAL 10 DAY,
+             @now - INTERVAL 1 DAY,
+             @now - INTERVAL 20 HOUR,
              false,
              30,
              'ENDED',

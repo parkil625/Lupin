@@ -1536,9 +1536,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         }}
                         className="rounded-xl border [&_button]:cursor-pointer bg-white"
                       />
-                      <p className="text-xs text-gray-600 mt-2">
-                        * 빨간색 날짜는 공휴일입니다 (선택 불가)
-                      </p>
                     </div>
 
                     {/* 시간 선택 */}
@@ -1573,14 +1570,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                               >
                                 {time}
                                 {isBooked && (
-                                  <span className="block text-[10px]">
-                                    (예약됨)
-                                  </span>
+                                  <span className="block text-[10px]"></span>
                                 )}
                                 {isPast && !isBooked && (
-                                  <span className="block text-[10px]">
-                                    (마감)
-                                  </span>
+                                  <span className="block text-[10px]"></span>
                                 )}
                               </Button>
                             );

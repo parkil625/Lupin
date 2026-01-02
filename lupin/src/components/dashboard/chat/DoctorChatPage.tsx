@@ -943,6 +943,8 @@ export default function DoctorChatPage() {
                           onChange={(e) => {
                             if (e.target.value.length <= 1000) {
                               setInstructions(e.target.value);
+                            } else {
+                              toast.error("복용 방법은 최대 1000자까지 입력할 수 있습니다.");
                             }
                           }}
                           placeholder="하루 3회, 식후 30분에 복용하세요."

@@ -191,10 +191,7 @@ public class PrescriptionService {
                 System.out.println("   - 약품 추가 대기: " + medicine.getName());
             }
 
-            // 7. 예약 상태 완료로 변경
-            appointment.complete();
-
-            // 8. 통합 저장 (부모만 저장하면 자식들도 자동 저장됨)
+            // 7. 통합 저장 (부모만 저장하면 자식들도 자동 저장됨)
             // EntityManager 관련 코드(persist, flush, clear) 제거하여 트랜잭션 안전성 확보
             Prescription savedPrescription = prescriptionRepository.save(prescription);
 

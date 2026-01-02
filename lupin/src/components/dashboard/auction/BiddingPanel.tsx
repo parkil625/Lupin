@@ -91,7 +91,7 @@ export const BiddingPanel = ({
                       <button
                           key={amt}
                           onClick={() => addAmount(amt)}
-                          className="px-3 py-1 text-xs font-bold bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+                          className="px-3 py-1 text-xs font-bold bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition hover:cursor-pointer"
                       >
                           +{amt.toLocaleString()}
                       </button>
@@ -105,7 +105,7 @@ export const BiddingPanel = ({
             <Button
                 onClick={onPlaceBid}
                 disabled={isBidding} // 로딩 중 클릭 방지
-                className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold hover:shadow-lg disabled:opacity-70"
+                className="w-full bg-gradient-to-r from-[#C93831] to-[#B02F28] text-white font-bold hover:shadow-lg disabled:opacity-70 hover:cursor-pointer"
             >
                 {isBidding ? (
                     <span className="animate-spin mr-2">⏳</span>

@@ -383,14 +383,14 @@ export default function Auction() {
                                         <TabsList className="grid w-full grid-cols-2 mb-4 bg-gray-100 p-1 rounded-xl">
                                             <TabsTrigger
                                                 value="scheduled"
-                                                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                                                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold hover:cursor-pointer"
                                             >
                                                 <Calendar className="w-4 h-4 mr-2" />
                                                 예정된 경매
                                             </TabsTrigger>
                                             <TabsTrigger
                                                 value="ended"
-                                                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                                                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold hover:cursor-pointer"
                                             >
                                                 <Trophy className="w-4 h-4 mr-2 text-yellow-600" />
                                                 종료된 경매

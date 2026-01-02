@@ -27,7 +27,7 @@ export const generatePrescriptionPDF = async (
           <style>
             body {
               margin: 0;
-              padding: 40px;
+              padding: 20px 30px;
               font-family: 'Noto Sans KR', sans-serif;
               background-color: white;
               width: 210mm;
@@ -38,13 +38,13 @@ export const generatePrescriptionPDF = async (
           </style>
         </head>
         <body>
-          <div style="border: 2px solid #000; padding: 20px;">
-            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
-              <h1 style="font-size: 32px; font-weight: 900; margin: 0; color: #1a1a1a;">처 방 전</h1>
-              <span style="font-size: 14px; color: #666;">(Prescription)</span>
+          <div style="border: 2px solid #000; padding: 15px;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+              <h1 style="font-size: 28px; font-weight: 900; margin: 0; color: #1a1a1a;">처 방 전</h1>
+              <span style="font-size: 12px; color: #666;">(Prescription)</span>
             </div>
 
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
               <div style="flex: 1; margin-right: 10px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
@@ -77,8 +77,8 @@ export const generatePrescriptionPDF = async (
               </div>
             </div>
 
-            <div style="margin-bottom: 20px;">
-              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 12px; color: #000;">환자 정보</h3>
+            <div style="margin-bottom: 12px;">
+              <h3 style="font-size: 16px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 6px; margin-bottom: 8px; color: #000;">환자 정보</h3>
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="border: 1px solid #ddd; padding: 10px; background-color: #f8f9fa; font-weight: bold; width: 120px;">성명</td>
@@ -93,51 +93,61 @@ export const generatePrescriptionPDF = async (
               </table>
             </div>
 
-            <div style="margin-bottom: 20px;">
-              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 12px; color: #000;">처방 의약품</h3>
+            <div style="margin-bottom: 12px;">
+              <h3 style="font-size: 16px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 6px; margin-bottom: 8px; color: #000;">처방 의약품</h3>
               <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
                   <tr style="background-color: #f1f3f5;">
-                    <th style="border: 1px solid #ddd; padding: 10px; width: 60%; font-size: 14px;">약품명</th>
-                    <th style="border: 1px solid #ddd; padding: 10px; font-size: 14px;">비고 / 주의사항</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; width: 60%; font-size: 13px;">약품명</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; font-size: 13px;">비고 / 주의사항</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${
-                    prescription.medicineDetails &&
-                    prescription.medicineDetails.length > 0
-                      ? prescription.medicineDetails
-                          .map(
-                            (med) => `
+                  ${(() => {
+                    const medicines = prescription.medicineDetails || [];
+                    const rows = [];
+
+                    // 실제 약품 행 추가
+                    for (let i = 0; i < medicines.length && i < 5; i++) {
+                      const med = medicines[i];
+                      rows.push(`
                     <tr>
-                      <td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; font-size: 14px;">${
+                      <td style="border: 1px solid #ddd; padding: 8px; font-weight: 500; font-size: 13px;">${
                         med.name
                       }</td>
-                      <td style="border: 1px solid #ddd; padding: 12px; color: #d35400; font-size: 14px; word-wrap: break-word; white-space: normal; overflow-wrap: break-word;">${
+                      <td style="border: 1px solid #ddd; padding: 8px; color: #d35400; font-size: 12px; word-wrap: break-word; white-space: normal; overflow-wrap: break-word;">${
                         med.precautions || "-"
                       }</td>
-                    </tr>
-                  `
-                          )
-                          .join("")
-                      : `<tr><td colspan="2" style="border: 1px solid #ddd; padding: 12px; text-align: center; color: #888;">처방된 약품이 없습니다.</td></tr>`
-                  }
+                    </tr>`);
+                    }
+
+                    // 나머지 빈 행 추가 (총 5개가 되도록)
+                    for (let i = medicines.length; i < 5; i++) {
+                      rows.push(`
+                    <tr>
+                      <td style="border: 1px solid #ddd; padding: 8px; font-size: 13px;">&nbsp;</td>
+                      <td style="border: 1px solid #ddd; padding: 8px; font-size: 12px;">&nbsp;</td>
+                    </tr>`);
+                    }
+
+                    return rows.join("");
+                  })()}
                 </tbody>
               </table>
             </div>
 
-            <div style="margin-bottom: 20px;">
-              <h3 style="font-size: 18px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 12px; color: #000;">복용 지도 및 참고사항</h3>
-              <div style="border: 1px solid #ddd; padding: 20px; min-height: 100px; background-color: #f8f9fa; border-radius: 8px;">
-                <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #333;">${
+            <div style="margin-bottom: 15px;">
+              <h3 style="font-size: 16px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 6px; margin-bottom: 8px; color: #000;">복용 지도 및 참고사항</h3>
+              <div style="border: 1px solid #ddd; padding: 15px; min-height: 150px; background-color: #f8f9fa; border-radius: 8px;">
+                <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #333; white-space: pre-wrap; word-wrap: break-word;">${
                   prescription.instructions || "특이사항 없음"
                 }</p>
               </div>
             </div>
 
-            <div style="text-align: center; margin-top: 60px; color: #888; font-size: 12px; padding-top: 30px;">
-              <p style="margin: 5px 0;">본 처방전은 Lupin 헬스케어 플랫폼에서 발급되었습니다.</p>
-              <p style="margin: 5px 0;">© 2025 Lupin All Rights Reserved.</p>
+            <div style="text-align: center; margin-top: 30px; color: #888; font-size: 11px; padding-top: 15px;">
+              <p style="margin: 3px 0;">본 처방전은 Lupin 헬스케어 플랫폼에서 발급되었습니다.</p>
+              <p style="margin: 3px 0;">© 2025 Lupin All Rights Reserved.</p>
             </div>
           </div>
         </body>
@@ -158,10 +168,26 @@ export const generatePrescriptionPDF = async (
 
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF("p", "mm", "a4");
-    const imgWidth = 210;
+    const imgWidth = 210; // A4 너비 (mm)
+    const pageHeight = 297; // A4 높이 (mm)
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+    // 여러 페이지로 분할하여 추가
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    // 첫 페이지 추가
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    // 내용이 한 페이지를 초과하는 경우 추가 페이지 생성
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
     pdf.save(`처방전_${prescription.patientName}_${prescription.date}.pdf`);
   } catch (error) {
     console.error("PDF 생성 중 오류 발생:", error);

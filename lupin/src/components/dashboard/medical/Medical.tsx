@@ -51,7 +51,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
   // 의사 프로필 정보 저장 (doctorId -> { avatar, activeDays, department })
   const [doctorProfiles, setDoctorProfiles] = useState<
-    Record<number, { avatar?: string; activeDays?: number; department?: string }>
+    Record<
+      number,
+      { avatar?: string; activeDays?: number; department?: string }
+    >
   >({});
 
   // -------------------------------------------------------------------------
@@ -655,7 +658,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
     // 1분마다 예약 목록 갱신 (예약 시간이 되면 진료 중으로 자동 변경)
     const interval = setInterval(() => {
-      void loadAppointments(true); // skipViewChange = true로 전달
+      void loadAppointments(true, true); // skipViewChange = true, skipLoading = true로 전달 (스켈레톤 표시 안 함)
     }, 60000);
 
     return () => clearInterval(interval);
@@ -665,16 +668,16 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        // 페이지가 다시 보일 때 (뒤로가기 등) 데이터 갱신
-        void loadAppointments(true);
+        // 페이지가 다시 보일 때 (뒤로가기 등) 데이터 갱신 (스켈레톤 표시 안 함)
+        void loadAppointments(true, true);
         void loadPrescriptions();
       }
     };
 
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
-        // bfcache에서 복원된 경우
-        void loadAppointments(true);
+        // bfcache에서 복원된 경우 (스켈레톤 표시 안 함)
+        void loadAppointments(true, true);
         void loadPrescriptions();
       }
     };
@@ -1060,7 +1063,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         name={activeAppointment?.doctorName}
                         department={
                           activeAppointment?.doctorId
-                            ? doctorProfiles[activeAppointment.doctorId]?.department || "의사"
+                            ? doctorProfiles[activeAppointment.doctorId]
+                                ?.department || "의사"
                             : "의사"
                         }
                         size="md"
@@ -1124,7 +1128,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 name={msg.senderName}
                                 department={
                                   activeAppointment?.doctorId
-                                    ? doctorProfiles[activeAppointment.doctorId]?.department || "의사"
+                                    ? doctorProfiles[activeAppointment.doctorId]
+                                        ?.department || "의사"
                                     : "의사"
                                 }
                                 size="sm"
@@ -1408,9 +1413,12 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                               await appointmentApi.cancelAppointment(
                                                 apt.id
                                               );
-                                              // 예약 목록 갱신 (스켈레톤 표시 안 함)
-                                              await loadAppointments(true, true);
-                                              setViewState("FORM");
+                                              // 예약 목록 갱신 (스켈레톤 표시 안 함, 예약 목록 화면 유지)
+                                              await loadAppointments(
+                                                true,
+                                                true
+                                              );
+                                              // 예약 변경 후 예약 목록 화면 유지 (FORM으로 이동하지 않음)
                                             } catch (error) {
                                               console.error(
                                                 "예약 변경 실패:",
@@ -1526,7 +1534,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             color: "#C93831",
                           },
                         }}
-                        className="rounded-xl border [&_button]:cursor-pointer"
+                        className="rounded-xl border [&_button]:cursor-pointer bg-white"
                       />
                       <p className="text-xs text-gray-600 mt-2">
                         * 빨간색 날짜는 공휴일입니다 (선택 불가)

@@ -78,7 +78,7 @@ class AuctionBidRepositoryTest {
 
         // When
         // Now returns List<AuctionBidResponse> instead of Entities
-        List<AuctionBid> result = auctionBidRepository.findBidsByActiveAuction();
+        List<AuctionBid> result = auctionBidRepository.findTop5ByAuction_StatusOrderByBidAmountDesc(activeAuction.getStatus());
 
         // Then
         // 1. Verify Size (Should be 3)

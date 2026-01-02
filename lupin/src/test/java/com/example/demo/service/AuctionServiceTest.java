@@ -426,7 +426,7 @@ class AuctionServiceTest {
                 .build();
         List<AuctionBid> mockBids = List.of(bid);
 
-        given(auctionBidRepository.findBidsByActiveAuction()).willReturn(mockBids);
+        given(auctionBidRepository.findTop5ByAuction_StatusOrderByBidAmountDesc(auction.getStatus())).willReturn(mockBids);
 
         // when
         List<AuctionBidResponse> result = auctionService.getAuctionStatus();

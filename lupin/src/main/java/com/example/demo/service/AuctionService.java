@@ -23,6 +23,7 @@ import org.redisson.client.codec.StringCodec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -220,7 +221,7 @@ public class AuctionService {
     // 현재 경매 정보 내역 리스트 조회
     public List<AuctionBidResponse> getAuctionStatus(){
         // 1. 엔티티 리스트 조회 (User 정보 포함됨)
-        List<AuctionBid> bids = auctionBidRepository.findBidsByActiveAuction();
+        List<AuctionBid> bids = auctionBidRepository.findTop5ByAuction_StatusOrderByBidAmountDesc(AuctionStatus.ACTIVE);
 
         // 2. DTO로 변환
         return bids.stream()

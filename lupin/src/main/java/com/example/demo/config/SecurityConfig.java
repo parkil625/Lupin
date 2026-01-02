@@ -37,7 +37,14 @@ public class SecurityConfig {
     private static final String[] PUBLIC_URLS = {
             "/",
             "/api/health",
-            "/error"
+            "/error",
+            "/*.ico",      // [추가] 파비콘
+            "/*.webp",     // [추가] webp 이미지
+            "/*.png",      // [추가] png 이미지
+            "/*.jpg",      // [추가] jpg 이미지
+            "/*.jpeg",     // [추가] jpeg 이미지
+            "/images/**",  // [추가] 이미지 폴더
+            "/static/**"   // [추가] 정적 리소스
     };
 
     private static final String[] AUTH_URLS = {

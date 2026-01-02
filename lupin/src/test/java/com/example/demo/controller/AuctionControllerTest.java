@@ -189,7 +189,7 @@ class AuctionControllerTest {
                 .andDo(print())
                 // [이전 대화 반영] 실패 시 200이 아니라 409를 기대해야 합니다.
                 .andExpect(status().isConflict())
-                .andExpect(content().string("아쉽지만 다른 분이 먼저 입찰했습니다."));
+                .andExpect(content().string("입찰 실패! 다시 시도해 주세요"));
     }
 
     @Test

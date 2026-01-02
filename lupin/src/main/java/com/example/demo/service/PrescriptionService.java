@@ -168,6 +168,11 @@ public class PrescriptionService {
                 throw new IllegalArgumentException("처방할 약품이 없습니다.");
             }
 
+            // 약품 개수 제한 (최대 5개)
+            if (request.getMedicines().size() > 5) {
+                throw new IllegalArgumentException("약품은 최대 5개까지 처방할 수 있습니다.");
+            }
+
             for (PrescriptionRequest.MedicineItem item : request.getMedicines()) {
                 Medicine medicine;
                 // 약품 조회

@@ -445,6 +445,12 @@ export default function DoctorChatPage() {
 
   // 약품 추가 (클릭 또는 엔터)
   const handleAddMedicine = (medicine: Medicine) => {
+    // 약품 개수 제한 체크 (최대 5개)
+    if (selectedMedicines.length >= 5) {
+      toast.error("약품은 최대 5개까지 선택할 수 있습니다.");
+      return;
+    }
+
     // 이미 추가된 약품인지 확인
     const existing = selectedMedicines.find((m) => m.id === medicine.id);
 
@@ -873,7 +879,7 @@ export default function DoctorChatPage() {
                         <Input
                           value={prescriptionDate}
                           disabled
-                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border-2 border-gray-300"
+                          className="mt-1 rounded-xl bg-white text-black disabled:opacity-100 border-2 border-gray-300"
                         />
                       </div>
 
@@ -906,7 +912,7 @@ export default function DoctorChatPage() {
                             className="text-xs text-blue-600 hover:text-blue-700"
                           >
                             <Edit2 className="w-3 h-3 mr-1" />
-                            약품 선택 ({selectedMedicines.length}개)
+                            약품 선택 ({selectedMedicines.length}/5개)
                           </Button>
                         </div>
                         <div
@@ -926,13 +932,22 @@ export default function DoctorChatPage() {
                       </div>
 
                       <div>
-                        <Label className="text-sm font-bold">복용 방법</Label>
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-sm font-bold">복용 방법</Label>
+                          <span className="text-xs text-gray-500">
+                            {instructions.length}/1000자
+                          </span>
+                        </div>
                         <Textarea
                           value={instructions}
-                          onChange={(e) => setInstructions(e.target.value)}
+                          onChange={(e) => {
+                            if (e.target.value.length <= 1000) {
+                              setInstructions(e.target.value);
+                            }
+                          }}
                           placeholder="하루 3회, 식후 30분에 복용하세요."
                           className="mt-1 rounded-xl bg-white placeholder:text-gray-400 border-2 border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
-                          rows={4}
+                          rows={6}
                         />
                       </div>
                     </div>

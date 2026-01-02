@@ -652,6 +652,7 @@ export default function DoctorChatPage() {
                                 size="sm"
                                 avatarUrl={patientAvatars[room.patientId]}
                                 activeDays={patientActiveDays[room.patientId]}
+                                userId={room.patientId}
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-1">
@@ -690,7 +691,7 @@ export default function DoctorChatPage() {
                                 )}
                                 <div className="flex items-center justify-between">
                                   <div className="text-xs text-gray-600 truncate flex-1">
-                                    {room.lastMessage || "메시지를 시작하세요"}
+                                    {room.lastMessage}
                                   </div>
                                   {room.unreadCount > 0 && (
                                     <Badge className="bg-red-500 text-white font-bold border-0 text-xs ml-2 flex-shrink-0">
@@ -729,6 +730,7 @@ export default function DoctorChatPage() {
                             ? patientActiveDays[selectedChatMember.id]
                             : undefined
                         }
+                        userId={selectedChatMember.id}
                       />
                       <div>
                         <div className="font-bold text-gray-900">
@@ -790,6 +792,7 @@ export default function DoctorChatPage() {
                                     ? patientActiveDays[selectedChatMember.id]
                                     : undefined
                                 }
+                                userId={selectedChatMember?.id}
                               />
                             )}
                             <div
@@ -908,7 +911,7 @@ export default function DoctorChatPage() {
                         </div>
                         <div
                           onClick={handleOpenMedicineDialog}
-                          className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-[#C93831] transition-all duration-300"
+                          className="min-h-[90px] p-3 rounded-xl border-2 border-dashed border-gray-300 bg-white cursor-pointer hover:border-[#C93831] transition-all duration-300"
                         >
                           <p
                             className={`text-sm whitespace-pre-wrap ${

@@ -1075,6 +1075,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 ?.activeDays
                             : undefined
                         }
+                        userId={activeAppointment?.doctorId}
                       />
                       <div>
                         <div className="font-bold text-gray-900">
@@ -1139,6 +1140,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                         ?.activeDays
                                     : undefined
                                 }
+                                userId={activeAppointment?.doctorId}
                               />
                             )}
                             <div

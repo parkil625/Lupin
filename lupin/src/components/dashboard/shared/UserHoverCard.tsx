@@ -6,7 +6,7 @@
  * - 피드, 댓글 등에서 재사용
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   HoverCard,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/hover-card";
 import { User } from "lucide-react";
 import { getProfileThumbnailUrl } from "@/api";
+import { userApi } from "@/api/userApi";
 
 export interface UserHoverCardProps {
   /** 사용자 이름 */
@@ -23,6 +24,8 @@ export interface UserHoverCardProps {
   department?: string;
   /** 이번 달 활동일 */
   activeDays?: number;
+  /** 사용자 ID (활동일 자동 로드용) */
+  userId?: number;
   /** 아바타 크기 (기본: md) */
   size?: "sm" | "md" | "lg";
   /** 아바타 이미지 URL */
@@ -47,17 +50,47 @@ export function UserHoverCard({
   name,
   department,
   activeDays,
+  userId,
   size = "md",
   avatarUrl,
   className,
 }: UserHoverCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [loadedActiveDays, setLoadedActiveDays] = useState<number | undefined>(undefined);
+
+  // activeDays가 없고 userId가 있으면 자동으로 로드
+  useEffect(() => {
+    // activeDays가 없고 userId가 있으면 API 호출
+    if (activeDays === undefined && userId) {
+      let cancelled = false;
+
+      userApi
+        .getUserStats(userId)
+        .then((stats) => {
+          if (!cancelled && stats.activeDays !== undefined) {
+            setLoadedActiveDays(stats.activeDays);
+          }
+        })
+        .catch((error) => {
+          if (!cancelled) {
+            console.error(`활동일 로드 실패 (userId: ${userId}):`, error);
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [activeDays, userId]);
 
   const handleImageError = () => {
     setImageError(true);
   };
 
   const showFallback = !avatarUrl || imageError;
+
+  // activeDays prop이 있으면 그것을 사용, 없으면 로드된 값 사용
+  const displayActiveDays = activeDays !== undefined ? activeDays : loadedActiveDays;
 
   return (
     <HoverCard openDelay={200} closeDelay={100}>
@@ -104,14 +137,14 @@ export function UserHoverCard({
             <p className="text-sm text-gray-700 font-medium">
               {department || "부서 미정"}
             </p>
-            {activeDays !== undefined && (
+            {displayActiveDays !== undefined && (
               <div className="pt-1">
                 <div className="flex justify-between text-xs">
                   <span className="text-gray-600 font-medium">
                     이번 달 활동
                   </span>
                   <span className="font-black text-gray-900">
-                    {activeDays}일
+                    {displayActiveDays}일
                   </span>
                 </div>
               </div>

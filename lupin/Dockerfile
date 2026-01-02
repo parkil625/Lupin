@@ -14,6 +14,11 @@ RUN ./gradlew dependencies --no-daemon
 
 # Copy source code and build
 COPY src src
+
+# [추가] React public 폴더의 이미지들을 Spring Boot 정적 리소스 경로(static)로 복사
+# 이렇게 해야 https://도메인/icon-report.webp 로 접근했을 때 파일이 보입니다.
+COPY public src/main/resources/static
+
 RUN ./gradlew build -x test --no-daemon
 
 # Run stage

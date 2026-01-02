@@ -81,6 +81,7 @@ public class AppointmentReminderScheduler {
                         appointment.getDepartmentName()))
                 .refId(refId)
                 .targetId(null)
+                .actorProfileImage("/icon-medicine.webp") // [추가] 의료 아이콘 설정
                 .isRead(false)
                 .build();
 
@@ -95,6 +96,7 @@ public class AppointmentReminderScheduler {
                         appointment.getPatient().getName()))
                 .refId(refId)
                 .targetId(null)
+                .actorProfileImage("/icon-medicine.webp") // [추가] 의료 아이콘 설정
                 .isRead(false)
                 .build();
 

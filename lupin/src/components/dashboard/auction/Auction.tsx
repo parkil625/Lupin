@@ -87,10 +87,10 @@ export default function Auction() {
                     setAuctions([activeAuctionData]);
                     // 이미 선택된 경매가 있다면 정보를 갱신하되, 선택 상태는 유지
                     setSelectedAuction((prev) => {
-                         if (!prev || prev.auctionId === activeAuctionData.auctionId) {
-                             return activeAuctionData;
-                         }
-                         return prev;
+                        if (!prev || prev.auctionId === activeAuctionData.auctionId) {
+                            return activeAuctionData;
+                        }
+                        return prev;
                     });
                 }
             } else {
@@ -191,7 +191,7 @@ export default function Auction() {
 
                 const newBidLog: BidHistory = {
                     id: uniqueId,
-                    userId: 0,
+                    userId: data.bidderId,
                     userName: data.bidderName,
                     bidAmount: data.currentPrice,
                     bidTime: data.bidTime,
@@ -286,10 +286,10 @@ export default function Auction() {
 
             toast.success("입찰에 성공했습니다! 🎉", {
                 description: (
-                                <span className="text-black font-black text-sm">
+                    <span className="text-black font-black text-sm">
                                     {amount.toLocaleString()}P 입찰 완료
                                 </span>
-                            ),
+                ),
                 duration: 2000,
             });
 

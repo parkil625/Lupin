@@ -7,89 +7,51 @@
  * - 읽지 않은 알림 강조 표시
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCheck, User } from "lucide-react";
 import { Notification } from "@/types/dashboard.types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getRelativeTime } from "@/lib/utils";
 
-// [추가] 알림 아이콘 결정 컴포넌트
+// [수정] 알림 아이콘 결정 컴포넌트 (DB 데이터 기반 + 에러 처리 강화)
 const NotificationIcon = ({ notification }: { notification: Notification }) => {
   const { type, actorProfileImage } = notification;
+  const [hasError, setHasError] = useState(false);
 
-  // 디버깅용 로그
-  console.log(
-    `[NotificationIcon] id=${notification.id}, type=${type}, img=${actorProfileImage}`
-  );
+  // 시스템 알림인지 확인 (시스템 알림은 아이콘 원본 비율 유지, 유저는 원형 크롭)
+  const isSystemNotification = [
+    "FEED_DELETED",
+    "COMMENT_DELETED",
+    "REPORT",
+    "PENALTY",
+    "SANCTION", // 신고
+    "APPOINTMENT",
+    "PRESCRIPTION",
+    "MEDICINE",
+    "CHAT",
+    "RESERVATION",
+    "DOCTOR", // 의료
+    "AUCTION",
+    "BID",
+    "WIN", // 경매
+  ].some((keyword) => type.includes(keyword));
 
-  // 1. 신고/제재 관련 (사이렌) - FEED_DELETED, COMMENT_DELETED 포함
-  if (
-    ["FEED_DELETED", "COMMENT_DELETED", "REPORT", "PENALTY", "SANCTION"].some(
-      (keyword) => type.includes(keyword)
-    )
-  ) {
-    console.log(" -> 신고(사이렌) 아이콘 적용");
-    return (
-      <img
-        src="/icon-report.webp"
-        alt="신고 알림"
-        className="w-10 h-10 object-contain flex-shrink-0"
-      />
-    );
-  }
-
-  // 2. 의료/진료/채팅/예약 관련 (알약) - APPOINTMENT, PRESCRIPTION 등
-  if (
-    [
-      "APPOINTMENT",
-      "PRESCRIPTION",
-      "MEDICINE",
-      "CHAT",
-      "RESERVATION",
-      "DOCTOR",
-    ].some((keyword) => type.includes(keyword))
-  ) {
-    console.log(" -> 의료(알약) 아이콘 적용");
-    return (
-      <img
-        src="/icon-medicine.webp"
-        alt="의료 알림"
-        className="w-10 h-10 object-contain flex-shrink-0"
-      />
-    );
-  }
-
-  // 3. 경매 관련 (망치) - AUCTION, BID, WIN
-  if (["AUCTION", "BID", "WIN"].some((keyword) => type.includes(keyword))) {
-    console.log(" -> 경매(망치) 아이콘 적용");
-    return (
-      <img
-        src="/icon-auction.webp"
-        alt="경매 알림"
-        className="w-10 h-10 object-contain flex-shrink-0"
-      />
-    );
-  }
-
-  // 4. 일반 활동 (기본 프로필 이미지 또는 기본 아이콘)
-  console.log(" -> 일반 유저 프로필 적용");
-  if (actorProfileImage && actorProfileImage.trim() !== "") {
+  // DB에 이미지가 있고, 로드 에러가 안 났을 때 표시
+  if (actorProfileImage && actorProfileImage.trim() !== "" && !hasError) {
     return (
       <img
         src={actorProfileImage}
-        alt="프로필"
-        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          target.style.display = "none";
-          target.parentElement
-            ?.querySelector(".fallback-avatar")
-            ?.classList.remove("hidden");
-        }}
+        alt="알림 아이콘"
+        // 시스템 알림이면 object-contain(비율 유지), 일반 유저면 rounded-full(원형)
+        className={`w-10 h-10 flex-shrink-0 ${
+          isSystemNotification ? "object-contain" : "rounded-full object-cover"
+        }`}
+        onError={() => setHasError(true)} // 이미지 로드 실패 시 에러 상태 true
       />
     );
   }
 
+  // 이미지가 없거나 로드 실패(엑박) 시 기본 아이콘 표시
   return (
     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 fallback-avatar">
       <User className="w-5 h-5 text-gray-400" />

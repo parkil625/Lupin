@@ -51,12 +51,14 @@ public class NotificationEvent {
 
     // 피드 삭제 알림
     public static NotificationEvent feedDeleted(Long targetUserId) {
-        return new NotificationEvent(NotificationType.FEED_DELETED, targetUserId, null, null, null, null, null, null);
+        // [수정] 시스템 알림 이름과 신고 아이콘(/icon-report.webp) 추가
+        return new NotificationEvent(NotificationType.FEED_DELETED, targetUserId, null, "Lupin System", "/icon-report.webp", null, null, null);
     }
 
     // 댓글 삭제 알림
     public static NotificationEvent commentDeleted(Long targetUserId) {
-        return new NotificationEvent(NotificationType.COMMENT_DELETED, targetUserId, null, null, null, null, null, null);
+        // [수정] 시스템 알림 이름과 신고 아이콘(/icon-report.webp) 추가
+        return new NotificationEvent(NotificationType.COMMENT_DELETED, targetUserId, null, "Lupin System", "/icon-report.webp", null, null, null);
     }
 
     /**
@@ -79,10 +81,24 @@ public class NotificationEvent {
                 targetUserId,
                 null,           // 시스템 알림이므로 actorUserId는 null
                 "Lupin Auction", // 알림 보낸 사람 이름 (시스템)
-                null,           // 프로필 이미지 없음
+                "/icon-auction.webp", // [수정] 경매 아이콘(/icon-auction.webp) 적용
                 auctionId,      // 클릭 시 이동할 경매 ID
                 null,           // targetId 없음
                 truncateContent(content)
+        );
+    }
+
+    // [추가] 진료 예약 알림 (시스템 알림 - 의료 아이콘 적용)
+    public static NotificationEvent appointmentReminder(Long targetUserId, Long appointmentId, String message) {
+        return new NotificationEvent(
+                NotificationType.APPOINTMENT_REMINDER,
+                targetUserId,
+                null,
+                "Lupin Health",
+                "/icon-medicine.webp", // [추가] 의료 아이콘(/icon-medicine.webp) 적용
+                appointmentId,
+                null,
+                truncateContent(message)
         );
     }
 }

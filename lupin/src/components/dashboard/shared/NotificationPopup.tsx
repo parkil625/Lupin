@@ -42,9 +42,11 @@ const NotificationIcon = ({ notification }: { notification: Notification }) => {
       <img
         src={actorProfileImage}
         alt="알림 아이콘"
-        // 시스템 알림이면 object-contain(비율 유지), 일반 유저면 rounded-full(원형)
-        className={`w-10 h-10 flex-shrink-0 ${
-          isSystemNotification ? "object-contain" : "rounded-full object-cover"
+        // [수정] 시스템 알림도 rounded-full(원형) 적용 + 배경색 추가
+        className={`w-10 h-10 flex-shrink-0 rounded-full ${
+          isSystemNotification
+            ? "object-contain bg-gray-50 border border-gray-100 p-1" // 시스템: 비율 유지, 여백, 배경
+            : "object-cover" // 유저: 꽉 채우기
         }`}
         onError={() => setHasError(true)} // 이미지 로드 실패 시 에러 상태 true
       />

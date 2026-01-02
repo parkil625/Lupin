@@ -310,7 +310,10 @@ export default function Auction() {
 
             toast.error(errorMessage);
         } finally {
-            setIsBidding(false);
+            //[핵심 수정] 요청이 끝나도 바로 버튼을 풀어주지 말고, 1초 뒤에 풀어줍니다.
+            setTimeout(() => {
+                setIsBidding(false);
+            }, 500);
         }
     };
 

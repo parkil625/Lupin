@@ -54,7 +54,7 @@ INSERT INTO auctions (
 ) VALUES (
              0,
              @now - INTERVAL 1 DAY,
-             @now + INTERVAL 10 HOUR,
+             @now + INTERVAL 9 HOUR,
              false,
              30,
              'ACTIVE',
@@ -68,7 +68,7 @@ SET @active_auction_id := LAST_INSERT_ID();
 INSERT INTO auction_items (item_name, description, item_image, auction_id)
 VALUES (
            '아이패드 프로 12.9형 (6세대)',
-           'M2 칩 탑재, Liquid Retina XDR 디스플레이. 스페이스 그레이 색상 256GB 모델입니다. 미개봉 새상품입니다.',
+           'M2 칩 탑재, Liquid Retina XDR 디스플레이. 스페이스 그레이 색상 256GB 모델입니다.',
            '/auctionActiveImg1.webp',
            @active_auction_id
        );

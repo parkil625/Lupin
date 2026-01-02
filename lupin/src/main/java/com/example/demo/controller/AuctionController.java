@@ -59,7 +59,7 @@ public class AuctionController {
 
         if (!isSuccess) {
             // [수정] 실패 시 200(ok) 대신 409(CONFLICT)를 반환하여 프론트엔드가 에러로 인식하게 함
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("아쉽지만 다른 분이 먼저 입찰했습니다.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("입찰 실패! 다시 시도해 주세요");
         }
 
         return ResponseEntity.ok().body("입찰 성공!");

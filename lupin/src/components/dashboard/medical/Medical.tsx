@@ -778,7 +778,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         handleOpenAppointmentChat
       );
     };
-  }, [appointments]);
+  }, [appointments, doctorProfiles]);
 
   // 진료 종료 이벤트 처리 (환자 측)
   useEffect(() => {

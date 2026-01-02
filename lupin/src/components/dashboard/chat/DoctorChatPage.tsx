@@ -82,9 +82,17 @@ export default function DoctorChatPage() {
   const [showMedicineDialog, setShowMedicineDialog] = useState(false);
 
   // 환자 프로필 아바타 저장 (patientId -> avatarUrl)
-  const [patientAvatars, setPatientAvatars] = useState<Record<number, string>>({});
+  const [patientAvatars, setPatientAvatars] = useState<Record<number, string>>(
+    {}
+  );
   // 환자 활동일 저장 (patientId -> activeDays)
-  const [patientActiveDays, setPatientActiveDays] = useState<Record<number, number>>({});
+  const [patientActiveDays, setPatientActiveDays] = useState<
+    Record<number, number>
+  >({});
+  // 환자 부서 저장 (patientId -> department)
+  const [patientDepartments, setPatientDepartments] = useState<
+    Record<number, string>
+  >({});
 
   // 스크롤 제어용 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -104,71 +112,84 @@ export default function DoctorChatPage() {
 
   // 채팅방 목록 로드 함수 (재사용 가능하도록 별도 함수로 분리)
   // [최적화] 프로필 캐싱 추가 및 불필요한 API 호출 제거
-  const loadChatRooms = useCallback(async (forceReload = false) => {
-    try {
-      if (!currentUserId) return;
+  const loadChatRooms = useCallback(
+    async (forceReload = false) => {
+      try {
+        if (!currentUserId) return;
 
-      const rooms = await chatApi.getChatRooms(currentUserId);
-      // 최신 메시지 순서대로 정렬 (카톡처럼)
-      const sortedRooms = rooms.sort(
-        (a: ChatRoomResponse, b: ChatRoomResponse) => {
-          const timeA = a.lastMessageTime
-            ? new Date(a.lastMessageTime).getTime()
-            : 0;
-          const timeB = b.lastMessageTime
-            ? new Date(b.lastMessageTime).getTime()
-            : 0;
-          return timeB - timeA; // 최신순
-        }
-      );
-      setChatRooms(sortedRooms);
-
-      // [최적화] 캐싱된 프로필이 없는 환자만 로드
-      const newPatientIds = sortedRooms
-        .map((room: ChatRoomResponse) => room.patientId)
-        .filter((patientId: number) =>
-          forceReload || !patientAvatars[patientId]
+        const rooms = await chatApi.getChatRooms(currentUserId);
+        // 최신 메시지 순서대로 정렬 (카톡처럼)
+        const sortedRooms = rooms.sort(
+          (a: ChatRoomResponse, b: ChatRoomResponse) => {
+            const timeA = a.lastMessageTime
+              ? new Date(a.lastMessageTime).getTime()
+              : 0;
+            const timeB = b.lastMessageTime
+              ? new Date(b.lastMessageTime).getTime()
+              : 0;
+            return timeB - timeA; // 최신순
+          }
         );
+        setChatRooms(sortedRooms);
 
-      if (newPatientIds.length === 0) return;
+        // [최적화] 캐싱된 프로필이 없는 환자만 로드
+        const newPatientIds = sortedRooms
+          .map((room: ChatRoomResponse) => room.patientId)
+          .filter(
+            (patientId: number) => forceReload || !patientAvatars[patientId]
+          );
 
-      // [최적화] 병렬 처리 최대 5개씩 제한 (서버 부하 감소)
-      const batchSize = 5;
-      const avatars: Record<number, string> = { ...patientAvatars };
-      const activeDaysMap: Record<number, number> = { ...patientActiveDays };
+        if (newPatientIds.length === 0) return;
 
-      for (let i = 0; i < newPatientIds.length; i += batchSize) {
-        const batch = newPatientIds.slice(i, i + batchSize);
-        await Promise.all(
-          batch.map(async (patientId: number) => {
-            try {
-              const patient = await userApi.getUserById(patientId);
-              if (patient.avatar) {
-                avatars[patientId] = patient.avatar;
-              }
+        // [최적화] 병렬 처리 최대 5개씩 제한 (서버 부하 감소)
+        const batchSize = 5;
+        const avatars: Record<number, string> = { ...patientAvatars };
+        const activeDaysMap: Record<number, number> = { ...patientActiveDays };
+        const departmentsMap: Record<number, string> = {
+          ...patientDepartments,
+        };
 
-              // 활동일 정보 가져오기
+        for (let i = 0; i < newPatientIds.length; i += batchSize) {
+          const batch = newPatientIds.slice(i, i + batchSize);
+          await Promise.all(
+            batch.map(async (patientId: number) => {
               try {
-                const stats = await userApi.getUserStats(patientId);
-                if (stats.activeDays !== undefined) {
-                  activeDaysMap[patientId] = stats.activeDays;
+                const patient = await userApi.getUserById(patientId);
+                if (patient.avatar) {
+                  avatars[patientId] = patient.avatar;
                 }
-              } catch (statsError) {
-                console.error(`환자 ${patientId} 통계 로드 실패:`, statsError);
-              }
-            } catch (error) {
-              console.error(`환자 ${patientId} 프로필 로드 실패:`, error);
-            }
-          })
-        );
-      }
+                if (patient.department) {
+                  departmentsMap[patientId] = patient.department;
+                }
 
-      setPatientAvatars(avatars);
-      setPatientActiveDays(activeDaysMap);
-    } catch (error) {
-      console.error("채팅방 목록 로드 실패:", error);
-    }
-  }, [currentUserId, patientAvatars, patientActiveDays]);
+                // 활동일 정보 가져오기
+                try {
+                  const stats = await userApi.getUserStats(patientId);
+                  if (stats.activeDays !== undefined) {
+                    activeDaysMap[patientId] = stats.activeDays;
+                  }
+                } catch (statsError) {
+                  console.error(
+                    `환자 ${patientId} 통계 로드 실패:`,
+                    statsError
+                  );
+                }
+              } catch (error) {
+                console.error(`환자 ${patientId} 프로필 로드 실패:`, error);
+              }
+            })
+          );
+        }
+
+        setPatientAvatars(avatars);
+        setPatientActiveDays(activeDaysMap);
+        setPatientDepartments(departmentsMap);
+      } catch (error) {
+        console.error("채팅방 목록 로드 실패:", error);
+      }
+    },
+    [currentUserId, patientAvatars, patientActiveDays, patientDepartments]
+  );
 
   const handleMessageReceived = useCallback(
     (message: ChatMessageResponse) => {
@@ -216,7 +237,7 @@ export default function DoctorChatPage() {
   // [bfcache 최적화] 페이지 표시/숨김 이벤트 처리 + 스크롤 위치 복원
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         // 페이지가 다시 보일 때 (뒤로가기 등) 캐시 사용하여 빠르게 로드
         loadChatRooms(false);
       }
@@ -228,7 +249,9 @@ export default function DoctorChatPage() {
         loadChatRooms(false);
 
         // 스크롤 위치 복원
-        const savedScrollPosition = sessionStorage.getItem('doctorChatScrollPosition');
+        const savedScrollPosition = sessionStorage.getItem(
+          "doctorChatScrollPosition"
+        );
         if (savedScrollPosition) {
           setTimeout(() => {
             window.scrollTo(0, parseInt(savedScrollPosition, 10));
@@ -239,17 +262,20 @@ export default function DoctorChatPage() {
 
     const handlePageHide = () => {
       // 스크롤 위치 저장
-      sessionStorage.setItem('doctorChatScrollPosition', window.scrollY.toString());
+      sessionStorage.setItem(
+        "doctorChatScrollPosition",
+        window.scrollY.toString()
+      );
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pageshow', handlePageShow);
-    window.addEventListener('pagehide', handlePageHide);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("pagehide", handlePageHide);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('pagehide', handlePageHide);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("pagehide", handlePageHide);
     };
   }, [loadChatRooms]);
 
@@ -490,7 +516,6 @@ export default function DoctorChatPage() {
         additionalInstructions: instructions || "",
       };
 
-
       // 4. API 호출
       await prescriptionApi.create(requestData);
 
@@ -597,7 +622,9 @@ export default function DoctorChatPage() {
                               setSelectedChatMember({
                                 id: room.patientId,
                                 name: room.patientName,
-                                avatar: patientAvatars[room.patientId] || room.patientName.charAt(0),
+                                avatar:
+                                  patientAvatars[room.patientId] ||
+                                  room.patientName.charAt(0),
                                 age: 0,
                                 gender: "",
                                 lastVisit: "",
@@ -619,7 +646,9 @@ export default function DoctorChatPage() {
                             <div className="flex items-center gap-3 mb-2">
                               <UserHoverCard
                                 name={room.patientName}
-                                department="환자"
+                                department={
+                                  patientDepartments[room.patientId] || "환자"
+                                }
                                 size="sm"
                                 avatarUrl={patientAvatars[room.patientId]}
                                 activeDays={patientActiveDays[room.patientId]}
@@ -637,7 +666,9 @@ export default function DoctorChatPage() {
                                   <div className="flex items-center gap-2 mb-1">
                                     <div
                                       className={`text-xs font-semibold ${
-                                        canEnter ? "text-[#C93831]" : "text-blue-600"
+                                        canEnter
+                                          ? "text-[#C93831]"
+                                          : "text-blue-600"
                                       }`}
                                     >
                                       예약시간 :{" "}
@@ -685,9 +716,19 @@ export default function DoctorChatPage() {
                     <div className="flex items-center gap-3">
                       <UserHoverCard
                         name={selectedChatMember.name}
-                        department="환자"
+                        department={
+                          selectedChatMember.id
+                            ? patientDepartments[selectedChatMember.id] ||
+                              "환자"
+                            : "환자"
+                        }
                         size="md"
                         avatarUrl={selectedChatMember.avatar}
+                        activeDays={
+                          selectedChatMember.id
+                            ? patientActiveDays[selectedChatMember.id]
+                            : undefined
+                        }
                       />
                       <div>
                         <div className="font-bold text-gray-900">
@@ -701,7 +742,7 @@ export default function DoctorChatPage() {
                     </div>
                     <Button
                       onClick={handleFinishConsultation}
-                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold"
+                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold cursor-pointer"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       진료 종료
@@ -735,9 +776,20 @@ export default function DoctorChatPage() {
                             {!isMine && (
                               <UserHoverCard
                                 name={senderDisplayName}
-                                department="환자"
+                                department={
+                                  selectedChatMember?.id
+                                    ? patientDepartments[
+                                        selectedChatMember.id
+                                      ] || "환자"
+                                    : "환자"
+                                }
                                 size="sm"
                                 avatarUrl={selectedChatMember?.avatar}
+                                activeDays={
+                                  selectedChatMember?.id
+                                    ? patientActiveDays[selectedChatMember.id]
+                                    : undefined
+                                }
                               />
                             )}
                             <div
@@ -777,7 +829,7 @@ export default function DoctorChatPage() {
                   <div className="flex gap-2 flex-shrink-0">
                     <Input
                       placeholder="메시지 입력..."
-                      className="rounded-xl border-2 border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
+                      className="rounded-xl bg-white border-2 border-gray-300 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
                       onFocus={handleInputFocus}
@@ -789,7 +841,7 @@ export default function DoctorChatPage() {
                     />
                     <Button
                       onClick={handleSendDoctorChat}
-                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white"
+                      className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white cursor-pointer"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
@@ -823,13 +875,11 @@ export default function DoctorChatPage() {
                       </div>
 
                       <div>
-                        <Label className="text-sm font-bold">
-                          담당 의사
-                        </Label>
+                        <Label className="text-sm font-bold">담당 의사</Label>
                         <Input
                           value={localStorage.getItem("userName") || "의료진"}
                           disabled
-                          className="mt-1 rounded-xl bg-gray-100 text-black disabled:opacity-100 border-2 border-gray-300"
+                          className="mt-1 rounded-xl bg-white text-black disabled:opacity-100 border-2 border-gray-300"
                         />
                       </div>
 
@@ -839,7 +889,7 @@ export default function DoctorChatPage() {
                           value={diagnosis}
                           onChange={(e) => setDiagnosis(e.target.value)}
                           placeholder="예: 급성 상기도 감염"
-                          className="mt-1 rounded-xl placeholder:text-gray-400 border-2 border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
+                          className="mt-1 rounded-xl bg-white placeholder:text-gray-400 border-2 border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                         />
                       </div>
 
@@ -862,7 +912,9 @@ export default function DoctorChatPage() {
                         >
                           <p
                             className={`text-sm whitespace-pre-wrap ${
-                              selectedMedicines.length === 0 ? "text-gray-400" : "text-gray-900"
+                              selectedMedicines.length === 0
+                                ? "text-gray-400"
+                                : "text-gray-900"
                             }`}
                           >
                             {getMedicinesText()}
@@ -876,7 +928,7 @@ export default function DoctorChatPage() {
                           value={instructions}
                           onChange={(e) => setInstructions(e.target.value)}
                           placeholder="하루 3회, 식후 30분에 복용하세요."
-                          className="mt-1 rounded-xl placeholder:text-gray-400 border-2 border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
+                          className="mt-1 rounded-xl bg-white placeholder:text-gray-400 border-2 border-gray-300 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                           rows={4}
                         />
                       </div>
@@ -886,7 +938,7 @@ export default function DoctorChatPage() {
                   <div className="mt-4 pt-4 border-t flex-shrink-0">
                     <Button
                       onClick={handleSavePrescription}
-                      className="w-full h-14 text-lg font-bold bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white"
+                      className="w-full h-14 text-lg font-bold bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white cursor-pointer"
                     >
                       처방전 저장
                     </Button>
@@ -926,7 +978,7 @@ export default function DoctorChatPage() {
                     handleAddMedicine(searchResults[0]);
                   }
                 }}
-                className="rounded-xl border-2 border-gray-300 placeholder:text-gray-400 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
+                className="rounded-xl bg-white border-2 border-gray-300 placeholder:text-gray-400 transition-all duration-200 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#C93831]"
                 autoFocus
               />
             </div>
@@ -1010,7 +1062,7 @@ export default function DoctorChatPage() {
             {/* 닫기 버튼 */}
             <div className="flex justify-end">
               <Button
-                className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold px-6"
+                className="bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all rounded-2xl shadow-lg hover:shadow-xl text-white font-bold px-6 cursor-pointer"
                 onClick={() => setShowMedicineDialog(false)}
               >
                 완료

@@ -49,8 +49,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     []
   );
 
-  // 의사 프로필 정보 저장 (doctorId -> { avatar, activeDays })
-  const [doctorProfiles, setDoctorProfiles] = useState<Record<number, { avatar?: string; activeDays?: number }>>({});
+  // 의사 프로필 정보 저장 (doctorId -> { avatar, activeDays, department })
+  const [doctorProfiles, setDoctorProfiles] = useState<
+    Record<number, { avatar?: string; activeDays?: number; department?: string }>
+  >({});
 
   // -------------------------------------------------------------------------
   // [HEAD] 예약 관련 상태 및 로직 (인라인 예약 기능을 위해 복구)
@@ -233,7 +235,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       try {
         // 채팅 가능 여부 확인
         const available = await appointmentApi.isChatAvailable(appointment.id);
-
         if (!available) {
           const lockMessage = await appointmentApi.getChatLockMessage(
             appointment.id
@@ -245,17 +246,21 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         // 의사 프로필 정보 로드 (없는 경우에만)
         if (!doctorProfiles[appointment.doctorId]) {
           try {
-            const profile = await userApi.getUserById(appointment.doctorId);
-            const stats = await userApi.getUserStats(appointment.doctorId);
-            setDoctorProfiles(prev => ({
+            const [userProfile, userStats] = await Promise.all([
+              userApi.getUserById(appointment.doctorId),
+              userApi.getUserStats(appointment.doctorId),
+            ]);
+
+            setDoctorProfiles((prev) => ({
               ...prev,
               [appointment.doctorId]: {
-                avatar: profile.avatar,
-                activeDays: stats.activeDays,
-              }
+                avatar: userProfile.avatar,
+                activeDays: userStats.activeDays,
+                department: userProfile.department,
+              },
             }));
-          } catch (error) {
-            console.error(`의사 프로필 로드 실패 (ID: ${appointment.doctorId}):`, error);
+          } catch (e) {
+            console.error("의사 프로필 로드 실패", e);
           }
         }
 
@@ -266,7 +271,6 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           type: "진료 상담",
         });
         setIsChatEnded(false);
-        // 메시지는 useEffect에서 roomId 변경 시 자동으로 로드됨
       } catch (error) {
         console.error("채팅 가능 여부 확인 실패:", error);
         toast.error("채팅 시작 중 오류가 발생했습니다.");
@@ -417,8 +421,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           );
           setBookedTimes(updatedBookedTimes);
 
-          // 예약 목록 다시 로드 (서버에서 최신 데이터, viewState 변경 방지)
-          await loadAppointments(true);
+          // 예약 목록 다시 로드 (서버에서 최신 데이터, viewState 변경 방지, 스켈레톤 표시 안 함)
+          await loadAppointments(true, true);
         } catch (error) {
           console.error("예약 목록 갱신 실패:", error);
         }
@@ -574,9 +578,11 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
   // 예약 목록 로드 함수
   const loadAppointments = useCallback(
-    async (skipViewChange = false) => {
+    async (skipViewChange = false, skipLoading = false) => {
       try {
-        setIsLoadingAppointments(true);
+        if (!skipLoading) {
+          setIsLoadingAppointments(true);
+        }
         const data = await appointmentApi.getPatientAppointments(
           currentPatientId
         );
@@ -593,17 +599,18 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         }
 
         // 의사 프로필 로드 (고유한 doctorId만) - 백그라운드에서 처리
-        const uniqueDoctorIds = [...new Set(data.map(apt => apt.doctorId))];
+        const uniqueDoctorIds = [...new Set(data.map((apt) => apt.doctorId))];
         for (const doctorId of uniqueDoctorIds) {
           try {
             const profile = await userApi.getUserById(doctorId);
             const stats = await userApi.getUserStats(doctorId);
-            setDoctorProfiles(prev => ({
+            setDoctorProfiles((prev) => ({
               ...prev,
               [doctorId]: {
                 avatar: profile.avatar,
                 activeDays: stats.activeDays,
-              }
+                department: profile.department,
+              },
             }));
           } catch (error) {
             console.error(`의사 프로필 로드 실패 (ID: ${doctorId}):`, error);
@@ -657,7 +664,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   // [bfcache 최적화] 페이지 표시/숨김 이벤트 처리
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         // 페이지가 다시 보일 때 (뒤로가기 등) 데이터 갱신
         void loadAppointments(true);
         void loadPrescriptions();
@@ -672,12 +679,12 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pageshow', handlePageShow);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pageshow", handlePageShow);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pageshow", handlePageShow);
     };
   }, [loadAppointments, loadPrescriptions]);
 
@@ -739,15 +746,19 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
             try {
               const profile = await userApi.getUserById(appointment.doctorId);
               const stats = await userApi.getUserStats(appointment.doctorId);
-              setDoctorProfiles(prev => ({
+              setDoctorProfiles((prev) => ({
                 ...prev,
                 [appointment.doctorId]: {
                   avatar: profile.avatar,
                   activeDays: stats.activeDays,
-                }
+                  department: profile.department,
+                },
               }));
             } catch (error) {
-              console.error(`의사 프로필 로드 실패 (ID: ${appointment.doctorId}):`, error);
+              console.error(
+                `의사 프로필 로드 실패 (ID: ${appointment.doctorId}):`,
+                error
+              );
             }
           }
 
@@ -879,107 +890,105 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         <div
                           key={i}
                           className="rounded-xl animate-pulse h-24"
-                          style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }}
-                        >
-                        </div>
+                          style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
+                        ></div>
                       ))}
                     </>
-                  ) : appointments
-                    .filter((apt) => {
-                      // 상태 필터 적용
-                      if (
-                        statusFilter !== "ALL" &&
-                        apt.status !== statusFilter
-                      ) {
-                        return false;
-                      }
-
-                      // CANCELLED 상태인 예약은 최대 5개까지만 표시
-                      if (apt.status === "CANCELLED") {
-                        const cancelledAppointments = appointments.filter(
-                          (a) => a.status === "CANCELLED"
-                        );
-                        const cancelledIndex = cancelledAppointments.findIndex(
-                          (a) => a.id === apt.id
-                        );
-                        return cancelledIndex < 5;
-                      }
-                      return true; // 다른 상태는 모두 표시
-                    })
-                    .map((apt) => {
-                      const appointmentDate = new Date(apt.date);
-                      const formattedDate = appointmentDate.toLocaleDateString(
-                        "ko-KR",
-                        {
-                          month: "long",
-                          day: "numeric",
+                  ) : (
+                    appointments
+                      .filter((apt) => {
+                        // 상태 필터 적용
+                        if (
+                          statusFilter !== "ALL" &&
+                          apt.status !== statusFilter
+                        ) {
+                          return false;
                         }
-                      );
-                      const formattedTime = appointmentDate.toLocaleTimeString(
-                        "ko-KR",
-                        {
-                          hour: "numeric",
-                          minute: "2-digit",
+
+                        // CANCELLED 상태인 예약은 최대 5개까지만 표시
+                        if (apt.status === "CANCELLED") {
+                          const cancelledAppointments = appointments.filter(
+                            (a) => a.status === "CANCELLED"
+                          );
+                          const cancelledIndex =
+                            cancelledAppointments.findIndex(
+                              (a) => a.id === apt.id
+                            );
+                          return cancelledIndex < 5;
                         }
-                      );
+                        return true; // 다른 상태는 모두 표시
+                      })
+                      .map((apt) => {
+                        const appointmentDate = new Date(apt.date);
+                        const formattedDate =
+                          appointmentDate.toLocaleDateString("ko-KR", {
+                            month: "long",
+                            day: "numeric",
+                          });
+                        const formattedTime =
+                          appointmentDate.toLocaleTimeString("ko-KR", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          });
 
-                      const statusConfig = {
-                        SCHEDULED: { label: "진료 예정", color: "#7950F2" },
-                        IN_PROGRESS: { label: "진료 중", color: "#20C997" },
-                        COMPLETED: { label: "진료 완료", color: "#868E96" },
-                        CANCELLED: { label: "취소됨", color: "#E03131" },
-                      };
-                      const config = statusConfig[apt.status] || {
-                        label: apt.status,
-                        color: "#868E96",
-                      };
-                      const isScheduled = apt.status === "SCHEDULED";
-                      const isInProgress = apt.status === "IN_PROGRESS";
+                        const statusConfig = {
+                          SCHEDULED: { label: "진료 예정", color: "#7950F2" },
+                          IN_PROGRESS: { label: "진료 중", color: "#20C997" },
+                          COMPLETED: { label: "진료 완료", color: "#868E96" },
+                          CANCELLED: { label: "취소됨", color: "#E03131" },
+                        };
+                        const config = statusConfig[apt.status] || {
+                          label: apt.status,
+                          color: "#868E96",
+                        };
+                        const isScheduled = apt.status === "SCHEDULED";
+                        const isInProgress = apt.status === "IN_PROGRESS";
 
-                      return (
-                        <div
-                          key={apt.id}
-                          onClick={() => handleAppointmentClick(apt)}
-                          className={`p-3 rounded-xl ${
-                            isScheduled || isInProgress
-                              ? "bg-white/80 hover:bg-white cursor-pointer"
-                              : "bg-white/80 cursor-default"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between mb-1">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-bold text-gray-900 text-sm">
-                                {apt.doctorName} 의사
+                        return (
+                          <div
+                            key={apt.id}
+                            onClick={() => handleAppointmentClick(apt)}
+                            className={`p-3 rounded-xl ${
+                              isScheduled || isInProgress
+                                ? "bg-white/80 hover:bg-white cursor-pointer"
+                                : "bg-white/80 cursor-default"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between mb-1">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-bold text-gray-900 text-sm">
+                                  {apt.doctorName} 의사
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  {apt.departmentName || "진료 예약"}
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-600">
-                                {apt.departmentName || "진료 예약"}
-                              </div>
+                              <Badge
+                                style={{ backgroundColor: config.color }}
+                                className="text-white font-bold border-0 text-xs px-3 py-1 whitespace-nowrap flex-shrink-0 ml-2"
+                              >
+                                {config.label}
+                              </Badge>
                             </div>
-                            <Badge
-                              style={{ backgroundColor: config.color }}
-                              className="text-white font-bold border-0 text-xs px-3 py-1 whitespace-nowrap flex-shrink-0 ml-2"
-                            >
-                              {config.label}
-                            </Badge>
+                            <div className="text-xs text-gray-600 font-medium mb-2">
+                              {formattedDate} {formattedTime}
+                            </div>
+                            {isScheduled && (
+                              <Button
+                                size="sm"
+                                onClick={(e) =>
+                                  handleCancelAppointment(apt.id, e)
+                                }
+                                className="w-full rounded-lg text-xs bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white border-0 cursor-pointer"
+                              >
+                                <XCircle className="w-3 h-3 mr-1" />
+                                취소
+                              </Button>
+                            )}
                           </div>
-                          <div className="text-xs text-gray-600 font-medium mb-2">
-                            {formattedDate} {formattedTime}
-                          </div>
-                          {isScheduled && (
-                            <Button
-                              size="sm"
-                              onClick={(e) =>
-                                handleCancelAppointment(apt.id, e)
-                              }
-                              className="w-full rounded-lg text-xs bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white border-0 cursor-pointer"
-                            >
-                              <XCircle className="w-3 h-3 mr-1" />
-                              취소
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                  )}
                 </div>
               </div>
             </Card>
@@ -1001,9 +1010,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         <div
                           key={i}
                           className="rounded-xl animate-pulse h-28"
-                          style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }}
-                        >
-                        </div>
+                          style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
+                        ></div>
                       ))}
                     </>
                   ) : prescriptions.length === 0 ? (
@@ -1049,11 +1057,24 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                   <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4">
                     <div className="flex items-center gap-3">
                       <UserHoverCard
-                        name={activeAppointment?.doctorName || "알 수 없음"}
-                        department="의사"
+                        name={activeAppointment?.doctorName}
+                        department={
+                          activeAppointment?.doctorId
+                            ? doctorProfiles[activeAppointment.doctorId]?.department || "의사"
+                            : "의사"
+                        }
                         size="md"
-                        avatarUrl={activeAppointment?.doctorId ? doctorProfiles[activeAppointment.doctorId]?.avatar : undefined}
-                        activeDays={activeAppointment?.doctorId ? doctorProfiles[activeAppointment.doctorId]?.activeDays : undefined}
+                        avatarUrl={
+                          activeAppointment?.doctorId
+                            ? doctorProfiles[activeAppointment.doctorId]?.avatar
+                            : undefined
+                        }
+                        activeDays={
+                          activeAppointment?.doctorId
+                            ? doctorProfiles[activeAppointment.doctorId]
+                                ?.activeDays
+                            : undefined
+                        }
                       />
                       <div>
                         <div className="font-bold text-gray-900">
@@ -1100,17 +1121,29 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             {!isMine && (
                               <UserHoverCard
                                 name={msg.senderName}
-                                department="의사"
+                                department={
+                                  activeAppointment?.doctorId
+                                    ? doctorProfiles[activeAppointment.doctorId]?.department || "의사"
+                                    : "의사"
+                                }
                                 size="sm"
-                                avatarUrl={activeAppointment?.doctorId ? doctorProfiles[activeAppointment.doctorId]?.avatar : undefined}
-                                activeDays={activeAppointment?.doctorId ? doctorProfiles[activeAppointment.doctorId]?.activeDays : undefined}
+                                avatarUrl={
+                                  activeAppointment?.doctorId
+                                    ? doctorProfiles[activeAppointment.doctorId]
+                                        ?.avatar
+                                    : undefined
+                                }
+                                activeDays={
+                                  activeAppointment?.doctorId
+                                    ? doctorProfiles[activeAppointment.doctorId]
+                                        ?.activeDays
+                                    : undefined
+                                }
                               />
                             )}
                             <div
                               className={`rounded-2xl p-3 max-w-md ${
-                                isMine
-                                  ? "bg-[#C93831] text-white"
-                                  : "bg-white"
+                                isMine ? "bg-[#C93831] text-white" : "bg-white"
                               }`}
                             >
                               {!isMine && (
@@ -1143,7 +1176,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                   <div className="flex gap-2">
                     <Input
                       placeholder="메시지 입력..."
-                      className="rounded-xl border-2 border-gray-300 focus-visible:ring-0 focus-visible:border-[#C93831] transition-all duration-300 placeholder:text-gray-400"
+                      className="rounded-xl bg-white border-2 border-gray-300 focus-visible:ring-0 focus-visible:border-[#C93831] transition-all duration-300 placeholder:text-gray-400"
                       value={chatMessage}
                       onChange={(e) => setChatMessage(e.target.value)}
                       onKeyPress={(e) => {
@@ -1256,146 +1289,156 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             <Card
                               key={i}
                               className="rounded-xl animate-pulse h-40"
-                              style={{ backgroundColor: 'rgba(201, 56, 49, 0.15)' }}
-                            >
-                            </Card>
+                              style={{
+                                backgroundColor: "rgba(201, 56, 49, 0.15)",
+                              }}
+                            ></Card>
                           ))}
                         </>
-                      ) : appointments
-                        .filter(
-                          (apt) =>
-                            apt.status === "SCHEDULED" ||
-                            apt.status === "IN_PROGRESS"
-                        )
-                        .map((apt) => {
-                          const appointmentDate = new Date(apt.date);
-                          const formattedDate =
-                            appointmentDate.toLocaleDateString("ko-KR", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            });
-                          const formattedTime =
-                            appointmentDate.toLocaleTimeString("ko-KR", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            });
+                      ) : (
+                        appointments
+                          .filter(
+                            (apt) =>
+                              apt.status === "SCHEDULED" ||
+                              apt.status === "IN_PROGRESS"
+                          )
+                          .map((apt) => {
+                            const appointmentDate = new Date(apt.date);
+                            const formattedDate =
+                              appointmentDate.toLocaleDateString("ko-KR", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              });
+                            const formattedTime =
+                              appointmentDate.toLocaleTimeString("ko-KR", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              });
 
-                          const statusConfig = {
-                            SCHEDULED: { label: "진료 예정", color: "#7950F2" },
-                            IN_PROGRESS: { label: "진료 중", color: "#20C997" },
-                            COMPLETED: { label: "진료 완료", color: "#868E96" },
-                            CANCELLED: { label: "취소됨", color: "#E03131" },
-                          };
-                          const config = statusConfig[apt.status] || {
-                            label: apt.status,
-                            color: "#868E96",
-                          };
-                          const isScheduled = apt.status === "SCHEDULED";
-                          const isInProgress = apt.status === "IN_PROGRESS";
+                            const statusConfig = {
+                              SCHEDULED: {
+                                label: "진료 예정",
+                                color: "#7950F2",
+                              },
+                              IN_PROGRESS: {
+                                label: "진료 중",
+                                color: "#20C997",
+                              },
+                              COMPLETED: {
+                                label: "진료 완료",
+                                color: "#868E96",
+                              },
+                              CANCELLED: { label: "취소됨", color: "#E03131" },
+                            };
+                            const config = statusConfig[apt.status] || {
+                              label: apt.status,
+                              color: "#868E96",
+                            };
+                            const isScheduled = apt.status === "SCHEDULED";
+                            const isInProgress = apt.status === "IN_PROGRESS";
 
-                          return (
-                            <Card
-                              key={apt.id}
-                              className="p-4 bg-white/80 rounded-xl"
-                            >
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="font-bold text-gray-900 text-sm mb-1">
-                                    {apt.doctorName} 의사
-                                  </h3>
-                                  <p className="text-xs text-gray-600">
-                                    {apt.departmentName || "진료 예약"}
-                                  </p>
-                                </div>
-                                <Badge
-                                  style={{ backgroundColor: config.color }}
-                                  className="text-white font-bold border-0 text-xs px-3 py-1 whitespace-nowrap flex-shrink-0 ml-2"
-                                >
-                                  {config.label}
-                                </Badge>
-                              </div>
-                              <div className="mb-3">
-                                <div className="flex items-center gap-2 text-gray-700 text-xs">
-                                  <Clock className="w-3 h-3" />
-                                  <span className="font-medium">
-                                    {formattedDate} {formattedTime}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="space-y-2">
-                                {isInProgress && (
-                                  <Button
-                                    onClick={() => handleAppointmentClick(apt)}
-                                    className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm border-0 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                            return (
+                              <Card
+                                key={apt.id}
+                                className="p-4 bg-white/80 rounded-xl"
+                              >
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-gray-900 text-sm mb-1">
+                                      {apt.doctorName} 의사
+                                    </h3>
+                                    <p className="text-xs text-gray-600">
+                                      {apt.departmentName || "진료 예약"}
+                                    </p>
+                                  </div>
+                                  <Badge
+                                    style={{ backgroundColor: config.color }}
+                                    className="text-white font-bold border-0 text-xs px-3 py-1 whitespace-nowrap flex-shrink-0 ml-2"
                                   >
-                                    채팅 시작
-                                  </Button>
-                                )}
-                                {isScheduled && (
-                                  <>
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <Button
-                                        onClick={async () => {
-                                          // 1시간 전 체크
-                                          const appointmentDateTime = new Date(
-                                            apt.date
-                                          );
-                                          const now = new Date();
-                                          const diffInMs =
-                                            appointmentDateTime.getTime() -
-                                            now.getTime();
-                                          const oneHourInMs = 60 * 60 * 1000;
+                                    {config.label}
+                                  </Badge>
+                                </div>
+                                <div className="mb-3">
+                                  <div className="flex items-center gap-2 text-gray-700 text-xs">
+                                    <Clock className="w-3 h-3" />
+                                    <span className="font-medium">
+                                      {formattedDate} {formattedTime}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  {isInProgress && (
+                                    <Button
+                                      onClick={() =>
+                                        handleAppointmentClick(apt)
+                                      }
+                                      className="w-full rounded-xl h-10 bg-[#20C997] hover:bg-[#18A37A] text-white font-bold text-sm border-0 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                                    >
+                                      채팅 시작
+                                    </Button>
+                                  )}
+                                  {isScheduled && (
+                                    <>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <Button
+                                          onClick={async () => {
+                                            // 1시간 전 체크
+                                            const appointmentDateTime =
+                                              new Date(apt.date);
+                                            const now = new Date();
+                                            const diffInMs =
+                                              appointmentDateTime.getTime() -
+                                              now.getTime();
+                                            const oneHourInMs = 60 * 60 * 1000;
 
-                                          if (
-                                            diffInMs <= oneHourInMs &&
-                                            diffInMs > 0
-                                          ) {
-                                            toast.error(
-                                              "곧 진료 시간이라 변경이 불가능합니다!"
-                                            );
-                                            return;
-                                          }
-
-                                          try {
-                                            await appointmentApi.cancelAppointment(
-                                              apt.id
-                                            );
-                                            const data =
-                                              await appointmentApi.getPatientAppointments(
-                                                currentPatientId
+                                            if (
+                                              diffInMs <= oneHourInMs &&
+                                              diffInMs > 0
+                                            ) {
+                                              toast.error(
+                                                "곧 진료 시간이라 변경이 불가능합니다!"
                                               );
-                                            setAppointments(data);
-                                            setViewState("FORM");
-                                          } catch (error) {
-                                            console.error(
-                                              "예약 변경 실패:",
-                                              error
-                                            );
-                                            toast.error(
-                                              "예약 변경에 실패했습니다."
-                                            );
+                                              return;
+                                            }
+
+                                            try {
+                                              await appointmentApi.cancelAppointment(
+                                                apt.id
+                                              );
+                                              // 예약 목록 갱신 (스켈레톤 표시 안 함)
+                                              await loadAppointments(true, true);
+                                              setViewState("FORM");
+                                            } catch (error) {
+                                              console.error(
+                                                "예약 변경 실패:",
+                                                error
+                                              );
+                                              toast.error(
+                                                "예약 변경에 실패했습니다."
+                                              );
+                                            }
+                                          }}
+                                          className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0 cursor-pointer"
+                                        >
+                                          예약 변경
+                                        </Button>
+                                        <Button
+                                          onClick={(e) =>
+                                            handleCancelAppointment(apt.id, e)
                                           }
-                                        }}
-                                        className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0 cursor-pointer"
-                                      >
-                                        예약 변경
-                                      </Button>
-                                      <Button
-                                        onClick={(e) =>
-                                          handleCancelAppointment(apt.id, e)
-                                        }
-                                        className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0 cursor-pointer"
-                                      >
-                                        예약 취소
-                                      </Button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </Card>
-                          );
-                        })}
+                                          className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0 cursor-pointer"
+                                        >
+                                          예약 취소
+                                        </Button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </Card>
+                            );
+                          })
+                      )}
                     </div>
                   </div>
                 </div>

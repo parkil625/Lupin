@@ -58,13 +58,16 @@ const ChatDialog = lazy(() => import("./dashboard/dialogs/ChatDialog"));
 const NotFoundPage = lazy(() => import("./errors/NotFoundPage"));
 
 // Stores & APIs
-import {
-  Feed,
-  Notification,
-  ChatMessage,
-} from "@/types/dashboard.types";
+import { Feed, Notification, ChatMessage } from "@/types/dashboard.types";
 import { PrescriptionResponse } from "@/api/prescriptionApi";
-import { feedApi, notificationApi, commentApi, userApi } from "@/api";
+// [수정] FeedResponse 타입 추가 (API 응답 타입 지정용)
+import {
+  feedApi,
+  notificationApi,
+  commentApi,
+  userApi,
+  FeedResponse,
+} from "@/api";
 import { useFeedStore, mapBackendFeed } from "@/store/useFeedStore";
 import { useNotificationSse } from "@/hooks/useNotificationSse";
 
@@ -113,24 +116,7 @@ function useDashboardLogic(
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [targetCommentId, setTargetCommentId] = useState<number | null>(null);
   const [showFeedDetailInHome, setShowFeedDetailInHome] = useState(false);
-
-  // Initial Data Load (Parallel Fetching)
-  useEffect(() => {
-    store.loadMyFeeds();
-    store.loadFeeds(0, true);
-
-    // 비동기 데이터 병렬 로드
-    const fetchData = async () => {
-      try {
-        const notis = await notificationApi.getAllNotifications();
-        if (Array.isArray(notis)) setNotifications(notis);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.refreshTrigger]);
+  // [수정] 여기서 fetchMyFeeds와 useEffect 로직을 제거하고, Dashboard 컴포넌트 내부로 이동시켰습니다.
 
   // SSE Setup
   useNotificationSse({
@@ -307,6 +293,111 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
   } = useDashboardLogic((path) => navigate(path), userType);
 
   const store = useFeedStore();
+
+  // ============================================================================
+  // [Fixed] Logic Moved to Component Level (to fix Reference & Type Errors)
+  // ============================================================================
+
+  // 1. 내 피드 페이지네이션 상태
+  const [myFeedPage, setMyFeedPage] = useState(0);
+  const [hasMoreMyFeeds, setHasMoreMyFeeds] = useState(true);
+  const [isLoadingMyFeeds, setIsLoadingMyFeeds] = useState(false);
+
+  // 2. 데이터 로드 함수 (타입 가드 적용 및 디버깅 로그 추가)
+  const fetchMyFeeds = useCallback(
+    async (page: number, isRefresh = false) => {
+      console.log(
+        `[Dashboard] fetchMyFeeds called. Page: ${page}, isRefresh: ${isRefresh}`
+      );
+
+      // 리프레시가 아니고, 로딩 중이거나 더 이상 데이터가 없으면 중단
+      if (!isRefresh && (isLoadingMyFeeds || !hasMoreMyFeeds)) {
+        console.log(
+          "[Dashboard] fetchMyFeeds skipped (Loading or No more data)"
+        );
+        return;
+      }
+
+      setIsLoadingMyFeeds(true);
+      try {
+        const userId = parseInt(localStorage.getItem("userId") || "1");
+        console.log(`[Dashboard] Fetching feeds for UserID: ${userId}`);
+
+        const res = await feedApi.getFeedsByUserId(userId, page, 10);
+
+        // [방어 코드] 응답이 없거나 content가 없는 경우
+        if (!res || !res.content) {
+          console.warn("[Dashboard] Response or content is null/undefined");
+          if (!isRefresh) setHasMoreMyFeeds(false);
+          return;
+        }
+
+        // [Type Fix] null 값을 필터링하고 타입 단언(Type Guard) 적용
+        // item is FeedResponse 구문이 컴파일러에게 "이 배열에는 null이 없다"고 보장합니다.
+        const validContent = res.content.filter(
+          (item): item is FeedResponse => {
+            if (item === null) {
+              console.warn(
+                "[Dashboard] Found null item in feed list, filtering out."
+              );
+              return false;
+            }
+            return true;
+          }
+        );
+
+        console.log(`[Dashboard] Valid feeds count: ${validContent.length}`);
+
+        // 변환 수행 (validContent는 null이 없으므로 안전함)
+        const newFeeds = validContent.map(mapBackendFeed);
+
+        // 스토어 상태 직접 업데이트
+        useFeedStore.setState((state) => {
+          const updatedFeeds =
+            isRefresh || page === 0
+              ? newFeeds
+              : [...state.myFeeds, ...newFeeds];
+          console.log(
+            `[Dashboard] Store updated. Total MyFeeds: ${updatedFeeds.length}`
+          );
+          return { myFeeds: updatedFeeds };
+        });
+
+        setHasMoreMyFeeds(res.hasNext);
+        setMyFeedPage(page);
+      } catch (e) {
+        console.error("[Dashboard] Failed to load my feeds:", e);
+        setHasMoreMyFeeds(false);
+      } finally {
+        setIsLoadingMyFeeds(false);
+      }
+    },
+    [hasMoreMyFeeds, isLoadingMyFeeds]
+  );
+
+  // 3. Initial Data Load & Effects (Hook에서 가져온 로직 복원)
+  useEffect(() => {
+    console.log("[Dashboard] Initial Load Triggered");
+
+    // [수정] store.loadMyFeeds() 대신 위에서 정의한 함수 호출
+    fetchMyFeeds(0, true);
+    store.loadFeeds(0, true);
+
+    // 알림 등 비동기 데이터 병렬 로드
+    const fetchData = async () => {
+      try {
+        const notis = await notificationApi.getAllNotifications();
+        if (Array.isArray(notis)) {
+          setNotifications(notis);
+          console.log(`[Dashboard] Notifications loaded: ${notis.length}`);
+        }
+      } catch (e) {
+        console.error("[Dashboard] Failed to load notifications:", e);
+      }
+    };
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.refreshTrigger]);
 
   // Local UI States
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -661,6 +752,10 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
                 notifications.filter((n) => !n.isRead).length
               }
               onNotificationClick={() => setShowNotifications(true)}
+              // [추가] 무한 스크롤 Props 전달
+              onLoadMore={() => fetchMyFeeds(myFeedPage + 1)}
+              hasMore={hasMoreMyFeeds}
+              isLoading={isLoadingMyFeeds}
             />
           )}
           {selectedNav === "feed" && (
@@ -696,9 +791,7 @@ export default function Dashboard({ onLogout, userType }: DashboardProps) {
           )}
           {selectedNav === "auction" && <AuctionView />}
           {selectedNav === "medical" && (
-            <MedicalView
-              setSelectedPrescription={setSelectedPrescription}
-            />
+            <MedicalView setSelectedPrescription={setSelectedPrescription} />
           )}
           {selectedNav === "chat" && <DoctorChatPage />}
           {selectedNav === "create" && (

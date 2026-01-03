@@ -10,7 +10,7 @@
  * 6. 이미지 페이로드 최적화: srcset + blur placeholder + WebP
  */
 
-import { useState, useEffect, useMemo, useCallback, memo } from "react";
+import { useState, useEffect, useMemo, useCallback, memo, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
@@ -29,6 +29,7 @@ import {
   Plus,
   Coins,
   Bell,
+  Loader2, // [추가] 로딩 아이콘
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { userApi, feedApi, getThumbnailUrl, getCdnUrl } from "@/api";
@@ -111,6 +112,10 @@ interface HomeProps {
   refreshTrigger?: number;
   unreadNotificationCount?: number;
   onNotificationClick?: () => void;
+  // [추가] 무한 스크롤 Props
+  onLoadMore: () => void;
+  hasMore: boolean;
+  isLoading: boolean;
 }
 
 interface UserApiResponse {
@@ -362,9 +367,34 @@ export default function Home({
   refreshTrigger,
   unreadNotificationCount = 0,
   onNotificationClick,
+  onLoadMore, // [추가]
+  hasMore, // [추가]
+  isLoading, // [추가]
 }: HomeProps) {
   const { stats, canPost, loading } = useHomeData(myFeeds, refreshTrigger);
-  const isMobile = useIsMobile(); // [추가] 현재 뷰포트가 모바일인지 확인
+  const isMobile = useIsMobile();
+
+  // [추가] 무한 스크롤 감지용 Ref 및 Observer 설정
+  const observerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 화면에 보이고, 더 불러올 데이터가 있고, 로딩 중이 아닐 때 실행
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: "100px" } // 하단 100px 남았을 때 미리 로드
+    );
+
+    const currentRef = observerRef.current;
+    if (currentRef) observer.observe(currentRef);
+
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, [hasMore, isLoading, onLoadMore]);
 
   // [최적화 7] LCP 이미지 Preload - 뷰포트에 따라 동적 로딩
   // 모바일(2열): 2개, PC(최대 5열): 5개 우선 로드
@@ -626,10 +656,21 @@ export default function Home({
                 key={feed.id}
                 feed={feed}
                 onFeedClick={handleFeedClick}
-                // [수정] 뷰포트에 따른 적응형 우선순위 주입 (모바일: 2, PC: 5)
                 isPriority={index < (isMobile ? 2 : 5)}
               />
             ))}
+          </div>
+
+          {/* [추가] 무한 스크롤 감지 영역 (Sentinel) 및 로더 */}
+          <div
+            ref={observerRef}
+            className="w-full h-24 flex items-center justify-center py-4"
+          >
+            {isLoading && (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-[#C93831]" />
+              </div>
+            )}
           </div>
         </div>
       </div>

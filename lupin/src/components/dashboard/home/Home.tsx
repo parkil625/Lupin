@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Feed } from "@/types/dashboard.types";
 import { userApi, feedApi, getThumbnailUrl, getCdnUrl } from "@/api";
+import { useIsMobile } from "@/components/ui/use-mobile";
 
 // ============================================================================
 // [0] Image Optimization Utilities
@@ -152,13 +153,14 @@ const FeedItem = memo(
     feed,
     index,
     onFeedClick,
+    isPriority, // [추가] 부모로부터 우선순위 여부 주입
   }: {
     feed: Feed;
     index: number;
     onFeedClick: (feedId: number) => void;
+    isPriority: boolean; // [추가] 타입 정의
   }) => {
-    // 상위 4개 이미지는 즉시 로딩
-    const isPriority = index < 4;
+    // [제거] 내부 하드코딩 로직 삭제 (const isPriority = index < 4;)
 
     // [수정] 원본 이미지 URL 확인
     const originalUrl = feed.images?.[0];
@@ -364,11 +366,18 @@ export default function Home({
   onNotificationClick,
 }: HomeProps) {
   const { stats, canPost, loading } = useHomeData(myFeeds, refreshTrigger);
+  const isMobile = useIsMobile(); // [추가] 현재 뷰포트가 모바일인지 확인
 
-  // [최적화 7] LCP 이미지 Preload - 상위 2개 피드 이미지
-  // 모바일에서 상단 2개 피드가 완전히 보이므로 이 이미지들을 우선 로드
+  // [최적화 7] LCP 이미지 Preload - 뷰포트에 따라 동적 로딩
+  // 모바일(2열): 2개, PC(최대 5열): 5개 우선 로드
   useEffect(() => {
-    const feedsToPreload = myFeeds.slice(0, 2);
+    // [디버깅] 현재 감지된 환경 및 프리로딩 개수 확인
+    const preloadCount = isMobile ? 2 : 5;
+    console.debug(
+      `[Home] Image Preloading Strategy: ${isMobile ? "Mobile(2)" : "PC(5)"}`
+    );
+
+    const feedsToPreload = myFeeds.slice(0, preloadCount);
     const links: HTMLLinkElement[] = [];
 
     feedsToPreload.forEach((feed) => {
@@ -620,6 +629,8 @@ export default function Home({
                 feed={feed}
                 index={index}
                 onFeedClick={handleFeedClick}
+                // [수정] 뷰포트에 따른 적응형 우선순위 주입 (모바일: 2, PC: 5)
+                isPriority={index < (isMobile ? 2 : 5)}
               />
             ))}
           </div>

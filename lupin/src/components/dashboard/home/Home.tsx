@@ -151,14 +151,12 @@ interface UserStats {
 const FeedItem = memo(
   ({
     feed,
-    index,
     onFeedClick,
-    isPriority, // [추가] 부모로부터 우선순위 여부 주입
+    isPriority,
   }: {
     feed: Feed;
-    index: number;
     onFeedClick: (feedId: number) => void;
-    isPriority: boolean; // [추가] 타입 정의
+    isPriority: boolean;
   }) => {
     // [제거] 내부 하드코딩 로직 삭제 (const isPriority = index < 4;)
 
@@ -627,7 +625,6 @@ export default function Home({
               <FeedItem
                 key={feed.id}
                 feed={feed}
-                index={index}
                 onFeedClick={handleFeedClick}
                 // [수정] 뷰포트에 따른 적응형 우선순위 주입 (모바일: 2, PC: 5)
                 isPriority={index < (isMobile ? 2 : 5)}

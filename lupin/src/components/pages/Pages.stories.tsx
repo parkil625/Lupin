@@ -265,6 +265,11 @@ export const HomePage: Story = {
           setShowFeedDetailInHome={setShowFeedDetail}
           onCreateClick={() => setShowCreateDialog(true)}
           refreshTrigger={0}
+          onLoadMore={() =>
+            console.log("[Storybook] Home - onLoadMore triggered")
+          }
+          hasMore={true}
+          isLoading={false}
         />
 
         <FeedDetailDialogHome

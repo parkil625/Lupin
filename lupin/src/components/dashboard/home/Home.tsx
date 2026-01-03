@@ -393,7 +393,7 @@ export default function Home({
     return () => {
       links.forEach((link) => link.remove());
     };
-  }, [myFeeds]);
+  }, [myFeeds, isMobile]); // [수정] isMobile 의존성 추가
 
   // [최적화 1] useCallback으로 핸들러 참조 고정 - 메모이제이션 완성
   // 이전 문제: onClick={() => ...}가 매번 새로운 함수를 생성하여 FeedItem의 memo가 무력화됨

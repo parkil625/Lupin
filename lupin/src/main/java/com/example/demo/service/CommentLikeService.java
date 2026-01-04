@@ -47,6 +47,9 @@ public class CommentLikeService {
 
         CommentLike savedCommentLike = commentLikeRepository.save(commentLike);
 
+        // [추가] 댓글 엔티티의 좋아요 수 즉시 증가 (Write-Through 패턴 적용)
+        comment.incrementLikeCount();
+
         // [최적화] 이벤트 발행 - 트랜잭션 커밋 후 비동기 알림 처리
         eventPublisher.publishEvent(NotificationEvent.commentLike(
                 comment.getWriter().getId(),
@@ -70,6 +73,10 @@ public class CommentLikeService {
 
         // 1. 좋아요 데이터 삭제
         commentLikeRepository.delete(commentLike);
+
+        // [추가] 댓글 엔티티의 좋아요 수 즉시 감소 (Write-Through 패턴 적용)
+        comment.decrementLikeCount();
+
         log.info(">>> [CommentLike Service] Deleted like for commentId: {}, userId: {}", commentId, user.getId());
 
         // 2. [핵심] 알림 뭉치기 대응 로직

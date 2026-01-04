@@ -45,4 +45,20 @@ public interface FeedAdminRepository extends JpaRepository<Feed, Long> {
         )
         """, nativeQuery = true)
     int syncCommentCounts();
+
+    /**
+     * [추가] 댓글 좋아요 카운트 동기화
+     * 댓글 테이블(comments.like_count)과 실제 좋아요 테이블(comment_likes)의 개수 불일치를 보정
+     */
+    @Modifying(clearAutomatically = true)
+    @Query(value = """
+        UPDATE comments c
+        SET like_count = (
+            SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id
+        )
+        WHERE c.like_count <> (
+            SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id
+        )
+        """, nativeQuery = true)
+    int syncCommentLikeCounts();
 }

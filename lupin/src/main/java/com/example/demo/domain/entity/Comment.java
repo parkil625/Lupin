@@ -89,4 +89,20 @@ public class Comment {
             throw new BusinessException(ErrorCode.COMMENT_NOT_OWNER);
         }
     }
+
+    // [추가] 좋아요 카운트 증감 메서드 (Service에서 호출하여 실시간 동기화)
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
+
+    // [추가] 배치/스케줄러에서 강제 동기화 시 사용 (DB 실제 데이터로 덮어쓰기)
+    public void syncLikeCount(int realCount) {
+        this.likeCount = realCount;
+    }
 }

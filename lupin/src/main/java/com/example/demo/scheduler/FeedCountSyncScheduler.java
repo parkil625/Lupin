@@ -23,10 +23,13 @@ public class FeedCountSyncScheduler {
     public void syncFeedCounts() {
         int likeCountUpdated = feedAdminRepository.syncLikeCounts();
         int commentCountUpdated = feedAdminRepository.syncCommentCounts();
+        
+        // [추가] 댓글 좋아요 수 동기화 실행
+        int commentLikeCountUpdated = feedAdminRepository.syncCommentLikeCounts();
 
-        if (likeCountUpdated > 0 || commentCountUpdated > 0) {
-            log.info("피드 카운트 동기화 완료 - 좋아요: {}개, 댓글: {}개 업데이트",
-                    likeCountUpdated, commentCountUpdated);
+        if (likeCountUpdated > 0 || commentCountUpdated > 0 || commentLikeCountUpdated > 0) {
+            log.info("데이터 카운트 동기화 완료 - 피드좋아요: {}개, 피드댓글: {}개, 댓글좋아요: {}개 업데이트",
+                    likeCountUpdated, commentCountUpdated, commentLikeCountUpdated);
         }
     }
 }

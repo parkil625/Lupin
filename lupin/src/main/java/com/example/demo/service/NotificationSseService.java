@@ -47,16 +47,17 @@ public class NotificationSseService {
     // [최종 수정] Cloudflare의 Brotli 압축을 무력화하기 위한 '고엔트로피' 무작위 데이터
     // 단순 반복 문자열은 압축되면 100바이트 미만으로 줄어들어 버퍼링을 뚫지 못합니다.
     // 매번 다른 UUID를 조합하여 약 10KB 이상의 압축 불가능한 데이터를 만듭니다.
-    private static final String DUMMY_DATA;
+    // 2026-01-04: Cloudflare 설정 변경으로 더 이상 패딩이 필요 없어 주석 처리함. (by 선일)
+    // private static final String DUMMY_DATA;
     
-    static {
-        StringBuilder sb = new StringBuilder();
-        // UUID(36자) * 300개 = 약 10,800 바이트 (10KB 이상)
-        for (int i = 0; i < 300; i++) {
-            sb.append(java.util.UUID.randomUUID().toString());
-        }
-        DUMMY_DATA = sb.toString();
-    }
+    // static {
+    //     StringBuilder sb = new StringBuilder();
+    //     // UUID(36자) * 300개 = 약 10,800 바이트 (10KB 이상)
+    //     for (int i = 0; i < 300; i++) {
+    //         sb.append(java.util.UUID.randomUUID().toString());
+    //     }
+    //     DUMMY_DATA = sb.toString();
+    // }
 
     // 전용 스케줄러 (내부 관리 - Bean 충돌 방지)
     private ThreadPoolTaskScheduler heartbeatScheduler;
@@ -110,12 +111,16 @@ public class NotificationSseService {
             synchronized (emitter) {
                 try {
                     // [수정] 하트비트에도 5KB 패딩을 붙여 연결이 살아있음을 즉시 전송 (버퍼링 방지)
+                    // 2026-01-04: 패딩 제거 (Cloudflare 설정 해결)
                     emitter.send(SseEmitter.event()
                             .name("heartbeat")
-                            .data("ping")
-                            .comment(DUMMY_DATA));
+                            .data("ping"));
+                            // .comment(DUMMY_DATA)); // 주석 처리
+                    
+                    // 로그 레벨을 debug로 낮춤 (너무 자주 찍히므로)
+                    log.trace("[SSE Heartbeat] 핑 전송 완료: userId={}", userId);
                 } catch (IOException e) {
-                    log.debug("Heartbeat 전송 실패, 연결 제거: userId={}", userId);
+                    log.debug("[SSE Heartbeat] 전송 실패, 연결 제거: userId={}", userId);
                     deadConnections.add(userId);
                 }
             }
@@ -165,12 +170,15 @@ public class NotificationSseService {
 
         // [수정] 연결 즉시 버퍼를 뚫어주어야 함 (매우 중요: 브라우저가 연결 성공을 바로 인지하도록)
         try {
+            // 2026-01-04: 패딩 제거
             emitter.send(SseEmitter.event()
                     .name("connect")
-                    .data("connected")
-                    .comment(DUMMY_DATA)); // [핵심] 5KB 패딩으로 초기 연결 즉시 전송
+                    .data("connected"));
+                    // .comment(DUMMY_DATA)); // [핵심] 5KB 패딩으로 초기 연결 즉시 전송 (주석 처리)
+            
+            log.info("[SSE Connect] 초기 연결 이벤트 전송 성공 (패딩 없음): userId={}", userId);
         } catch (IOException e) {
-            log.error("SSE 초기 이벤트 전송 실패: userId={}", userId, e);
+            log.error("[SSE Connect] 초기 이벤트 전송 실패: userId={}", userId, e);
             emitters.remove(userId);
         }
 
@@ -280,12 +288,12 @@ public class NotificationSseService {
                 // 이벤트명: "notification-delete", 데이터: ID 리스트
                 emitter.send(SseEmitter.event()
                         .name("notification-delete")
-                        .data(notificationIds)
-                        .comment(DUMMY_DATA)); // [수정] 5KB 패딩 적용 (확실한 전송 보장)
+                        .data(notificationIds));
+                        // .comment(DUMMY_DATA)); // [수정] 5KB 패딩 적용 (확실한 전송 보장) -> 주석 처리
 
-                log.info("SSE 알림 삭제 전송 성공: userId={}, ids={}", userId, notificationIds);
+                log.info("[SSE Delete] 알림 삭제 전송 성공: userId={}, ids={}, (패딩 없음)", userId, notificationIds);
             } catch (IOException e) {
-                log.error("SSE 알림 삭제 전송 실패: userId={}", userId, e);
+                log.error("[SSE Delete] 알림 삭제 전송 실패: userId={}", userId, e);
                 emitters.remove(userId);
             }
         }
@@ -318,13 +326,13 @@ public class NotificationSseService {
                 emitter.send(SseEmitter.event()
                         .id(String.valueOf(notification.getId()))
                         .name("notification")
-                        .data(notification)
-                        .comment(DUMMY_DATA)); // [수정] 5KB 패딩 적용 (즉시 전송 보장)
+                        .data(notification));
+                        // .comment(DUMMY_DATA)); // [수정] 5KB 패딩 적용 (즉시 전송 보장) -> 주석 처리
                 
-                log.info("SSE 알림 전송 성공: userId={}, type={}, eventId={}",
+                log.info("[SSE Send] 알림 전송 성공: userId={}, type={}, eventId={}, (패딩 없음)",
                         userId, notification.getType(), notification.getId());
             } catch (IOException e) {
-                log.error("SSE 알림 전송 실패: userId={}", userId, e);
+                log.error("[SSE Send] 알림 전송 실패: userId={}", userId, e);
                 emitters.remove(userId);
             }
         }

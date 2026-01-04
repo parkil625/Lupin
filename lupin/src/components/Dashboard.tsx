@@ -129,10 +129,11 @@ function useDashboardLogic(
       });
 
       // 토스트 메시지도 ID를 지정하여 중복 쌓임을 방지
-      toast.info(n.title, {
-        id: `noti-${n.id}`,
-        description: n.content,
-      });
+      // [수정] 2026-01-04: 토스트 스타일 문제로 잠시 비활성화 (by 선일)
+      // toast.info(n.title, {
+      //   id: `noti-${n.id}`,
+      //   description: n.content,
+      // });
     }, []),
     // [추가] 알림 삭제 이벤트 처리
     onNotificationDeleted: useCallback((ids: number[]) => {

@@ -71,9 +71,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   } | null>(null);
   const [isChatEnded, setIsChatEnded] = useState(false);
 
-  // 예약 화면 상태 (채팅이 없으면 기본으로 예약 화면 표시)
+  // 예약 화면 상태 (초기값은 "LIST"로 설정하여 예약이 있으면 즉시 표시)
   const [viewState, setViewState] = useState<"FORM" | "SUCCESS" | "LIST">(
-    "FORM"
+    "LIST"
   );
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -312,10 +312,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       };
       setAppointments((prev) => [newAppointment, ...prev]);
 
-      // 성공 화면으로 전환
-      setViewState("SUCCESS");
+      // 즉시 LIST 뷰로 전환하여 생성된 예약을 바로 보여줌
+      setViewState("LIST");
 
-      // 약간의 딜레이 후 서버에서 최신 데이터 조회 (Redis 캐시 무효화 대기)
+      // 최소한의 딜레이 후 서버에서 최신 데이터 조회
       setTimeout(async () => {
         try {
           const dateStr = formatDateToString(selectedDate);
@@ -330,7 +330,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         } catch (error) {
           console.error("예약 목록 갱신 실패:", error);
         }
-      }, 500);
+      }, 200);
     } catch (error) {
       console.error("❌ 예약 생성 실패:", error);
       toast.error("예약 생성에 실패했습니다. 다시 시도해주세요.");
@@ -492,14 +492,13 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         );
         setAppointments(data);
 
-        // 예약이 있으면 즉시 LIST 뷰로 전환 (초기 마운트 시에만)
-        if (
-          !skipViewChange &&
-          isInitialMount.current &&
-          data.length > 0 &&
-          viewState === "FORM"
-        ) {
-          setViewState("LIST");
+        // 초기 마운트 시 viewState 결정: 예약이 있으면 LIST, 없으면 FORM
+        if (!skipViewChange && isInitialMount.current) {
+          if (data.length > 0) {
+            setViewState("LIST");
+          } else {
+            setViewState("FORM");
+          }
         }
 
         // 의사 프로필 로드 (고유한 doctorId만) - 백그라운드에서 처리
@@ -527,7 +526,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         setIsLoadingAppointments(false);
       }
     },
-    [currentPatientId, viewState]
+    [currentPatientId]
   );
 
   // 처방전 로드 함수

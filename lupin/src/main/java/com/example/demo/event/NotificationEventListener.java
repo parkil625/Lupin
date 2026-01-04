@@ -72,9 +72,9 @@ public class NotificationEventListener {
                     newTitle = event.getActorName() + "님 외 " + (likeCount - 1) + "명이 회원님의 게시물을 좋아합니다.";
                 }
 
-                // [수정] ID 대신 User 객체로 조회 (JPA 매핑 문제 해결)
+                // [수정] 읽음 여부 상관없이 최신 알림 조회 (Smart Threading)
                 java.util.Optional<Notification> existingOpt = notificationRepository
-                        .findTopByUserAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
+                        .findTopByUserAndTypeAndRefIdOrderByCreatedAtDesc(
                                 targetUser,
                                 event.getType(),
                                 String.valueOf(event.getRefId())
@@ -82,10 +82,18 @@ public class NotificationEventListener {
 
                 if (existingOpt.isPresent()) {
                     Notification existing = existingOpt.get();
-                    log.info("[Notification] 기존 알림 뭉치기 (ID: {}). Count: {}", existing.getId(), likeCount);
+                    log.info("[Notification] 기존 알림 뭉치기 & 위로 올리기 (ID: {}). Count: {}", existing.getId(), likeCount);
 
-                    // 기존 알림 업데이트: 타이틀(뭉친 메시지), 프로필이미지(최신 누른 사람), 시간(Now)
+                    // 1. 내용 및 프로필 이미지 업데이트
                     existing.updateForAggregation(newTitle, event.getActorProfileImage());
+                    
+                    // 2. [핵심] 다시 '안 읽음' 상태로 변경하여 강조 (Recycle)
+                    existing.setRead(false);
+                    
+                    // 3. [핵심] 생성 시간을 현재로 갱신하여 리스트 최상단으로 이동 (Bump Up)
+                    // 주의: Notification 엔티티의 createdAt 필드가 수정 가능해야 합니다. (@CreatedDate updatable=true 확인 필요)
+                    existing.setCreatedAt(java.time.LocalDateTime.now());
+
                     savedNotification = notificationRepository.save(existing);
                 } else {
                     // 기존 알림 없으면 신규 생성

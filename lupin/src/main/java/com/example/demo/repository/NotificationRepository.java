@@ -72,9 +72,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("SELECT COUNT(n) > 0 FROM Notification n WHERE n.user.id = :userId AND n.type = :type AND n.refId = :refId")
     boolean existsByUserIdAndTypeAndRefId(@Param("userId") Long userId, @Param("type") NotificationType type, @Param("refId") String refId);
 
-    // [추가] 알림 뭉치기용: 특정 타겟(Feed 등)에 대해 읽지 않은 최신 알림 1건 조회
-    // UserId(Long) 대신 User 객체로 조회하여 매핑 정확도 향상
-    java.util.Optional<Notification> findTopByUserAndTypeAndRefIdAndIsReadFalseOrderByCreatedAtDesc(
+    // [수정] 알림 뭉치기용: 읽음 여부와 상관없이 가장 최신 알림 1건 조회 (Smart Threading)
+    // 읽었더라도 다시 합쳐서 안 읽음 상태로 만들기 위해 IsReadFalse 조건 제거
+    java.util.Optional<Notification> findTopByUserAndTypeAndRefIdOrderByCreatedAtDesc(
             User user,
             NotificationType type,
             String refId

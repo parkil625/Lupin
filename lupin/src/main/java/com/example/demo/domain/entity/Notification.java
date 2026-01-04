@@ -53,6 +53,15 @@ public class Notification {
         this.isRead = true;
     }
 
+    // [추가] 컴파일 에러 해결을 위한 Setter 메서드
+    public void setRead(boolean isRead) {
+        this.isRead = isRead;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     // [추가] 알림 뭉치기/갱신을 위한 비즈니스 메서드
     public void updateForAggregation(String title, String actorProfileImage) {
         this.title = title;

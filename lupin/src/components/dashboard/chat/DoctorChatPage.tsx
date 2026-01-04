@@ -9,7 +9,7 @@
  *    - chatRooms에서 올바른 roomId를 가져와 사용
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,8 @@ import { prescriptionApi } from "@/api/prescriptionApi";
 import { appointmentApi } from "@/api/appointmentApi";
 import { userApi } from "@/api/userApi";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
+import { formatChatTime, canEnterChatRoom } from "./utils";
+import { MAX_MEDICINES, MAX_INSTRUCTIONS_LENGTH, CHAT_ROOMS_REFRESH_INTERVAL, PROFILE_BATCH_SIZE } from "./constants";
 
 interface Medicine {
   id: number;
@@ -40,32 +42,6 @@ interface Medicine {
   description?: string;
   precautions?: string;
 }
-
-// 시간 포맷 함수 (카톡 스타일)
-const formatChatTime = (timeString?: string) => {
-  if (!timeString) return "";
-
-  const messageTime = new Date(timeString);
-  const today = new Date();
-
-  // 오늘인지 확인
-  const isToday = messageTime.toDateString() === today.toDateString();
-
-  if (isToday) {
-    // 오늘이면 시간만 표시 (오후 3:45)
-    return messageTime.toLocaleTimeString("ko-KR", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  } else {
-    // 오늘이 아니면 날짜 표시 (12월 11일)
-    return messageTime.toLocaleDateString("ko-KR", {
-      month: "long",
-      day: "numeric",
-    });
-  }
-};
 
 export default function DoctorChatPage() {
   const currentUserId = parseInt(localStorage.getItem("userId") || "0");
@@ -96,6 +72,13 @@ export default function DoctorChatPage() {
 
   // 스크롤 제어용 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 필터링된 채팅방 목록 (useMemo로 최적화)
+  const filteredChatRooms = useMemo(() => {
+    return chatRooms.filter(
+      (room) => room.status === "IN_PROGRESS" || room.status === "SCHEDULED"
+    );
+  }, [chatRooms]);
 
   // 처방전 폼 상태
   const [prescriptionDate] = useState(
@@ -142,7 +125,7 @@ export default function DoctorChatPage() {
         if (newPatientIds.length === 0) return;
 
         // [최적화] 병렬 처리 최대 5개씩 제한 (서버 부하 감소)
-        const batchSize = 5;
+        const batchSize = PROFILE_BATCH_SIZE;
         const avatars: Record<number, string> = { ...patientAvatars };
         const activeDaysMap: Record<number, number> = { ...patientActiveDays };
         const departmentsMap: Record<number, string> = {
@@ -229,7 +212,7 @@ export default function DoctorChatPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       loadChatRooms(false); // 캐시된 프로필 사용
-    }, 180000); // 3분마다 갱신
+    }, CHAT_ROOMS_REFRESH_INTERVAL);
 
     return () => clearInterval(interval);
   }, [loadChatRooms]);
@@ -278,25 +261,6 @@ export default function DoctorChatPage() {
       window.removeEventListener("pagehide", handlePageHide);
     };
   }, [loadChatRooms]);
-
-  // 예약 시간 5분 전부터 입장 가능한지 확인하는 함수
-  const canEnterChatRoom = (appointmentTime?: string, status?: string) => {
-    // 이미 진료 중이면 무조건 입장 가능
-    if (status === "IN_PROGRESS") return true;
-
-    // 예약 예정 상태인 경우, 예약 시간 5분 전부터 입장 가능
-    if (status === "SCHEDULED" && appointmentTime) {
-      const appointmentDate = new Date(appointmentTime);
-      const now = new Date();
-      const fiveMinutesBefore = new Date(
-        appointmentDate.getTime() - 5 * 60 * 1000
-      );
-
-      return now >= fiveMinutesBefore;
-    }
-
-    return false;
-  };
 
   // 알림 클릭 시 채팅창 자동 오픈 (5분 전 알림)
   useEffect(() => {
@@ -446,8 +410,8 @@ export default function DoctorChatPage() {
   // 약품 추가 (클릭 또는 엔터)
   const handleAddMedicine = (medicine: Medicine) => {
     // 약품 개수 제한 체크 (최대 5개)
-    if (selectedMedicines.length >= 5) {
-      toast.error("약품은 최대 5개까지 선택할 수 있습니다.");
+    if (selectedMedicines.length >= MAX_MEDICINES) {
+      toast.error(`약품은 최대 ${MAX_MEDICINES}개까지 선택할 수 있습니다.`);
       return;
     }
 
@@ -586,22 +550,12 @@ export default function DoctorChatPage() {
               </h3>
               <div className="flex-1 overflow-y-auto custom-scrollbar">
                 <div className="space-y-3 pr-2">
-                  {chatRooms.filter(
-                    (room) =>
-                      room.status === "IN_PROGRESS" ||
-                      room.status === "SCHEDULED"
-                  ).length === 0 ? (
+                  {filteredChatRooms.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500">
                       예약된 채팅방이 없습니다
                     </div>
                   ) : (
-                    chatRooms
-                      .filter(
-                        (room) =>
-                          room.status === "IN_PROGRESS" ||
-                          room.status === "SCHEDULED"
-                      )
-                      .map((room) => {
+                    filteredChatRooms.map((room) => {
                         // activeRoomId로 선택 여부 판단
                         const isSelected = activeRoomId === room.roomId;
 
@@ -912,7 +866,7 @@ export default function DoctorChatPage() {
                             className="text-xs text-blue-600 hover:text-blue-700"
                           >
                             <Edit2 className="w-3 h-3 mr-1" />
-                            약품 선택 ({selectedMedicines.length}/5개)
+                            약품 선택 ({selectedMedicines.length}/{MAX_MEDICINES}개)
                           </Button>
                         </div>
                         <div
@@ -935,16 +889,16 @@ export default function DoctorChatPage() {
                         <div className="flex items-center justify-between mb-2">
                           <Label className="text-sm font-bold">복용 방법</Label>
                           <span className="text-xs text-gray-500">
-                            {instructions.length}/1000자
+                            {instructions.length}/{MAX_INSTRUCTIONS_LENGTH}자
                           </span>
                         </div>
                         <Textarea
                           value={instructions}
                           onChange={(e) => {
-                            if (e.target.value.length <= 1000) {
+                            if (e.target.value.length <= MAX_INSTRUCTIONS_LENGTH) {
                               setInstructions(e.target.value);
                             } else {
-                              toast.error("복용 방법은 최대 1000자까지 입력할 수 있습니다.");
+                              toast.error(`복용 방법은 최대 ${MAX_INSTRUCTIONS_LENGTH}자까지 입력할 수 있습니다.`);
                             }
                           }}
                           placeholder="하루 3회, 식후 30분에 복용하세요."

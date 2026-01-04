@@ -17,8 +17,8 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
     private NotificationRepository notificationRepository;
 
     @Test
-    @DisplayName("사용자의 알림을 최신순으로 조회한다")
-    void findByUserIdOrderByCreatedAtDescTest() {
+    @DisplayName("사용자의 알림을 최신순으로 조회한다 (15일 이내)")
+    void findByUserIdAndCreatedAtAfterTest() {
         // given
         User user = createAndSaveUser("user1");
         User otherUser = createAndSaveUser("user2");
@@ -29,7 +29,8 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
         createAndSaveNotification(otherUser, NotificationType.FEED_LIKE, "다른 사용자 알림");
 
         // when - userId만 사용하여 detached entity 문제 방지
-        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
+        // 테스트 환경이므로 넉넉하게 30일 전 데이터부터 조회
+        List<Notification> notifications = notificationRepository.findByUserIdAndCreatedAtAfter(user.getId(), java.time.LocalDateTime.now().minusDays(30));
 
         // then
         assertThat(notifications).hasSize(3);
@@ -80,7 +81,7 @@ class NotificationRepositoryTest extends BaseRepositoryTest {
         notificationRepository.deleteByRefIdAndTypeIn(feedId, List.of(NotificationType.FEED_LIKE, NotificationType.COMMENT));
 
         // then - userId만 사용하여 detached entity 문제 방지
-        List<Notification> remaining = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
+        List<Notification> remaining = notificationRepository.findByUserIdAndCreatedAtAfter(user.getId(), java.time.LocalDateTime.now().minusDays(30));
         assertThat(remaining).hasSize(3);
         assertThat(remaining).extracting("type")
                 .containsExactlyInAnyOrder(NotificationType.COMMENT_LIKE, NotificationType.REPLY, NotificationType.FEED_LIKE);

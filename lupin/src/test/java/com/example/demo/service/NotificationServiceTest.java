@@ -67,7 +67,8 @@ class NotificationServiceTest {
                 .build();
 
         // userId만 사용하여 detached entity 문제 방지
-        given(notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId()))
+        // 날짜 파라미터(cutoffDate)는 어떤 값이든(any) 허용하도록 설정
+        given(notificationRepository.findByUserIdAndCreatedAtAfter(org.mockito.ArgumentMatchers.eq(user.getId()), org.mockito.ArgumentMatchers.any(java.time.LocalDateTime.class)))
                 .willReturn(List.of(notification1, notification2));
 
         // when

@@ -21,9 +21,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId ORDER BY n.createdAt DESC")
     Slice<Notification> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 
-    // [N+1 해결] JOIN FETCH n.user 추가 - 알림 조회 시 사용자 정보까지 한방 쿼리로 로딩
-    @Query("SELECT n FROM Notification n JOIN FETCH n.user WHERE n.user.id = :userId ORDER BY n.createdAt DESC, n.id DESC")
-    List<Notification> findByUserIdOrderByCreatedAtDescIdDesc(@Param("userId") Long userId);
+    // [N+1 해결] JOIN FETCH n.user 추가 + [최적화] 15일 이내 데이터만 조회 (스케줄러 갭 보완)
+    @Query("SELECT n FROM Notification n JOIN FETCH n.user WHERE n.user.id = :userId AND n.createdAt >= :cutoffDate ORDER BY n.createdAt DESC, n.id DESC")
+    List<Notification> findByUserIdAndCreatedAtAfter(@Param("userId") Long userId, @Param("cutoffDate") LocalDateTime cutoffDate);
 
     // [최적화] 존재 확인 (userId만 사용하여 detached entity 문제 방지)
     @Query("SELECT COUNT(n) > 0 FROM Notification n WHERE n.user.id = :userId AND n.isRead = false")

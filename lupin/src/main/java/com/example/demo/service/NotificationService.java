@@ -49,7 +49,9 @@ public class NotificationService {
 
         // user.getId()만 사용하여 detached entity (@Version null) 문제 방지
         // Repository에서 JOIN FETCH로 user 정보를 함께 가져옵니다.
-        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDescIdDesc(user.getId());
+        // [수정] 15일 이내의 알림만 조회 (스케줄러 삭제 전이라도 안 보이게 처리)
+        java.time.LocalDateTime cutoffDate = java.time.LocalDateTime.now().minusDays(15);
+        List<Notification> notifications = notificationRepository.findByUserIdAndCreatedAtAfter(user.getId(), cutoffDate);
         
         long duration = System.currentTimeMillis() - startTime;
         log.info("<<< [NotificationService] Fetched {} notifications in {}ms", notifications.size(), duration);

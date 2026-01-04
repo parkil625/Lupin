@@ -237,10 +237,11 @@ jobs:
             sudo docker-compose -f docker-compose.prod.yml down
             sudo docker-compose -f docker-compose.prod.yml up -d
 
-            # (디스크 꽉 참 방지: 사용하지 않는 이미지(dangling)만 삭제)
-            # 주의: system prune -af는 중지된 컨테이너도 삭제하므로 디버깅이 불가능해짐
+            # (디스크 꽉 참 방지: 실행 중이지 않은 '모든' 이미지 삭제)
+            # -a (all) 옵션을 추가하여, 태그가 붙어있는 구버전 이미지도 과감하게 삭제합니다.
+            # 현재 실행 중인 컨테이너(방금 배포한 최신 버전)의 이미지는 삭제되지 않으니 안심하세요.
             echo ">>> [Deploy] Cleaning up unused images..."
-            sudo docker image prune -f
+            sudo docker image prune -af
             echo ">>> [Deploy] Cleanup completed."
 
       - name: Deployment result

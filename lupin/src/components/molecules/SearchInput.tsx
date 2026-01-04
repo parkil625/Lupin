@@ -42,21 +42,21 @@ export default function SearchInput({
         onChange={(e) => onChange(e.target.value)}
         onFocus={(e) => {
           setIsFocused(true);
-          e.target.style.boxShadow = '0 0 20px 5px rgba(201, 56, 49, 0.35)';
+          e.target.style.boxShadow = "0 0 20px 5px rgba(201, 56, 49, 0.35)";
         }}
         onBlur={(e) => {
           setTimeout(() => setIsFocused(false), 200);
-          e.target.style.boxShadow = '';
+          e.target.style.boxShadow = "";
         }}
         className="w-full h-10 pl-12 pr-14 text-sm backdrop-blur-xl bg-white/40 border-2 border-gray-300 rounded-full shadow-sm transition-all duration-300 focus:border-[#C93831] focus:outline-none focus:ring-0"
-        style={{ paddingLeft: '44px', outline: 'none' }}
+        style={{ paddingLeft: "44px", outline: "none" }}
       />
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-300/80 hover:bg-gray-400/80 flex items-center justify-center z-10"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors z-10"
         >
-          <X className="w-6 h-6 text-gray-600" />
+          <X className="w-5 h-5" />
         </button>
       )}
 
@@ -73,7 +73,9 @@ export default function SearchInput({
               className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-gray-100/80 transition-colors text-left"
             >
               <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <span className="text-sm text-gray-700 truncate">{suggestion}</span>
+              <span className="text-sm text-gray-700 truncate">
+                {suggestion}
+              </span>
             </button>
           ))}
         </div>

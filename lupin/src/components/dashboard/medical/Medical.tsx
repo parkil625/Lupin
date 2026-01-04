@@ -6,7 +6,7 @@
  * - 우측: 실시간 채팅 또는 진료 예약.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ import { userApi } from "@/api/userApi";
 import { prescriptionApi, PrescriptionResponse } from "@/api/prescriptionApi";
 import { toast } from "sonner";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
+import { AVAILABLE_TIMES, DEPARTMENT_NAMES, STATUS_CONFIG } from "./constants";
+import { isPastDate, isPastTime as utilIsPastTime, formatDateToString, formatDateTime } from "./utils";
 
 interface MedicalProps {
   setSelectedPrescription: (prescription: PrescriptionResponse | null) => void;
@@ -84,99 +86,37 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     time: string;
   } | null>(null);
 
-  // 한국 공휴일 (2024년 기준)
-  const holidays = [
-    new Date(2024, 0, 1), // 신정
-    new Date(2024, 1, 9), // 설날 연휴
-    new Date(2024, 1, 10), // 설날
-    new Date(2024, 1, 11), // 설날 연휴
-    new Date(2024, 2, 1), // 삼일절
-    new Date(2024, 4, 5), // 어린이날
-    new Date(2024, 4, 15), // 부처님 오신 날
-    new Date(2024, 5, 6), // 현충일
-    new Date(2024, 7, 15), // 광복절
-    new Date(2024, 8, 16), // 추석 연휴
-    new Date(2024, 8, 17), // 추석
-    new Date(2024, 8, 18), // 추석 연휴
-    new Date(2024, 9, 3), // 개천절
-    new Date(2024, 9, 9), // 한글날
-    new Date(2024, 11, 25), // 크리스마스
-    // 2025년
-    new Date(2025, 0, 1), // 신정
-    new Date(2025, 0, 28), // 설날 연휴
-    new Date(2025, 0, 29), // 설날
-    new Date(2025, 0, 30), // 설날 연휴
-    new Date(2025, 2, 1), // 삼일절
-    new Date(2025, 4, 5), // 어린이날
-    new Date(2025, 4, 5), // 부처님 오신 날
-    new Date(2025, 5, 6), // 현충일
-    new Date(2025, 7, 15), // 광복절
-    new Date(2025, 9, 3), // 개천절
-    new Date(2025, 9, 5), // 추석 연휴
-    new Date(2025, 9, 6), // 추석
-    new Date(2025, 9, 7), // 추석 연휴
-    new Date(2025, 9, 9), // 한글날
-    new Date(2025, 11, 25), // 크리스마스
-  ];
-
-  // 공휴일인지 확인
-  const isHoliday = (date: Date) => {
-    return holidays.some(
-      (holiday) =>
-        holiday.getFullYear() === date.getFullYear() &&
-        holiday.getMonth() === date.getMonth() &&
-        holiday.getDate() === date.getDate()
-    );
-  };
-
-  // 지난 날짜인지 확인
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const isPastDate = (date: Date) => {
-    const dateOnly = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
-    return dateOnly < today;
-  };
-
-  // 오늘인지 확인
-  const isToday = (date: Date | undefined) => {
-    if (!date) return false;
-    return (
-      date.getFullYear() === now.getFullYear() &&
-      date.getMonth() === now.getMonth() &&
-      date.getDate() === now.getDate()
-    );
-  };
-
-  // 시간이 지났는지 확인 (오늘인 경우만)
-  const isPastTime = (time: string) => {
-    if (!selectedDate || !isToday(selectedDate)) return false;
-    const [hours, minutes] = time.split(":").map(Number);
-    const currentHours = now.getHours();
-    const currentMinutes = now.getMinutes();
-    return (
-      hours < currentHours ||
-      (hours === currentHours && minutes <= currentMinutes)
-    );
-  };
-
-  // 예약 가능 시간
-  const availableTimes = [
-    "09:00",
-    "10:00",
-    "11:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-  ];
-
   // 채팅방이 활성화되어야 하는지 확인
   const hasActiveChat = activeAppointment !== null && !isChatEnded;
+
+  // 필터링된 예약 목록 (useMemo로 최적화)
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((apt) => {
+      // 상태 필터 적용
+      if (statusFilter !== "ALL" && apt.status !== statusFilter) {
+        return false;
+      }
+
+      // CANCELLED 상태인 예약은 최대 5개까지만 표시
+      if (apt.status === "CANCELLED") {
+        const cancelledAppointments = appointments.filter(
+          (a) => a.status === "CANCELLED"
+        );
+        const cancelledIndex = cancelledAppointments.findIndex(
+          (a) => a.id === apt.id
+        );
+        return cancelledIndex < 5;
+      }
+      return true; // 다른 상태는 모두 표시
+    });
+  }, [appointments, statusFilter]);
+
+  // 활성 예약 목록 (SCHEDULED 또는 IN_PROGRESS만)
+  const activeAppointments = useMemo(() => {
+    return appointments.filter(
+      (apt) => apt.status === "SCHEDULED" || apt.status === "IN_PROGRESS"
+    );
+  }, [appointments]);
 
   // 선택된 진료과와 날짜가 변경될 때 예약된 시간 조회
   useEffect(() => {
@@ -187,17 +127,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       }
 
       try {
-        // 진료과 한글 이름 매핑
-        const departmentNames: Record<string, string> = {
-          internal: "내과",
-          surgery: "외과",
-          psychiatry: "신경정신과",
-          dermatology: "피부과",
-          thoracic_surgery: "흉부외과",
-          obstetrics_gynecology: "산부인과",
-        };
-
-        const departmentKoreanName = departmentNames[selectedDepartment];
+        const departmentKoreanName = DEPARTMENT_NAMES[selectedDepartment];
 
         // 의사 조회
         const doctors = await userApi.getDoctorsByDepartment(
@@ -211,12 +141,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
         // 첫 번째 의사의 예약된 시간 조회
         const doctorId = doctors[0].id;
-        // 로컬 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 문제 방지)
-        const year = selectedDate.getFullYear();
-        const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-        const day = String(selectedDate.getDate()).padStart(2, "0");
-        const dateStr = `${year}-${month}-${day}`;
-
+        const dateStr = formatDateToString(selectedDate);
         const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
         setBookedTimes(booked);
       } catch (error) {
@@ -319,9 +244,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     if (!selectedDepartment || !selectedDate || !selectedTime) return;
 
     // 예약 개수 제한 체크 (SCHEDULED 상태인 예약만 카운트)
-    const activeAppointmentsCount = appointments.filter(
-      (apt) => apt.status === "SCHEDULED" || apt.status === "IN_PROGRESS"
-    ).length;
+    const activeAppointmentsCount = activeAppointments.length;
 
     if (activeAppointmentsCount >= 5) {
       toast.error(
@@ -330,17 +253,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       return;
     }
 
-    // 진료과 한글 이름 매핑
-    const departmentNames: Record<string, string> = {
-      internal: "내과",
-      surgery: "외과",
-      psychiatry: "신경정신과",
-      dermatology: "피부과",
-      thoracic_surgery: "흉부외과",
-      obstetrics_gynecology: "산부인과",
-    };
-
-    const departmentKoreanName = departmentNames[selectedDepartment];
+    const departmentKoreanName = DEPARTMENT_NAMES[selectedDepartment];
 
     // 의사 조회
     let selectedDoctor: { id: number; name: string; department: string };
@@ -365,15 +278,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
     try {
       // 날짜 + 시간 조합 (로컬 시간 유지)
-      const [hours, minutes] = selectedTime.split(":").map(Number);
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-      const day = String(selectedDate.getDate()).padStart(2, "0");
-      const hoursStr = String(hours).padStart(2, "0");
-      const minutesStr = String(minutes).padStart(2, "0");
-
-      // ISO 8601 형식이지만 타임존 정보 없이 로컬 시간으로 전송
-      const dateTimeStr = `${year}-${month}-${day}T${hoursStr}:${minutesStr}:00`;
+      const dateTimeStr = formatDateTime(selectedDate, selectedTime);
 
       // 백엔드 API 호출
       const appointmentId = await appointmentApi.createAppointment({
@@ -413,11 +318,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       // 약간의 딜레이 후 서버에서 최신 데이터 조회 (Redis 캐시 무효화 대기)
       setTimeout(async () => {
         try {
-          // 로컬 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 문제 방지)
-          const year = selectedDate.getFullYear();
-          const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-          const day = String(selectedDate.getDate()).padStart(2, "0");
-          const dateStr = `${year}-${month}-${day}`;
+          const dateStr = formatDateToString(selectedDate);
           const updatedBookedTimes = await appointmentApi.getBookedTimes(
             selectedDoctor.id,
             dateStr
@@ -898,30 +799,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                       ))}
                     </>
                   ) : (
-                    appointments
-                      .filter((apt) => {
-                        // 상태 필터 적용
-                        if (
-                          statusFilter !== "ALL" &&
-                          apt.status !== statusFilter
-                        ) {
-                          return false;
-                        }
-
-                        // CANCELLED 상태인 예약은 최대 5개까지만 표시
-                        if (apt.status === "CANCELLED") {
-                          const cancelledAppointments = appointments.filter(
-                            (a) => a.status === "CANCELLED"
-                          );
-                          const cancelledIndex =
-                            cancelledAppointments.findIndex(
-                              (a) => a.id === apt.id
-                            );
-                          return cancelledIndex < 5;
-                        }
-                        return true; // 다른 상태는 모두 표시
-                      })
-                      .map((apt) => {
+                    filteredAppointments.map((apt) => {
                         const appointmentDate = new Date(apt.date);
                         const formattedDate =
                           appointmentDate.toLocaleDateString("ko-KR", {
@@ -934,13 +812,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                             minute: "2-digit",
                           });
 
-                        const statusConfig = {
-                          SCHEDULED: { label: "진료 예정", color: "#7950F2" },
-                          IN_PROGRESS: { label: "진료 중", color: "#20C997" },
-                          COMPLETED: { label: "진료 완료", color: "#868E96" },
-                          CANCELLED: { label: "취소됨", color: "#E03131" },
-                        };
-                        const config = statusConfig[apt.status] || {
+                        const config = STATUS_CONFIG[apt.status as keyof typeof STATUS_CONFIG] || {
                           label: apt.status,
                           color: "#868E96",
                         };
@@ -1303,13 +1175,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                           ))}
                         </>
                       ) : (
-                        appointments
-                          .filter(
-                            (apt) =>
-                              apt.status === "SCHEDULED" ||
-                              apt.status === "IN_PROGRESS"
-                          )
-                          .map((apt) => {
+                        activeAppointments.map((apt) => {
                             const appointmentDate = new Date(apt.date);
                             const formattedDate =
                               appointmentDate.toLocaleDateString("ko-KR", {
@@ -1323,22 +1189,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                 minute: "2-digit",
                               });
 
-                            const statusConfig = {
-                              SCHEDULED: {
-                                label: "진료 예정",
-                                color: "#7950F2",
-                              },
-                              IN_PROGRESS: {
-                                label: "진료 중",
-                                color: "#20C997",
-                              },
-                              COMPLETED: {
-                                label: "진료 완료",
-                                color: "#868E96",
-                              },
-                              CANCELLED: { label: "취소됨", color: "#E03131" },
-                            };
-                            const config = statusConfig[apt.status] || {
+                            const config = STATUS_CONFIG[apt.status as keyof typeof STATUS_CONFIG] || {
                               label: apt.status,
                               color: "#868E96",
                             };
@@ -1525,15 +1376,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                           setSelectedDate(date);
                           setSelectedTime(""); // 날짜 변경 시 시간 초기화
                         }}
-                        disabled={(date) => isPastDate(date) || isHoliday(date)}
-                        modifiers={{
-                          holiday: holidays,
-                        }}
-                        modifiersStyles={{
-                          holiday: {
-                            color: "#C93831",
-                          },
-                        }}
+                        disabled={(date) => isPastDate(date)}
                         className="rounded-xl border [&_button]:cursor-pointer bg-white"
                       />
                     </div>
@@ -1545,9 +1388,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                           시간 선택
                         </Label>
                         <div className="grid grid-cols-4 gap-2">
-                          {availableTimes.map((time) => {
+                          {AVAILABLE_TIMES.map((time) => {
                             const isBooked = bookedTimes.includes(time);
-                            const isPast = isPastTime(time);
+                            const isPast = utilIsPastTime(time, selectedDate);
                             const isDisabled = isBooked || isPast;
                             const isSelected = selectedTime === time;
                             return (

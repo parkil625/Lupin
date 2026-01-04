@@ -397,7 +397,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       if (message.senderId !== currentUserId) {
         toast.success("새 메시지가 도착했습니다");
 
-        // 처방전 발급 메시지인 경우 처방전 목록 새로고침
+        // 처방전 발급 메시지인 경우 처방전 목록 새로고침 (스켈레톤 표시 안 함)
         if (message.content.includes("처방전")) {
           try {
             // [중요] DB 저장 완료까지 0.5초 대기 후 조회 (Race Condition 방지)
@@ -531,9 +531,11 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   );
 
   // 처방전 로드 함수
-  const loadPrescriptions = useCallback(async () => {
+  const loadPrescriptions = useCallback(async (skipLoading = false) => {
     try {
-      setIsLoadingPrescriptions(true);
+      if (!skipLoading) {
+        setIsLoadingPrescriptions(true);
+      }
       const data = await prescriptionApi.getPatientPrescriptions(
         currentPatientId
       );
@@ -542,16 +544,17 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       // 에러 발생 시 빈 배열로 설정 (500 에러 무시)
       setPrescriptions([]);
     } finally {
-      setIsLoadingPrescriptions(false);
+      if (!skipLoading) {
+        setIsLoadingPrescriptions(false);
+      }
     }
   }, [currentPatientId]);
 
   // 초기 예약 목록 및 처방전 로드 + 1분마다 예약 목록 자동 갱신
   useEffect(() => {
-    // 초기 로드를 IIFE로 감싸서 cascading render 방지
+    // 초기 로드를 병렬로 처리하여 빠르게 로딩
     (async () => {
-      await loadAppointments();
-      await loadPrescriptions();
+      await Promise.all([loadAppointments(), loadPrescriptions()]);
 
       // 초기 마운트 완료 표시
       isInitialMount.current = false;
@@ -571,7 +574,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       if (document.visibilityState === "visible") {
         // 페이지가 다시 보일 때 (뒤로가기 등) 데이터 갱신 (스켈레톤 표시 안 함)
         void loadAppointments(true, true);
-        void loadPrescriptions();
+        void loadPrescriptions(true);
       }
     };
 
@@ -579,7 +582,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       if (event.persisted) {
         // bfcache에서 복원된 경우 (스켈레톤 표시 안 함)
         void loadAppointments(true, true);
-        void loadPrescriptions();
+        void loadPrescriptions(true);
       }
     };
 
@@ -598,16 +601,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       const customEvent = event as CustomEvent<{ patientId: number }>;
       const { patientId } = customEvent.detail;
 
-      // 현재 환자의 처방전인 경우에만 새로고침
+      // 현재 환자의 처방전인 경우에만 새로고침 (스켈레톤 표시 안 함)
       if (patientId === currentPatientId) {
-        try {
-          const data = await prescriptionApi.getPatientPrescriptions(
-            currentPatientId
-          );
-          setPrescriptions(data);
-        } catch {
-          setPrescriptions([]);
-        }
+        await loadPrescriptions(true);
       }
     };
 
@@ -619,7 +615,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         handlePrescriptionCreated
       );
     };
-  }, [currentPatientId]);
+  }, [currentPatientId, loadPrescriptions]);
 
   // 알림에서 채팅방 자동 오픈 이벤트 처리
   useEffect(() => {
@@ -793,9 +789,19 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                       {[1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="rounded-xl animate-pulse h-24"
-                          style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
-                        ></div>
+                          className="p-3 rounded-xl bg-white/80"
+                          style={{ minHeight: "96px" }}
+                        >
+                          <div className="flex items-start justify-between mb-1">
+                            <div className="flex-1">
+                              <div className="h-4 bg-gray-200 rounded animate-pulse mb-1 w-2/3"></div>
+                              <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                            </div>
+                            <div className="h-6 w-16 bg-gray-200 rounded animate-pulse ml-2"></div>
+                          </div>
+                          <div className="h-3 bg-gray-200 rounded animate-pulse mb-2 w-1/3"></div>
+                          <div className="h-8 bg-gray-200 rounded animate-pulse w-full"></div>
+                        </div>
                       ))}
                     </>
                   ) : (
@@ -884,9 +890,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                       {[1, 2].map((i) => (
                         <div
                           key={i}
-                          className="rounded-xl animate-pulse h-28"
-                          style={{ backgroundColor: "rgba(201, 56, 49, 0.15)" }}
-                        ></div>
+                          className="p-3 rounded-xl bg-white/80 border border-gray-200"
+                          style={{ minHeight: "112px" }}
+                        >
+                          <div className="h-5 bg-gray-200 rounded animate-pulse mb-1 w-3/4"></div>
+                          <div className="h-4 bg-gray-200 rounded animate-pulse mb-1 w-1/2"></div>
+                          <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-1/3"></div>
+                          <div className="h-8 bg-gray-200 rounded animate-pulse w-full"></div>
+                        </div>
                       ))}
                     </>
                   ) : prescriptions.length === 0 ? (

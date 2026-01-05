@@ -22,10 +22,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -805,6 +808,74 @@ class AuctionServiceTest {
 
         // 4. 알림 이벤트 발행 확인
         verify(eventPublisher).publishEvent(any(NotificationEvent.class));
+    }
+
+    @Test
+    @DisplayName("입찰 시 SSE 메시지가 서울 시간대(ISO_OFFSET_DATE_TIME) 포맷으로 전송되어야 한다")
+    void placeBid_Success() {
+        // given
+        Long auctionId = 1L;
+        Long userId = 1L;
+        Long bidAmount = 11000L;
+        LocalDateTime bidTime = LocalDateTime.of(2026, 1, 5, 20, 30, 0); // 테스트용 시간
+
+
+        User user = User.builder()
+                .id(userId)
+                .name("테스터")
+                .totalPoints(1000L)
+                .build();
+
+
+        // Auction & User Mocking
+        Auction auction = Auction.builder()
+                .id(1L)
+                .currentPrice(1000L)
+                .status(AuctionStatus.ACTIVE)
+                .startTime(LocalDateTime.now().minusHours(2))
+                .regularEndTime(LocalDateTime.now().minusMinutes(1))
+                .winner(user)
+                .build();
+
+
+
+        // Repository Stubbing
+        given(auctionRepository.findById(auctionId)).willReturn(Optional.of(auction));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // Redis Stubbing (RBucket Mocking)
+        RBucket<String> rBucket = mock(RBucket.class);
+        given(redissonClient.<String>getBucket(anyString(), any(StringCodec.class))).willReturn(rBucket);
+
+        // when
+        auctionService.placeBid(auctionId, userId, bidAmount, bidTime);
+
+        // then
+        // 1. 입찰 저장 확인
+        verify(auctionBidRepository).save(any(AuctionBid.class));
+
+        // 2. 스케줄러 업데이트 확인
+        verify(auctionTaskScheduler).scheduleAuctionEnd(eq(auctionId), any(LocalDateTime.class));
+
+        // 3. SSE 메시지 검증 (핵심 변경 사항)
+        ArgumentCaptor<AuctionSseMessage> messageCaptor = ArgumentCaptor.forClass(AuctionSseMessage.class);
+        verify(auctionSseService).broadcast(messageCaptor.capture());
+
+        AuctionSseMessage capturedMessage = messageCaptor.getValue();
+
+        // [검증 포인트] 날짜가 "Asia/Seoul" 타임존과 ISO 포맷으로 변환되었는지 확인
+        String expectedBidTime = bidTime.atZone(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+        String expectedEndTime = auction.getEndTime().atZone(ZoneId.of("Asia/Seoul"))
+                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+        assertThat(capturedMessage.getBidTime()).isEqualTo(expectedBidTime);
+        assertThat(capturedMessage.getNewEndTime()).isEqualTo(expectedEndTime);
+
+        // 기타 데이터 검증
+        assertThat(capturedMessage.getCurrentPrice()).isEqualTo(bidAmount);
+        assertThat(capturedMessage.getBidderId()).isEqualTo(userId);
     }
 
     // 편의 메서드 (Auction에 setAuctionItem이 없는 경우를 대비한 헬퍼)

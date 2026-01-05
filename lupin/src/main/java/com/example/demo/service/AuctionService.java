@@ -27,8 +27,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,12 +93,22 @@ public class AuctionService {
                 .bidderId(user.getId())
                 .currentPrice(auction.getCurrentPrice()) // 갱신된 가격
                 .bidderName(user.getName())              // 입찰자 이름
-                .bidTime(bidTime.toString())             // 입찰 시간
-                .newEndTime(auction.getEndTime().toString()) // 연장된 종료 시간
+                .bidTime(bidTime.atZone(ZoneId.of("Asia/Seoul")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+                .newEndTime(auction.getEndTime().atZone(ZoneId.of("Asia/Seoul")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
                 .totalBids(auction.getTotalBids())
                 .build();
 
-        auctionSseService.broadcast(message);
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    auctionSseService.broadcast(message);
+                }
+            });
+        } else {
+            // 트랜잭션이 없는 경우라면 그냥 바로 보냄 (혹시 모를 방어 코드)
+            auctionSseService.broadcast(message);
+        }
     }
 
     // 경매 시작 시간이 된 경매 active 시켜주는 메소드

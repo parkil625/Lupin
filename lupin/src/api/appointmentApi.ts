@@ -60,6 +60,14 @@ export const appointmentApi = {
   },
 
   /**
+   * 예약 변경
+   * PUT /api/appointment/{appointmentId}/reschedule
+   */
+  rescheduleAppointment: async (appointmentId: number, request: AppointmentRequest): Promise<void> => {
+    await apiClient.put(`/appointment/${appointmentId}/reschedule`, request);
+  },
+
+  /**
    * 진료 완료
    * PUT /api/appointment/{appointmentId}/complete
    */

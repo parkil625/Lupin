@@ -60,6 +60,15 @@ public class AppointmentController {
         return ResponseEntity.ok("예약이 취소되었습니다.");
     }
 
+    @PutMapping("/{appointmentId}/reschedule")
+    public ResponseEntity<String> rescheduleAppointment(
+            @PathVariable Long appointmentId,
+            @Valid @RequestBody AppointmentRequest request) {
+        log.info("예약 변경 요청 - appointmentId: {}, newDate: {}", appointmentId, request.getDate());
+        appointmentService.rescheduleAppointment(appointmentId, request.getDate());
+        return ResponseEntity.ok("예약이 변경되었습니다.");
+    }
+
     @PutMapping("/{appointmentId}/complete")
     public ResponseEntity<String> completeAppointment(@PathVariable Long appointmentId) {
         appointmentService.completeConsultation(appointmentId);

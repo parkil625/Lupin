@@ -162,6 +162,65 @@ public class AppointmentService {
     }
 
     @Transactional
+    public void rescheduleAppointment(Long appointmentId, LocalDateTime newDate) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
+
+        Long doctorId = appointment.getDoctor().getId();
+        LocalDate oldDate = appointment.getDate().toLocalDate();
+        LocalDate newDateOnly = newDate.toLocalDate();
+
+        // Redis 분산 락을 사용하여 동시성 제어
+        String lockKey = APPOINTMENT_LOCK_PREFIX + doctorId + ":" + newDate;
+        RLock lock = redissonClient.getLock(lockKey);
+
+        try {
+            boolean isLocked = lock.tryLock(LOCK_WAIT_TIME, LOCK_LEASE_TIME, TimeUnit.SECONDS);
+            if (!isLocked) {
+                throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS,
+                    "다른 사용자가 예약 중입니다. 잠시 후 다시 시도해주세요.");
+            }
+
+            // 의사의 새 시간대 예약 여부 확인
+            if (appointmentRepository.existsByDoctorIdAndDate(doctorId, newDate)) {
+                throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS,
+                    "해당 의사의 해당 시간에 예약이 이미 꽉 찼습니다.");
+            }
+
+            // 예약 시간 변경
+            appointment.reschedule(newDate);
+
+            // 트랜잭션 커밋 후 Redis 캐시 무효화 (기존 날짜와 새 날짜 모두)
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        invalidateBookedTimesCache(doctorId, oldDate);
+                        if (!oldDate.equals(newDateOnly)) {
+                            invalidateBookedTimesCache(doctorId, newDateOnly);
+                        }
+                        log.info("예약 변경 후 캐시 무효화 완료: doctorId={}, oldDate={}, newDate={}",
+                            doctorId, oldDate, newDateOnly);
+                    }
+                });
+            } else {
+                invalidateBookedTimesCache(doctorId, oldDate);
+                if (!oldDate.equals(newDateOnly)) {
+                    invalidateBookedTimesCache(doctorId, newDateOnly);
+                }
+                log.debug("트랜잭션 없음 - 예약 변경 후 캐시 즉시 무효화");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BusinessException(ErrorCode.APPOINTMENT_ALREADY_EXISTS, "예약 처리 중 오류가 발생했습니다.");
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Transactional
     public void startConsultation(Long appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));

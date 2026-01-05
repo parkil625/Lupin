@@ -75,62 +75,15 @@ export default defineConfig({
     // 🚀 [FCP/LCP 최적화] 번들 분할로 초기 로딩 속도 개선 (508KB 감소)
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // 1. React 핵심 라이브러리 분리 (항상 필요)
-          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-            return 'vendor-react';
-          }
-
-          // 2. HTTP 클라이언트 분리 (초기 로딩에 필요)
-          if (id.includes('axios')) {
-            return 'client';
-          }
-
-          // 3. 차트 라이브러리 분리 (Home/Ranking에서만 사용 - lazy)
-          if (id.includes('recharts')) {
-            return 'charts';
-          }
-
-          // 4. 폼 라이브러리 분리 (특정 페이지에서만 사용)
-          if (id.includes('react-hook-form') || id.includes('zod') || id.includes('@hookform/resolvers')) {
-            return 'forms';
-          }
-
-          // 5. WebSocket 라이브러리 분리 (채팅에서만 사용 - lazy)
-          if (id.includes('@stomp/stompjs') || id.includes('sockjs-client')) {
-            return 'websocket';
-          }
-
-          // 6. Radix UI 컴포넌트별 분리 (사용 시에만 로드)
-          if (id.includes('@radix-ui/react-dialog') || id.includes('@radix-ui/react-alert-dialog')) {
-            return 'radix-dialog';
-          }
-          if (id.includes('@radix-ui/react-select') || id.includes('@radix-ui/react-dropdown-menu')) {
-            return 'radix-select';
-          }
-          if (id.includes('@radix-ui')) {
-            return 'radix-ui';
-          }
-
-          // 7. Lucide 아이콘 분리 (트리셰이킹 지원)
-          if (id.includes('lucide-react')) {
-            return 'icons';
-          }
-
-          // 8. 기타 UI 유틸리티 분리
-          if (id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge')) {
-            return 'vendor-ui';
-          }
-
-          // 9. 날짜 관련 라이브러리 분리 (달력에서만 사용)
-          if (id.includes('react-day-picker') || id.includes('date-fns')) {
-            return 'date-picker';
-          }
-
-          // 10. node_modules의 나머지는 vendor로 통합
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
+        manualChunks: {
+          // React 핵심 라이브러리는 항상 함께 번들링 (의존성 문제 방지)
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // 차트 라이브러리 분리 (lazy 로딩)
+          'charts': ['recharts'],
+          // WebSocket 라이브러리 분리 (lazy 로딩)
+          'websocket': ['@stomp/stompjs', 'sockjs-client'],
+          // 폼 라이브러리 분리
+          'forms': ['react-hook-form', 'zod'],
         }
       }
     }

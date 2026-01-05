@@ -258,7 +258,7 @@ export default function CreateFeedDialog({
       setContent("");
       setStartExifTime(null);
       setEndExifTime(null);
-      setVerificationStatus("none");
+      // setVerificationStatus("none"); <--- 삭제됨 (자동 계산됨)
 
       onOpenChange(false);
     } catch {
@@ -375,7 +375,7 @@ export default function CreateFeedDialog({
     setContent("");
     setStartExifTime(null);
     setEndExifTime(null);
-    setVerificationStatus("none");
+    // setVerificationStatus("none"); <--- 삭제됨 (자동 계산됨)
 
     // 다이얼로그 닫은 후 localStorage 삭제 (useEffect 방지)
     onOpenChange(false);

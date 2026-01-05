@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Notification } from "@/types/dashboard.types";
 
 interface UseNotificationSseProps {
@@ -13,6 +14,7 @@ export const useNotificationSse = ({
   onNotificationDeleted, // [추가]
   enabled = true,
 }: UseNotificationSseProps) => {
+  const { isLoggedIn } = useAuthStore();
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -171,7 +173,7 @@ export const useNotificationSse = ({
       disconnect();
       clearInterval(tokenRefreshInterval);
     };
-  }, [connectInternal, disconnect, enabled]);
+  }, [connectInternal, disconnect, enabled, isLoggedIn]);
 
   return {
     reconnect: connectInternal,

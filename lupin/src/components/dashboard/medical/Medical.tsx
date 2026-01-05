@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, FileText, XCircle, Send } from "lucide-react"; // CalendarIcon 대신 Calendar 사용
+import { Clock, FileText, XCircle, Send, X } from "lucide-react"; // CalendarIcon 대신 Calendar 사용
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { chatApi, ChatMessageResponse } from "@/api/chatApi";
 import { appointmentApi, AppointmentResponse } from "@/api/appointmentApi";
@@ -85,6 +85,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     date: string;
     time: string;
   } | null>(null);
+
+  // 예약 변경 모드 상태
+  const [isRescheduleMode, setIsRescheduleMode] = useState(false);
+  const [rescheduleAppointment, setRescheduleAppointment] = useState<AppointmentResponse | null>(null);
 
   // 채팅방이 활성화되어야 하는지 확인
   const hasActiveChat = activeAppointment !== null && !isChatEnded;
@@ -243,6 +247,41 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   const handleConfirmAppointment = async () => {
     if (!selectedDepartment || !selectedDate || !selectedTime) return;
 
+    // 예약 변경 모드일 때
+    if (isRescheduleMode && rescheduleAppointment) {
+      // 확인 alert
+      if (!confirm("예약을 변경하시겠습니까?")) {
+        return;
+      }
+
+      try {
+        const dateTimeStr = formatDateTime(selectedDate, selectedTime);
+
+        // 예약 변경 API 호출
+        await appointmentApi.rescheduleAppointment(rescheduleAppointment.id, {
+          patientId: currentPatientId,
+          doctorId: rescheduleAppointment.doctorId,
+          date: dateTimeStr,
+        });
+
+        // 상태 초기화
+        setIsRescheduleMode(false);
+        setRescheduleAppointment(null);
+        setViewState("LIST");
+
+        // 예약 변경 완료 알림
+        alert("예약이 변경되었습니다.");
+
+        // 예약 목록 다시 로드
+        await loadAppointments(true, true);
+      } catch (error) {
+        console.error("❌ 예약 변경 실패:", error);
+        toast.error("예약 변경에 실패했습니다. 다시 시도해주세요.");
+      }
+      return;
+    }
+
+    // 예약 생성 모드
     // 예약 개수 제한 체크 (SCHEDULED 상태인 예약만 카운트)
     const activeAppointmentsCount = activeAppointments.length;
 
@@ -314,6 +353,9 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
       // 즉시 LIST 뷰로 전환하여 생성된 예약을 바로 보여줌
       setViewState("LIST");
+
+      // 예약 완료 알림
+      alert("예약이 완료되었습니다.");
 
       // 최소한의 딜레이 후 서버에서 최신 데이터 조회
       setTimeout(async () => {
@@ -1250,7 +1292,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                     <>
                                       <div className="grid grid-cols-2 gap-2">
                                         <Button
-                                          onClick={async () => {
+                                          onClick={() => {
                                             // 1시간 전 체크
                                             const appointmentDateTime =
                                               new Date(apt.date);
@@ -1270,25 +1312,19 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                               return;
                                             }
 
-                                            try {
-                                              await appointmentApi.cancelAppointment(
-                                                apt.id
-                                              );
-                                              // 예약 목록 갱신 (스켈레톤 표시 안 함, 예약 목록 화면 유지)
-                                              await loadAppointments(
-                                                true,
-                                                true
-                                              );
-                                              // 예약 변경 후 예약 목록 화면 유지 (FORM으로 이동하지 않음)
-                                            } catch (error) {
-                                              console.error(
-                                                "예약 변경 실패:",
-                                                error
-                                              );
-                                              toast.error(
-                                                "예약 변경에 실패했습니다."
-                                              );
-                                            }
+                                            // 예약 변경 모드로 전환 (예약 취소하지 않음)
+                                            setRescheduleAppointment(apt);
+                                            setIsRescheduleMode(true);
+                                            setSelectedDepartment(apt.departmentName || "");
+                                            setSelectedDate(new Date(apt.date));
+                                            setSelectedTime(
+                                              new Date(apt.date).toLocaleTimeString("ko-KR", {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                hour12: false,
+                                              })
+                                            );
+                                            setViewState("FORM");
                                           }}
                                           className="rounded-xl h-10 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold text-sm border-0 cursor-pointer"
                                         >
@@ -1316,9 +1352,22 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
               ) : (
                 // 인라인 예약 화면 (FORM 상태)
                 <div className="h-full overflow-y-auto custom-scrollbar flex flex-col items-center justify-center">
-                  <div className="w-[320px]">
+                  <div className="w-[320px] relative">
+                    {/* 닫기 버튼 */}
+                    <button
+                      onClick={() => {
+                        setViewState("LIST");
+                        setIsRescheduleMode(false);
+                        setRescheduleAppointment(null);
+                      }}
+                      className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+                      aria-label="닫기"
+                    >
+                      <X className="w-5 h-5 text-gray-700" />
+                    </button>
+
                     <h2 className="text-2xl font-black text-gray-900 mb-4 text-center">
-                      진료 예약
+                      {isRescheduleMode ? "예약 변경" : "진료 예약"}
                     </h2>
 
                     {/* 진료과 선택 */}
@@ -1446,7 +1495,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                       className="w-full bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold rounded-xl h-12 border-0 cursor-pointer disabled:cursor-not-allowed"
                       onClick={handleConfirmAppointment}
                     >
-                      예약하기
+                      {isRescheduleMode ? "예약 변경" : "예약하기"}
                     </Button>
                   </div>
                 </div>

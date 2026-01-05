@@ -76,4 +76,17 @@ public class Appointment {
         }
         this.status = AppointmentStatus.CANCELLED;
     }
+
+    public void reschedule(LocalDateTime newDate) {
+        if (this.status == AppointmentStatus.COMPLETED) {
+            throw new BusinessException(ErrorCode.APPOINTMENT_COMPLETED, "완료된 예약은 변경할 수 없습니다.");
+        }
+        if (this.status == AppointmentStatus.CANCELLED) {
+            throw new BusinessException(ErrorCode.APPOINTMENT_CANCELLED, "취소된 예약은 변경할 수 없습니다.");
+        }
+        if (this.status == AppointmentStatus.IN_PROGRESS) {
+            throw new BusinessException(ErrorCode.APPOINTMENT_IN_PROGRESS, "진료 중인 예약은 변경할 수 없습니다.");
+        }
+        this.date = newDate;
+    }
 }

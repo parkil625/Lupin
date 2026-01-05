@@ -170,4 +170,41 @@ class AppointmentControllerTest {
 
         verify(appointmentService).cancelAppointment(appointmentId);
     }
+
+    @Test
+    @WithMockUser
+    @DisplayName("예약 변경 성공")
+    void rescheduleAppointment_ShouldReturnSuccessMessage() throws Exception {
+        // Given
+        Long appointmentId = 1L;
+        AppointmentRequest request = AppointmentRequest.builder()
+                .patientId(1L)
+                .doctorId(21L)
+                .date(LocalDateTime.of(2025, 12, 21, 16, 0))
+                .build();
+
+        // When & Then
+        mockMvc.perform(put("/api/appointment/{appointmentId}/reschedule", appointmentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("예약이 변경되었습니다."));
+
+        verify(appointmentService).rescheduleAppointment(appointmentId, request.getDate());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("예약 변경 - 잘못된 요청 (날짜 누락)")
+    void rescheduleAppointment_ShouldFailWhenDateMissing() throws Exception {
+        // Given
+        Long appointmentId = 1L;
+        String invalidRequest = "{\"patientId\":1,\"doctorId\":21}"; // date 누락
+
+        // When & Then
+        mockMvc.perform(put("/api/appointment/{appointmentId}/reschedule", appointmentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest());
+    }
 }

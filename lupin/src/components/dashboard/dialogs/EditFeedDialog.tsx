@@ -7,7 +7,7 @@
  * - 운동 시작/끝 사진 업로드
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -97,11 +97,57 @@ export default function EditFeedDialog({
   // EXIF 시간 및 검증 상태
   const [startExifTime, setStartExifTime] = useState<Date | null>(null);
   const [endExifTime, setEndExifTime] = useState<Date | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<
-    "none" | "verified" | "invalid"
-  >("none");
   const [imagesChanged, setImagesChanged] = useState(false);
   const firstButtonRef = useRef<HTMLButtonElement>(null);
+
+  // [수정] verificationStatus를 useState가 아닌 useMemo로 실시간 계산 (500 에러 방지)
+  const verificationStatus = useMemo(() => {
+    if (!imagesChanged) return "none";
+    if (!startExifTime || !endExifTime) return "none";
+
+    // 검증 기준 날짜 설정
+    const baseDate = feed ? new Date(feed.createdAt) : new Date();
+    const today = new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth(),
+      baseDate.getDate()
+    );
+    const toleranceHours = 6;
+
+    const allowedStart = new Date(
+      today.getTime() - toleranceHours * 60 * 60 * 1000
+    );
+    const allowedEnd = new Date(
+      today.getTime() +
+        24 * 60 * 60 * 1000 -
+        1 +
+        toleranceHours * 60 * 60 * 1000
+    );
+
+    const isStartBeforeEnd = startExifTime < endExifTime;
+    const durationHours =
+      (endExifTime.getTime() - startExifTime.getTime()) / (1000 * 60 * 60);
+    const isDurationValid = durationHours <= 24;
+    const isStartInRange =
+      startExifTime >= allowedStart && startExifTime <= allowedEnd;
+    const isEndInRange =
+      endExifTime >= allowedStart && endExifTime <= allowedEnd;
+
+    if (isStartBeforeEnd && isDurationValid && isStartInRange && isEndInRange) {
+      return "verified";
+    } else {
+      return "invalid";
+    }
+  }, [startExifTime, endExifTime, imagesChanged, feed]);
+
+  // [추가] 이미지가 삭제되면(null) EXIF 시간 정보도 초기화
+  useEffect(() => {
+    if (!startImage) setStartExifTime(null);
+  }, [startImage]);
+
+  useEffect(() => {
+    if (!endImage) setEndExifTime(null);
+  }, [endImage]);
 
   const initialDataRef = useRef<{
     startImage: string | null;
@@ -180,54 +226,6 @@ export default function EditFeedDialog({
       };
     }
   }, [feed, open]);
-
-  // EXIF 시간 검증 (이미지가 변경된 경우에만)
-  useEffect(() => {
-    if (!imagesChanged) {
-      setVerificationStatus("none");
-      return;
-    }
-
-    if (!startExifTime || !endExifTime) {
-      setVerificationStatus("none");
-      return;
-    }
-
-    // [수정] 검증 기준을 '오늘'이 아니라 '피드 생성일(createdAt)'로 변경
-    // 수정 시에는 과거 날짜의 운동 기록을 수정하는 것이므로, 당시 날짜 기준으로 검증해야 함
-    const baseDate = feed ? new Date(feed.createdAt) : new Date();
-    const today = new Date(
-      baseDate.getFullYear(),
-      baseDate.getMonth(),
-      baseDate.getDate()
-    );
-    const toleranceHours = 6;
-
-    const allowedStart = new Date(
-      today.getTime() - toleranceHours * 60 * 60 * 1000
-    );
-    const allowedEnd = new Date(
-      today.getTime() +
-        24 * 60 * 60 * 1000 -
-        1 +
-        toleranceHours * 60 * 60 * 1000
-    );
-
-    const isStartBeforeEnd = startExifTime < endExifTime;
-    const durationHours =
-      (endExifTime.getTime() - startExifTime.getTime()) / (1000 * 60 * 60);
-    const isDurationValid = durationHours <= 24;
-    const isStartInRange =
-      startExifTime >= allowedStart && startExifTime <= allowedEnd;
-    const isEndInRange =
-      endExifTime >= allowedStart && endExifTime <= allowedEnd;
-
-    if (isStartBeforeEnd && isDurationValid && isStartInRange && isEndInRange) {
-      setVerificationStatus("verified");
-    } else {
-      setVerificationStatus("invalid");
-    }
-  }, [startExifTime, endExifTime, imagesChanged, feed]);
 
   // [수정] 이미지 업로드 핸들러 (로딩 상태 제어 추가)
   const uploadImage = async (

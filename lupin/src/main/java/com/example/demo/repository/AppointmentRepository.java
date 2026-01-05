@@ -16,14 +16,33 @@ import java.util.Optional;
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
     // @Query를 이용하여 환자와 의사 정보를 같이 가져옴
+    // 정렬 우선순위: 진료중(1) → 진료예약(2) → 취소됨(3) → 완료됨(4), 각 상태 내에서는 날짜 내림차순
     @Query("SELECT a FROM Appointment a " +
        "JOIN FETCH a.patient " +
        "JOIN FETCH a.doctor " +
        "WHERE a.patient.id = :patientId " +
-       "ORDER BY a.date DESC")
+       "ORDER BY CASE a.status " +
+       "  WHEN com.example.demo.domain.enums.AppointmentStatus.IN_PROGRESS THEN 1 " +
+       "  WHEN com.example.demo.domain.enums.AppointmentStatus.SCHEDULED THEN 2 " +
+       "  WHEN com.example.demo.domain.enums.AppointmentStatus.CANCELLED THEN 3 " +
+       "  WHEN com.example.demo.domain.enums.AppointmentStatus.COMPLETED THEN 4 " +
+       "  ELSE 5 END, " +
+       "a.date DESC")
 List<Appointment> findByPatientIdOrderByDateDesc(@Param("patientId") Long patientId);
 
-    List<Appointment> findByDoctorIdOrderByDateDesc(Long doctorId);
+    // 의사의 예약 목록도 동일한 우선순위로 정렬
+    @Query("SELECT a FROM Appointment a " +
+       "JOIN FETCH a.patient " +
+       "JOIN FETCH a.doctor " +
+       "WHERE a.doctor.id = :doctorId " +
+       "ORDER BY CASE a.status " +
+       "  WHEN com.example.demo.domain.enums.AppointmentStatus.IN_PROGRESS THEN 1 " +
+       "  WHEN com.example.demo.domain.enums.AppointmentStatus.SCHEDULED THEN 2 " +
+       "  WHEN com.example.demo.domain.enums.AppointmentStatus.CANCELLED THEN 3 " +
+       "  WHEN com.example.demo.domain.enums.AppointmentStatus.COMPLETED THEN 4 " +
+       "  ELSE 5 END, " +
+       "a.date DESC")
+    List<Appointment> findByDoctorIdOrderByDateDesc(@Param("doctorId") Long doctorId);
 
     // 취소되지 않은 예약만 체크 (CANCELLED 제외)
     @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END " +

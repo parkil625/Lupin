@@ -34,13 +34,39 @@ import { userApi } from "@/api/userApi";
 import { prescriptionApi, PrescriptionResponse } from "@/api/prescriptionApi";
 import { toast } from "sonner";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
-import { AVAILABLE_TIMES, DEPARTMENT_NAMES, STATUS_CONFIG } from "./constants";
+import { AVAILABLE_TIMES, DEPARTMENT_NAMES, DEPARTMENT_KEYS, STATUS_CONFIG } from "./constants";
 import {
   isPastDate,
   isPastTime as utilIsPastTime,
   formatDateToString,
   formatDateTime,
 } from "./utils";
+
+/**
+ * 예약 목록 정렬 함수
+ * 우선순위: 진료중(1) → 진료예약(2) → 취소됨(3) → 완료됨(4), 각 상태 내에서는 날짜 내림차순
+ */
+const sortAppointments = (appointments: AppointmentResponse[]): AppointmentResponse[] => {
+  const statusPriority: Record<string, number> = {
+    IN_PROGRESS: 1,
+    SCHEDULED: 2,
+    CANCELLED: 3,
+    COMPLETED: 4,
+  };
+
+  return [...appointments].sort((a, b) => {
+    // 1. 상태 우선순위 비교
+    const priorityA = statusPriority[a.status] || 5;
+    const priorityB = statusPriority[b.status] || 5;
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // 2. 같은 상태면 날짜 내림차순 (최신순)
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+};
 
 interface MedicalProps {
   setSelectedPrescription: (prescription: PrescriptionResponse | null) => void;
@@ -90,6 +116,13 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState("");
   const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+
+  // 진료과별 의사 목록 캐시 (진료과 전환 시 API 호출 최소화)
+  const [doctorCache, setDoctorCache] = useState<Record<string, { id: number; name: string; department: string }[]>>({});
+
+  // 날짜별 예약 시간 캐시 (날짜 전환 시 API 호출 최소화)
+  // 키 형식: "departmentKey_YYYY-MM-DD"
+  const [bookedTimesCache, setBookedTimesCache] = useState<Record<string, string[]>>({});
   const [lastCreatedAppointment, setLastCreatedAppointment] = useState<{
     doctorName: string;
     departmentName: string;
@@ -144,11 +177,25 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
       try {
         const departmentKoreanName = DEPARTMENT_NAMES[selectedDepartment];
+        const dateStr = formatDateToString(selectedDate);
+        const cacheKey = `${selectedDepartment}_${dateStr}`;
 
-        // 의사 조회
-        const doctors = await userApi.getDoctorsByDepartment(
-          departmentKoreanName
-        );
+        // 예약 시간 캐시 확인
+        const cachedBookedTimes = bookedTimesCache[cacheKey];
+        if (cachedBookedTimes) {
+          setBookedTimes(cachedBookedTimes);
+          return;
+        }
+
+        // 캐시에서 의사 목록 확인
+        let doctors = doctorCache[selectedDepartment];
+
+        if (!doctors) {
+          // 캐시에 없으면 API 호출
+          doctors = await userApi.getDoctorsByDepartment(departmentKoreanName);
+          // 캐시에 저장
+          setDoctorCache(prev => ({ ...prev, [selectedDepartment]: doctors }));
+        }
 
         if (doctors.length === 0) {
           setBookedTimes([]);
@@ -157,8 +204,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
         // 첫 번째 의사의 예약된 시간 조회
         const doctorId = doctors[0].id;
-        const dateStr = formatDateToString(selectedDate);
         const booked = await appointmentApi.getBookedTimes(doctorId, dateStr);
+
+        // 예약 시간 캐시에 저장
+        setBookedTimesCache(prev => ({ ...prev, [cacheKey]: booked }));
         setBookedTimes(booked);
       } catch (error) {
         console.error("예약된 시간 조회 실패:", error);
@@ -167,6 +216,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     };
 
     fetchBookedTimes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDepartment, selectedDate]);
 
   // 예약 클릭 핸들러 - 채팅방 열기
@@ -234,14 +284,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
     }
 
     try {
-      await appointmentApi.cancelAppointment(appointmentId);
-      toast.success("예약이 취소되었습니다.");
-
-      // 예약 목록 다시 로드
-      const data = await appointmentApi.getPatientAppointments(
-        currentPatientId
+      // 낙관적 업데이트: UI에서 즉시 취소 상태로 변경 및 정렬
+      setAppointments((prev) =>
+        sortAppointments(
+          prev.map((apt) =>
+            apt.id === appointmentId ? { ...apt, status: "CANCELLED" as const } : apt
+          )
+        )
       );
-      setAppointments(data);
 
       // 현재 채팅 중인 예약이 취소된 경우 채팅방 닫기
       if (activeAppointment?.id === appointmentId) {
@@ -249,6 +299,13 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         setIsChatEnded(true);
         // 메시지는 유지 (취소된 예약의 채팅 기록도 서버에 남음)
       }
+
+      // API 호출
+      await appointmentApi.cancelAppointment(appointmentId);
+      toast.success("예약이 취소되었습니다.");
+
+      // 서버에서 최신 데이터 조회 (백그라운드)
+      await loadAppointments(true, true);
     } catch (error) {
       console.error("예약 취소 실패:", error);
       toast.error("예약 취소에 실패했습니다.");
@@ -276,13 +333,38 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           date: dateTimeStr,
         });
 
+        // 변경된 예약 정보 저장 (성공 화면에 표시용)
+        const departmentKoreanName =
+          selectedDepartment === "INTERNAL_MEDICINE"
+            ? "내과"
+            : selectedDepartment === "SURGERY"
+              ? "외과"
+              : selectedDepartment === "PEDIATRICS"
+                ? "소아과"
+                : selectedDepartment === "DERMATOLOGY"
+                  ? "피부과"
+                  : selectedDepartment === "PSYCHIATRY"
+                    ? "정신건강의학과"
+                    : "기타";
+
+        setLastCreatedAppointment({
+          doctorName: rescheduleAppointment.doctorName,
+          departmentName: departmentKoreanName,
+          date: selectedDate.toLocaleDateString("ko-KR"),
+          time: selectedTime,
+        });
+
         // 상태 초기화
         setIsRescheduleMode(false);
         setRescheduleAppointment(null);
-        setViewState("LIST");
 
-        // 예약 목록 다시 로드
-        await loadAppointments(true, true);
+        // SUCCESS 화면으로 전환
+        setViewState("SUCCESS");
+
+        // 백그라운드에서 예약 목록 다시 로드
+        setTimeout(async () => {
+          await loadAppointments(true, true);
+        }, 100);
       } catch (error) {
         console.error("❌ 예약 변경 실패:", error);
         toast.error("예약 변경에 실패했습니다. 다시 시도해주세요.");
@@ -303,13 +385,18 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
 
     const departmentKoreanName = DEPARTMENT_NAMES[selectedDepartment];
 
-    // 의사 조회
+    // 의사 조회 (캐시 사용)
     let selectedDoctor: { id: number; name: string; department: string };
     try {
-      // API를 통해 진료과별 의사 조회 (한글 진료과명 사용)
-      const doctors = await userApi.getDoctorsByDepartment(
-        departmentKoreanName
-      );
+      // 캐시에서 의사 목록 확인
+      let doctors = doctorCache[selectedDepartment];
+
+      if (!doctors) {
+        // 캐시에 없으면 API 호출
+        doctors = await userApi.getDoctorsByDepartment(departmentKoreanName);
+        // 캐시에 저장
+        setDoctorCache(prev => ({ ...prev, [selectedDepartment]: doctors }));
+      }
 
       if (doctors.length === 0) {
         toast.error("해당 진료과에 배정된 의사가 없습니다.");
@@ -358,7 +445,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         date: dateTimeStr,
         status: "SCHEDULED",
       };
-      setAppointments((prev) => [newAppointment, ...prev]);
+      setAppointments((prev) => sortAppointments([newAppointment, ...prev]));
 
       // SUCCESS 화면으로 전환
       setViewState("SUCCESS");
@@ -367,10 +454,15 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       setTimeout(async () => {
         try {
           const dateStr = formatDateToString(selectedDate);
+          const cacheKey = `${selectedDepartment}_${dateStr}`;
+
           const updatedBookedTimes = await appointmentApi.getBookedTimes(
             selectedDoctor.id,
             dateStr
           );
+
+          // 캐시 업데이트
+          setBookedTimesCache(prev => ({ ...prev, [cacheKey]: updatedBookedTimes }));
           setBookedTimes(updatedBookedTimes);
 
           // 예약 목록 다시 로드 (서버에서 최신 데이터, viewState 변경 방지, 스켈레톤 표시 안 함)
@@ -426,7 +518,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           const appointmentsData = await appointmentApi.getPatientAppointments(
             currentPatientId
           );
-          setAppointments(appointmentsData);
+          setAppointments(sortAppointments(appointmentsData));
 
           const prescriptionsData =
             await prescriptionApi.getPatientPrescriptions(currentPatientId);
@@ -538,7 +630,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         const data = await appointmentApi.getPatientAppointments(
           currentPatientId
         );
-        setAppointments(data);
+        // 백엔드에서 이미 정렬되지만, 일관성을 위해 프론트엔드에서도 정렬 적용
+        setAppointments(sortAppointments(data));
 
         // 초기 마운트 시 viewState 결정: 예약이 있으면 LIST, 없으면 FORM
         if (!skipViewChange && isInitialMount.current) {
@@ -756,7 +849,7 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
         const appointmentsData = await appointmentApi.getPatientAppointments(
           currentPatientId
         );
-        setAppointments(appointmentsData);
+        setAppointments(sortAppointments(appointmentsData));
 
         const prescriptionsData = await prescriptionApi.getPatientPrescriptions(
           currentPatientId
@@ -1204,6 +1297,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                       onClick={() => {
                         setViewState("LIST");
                         setLastCreatedAppointment(null);
+                        // 폼 상태 초기화 (다음 예약 시 진료과를 다시 선택하도록)
+                        setSelectedDepartment("");
+                        setSelectedDate(undefined);
+                        setSelectedTime("");
                       }}
                       className="w-full rounded-xl h-12 bg-[#C93831] hover:bg-[#B02F28] active:scale-[0.98] transition-all text-white font-bold border-0 cursor-pointer"
                     >
@@ -1331,9 +1428,11 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                                           // 예약 변경 모드로 전환 (예약 취소하지 않음)
                                           setRescheduleAppointment(apt);
                                           setIsRescheduleMode(true);
-                                          setSelectedDepartment(
-                                            apt.departmentName || ""
-                                          );
+
+                                          // 한글 진료과명을 영문 키로 변환
+                                          const departmentKey = DEPARTMENT_KEYS[apt.departmentName || ""] || "";
+                                          setSelectedDepartment(departmentKey);
+
                                           setSelectedDate(new Date(apt.date));
                                           setSelectedTime(
                                             new Date(
@@ -1379,6 +1478,10 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                         setViewState("LIST");
                         setIsRescheduleMode(false);
                         setRescheduleAppointment(null);
+                        // 폼 상태 초기화 (다음 예약 시 진료과를 다시 선택하도록)
+                        setSelectedDepartment("");
+                        setSelectedDate(undefined);
+                        setSelectedTime("");
                       }}
                       className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                       aria-label="닫기"

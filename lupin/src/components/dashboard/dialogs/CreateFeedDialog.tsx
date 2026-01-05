@@ -7,7 +7,7 @@
  * - 운동 시작/끝 사진 업로드
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -96,9 +96,42 @@ export default function CreateFeedDialog({
   // EXIF 시간 및 검증 상태
   const [startExifTime, setStartExifTime] = useState<Date | null>(null);
   const [endExifTime, setEndExifTime] = useState<Date | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<
-    "none" | "verified" | "invalid"
-  >("none");
+
+  // [수정] verificationStatus를 useState가 아닌 useMemo로 즉시 계산 (싱크 문제 해결)
+  const verificationStatus = useMemo(() => {
+    if (!startExifTime || !endExifTime) return "none";
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const toleranceHours = 6;
+
+    // 허용 범위: 오늘 0시 - 6시간 ~ 오늘 23:59:59 + 6시간
+    const allowedStart = new Date(
+      today.getTime() - toleranceHours * 60 * 60 * 1000
+    );
+    const allowedEnd = new Date(
+      today.getTime() +
+        24 * 60 * 60 * 1000 -
+        1 +
+        toleranceHours * 60 * 60 * 1000
+    );
+
+    // 조건 검증
+    const isStartBeforeEnd = startExifTime < endExifTime;
+    const durationHours =
+      (endExifTime.getTime() - startExifTime.getTime()) / (1000 * 60 * 60);
+    const isDurationValid = durationHours <= 24;
+    const isStartInRange =
+      startExifTime >= allowedStart && startExifTime <= allowedEnd;
+    const isEndInRange =
+      endExifTime >= allowedStart && endExifTime <= allowedEnd;
+
+    if (isStartBeforeEnd && isDurationValid && isStartInRange && isEndInRange) {
+      return "verified";
+    } else {
+      return "invalid";
+    }
+  }, [startExifTime, endExifTime]);
 
   // [추가] 이미지가 삭제되면(null) EXIF 시간 정보도 초기화하여 문구를 되돌림
   useEffect(() => {
@@ -177,45 +210,6 @@ export default function CreateFeedDialog({
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     }
   }, [open, startImage, endImage, otherImages, workoutType, content]);
-
-  // EXIF 시간 검증
-  useEffect(() => {
-    if (!startExifTime || !endExifTime) {
-      setVerificationStatus("none");
-      return;
-    }
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const toleranceHours = 6;
-
-    // 허용 범위: 오늘 0시 - 6시간 ~ 오늘 23:59:59 + 6시간
-    const allowedStart = new Date(
-      today.getTime() - toleranceHours * 60 * 60 * 1000
-    );
-    const allowedEnd = new Date(
-      today.getTime() +
-        24 * 60 * 60 * 1000 -
-        1 +
-        toleranceHours * 60 * 60 * 1000
-    );
-
-    // 조건 검증
-    const isStartBeforeEnd = startExifTime < endExifTime;
-    const durationHours =
-      (endExifTime.getTime() - startExifTime.getTime()) / (1000 * 60 * 60);
-    const isDurationValid = durationHours <= 24;
-    const isStartInRange =
-      startExifTime >= allowedStart && startExifTime <= allowedEnd;
-    const isEndInRange =
-      endExifTime >= allowedStart && endExifTime <= allowedEnd;
-
-    if (isStartBeforeEnd && isDurationValid && isStartInRange && isEndInRange) {
-      setVerificationStatus("verified");
-    } else {
-      setVerificationStatus("invalid");
-    }
-  }, [startExifTime, endExifTime]);
 
   // 작성 버튼 클릭
   const handleSubmit = async () => {

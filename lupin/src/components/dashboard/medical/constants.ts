@@ -19,6 +19,16 @@ export const DEPARTMENT_NAMES: Record<string, string> = {
   obstetrics_gynecology: "산부인과",
 };
 
+// 진료과 한글 이름 → 영문 키 역매핑 (예약 변경 시 사용)
+export const DEPARTMENT_KEYS: Record<string, string> = {
+  "내과": "internal",
+  "외과": "surgery",
+  "신경정신과": "psychiatry",
+  "피부과": "dermatology",
+  "흉부외과": "thoracic_surgery",
+  "산부인과": "obstetrics_gynecology",
+};
+
 // 예약 상태 설정
 export const STATUS_CONFIG = {
   SCHEDULED: { label: "진료 예정", color: "#7950F2" },

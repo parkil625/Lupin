@@ -100,6 +100,15 @@ export default function CreateFeedDialog({
     "none" | "verified" | "invalid"
   >("none");
 
+  // [추가] 이미지가 삭제되면(null) EXIF 시간 정보도 초기화하여 문구를 되돌림
+  useEffect(() => {
+    if (!startImage) setStartExifTime(null);
+  }, [startImage]);
+
+  useEffect(() => {
+    if (!endImage) setEndExifTime(null);
+  }, [endImage]);
+
   // 피드 내용 (plain text)
   const [content, setContent] = useState("");
 

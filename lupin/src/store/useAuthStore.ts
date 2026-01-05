@@ -65,6 +65,9 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem("userBirthDate");
           localStorage.removeItem("userGender");
 
+          // [추가] 피드 작성 임시 저장 데이터 삭제
+          localStorage.removeItem("createFeedDraft");
+
           set({ isLoggedIn: false, userRole: "member" });
           window.location.href = "/login";
         }

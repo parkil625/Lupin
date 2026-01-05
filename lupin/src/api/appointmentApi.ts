@@ -11,6 +11,7 @@ export interface AppointmentRequest {
 
 /**
  * 예약 응답 DTO
+ * [N+1 문제 해결] 백엔드에서 의사 프로필 정보를 포함하여 전달
  */
 export interface AppointmentResponse {
   id: number;
@@ -21,6 +22,8 @@ export interface AppointmentResponse {
   departmentName?: string;
   date: string;
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  doctorAvatar?: string;      // [N+1 해결] 백엔드에서 함께 전달
+  doctorDepartment?: string;  // [N+1 해결] 백엔드에서 함께 전달
 }
 
 export const appointmentApi = {

@@ -461,9 +461,8 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
             dateStr
           );
 
-          // 캐시 업데이트
+          // 캐시만 업데이트 (bookedTimes는 업데이트하지 않음 - SUCCESS 화면에서 불필요한 리렌더링 방지)
           setBookedTimesCache(prev => ({ ...prev, [cacheKey]: updatedBookedTimes }));
-          setBookedTimes(updatedBookedTimes);
 
           // 예약 목록 다시 로드 (서버에서 최신 데이터, viewState 변경 방지, 스켈레톤 표시 안 함)
           await loadAppointments(true, true);
@@ -505,30 +504,33 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
       if (message.type === "CONSULTATION_END") {
         const doctorName = message.doctorName || "담당 의사";
 
-        // 1. 동기적으로 alert를 가장 먼저 표시 (블로킹)
-        alert("진료가 종료되었습니다.\n예약 목록으로 이동합니다.");
+        // setTimeout을 사용해 다음 이벤트 루프에서 alert 표시 (즉시 표시)
+        setTimeout(async () => {
+          // 1. alert를 가장 먼저 표시 (블로킹)
+          alert("진료가 종료되었습니다.\n예약 목록으로 이동합니다.");
 
-        // 2. alert를 닫은 후 상태 초기화 (메시지는 유지 - 서버에서 관리)
-        setActiveAppointment(null);
-        setIsChatEnded(true);
-        setViewState("LIST");
+          // 2. alert를 닫은 후 상태 초기화 (메시지는 유지 - 서버에서 관리)
+          setActiveAppointment(null);
+          setIsChatEnded(true);
+          setViewState("LIST");
 
-        // 3. 백그라운드에서 데이터 새로고침
-        try {
-          const appointmentsData = await appointmentApi.getPatientAppointments(
-            currentPatientId
-          );
-          setAppointments(sortAppointments(appointmentsData));
+          // 3. 백그라운드에서 데이터 새로고침
+          try {
+            const appointmentsData = await appointmentApi.getPatientAppointments(
+              currentPatientId
+            );
+            setAppointments(sortAppointments(appointmentsData));
 
-          const prescriptionsData =
-            await prescriptionApi.getPatientPrescriptions(currentPatientId);
-          setPrescriptions(prescriptionsData);
+            const prescriptionsData =
+              await prescriptionApi.getPatientPrescriptions(currentPatientId);
+            setPrescriptions(prescriptionsData);
 
-          toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
-        } catch (error) {
-          console.error("데이터 새로고침 실패:", error);
-          toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
-        }
+            toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
+          } catch (error) {
+            console.error("데이터 새로고침 실패:", error);
+            toast.success(`${doctorName} 의사님의 진료가 완료되었습니다.`);
+          }
+        }, 0);
         return;
       }
 
@@ -642,24 +644,22 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
           }
         }
 
-        // 의사 프로필 로드 (고유한 doctorId만) - 백그라운드에서 처리
-        const uniqueDoctorIds = [...new Set(data.map((apt) => apt.doctorId))];
-        for (const doctorId of uniqueDoctorIds) {
-          try {
-            const profile = await userApi.getUserById(doctorId);
-            const stats = await userApi.getUserStats(doctorId);
-            setDoctorProfiles((prev) => ({
-              ...prev,
-              [doctorId]: {
-                avatar: profile.avatar,
-                activeDays: stats.activeDays,
-                department: profile.department,
-              },
-            }));
-          } catch (error) {
-            console.error(`의사 프로필 로드 실패 (ID: ${doctorId}):`, error);
+        // [N+1 문제 해결] 백엔드에서 이미 JOIN FETCH로 로드된 의사 프로필 사용
+        // 기존: 1 + N×2 쿼리 (예약 목록 1회 + 각 의사별 프로필 N회 + 통계 N회)
+        // 최적화: 백엔드 응답에 포함된 doctorAvatar, doctorDepartment 사용
+        const profiles: Record<number, { avatar?: string; activeDays?: number; department?: string }> = {};
+
+        for (const apt of data) {
+          if (!profiles[apt.doctorId]) {
+            profiles[apt.doctorId] = {
+              avatar: apt.doctorAvatar,
+              department: apt.doctorDepartment,
+              activeDays: undefined, // activeDays는 별도 API 호출 필요 시 추가
+            };
           }
         }
+
+        setDoctorProfiles(profiles);
       } catch (error) {
         console.error("예약 목록 로드 실패:", error);
         toast.error("예약 목록을 불러오는데 실패했습니다.");
@@ -1476,12 +1476,14 @@ export default function Medical({ setSelectedPrescription }: MedicalProps) {
                     <button
                       onClick={() => {
                         setViewState("LIST");
+                        // 예약 변경 모드가 아닐 때만 폼 상태 초기화
+                        if (!isRescheduleMode) {
+                          setSelectedDepartment("");
+                          setSelectedDate(undefined);
+                          setSelectedTime("");
+                        }
                         setIsRescheduleMode(false);
                         setRescheduleAppointment(null);
-                        // 폼 상태 초기화 (다음 예약 시 진료과를 다시 선택하도록)
-                        setSelectedDepartment("");
-                        setSelectedDate(undefined);
-                        setSelectedTime("");
                       }}
                       className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                       aria-label="닫기"

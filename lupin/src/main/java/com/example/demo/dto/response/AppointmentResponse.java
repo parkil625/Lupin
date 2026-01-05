@@ -19,6 +19,8 @@ public class AppointmentResponse {
     private String departmentName;
     private LocalDateTime date;
     private AppointmentStatus status;
+    private String doctorAvatar;      // [N+1 해결] 의사 프로필 이미지
+    private String doctorDepartment;  // [N+1 해결] 의사 진료과
 
     public static AppointmentResponse from(Appointment appointment) {
         String department = appointment.getDoctor().getDepartment();
@@ -35,6 +37,8 @@ public class AppointmentResponse {
                 .departmentName(departmentName)
                 .date(appointment.getDate())
                 .status(appointment.getStatus())
+                .doctorAvatar(appointment.getDoctor().getAvatar())           // [N+1 해결] JOIN FETCH로 이미 로드됨
+                .doctorDepartment(appointment.getDoctor().getDepartment())   // [N+1 해결] JOIN FETCH로 이미 로드됨
                 .build();
     }
 

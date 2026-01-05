@@ -16,18 +16,20 @@ export interface ChatMessageResponse {
 
 /**
  * 채팅방 응답 DTO
- * 백엔드 ChatController.java의 getChatRooms와 일치
+ * [N+1 문제 해결] 백엔드에서 환자 프로필 정보 포함하여 전달
  */
 export interface ChatRoomResponse {
   roomId: string;           // "appointment_123"
   patientId: number;
   patientName: string;
+  patientAvatar?: string;   // [N+1 해결] 백엔드에서 함께 전달
+  patientDepartment?: string; // [N+1 해결] 백엔드에서 함께 전달
   doctorId: number;
   lastMessage?: string;
   unreadCount: number;
   lastMessageTime?: string;
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'UNKNOWN';
-  appointmentTime?: string; // 예약 시간 (추가)
+  appointmentTime?: string;
 }
 
 export const chatApi = {

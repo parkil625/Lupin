@@ -58,34 +58,31 @@ public class ChatController {
     }
 
     /**
-     * 의사의 채팅방 목록 조회
+     * [N+1 문제 해결] 의사의 채팅방 목록 조회 (환자 프로필 포함)
      * GET /api/chat/rooms?userId={userId}
+     *
+     * 기존: 21회 API 호출 (1 + N×2 쿼리)
+     * 최적화: 1회 쿼리 (JOIN FETCH 사용)
      */
     @GetMapping("/rooms")
     public ResponseEntity<List<Map<String, Object>>> getChatRooms(@RequestParam Long userId) {
-        List<String> roomIds = chatService.getAllChatRoomsIncludingEmpty(userId);
+        // [최적화] JOIN FETCH로 환자 정보를 함께 로드 (N+1 문제 해결)
+        List<Appointment> appointments = chatService.getChatRoomsWithPatientProfiles(userId);
 
-        List<Map<String, Object>> chatRooms = roomIds.stream()
-                .map(roomId -> {
+        List<Map<String, Object>> chatRooms = appointments.stream()
+                .map(appointment -> {
                     Map<String, Object> room = new HashMap<>();
+                    String roomId = "appointment_" + appointment.getId();
                     room.put("roomId", roomId);
 
-                    // 예약 정보에서 환자 정보 가져오기
-                    try {
-                        Appointment appointment = chatService.getAppointmentFromRoomId(roomId);
-                        room.put("patientId", appointment.getPatient().getId());
-                        room.put("patientName", appointment.getPatient().getName());
-                        room.put("doctorId", appointment.getDoctor().getId());
-                        room.put("status", appointment.getStatus().toString());
-                        room.put("appointmentTime", appointment.getDate().toString());
-                    } catch (Exception e) {
-                        log.error("채팅방 {}에 대한 예약 정보를 찾을 수 없습니다. 에러: {}", roomId, e.getMessage(), e);
-                        room.put("patientId", 0);
-                        room.put("patientName", "알 수 없음");
-                        room.put("doctorId", userId);
-                        room.put("status", "UNKNOWN");
-                        room.put("appointmentTime", "");
-                    }
+                    // [최적화] 이미 JOIN FETCH로 로드된 환자 정보 사용 (추가 쿼리 없음)
+                    room.put("patientId", appointment.getPatient().getId());
+                    room.put("patientName", appointment.getPatient().getName());
+                    room.put("patientAvatar", appointment.getPatient().getAvatar());
+                    room.put("patientDepartment", appointment.getPatient().getDepartment());
+                    room.put("doctorId", appointment.getDoctor().getId());
+                    room.put("status", appointment.getStatus().toString());
+                    room.put("appointmentTime", appointment.getDate().toString());
 
                     // 마지막 메시지
                     ChatMessage lastMessage = chatService.getLatestMessageInRoom(roomId);

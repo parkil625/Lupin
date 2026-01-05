@@ -33,7 +33,7 @@ import { appointmentApi } from "@/api/appointmentApi";
 import { userApi } from "@/api/userApi";
 import UserHoverCard from "@/components/dashboard/shared/UserHoverCard";
 import { formatChatTime, canEnterChatRoom } from "./utils";
-import { MAX_MEDICINES, MAX_INSTRUCTIONS_LENGTH, CHAT_ROOMS_REFRESH_INTERVAL, PROFILE_BATCH_SIZE } from "./constants";
+import { MAX_MEDICINES, MAX_INSTRUCTIONS_LENGTH, CHAT_ROOMS_REFRESH_INTERVAL, PROFILE_BATCH_SIZE, MEDICINE_SEARCH_DEBOUNCE_MS } from "./constants";
 
 interface Medicine {
   id: number;
@@ -57,18 +57,37 @@ export default function DoctorChatPage() {
   const [chatMessage, setChatMessage] = useState("");
   const [showMedicineDialog, setShowMedicineDialog] = useState(false);
 
+  // [새로고침 캐시 최적화] localStorage에서 프로필 캐시 복원
+  const loadCachedProfiles = () => {
+    try {
+      const cached = localStorage.getItem('doctorChat_profileCache');
+      if (cached) {
+        const { avatars, activeDays, departments, timestamp } = JSON.parse(cached);
+        // 캐시 유효기간: 30분
+        if (Date.now() - timestamp < 30 * 60 * 1000) {
+          return { avatars, activeDays, departments };
+        }
+      }
+    } catch (error) {
+      console.error('캐시 로드 실패:', error);
+    }
+    return { avatars: {}, activeDays: {}, departments: {} };
+  };
+
+  const cachedProfiles = loadCachedProfiles();
+
   // 환자 프로필 아바타 저장 (patientId -> avatarUrl)
   const [patientAvatars, setPatientAvatars] = useState<Record<number, string>>(
-    {}
+    cachedProfiles.avatars
   );
   // 환자 활동일 저장 (patientId -> activeDays)
   const [patientActiveDays, setPatientActiveDays] = useState<
     Record<number, number>
-  >({});
+  >(cachedProfiles.activeDays);
   // 환자 부서 저장 (patientId -> department)
   const [patientDepartments, setPatientDepartments] = useState<
     Record<number, string>
-  >({});
+  >(cachedProfiles.departments);
 
   // 스크롤 제어용 Ref
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -93,14 +112,20 @@ export default function DoctorChatPage() {
   const [searchResults, setSearchResults] = useState<Medicine[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // 채팅방 목록 로드 함수 (재사용 가능하도록 별도 함수로 분리)
-  // [최적화] 프로필 캐싱 추가 및 불필요한 API 호출 제거
+  // 약품 검색 디바운스 타이머
+  const searchDebounceTimerRef = useRef<number | null>(null);
+
+  // [N+1 문제 해결] 채팅방 목록 로드 - 백엔드에서 프로필 정보 함께 전달
+  // 기존: 21회 API 호출 (1 + N×2)
+  // 최적화: 1~11회 API 호출 (채팅방 1 + 활동일 N, avatar/department은 백엔드에서 제공)
   const loadChatRooms = useCallback(
     async (forceReload = false) => {
       try {
         if (!currentUserId) return;
 
+        // [N+1 해결] 백엔드에서 환자 프로필 정보를 포함하여 전달
         const rooms = await chatApi.getChatRooms(currentUserId);
+
         // 최신 메시지 순서대로 정렬 (카톡처럼)
         const sortedRooms = rooms.sort(
           (a: ChatRoomResponse, b: ChatRoomResponse) => {
@@ -115,58 +140,64 @@ export default function DoctorChatPage() {
         );
         setChatRooms(sortedRooms);
 
-        // [최적화] 캐싱된 프로필이 없는 환자만 로드
+        // [N+1 해결] 백엔드에서 받은 프로필 정보를 캐시에 저장
+        const avatars: Record<number, string> = { ...patientAvatars };
+        const departmentsMap: Record<number, string> = { ...patientDepartments };
+
+        sortedRooms.forEach((room: ChatRoomResponse) => {
+          if (room.patientAvatar) {
+            avatars[room.patientId] = room.patientAvatar;
+          }
+          if (room.patientDepartment) {
+            departmentsMap[room.patientId] = room.patientDepartment;
+          }
+        });
+
+        setPatientAvatars(avatars);
+        setPatientDepartments(departmentsMap);
+
+        // [활동일 정보는 별도 로드 필요] - 백엔드에 없음
+        // forceReload나 캐시 누락 시에만 로드
         const newPatientIds = sortedRooms
           .map((room: ChatRoomResponse) => room.patientId)
           .filter(
-            (patientId: number) => forceReload || !patientAvatars[patientId]
+            (patientId: number) => forceReload || !patientActiveDays[patientId]
           );
 
-        if (newPatientIds.length === 0) return;
+        if (newPatientIds.length > 0) {
+          const batchSize = PROFILE_BATCH_SIZE;
+          const activeDaysMap: Record<number, number> = { ...patientActiveDays };
 
-        // [최적화] 병렬 처리 최대 5개씩 제한 (서버 부하 감소)
-        const batchSize = PROFILE_BATCH_SIZE;
-        const avatars: Record<number, string> = { ...patientAvatars };
-        const activeDaysMap: Record<number, number> = { ...patientActiveDays };
-        const departmentsMap: Record<number, string> = {
-          ...patientDepartments,
-        };
-
-        for (let i = 0; i < newPatientIds.length; i += batchSize) {
-          const batch = newPatientIds.slice(i, i + batchSize);
-          await Promise.all(
-            batch.map(async (patientId: number) => {
-              try {
-                const patient = await userApi.getUserById(patientId);
-                if (patient.avatar) {
-                  avatars[patientId] = patient.avatar;
-                }
-                if (patient.department) {
-                  departmentsMap[patientId] = patient.department;
-                }
-
-                // 활동일 정보 가져오기
+          for (let i = 0; i < newPatientIds.length; i += batchSize) {
+            const batch = newPatientIds.slice(i, i + batchSize);
+            await Promise.all(
+              batch.map(async (patientId: number) => {
                 try {
                   const stats = await userApi.getUserStats(patientId);
                   if (stats.activeDays !== undefined) {
                     activeDaysMap[patientId] = stats.activeDays;
                   }
                 } catch (statsError) {
-                  console.error(
-                    `환자 ${patientId} 통계 로드 실패:`,
-                    statsError
-                  );
+                  console.error(`환자 ${patientId} 통계 로드 실패:`, statsError);
                 }
-              } catch (error) {
-                console.error(`환자 ${patientId} 프로필 로드 실패:`, error);
-              }
-            })
-          );
+              })
+            );
+          }
+
+          setPatientActiveDays(activeDaysMap);
         }
 
-        setPatientAvatars(avatars);
-        setPatientActiveDays(activeDaysMap);
-        setPatientDepartments(departmentsMap);
+        // [새로고침 캐시 최적화] localStorage에 프로필 캐시 저장 (30분 유효)
+        try {
+          localStorage.setItem('doctorChat_profileCache', JSON.stringify({
+            avatars,
+            activeDays: patientActiveDays,
+            departments: departmentsMap,
+            timestamp: Date.now()
+          }));
+        } catch (error) {
+          console.error('캐시 저장 실패:', error);
+        }
       } catch (error) {
         console.error("채팅방 목록 로드 실패:", error);
       }
@@ -218,11 +249,18 @@ export default function DoctorChatPage() {
   }, [loadChatRooms]);
 
   // [bfcache 최적화] 페이지 표시/숨김 이벤트 처리 + 스크롤 위치 복원
+  // pagehide 제거하여 bfcache 차단 방지
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         // 페이지가 다시 보일 때 (뒤로가기 등) 캐시 사용하여 빠르게 로드
         loadChatRooms(false);
+      } else if (document.visibilityState === "hidden") {
+        // 페이지가 숨겨질 때 스크롤 위치 저장 (pagehide 대신 사용)
+        sessionStorage.setItem(
+          "doctorChatScrollPosition",
+          window.scrollY.toString()
+        );
       }
     };
 
@@ -243,22 +281,12 @@ export default function DoctorChatPage() {
       }
     };
 
-    const handlePageHide = () => {
-      // 스크롤 위치 저장
-      sessionStorage.setItem(
-        "doctorChatScrollPosition",
-        window.scrollY.toString()
-      );
-    };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pageshow", handlePageShow);
-    window.addEventListener("pagehide", handlePageHide);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pageshow", handlePageShow);
-      window.removeEventListener("pagehide", handlePageHide);
     };
   }, [loadChatRooms]);
 
@@ -387,24 +415,36 @@ export default function DoctorChatPage() {
     }
   };
 
-  // 약품 검색
-  const handleSearchMedicines = async (query: string) => {
+  // 약품 검색 (디바운싱 적용 - Rate Limit 방지)
+  const handleSearchMedicines = (query: string) => {
     setSearchQuery(query);
+
+    // 이전 타이머 취소
+    if (searchDebounceTimerRef.current) {
+      clearTimeout(searchDebounceTimerRef.current);
+    }
 
     if (!query.trim()) {
       setSearchResults([]);
+      setIsSearching(false);
       return;
     }
 
+    // 검색 중 표시
     setIsSearching(true);
-    try {
-      const data = await prescriptionApi.searchMedicines(query);
-      setSearchResults(data);
-    } catch (error) {
-      console.error("약품 검색 실패:", error);
-    } finally {
-      setIsSearching(false);
-    }
+
+    // 디바운스 타이머 설정 (300ms 후 실행)
+    searchDebounceTimerRef.current = window.setTimeout(async () => {
+      try {
+        const data = await prescriptionApi.searchMedicines(query);
+        setSearchResults(data);
+      } catch (error) {
+        console.error("약품 검색 실패:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, MEDICINE_SEARCH_DEBOUNCE_MS);
   };
 
   // 약품 추가 (클릭 또는 엔터)

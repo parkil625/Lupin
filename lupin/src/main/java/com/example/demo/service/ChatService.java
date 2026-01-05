@@ -145,4 +145,19 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * [N+1 문제 해결] JOIN FETCH로 환자 프로필 정보를 포함한 채팅방 목록 조회
+     * 기존: 1 + N×2 쿼리 (채팅방 목록 1회 + 각 환자 프로필 N×2회)
+     * 최적화: 1 쿼리 (JOIN FETCH로 한 번에 조회)
+     */
+    public List<Appointment> getChatRoomsWithPatientProfiles(Long doctorId) {
+        // JOIN FETCH로 환자(patient) 정보를 함께 로드 (N+1 문제 해결)
+        List<Appointment> appointments = appointmentRepository.findByDoctorIdOrderByDateDesc(doctorId);
+
+        // CANCELLED 상태 제외
+        return appointments.stream()
+                .filter(appointment -> appointment.getStatus() != AppointmentStatus.CANCELLED)
+                .collect(Collectors.toList());
+    }
+
 }

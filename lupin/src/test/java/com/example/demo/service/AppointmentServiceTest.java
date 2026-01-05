@@ -360,4 +360,167 @@ class AppointmentServiceTest {
         assertThat(bookedTimes).containsExactly("10:00");
         verify(appointmentRepository, times(1)).findByDoctorIdAndDateBetween(doctorId, startOfDay, endOfDay);
     }
+
+    @Test
+    @DisplayName("예약 변경 - 성공")
+    void rescheduleAppointment_ShouldSucceed() throws InterruptedException {
+        // Given
+        Long appointmentId = 1L;
+        LocalDateTime newDate = LocalDateTime.of(2025, 12, 2, 15, 0);
+
+        given(appointmentRepository.findById(appointmentId)).willReturn(Optional.of(appointment));
+        given(redissonClient.getLock(anyString())).willReturn(rLock);
+        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
+        given(appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), newDate)).willReturn(false);
+
+        // When
+        appointmentService.rescheduleAppointment(appointmentId, newDate);
+
+        // Then
+        verify(appointmentRepository).findById(appointmentId);
+        verify(rLock).tryLock(anyLong(), anyLong(), any(TimeUnit.class));
+        verify(appointmentRepository).existsByDoctorIdAndDate(doctor.getId(), newDate);
+        verify(rLock).unlock();
+    }
+
+    @Test
+    @DisplayName("예약 변경 - 이미 예약된 시간이면 실패")
+    void rescheduleAppointment_ShouldFailWhenTimeAlreadyBooked() throws InterruptedException {
+        // Given
+        Long appointmentId = 1L;
+        LocalDateTime newDate = LocalDateTime.of(2025, 12, 2, 15, 0);
+
+        given(appointmentRepository.findById(appointmentId)).willReturn(Optional.of(appointment));
+        given(redissonClient.getLock(anyString())).willReturn(rLock);
+        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
+        given(appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), newDate)).willReturn(true);
+
+        // When & Then
+        assertThatThrownBy(() -> appointmentService.rescheduleAppointment(appointmentId, newDate))
+                .isInstanceOf(com.example.demo.exception.BusinessException.class)
+                .hasMessageContaining("해당 의사의 해당 시간에 예약이 이미 꽉 찼습니다");
+
+        verify(rLock).unlock();
+    }
+
+    @Test
+    @DisplayName("예약 변경 - 완료된 예약은 변경 불가")
+    void rescheduleAppointment_ShouldFailWhenCompleted() throws InterruptedException {
+        // Given
+        Long appointmentId = 1L;
+        LocalDateTime newDate = LocalDateTime.of(2025, 12, 2, 15, 0);
+
+        Appointment completedAppointment = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.COMPLETED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId)).willReturn(Optional.of(completedAppointment));
+        given(redissonClient.getLock(anyString())).willReturn(rLock);
+        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
+        given(appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), newDate)).willReturn(false);
+
+        // When & Then
+        assertThatThrownBy(() -> appointmentService.rescheduleAppointment(appointmentId, newDate))
+                .isInstanceOf(com.example.demo.exception.BusinessException.class)
+                .hasMessageContaining("완료된 예약은 변경할 수 없습니다");
+
+        verify(rLock).unlock();
+    }
+
+    @Test
+    @DisplayName("예약 변경 - 취소된 예약은 변경 불가")
+    void rescheduleAppointment_ShouldFailWhenCancelled() throws InterruptedException {
+        // Given
+        Long appointmentId = 1L;
+        LocalDateTime newDate = LocalDateTime.of(2025, 12, 2, 15, 0);
+
+        Appointment cancelledAppointment = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.CANCELLED)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId)).willReturn(Optional.of(cancelledAppointment));
+        given(redissonClient.getLock(anyString())).willReturn(rLock);
+        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
+        given(appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), newDate)).willReturn(false);
+
+        // When & Then
+        assertThatThrownBy(() -> appointmentService.rescheduleAppointment(appointmentId, newDate))
+                .isInstanceOf(com.example.demo.exception.BusinessException.class)
+                .hasMessageContaining("취소된 예약은 변경할 수 없습니다");
+
+        verify(rLock).unlock();
+    }
+
+    @Test
+    @DisplayName("예약 변경 - 진료 중인 예약은 변경 불가")
+    void rescheduleAppointment_ShouldFailWhenInProgress() throws InterruptedException {
+        // Given
+        Long appointmentId = 1L;
+        LocalDateTime newDate = LocalDateTime.of(2025, 12, 2, 15, 0);
+
+        Appointment inProgressAppointment = Appointment.builder()
+                .id(1L)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId)).willReturn(Optional.of(inProgressAppointment));
+        given(redissonClient.getLock(anyString())).willReturn(rLock);
+        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(true);
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
+        given(appointmentRepository.existsByDoctorIdAndDate(doctor.getId(), newDate)).willReturn(false);
+
+        // When & Then
+        assertThatThrownBy(() -> appointmentService.rescheduleAppointment(appointmentId, newDate))
+                .isInstanceOf(com.example.demo.exception.BusinessException.class)
+                .hasMessageContaining("진료 중인 예약은 변경할 수 없습니다");
+
+        verify(rLock).unlock();
+    }
+
+    @Test
+    @DisplayName("예약 변경 - 존재하지 않는 예약")
+    void rescheduleAppointment_ShouldFailWhenNotFound() {
+        // Given
+        Long appointmentId = 999L;
+        LocalDateTime newDate = LocalDateTime.of(2025, 12, 2, 15, 0);
+
+        given(appointmentRepository.findById(appointmentId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> appointmentService.rescheduleAppointment(appointmentId, newDate))
+                .isInstanceOf(com.example.demo.exception.BusinessException.class)
+                .hasMessageContaining("존재하지 않는 예약입니다");
+    }
+
+    @Test
+    @DisplayName("예약 변경 - 락 획득 실패")
+    void rescheduleAppointment_ShouldFailWhenLockFailed() throws InterruptedException {
+        // Given
+        Long appointmentId = 1L;
+        LocalDateTime newDate = LocalDateTime.of(2025, 12, 2, 15, 0);
+
+        given(appointmentRepository.findById(appointmentId)).willReturn(Optional.of(appointment));
+        given(redissonClient.getLock(anyString())).willReturn(rLock);
+        given(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).willReturn(false);
+
+        // When & Then
+        assertThatThrownBy(() -> appointmentService.rescheduleAppointment(appointmentId, newDate))
+                .isInstanceOf(com.example.demo.exception.BusinessException.class)
+                .hasMessageContaining("다른 사용자가 예약 중입니다");
+    }
 }

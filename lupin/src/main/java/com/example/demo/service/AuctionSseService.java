@@ -46,6 +46,12 @@ public class AuctionSseService {
 
         try {
             emitter.send(SseEmitter.event().name("connect").data("connected!"));
+
+            String padding = " ".repeat(2048); // 공백 2KB 정도 추가 (필요 시 더 늘림)
+
+            emitter.send(SseEmitter.event()
+                    .name("connect")
+                    .data("connected!" + padding)); // 의미 없는 공백을 뒤에 붙임
         } catch (IOException e) {
             log.error("SSE 연결 실패", e);
         }

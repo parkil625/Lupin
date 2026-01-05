@@ -88,8 +88,8 @@ INSERT INTO auctions (
     winning_bid
 ) VALUES (
              0,
-             @now + INTERVAL 3 DAY,
-             @now + INTERVAL 4 DAY,
+             DATE(@now + INTERVAL 3 DAY) + INTERVAL 22 HOUR,
+             DATE(@now + INTERVAL 4 DAY) + INTERVAL 22 HOUR,
              false,
              30,
              'SCHEDULED',
@@ -123,8 +123,8 @@ INSERT INTO auctions (
     winning_bid
 ) VALUES (
              0,
-             @now + INTERVAL 4 DAY,
-             @now + INTERVAL 5 DAY,
+             DATE(@now + INTERVAL 4 DAY) + INTERVAL 22 HOUR,
+             DATE(@now + INTERVAL 5 DAY) + INTERVAL 22 HOUR,
              false,
              30,
              'SCHEDULED',

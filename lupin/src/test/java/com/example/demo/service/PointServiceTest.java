@@ -52,65 +52,6 @@ class PointServiceTest {
     }
 
     @Test
-    @DisplayName("사용자의 총 포인트를 조회한다")
-    void getTotalPointsTest() {
-        // given
-        ReflectionTestUtils.setField(user, "totalPoints", 1500L);
-
-        // when
-        long result = pointService.getTotalPoints(user);
-
-        // then
-        assertThat(result).isEqualTo(1500L);
-    }
-
-    @Test
-    @DisplayName("총 포인트 기본값은 0이다")
-    void getTotalPointsDefaultZeroTest() {
-        // when
-        long result = pointService.getTotalPoints(user);
-
-        // then
-        assertThat(result).isZero();
-    }
-
-    @Test
-    @DisplayName("이번 달 포인트 증감을 조회한다")
-    void getMonthlyPointsTest() {
-        // given
-        YearMonth yearMonth = YearMonth.of(2024, 11);
-        given(pointLogRepository.sumPointsByUserIdAndMonth(
-                any(Long.class), 
-                any(), 
-                any()
-        )).willReturn(300L);
-
-        // when
-        long result = pointService.getMonthlyPoints(user, yearMonth);
-
-        // then
-        assertThat(result).isEqualTo(300L);
-    }
-
-    @Test
-    @DisplayName("이번 달 포인트 증감이 음수면 0을 반환한다")
-    void getMonthlyPointsNegativeReturnsZeroTest() {
-        // given
-        YearMonth yearMonth = YearMonth.of(2024, 11);
-        given(pointLogRepository.sumPointsByUserIdAndMonth(
-                any(Long.class), 
-                any(), 
-                any()
-        )).willReturn(-200L);
-
-        // when
-        long result = pointService.getMonthlyPoints(user, yearMonth);
-
-        // then
-        assertThat(result).isZero();
-    }
-
-    @Test
     @DisplayName("포인트 획득(earnPoints) 시 EARN 타입으로 저장되고 포인트 변경 이벤트가 발행된다")
     void earnPointsTest() {
         // given

@@ -791,4 +791,81 @@ class FeedE2ETest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("E2E: 다른 사용자의 피드 수정 시 403 Forbidden")
+    @WithMockUser(username = "otheruser") // 다른 유저로 로그인
+    void updateFeedByOtherUser_Returns403() throws Exception {
+        // given: testuser가 작성한 피드
+        Feed feed = feedRepository.save(Feed.builder()
+                .writer(testUser)
+                .activity("RUNNING")
+                .content("내 글")
+                .build());
+
+        FeedRequest updateRequest = FeedRequest.builder()
+                .activity("WALKING")
+                .content("해킹 시도")
+                .build();
+
+        // when & then
+        mockMvc.perform(put("/api/feeds/" + feed.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("E2E: 다른 사용자의 피드 삭제 시 403 Forbidden")
+    @WithMockUser(username = "otheruser")
+    void deleteFeedByOtherUser_Returns403() throws Exception {
+        // given
+        Feed feed = feedRepository.save(Feed.builder()
+                .writer(testUser)
+                .activity("RUNNING")
+                .content("내 글")
+                .build());
+
+        // when & then
+        mockMvc.perform(delete("/api/feeds/" + feed.getId()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("E2E: 다른 사용자의 댓글 수정 시 403 Forbidden")
+    @WithMockUser(username = "otheruser")
+    void updateCommentByOtherUser_Returns403() throws Exception {
+        // given
+        Feed feed = feedRepository.save(Feed.builder().writer(testUser).activity("RUN").content("글").build());
+        Comment comment = commentRepository.save(Comment.builder()
+                .writer(testUser)
+                .feed(feed)
+                .content("내 댓글")
+                .build());
+
+        CommentRequest updateRequest = new CommentRequest("수정 시도");
+
+        // when & then
+        mockMvc.perform(put("/api/comments/" + comment.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("E2E: 다른 사용자의 댓글 삭제 시 403 Forbidden")
+    @WithMockUser(username = "otheruser")
+    void deleteCommentByOtherUser_Returns403() throws Exception {
+        // given
+        Feed feed = feedRepository.save(Feed.builder().writer(testUser).activity("RUN").content("글").build());
+        Comment comment = commentRepository.save(Comment.builder()
+                .writer(testUser)
+                .feed(feed)
+                .content("내 댓글")
+                .build());
+
+        // when & then
+        mockMvc.perform(delete("/api/comments/" + comment.getId()))
+                .andExpect(status().isForbidden());
+    }
 }

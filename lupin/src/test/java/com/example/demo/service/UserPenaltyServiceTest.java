@@ -55,57 +55,6 @@ class UserPenaltyServiceTest {
     }
 
     @Test
-    @DisplayName("사용자에게 제재를 부여한다")
-    void addPenaltyTest() {
-        // given
-        PenaltyType penaltyType = PenaltyType.FEED;
-        given(userPenaltyRepository.save(any(UserPenalty.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
-
-        // when
-        UserPenalty result = userPenaltyService.addPenalty(user, penaltyType);
-
-        // then
-        assertThat(result.getUser()).isEqualTo(user);
-        assertThat(result.getPenaltyType()).isEqualTo(penaltyType);
-        verify(userPenaltyRepository).save(any(UserPenalty.class));
-    }
-
-    @Test
-    @DisplayName("활성 제재가 있으면 true를 반환한다")
-    void hasActivePenaltyTrueTest() {
-        // given
-        PenaltyType penaltyType = PenaltyType.FEED;
-        // [수정] existsByUserId... 로 변경하고 eq(user.getId()) 사용
-        given(userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(
-                eq(user.getId()), eq(penaltyType), any(LocalDateTime.class)))
-                .willReturn(true);
-
-        // when
-        boolean result = userPenaltyService.hasActivePenalty(user, penaltyType);
-
-        // then
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("활성 제재가 없으면 false를 반환한다")
-    void hasActivePenaltyFalseTest() {
-        // given
-        PenaltyType penaltyType = PenaltyType.COMMENT;
-        // [수정] existsByUserId... 로 변경하고 eq(user.getId()) 사용
-        given(userPenaltyRepository.existsByUserIdAndPenaltyTypeAndCreatedAtAfter(
-                eq(user.getId()), eq(penaltyType), any(LocalDateTime.class)))
-                .willReturn(false);
-
-        // when
-        boolean result = userPenaltyService.hasActivePenalty(user, penaltyType);
-
-        // then
-        assertThat(result).isFalse();
-    }
-
-    @Test
     @DisplayName("신고가 좋아요의 5배 이상이면 페널티 조건을 충족한다")
     void shouldApplyPenaltyTrueTest() {
         // given

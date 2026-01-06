@@ -132,10 +132,16 @@ export default function AppointmentsPage({
       }
     };
 
-    window.addEventListener("doctorConsultationEnded", handleDoctorConsultationEnded);
+    window.addEventListener(
+      "doctorConsultationEnded",
+      handleDoctorConsultationEnded
+    );
 
     return () => {
-      window.removeEventListener("doctorConsultationEnded", handleDoctorConsultationEnded);
+      window.removeEventListener(
+        "doctorConsultationEnded",
+        handleDoctorConsultationEnded
+      );
     };
   }, [currentUser.id, currentUser.role]);
 
@@ -151,7 +157,9 @@ export default function AppointmentsPage({
       // 예약 목록 새로고침
       try {
         if (currentUser.role === "PATIENT") {
-          const data = await appointmentApi.getPatientAppointments(currentUser.id);
+          const data = await appointmentApi.getPatientAppointments(
+            currentUser.id
+          );
           setAppointments(data);
         }
       } catch (error) {
@@ -194,7 +202,9 @@ export default function AppointmentsPage({
   const isFiveMinutesBeforeAppointment = (appointmentDate: string) => {
     const appointmentTime = new Date(appointmentDate);
     const now = new Date();
-    const fiveMinutesBefore = new Date(appointmentTime.getTime() - 5 * 60 * 1000);
+    const fiveMinutesBefore = new Date(
+      appointmentTime.getTime() - 5 * 60 * 1000
+    );
 
     return now >= fiveMinutesBefore;
   };
@@ -264,12 +274,21 @@ export default function AppointmentsPage({
                   <SelectValue placeholder="전체 예약" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL" className="cursor-pointer">전체 예약</SelectItem>
-                  <SelectItem value="SCHEDULED" className="cursor-pointer">예약된 진료</SelectItem>
-                  <SelectItem value="IN_PROGRESS_OR_COMPLETED" className="cursor-pointer">
+                  <SelectItem value="ALL" className="cursor-pointer">
+                    전체 예약
+                  </SelectItem>
+                  <SelectItem value="SCHEDULED" className="cursor-pointer">
+                    예약된 진료
+                  </SelectItem>
+                  <SelectItem
+                    value="IN_PROGRESS_OR_COMPLETED"
+                    className="cursor-pointer"
+                  >
                     진행 중 진료
                   </SelectItem>
-                  <SelectItem value="CANCELLED" className="cursor-pointer">취소된 진료</SelectItem>
+                  <SelectItem value="CANCELLED" className="cursor-pointer">
+                    취소된 진료
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

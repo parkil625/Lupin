@@ -15,7 +15,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * WebConfig 테스트
+ * WebConfig 테스트.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("WebConfig 테스트")

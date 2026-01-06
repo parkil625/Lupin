@@ -32,7 +32,7 @@ import static org.mockito.BDDMockito.*;
 import static org.mockito.ArgumentMatchers.*;
 
 /**
- * AppointmentService TDD 테스트
+ * AppointmentService TDD 테스트.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AppointmentService 테스트")

@@ -388,13 +388,7 @@ class FeedE2ETest {
     @WithMockUser(username = "testuser")
     void getHomeFeeds() throws Exception {
         // given - 다른 사용자가 피드 3개 생성 (홈 피드는 본인 제외)
-        User otherUser = userRepository.save(User.builder()
-                .userId("otheruser")
-                .password("password")
-                .name("다른유저")
-                .role(Role.MEMBER)
-                .build());
-
+        // [수정] setUp()에서 이미 생성된 otherUser 변수를 바로 사용합니다. (중복 생성 제거)
         for (int i = 1; i <= 3; i++) {
             feedRepository.save(Feed.builder()
                     .writer(otherUser)

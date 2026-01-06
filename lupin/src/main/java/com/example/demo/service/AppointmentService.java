@@ -233,18 +233,35 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.APPOINTMENT_NOT_FOUND, "존재하지 않는 예약입니다."));
 
+        String doctorName = appointment.getDoctor().getName();
         appointment.complete();
 
-        // WebSocket으로 진료 종료 알림 전송
-        String roomId = "appointment_" + appointmentId;
-        try {
-            String doctorName = appointment.getDoctor().getName();
-            messagingTemplate.convertAndSend("/queue/chat/" + roomId,
-                new ConsultationEndNotification(appointmentId, doctorName));
-            log.info("진료 종료 알림 전송 완료: appointmentId={}, roomId={}, doctor={}",
-                appointmentId, roomId, doctorName);
-        } catch (Exception e) {
-            log.error("진료 종료 알림 전송 실패: {}", e.getMessage());
+        // 트랜잭션 커밋 후 WebSocket 메시지 전송 (비동기)
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    String roomId = "appointment_" + appointmentId;
+                    try {
+                        messagingTemplate.convertAndSend("/queue/chat/" + roomId,
+                            new ConsultationEndNotification(appointmentId, doctorName));
+                        log.info("진료 종료 알림 전송 완료: appointmentId={}, roomId={}, doctor={}",
+                            appointmentId, roomId, doctorName);
+                    } catch (Exception e) {
+                        log.error("진료 종료 알림 전송 실패: {}", e.getMessage());
+                    }
+                }
+            });
+        } else {
+            // 트랜잭션이 없는 환경 (테스트 등)에서는 즉시 전송
+            String roomId = "appointment_" + appointmentId;
+            try {
+                messagingTemplate.convertAndSend("/queue/chat/" + roomId,
+                    new ConsultationEndNotification(appointmentId, doctorName));
+                log.info("진료 종료 알림 전송 완료 (트랜잭션 없음): appointmentId={}, roomId={}", appointmentId, roomId);
+            } catch (Exception e) {
+                log.error("진료 종료 알림 전송 실패: {}", e.getMessage());
+            }
         }
     }
 

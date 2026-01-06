@@ -3,10 +3,12 @@ package com.example.demo.integration;
 import com.example.demo.config.TestRedisConfiguration;
 import com.example.demo.domain.entity.Appointment;
 import com.example.demo.domain.entity.User;
+import com.example.demo.domain.enums.AppointmentStatus;
 import com.example.demo.domain.enums.Role;
 import com.example.demo.dto.request.AppointmentRequest;
 import com.example.demo.repository.AppointmentRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.AppointmentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -15,10 +17,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Import;
+
+import java.time.LocalDateTime;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -43,6 +54,12 @@ class AppointmentIntegrationTest {
 
     @Autowired
     private AppointmentRepository appointmentRepository;
+
+    @Autowired
+    private AppointmentService appointmentService;
+
+    @SpyBean
+    private SimpMessagingTemplate messagingTemplate;
 
     private Long patientId;
     private Long doctorId;
@@ -131,5 +148,87 @@ class AppointmentIntegrationTest {
                 .filter(a -> a.getDoctor().getId().equals(doctor.getId()))
                 .findFirst().get();
         assertThat(savedApt.getDepartmentName()).isEqualTo("내과");
+    }
+
+    @Test
+    @DisplayName("진료 완료 시 트랜잭션 커밋 후 WebSocket 메시지 전송 (afterCommit 실행)")
+    void completeConsultation_ShouldSendWebSocketMessageAfterCommit() {
+        // Given: IN_PROGRESS 상태의 예약 생성
+        User doctor = userRepository.save(User.builder()
+                .userId("doctor02")
+                .name("김의사")
+                .role(Role.DOCTOR)
+                .department("내과")
+                .build());
+
+        User patient = userRepository.save(User.builder()
+                .userId("patient02")
+                .password("pass")
+                .name("박환자")
+                .role(Role.MEMBER)
+                .build());
+
+        Appointment appointment = appointmentRepository.save(Appointment.builder()
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 15, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .departmentName(doctor.getDepartment())
+                .build());
+
+        Long appointmentId = appointment.getId();
+        String expectedRoomId = "appointment_" + appointmentId;
+
+        // When: 진료 완료 메서드 호출 (이 메서드는 @Transactional이므로 트랜잭션이 활성화됨)
+        appointmentService.completeConsultation(appointmentId);
+
+        // Then: afterCommit이 실행되어 WebSocket 메시지가 전송되어야 함
+        // timeout을 사용하여 비동기 메시지 전송을 기다림 (최대 2초)
+        verify(messagingTemplate, timeout(2000).times(1)).convertAndSend(
+                eq("/queue/chat/" + expectedRoomId),
+                any(AppointmentService.ConsultationEndNotification.class)
+        );
+
+        // 예약 상태도 COMPLETED로 변경되었는지 확인
+        Appointment updatedAppointment = appointmentRepository.findById(appointmentId).orElseThrow();
+        assertThat(updatedAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("진료 완료 시 WebSocket 메시지에 올바른 정보 포함")
+    void completeConsultation_ShouldSendCorrectNotificationData() {
+        // Given
+        User doctor = userRepository.save(User.builder()
+                .userId("doctor03")
+                .name("이의사")
+                .role(Role.DOCTOR)
+                .department("외과")
+                .build());
+
+        User patient = userRepository.save(User.builder()
+                .userId("patient03")
+                .password("pass")
+                .name("최환자")
+                .role(Role.MEMBER)
+                .build());
+
+        Appointment appointment = appointmentRepository.save(Appointment.builder()
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 16, 15, 30))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .departmentName(doctor.getDepartment())
+                .build());
+
+        Long appointmentId = appointment.getId();
+
+        // When
+        appointmentService.completeConsultation(appointmentId);
+
+        // Then: WebSocket 메시지에 appointmentId와 doctorName이 포함되어야 함
+        verify(messagingTemplate, timeout(2000).times(1)).convertAndSend(
+                eq("/queue/chat/appointment_" + appointmentId),
+                any(AppointmentService.ConsultationEndNotification.class)
+        );
     }
 }

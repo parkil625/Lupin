@@ -56,6 +56,9 @@ class AppointmentServiceTest {
     @Mock
     private RLock rLock;
 
+    @Mock
+    private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
     @InjectMocks
     private AppointmentService appointmentService;
 
@@ -171,6 +174,110 @@ class AppointmentServiceTest {
         // Then
         assertThat(inProgressAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
         verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
+
+    @Test
+    @DisplayName("진료 완료 시 트랜잭션 동기화가 활성화되어 있으면 afterCommit에 WebSocket 메시지 전송 등록")
+    void completeConsultation_ShouldRegisterWebSocketMessageInAfterCommit() {
+        // Given
+        Long appointmentId = 1L;
+        Appointment inProgressAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(inProgressAppointment));
+
+        // When
+        appointmentService.completeConsultation(appointmentId);
+
+        // Then
+        // TransactionSynchronizationManager가 활성화되어 있으므로
+        // afterCommit 콜백이 등록되어야 함 (실제 메시지 전송은 트랜잭션 커밋 후)
+        assertThat(inProgressAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
+        assertThat(TransactionSynchronizationManager.isSynchronizationActive()).isTrue();
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+    }
+
+    @Test
+    @DisplayName("진료 완료 시 트랜잭션 동기화가 비활성화되어 있으면 즉시 WebSocket 메시지 전송 시도")
+    void completeConsultation_ShouldSendWebSocketMessageImmediatelyWhenNoTransaction() {
+        // Given
+        // 트랜잭션 동기화 비활성화
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        Long appointmentId = 1L;
+        Appointment inProgressAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(inProgressAppointment));
+
+        // When
+        appointmentService.completeConsultation(appointmentId);
+
+        // Then
+        assertThat(inProgressAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
+        assertThat(TransactionSynchronizationManager.isSynchronizationActive()).isFalse();
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+
+        // WebSocket 메시지 전송 검증
+        verify(messagingTemplate, times(1)).convertAndSend(
+                eq("/queue/chat/appointment_" + appointmentId),
+                any(AppointmentService.ConsultationEndNotification.class)
+        );
+
+        // 테스트 종료 후 트랜잭션 동기화 재활성화
+        TransactionSynchronizationManager.initSynchronization();
+    }
+
+    @Test
+    @DisplayName("진료 완료 시 WebSocket 메시지 전송 중 예외 발생해도 트랜잭션은 성공")
+    void completeConsultation_ShouldCompleteEvenWhenWebSocketFails() {
+        // Given
+        // 트랜잭션 동기화 비활성화
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        Long appointmentId = 1L;
+        Appointment inProgressAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(inProgressAppointment));
+
+        // WebSocket 메시지 전송 실패 시뮬레이션
+        willThrow(new RuntimeException("WebSocket connection failed"))
+                .given(messagingTemplate).convertAndSend(anyString(), any());
+
+        // When
+        appointmentService.completeConsultation(appointmentId);
+
+        // Then
+        // 예외가 발생해도 진료 상태는 COMPLETED로 변경되어야 함
+        assertThat(inProgressAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+        verify(messagingTemplate, times(1)).convertAndSend(anyString(), any());
+
+        // 테스트 종료 후 트랜잭션 동기화 재활성화
+        TransactionSynchronizationManager.initSynchronization();
     }
 
     @Test

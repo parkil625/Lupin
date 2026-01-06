@@ -81,4 +81,11 @@ public class AuctionController {
         return ResponseEntity.ok(auctionService.getMonthlyWinners());
     }
 
+    @Operation(summary = "[시연용] 정규 시간 종료", description = "발표 시연용: 정규 시간을 즉시 종료시켜 초읽기(Overtime) 진입 가능 상태로 만듭니다.")
+    @GetMapping("/test/regular-end/{auctionId}")
+    public ResponseEntity<String> expireRegularTime(@PathVariable Long auctionId) {
+        auctionService.expireRegularTime(auctionId);
+        return ResponseEntity.ok("경매(" + auctionId + ")의 정규 시간이 종료되었습니다! 이제 입찰하면 초읽기가 시작됩니다.");
+    }
+
 }

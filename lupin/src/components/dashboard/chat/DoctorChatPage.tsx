@@ -352,19 +352,22 @@ export default function DoctorChatPage() {
     try {
       await appointmentApi.completeAppointment(appointmentId);
 
-      // 2. 약간의 딜레이 후 UI 업데이트 (WebSocket 메시지 전송 시간 확보)
+      // 2. WebSocket 메시지 전송 대기 (트랜잭션 커밋 + 네트워크 전송 시간 확보)
       setTimeout(() => {
+        // 3. alert로 진료 종료 알림
+        alert(`${memberName}님의 진료가 종료되었습니다.`);
+
+        // 4. UI 업데이트
         setSelectedChatMember(null);
         setActiveRoomId(null);
         setMessages([]);
-        toast.success(`${memberName}님의 진료를 종료했습니다.`);
 
-        // 채팅방 목록 갱신
+        // 5. 채팅방 목록 갱신
         loadChatRooms();
-      }, 200);
+      }, 500);
     } catch (error) {
       console.error("진료 종료 API 실패:", error);
-      toast.error("진료 종료 중 오류가 발생했습니다.");
+      alert("진료 종료 중 오류가 발생했습니다.");
     }
   };
 

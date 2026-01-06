@@ -348,22 +348,23 @@ export default function DoctorChatPage() {
     const appointmentId = parseInt(activeRoomId.replace("appointment_", ""));
     const memberName = selectedChatMember.name;
 
-    // 즉시 UI 업데이트 (사용자 경험 향상)
-    setSelectedChatMember(null);
-    setActiveRoomId(null);
-    setMessages([]);
-    toast.success(`${memberName}님의 진료를 종료합니다.`);
-
-    // API 호출은 백그라운드에서 처리
+    // 1. WebSocket 연결이 살아있을 때 API 호출 (백엔드에서 CONSULTATION_END 전송)
     try {
       await appointmentApi.completeAppointment(appointmentId);
 
-      // 채팅방 목록 갱신 (백그라운드)
-      loadChatRooms();
+      // 2. 약간의 딜레이 후 UI 업데이트 (WebSocket 메시지 전송 시간 확보)
+      setTimeout(() => {
+        setSelectedChatMember(null);
+        setActiveRoomId(null);
+        setMessages([]);
+        toast.success(`${memberName}님의 진료를 종료했습니다.`);
+
+        // 채팅방 목록 갱신
+        loadChatRooms();
+      }, 200);
     } catch (error) {
       console.error("진료 종료 API 실패:", error);
-      // API 실패해도 UI는 이미 업데이트되었으므로 사용자에게는 영향 없음
-      // 필요시 재시도 로직 추가 가능
+      toast.error("진료 종료 중 오류가 발생했습니다.");
     }
   };
 

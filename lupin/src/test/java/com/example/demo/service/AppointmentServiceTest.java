@@ -265,7 +265,7 @@ class AppointmentServiceTest {
 
         // WebSocket 메시지 전송 실패 시뮬레이션
         willThrow(new RuntimeException("WebSocket connection failed"))
-                .given(messagingTemplate).convertAndSend(anyString(), any());
+                .given(messagingTemplate).convertAndSend(anyString(), any(AppointmentService.ConsultationEndNotification.class));
 
         // When
         appointmentService.completeConsultation(appointmentId);
@@ -274,7 +274,7 @@ class AppointmentServiceTest {
         // 예외가 발생해도 진료 상태는 COMPLETED로 변경되어야 함
         assertThat(inProgressAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
         verify(appointmentRepository, times(1)).findById(appointmentId);
-        verify(messagingTemplate, times(1)).convertAndSend(anyString(), any());
+        verify(messagingTemplate, times(1)).convertAndSend(anyString(), any(AppointmentService.ConsultationEndNotification.class));
 
         // 테스트 종료 후 트랜잭션 동기화 재활성화
         TransactionSynchronizationManager.initSynchronization();

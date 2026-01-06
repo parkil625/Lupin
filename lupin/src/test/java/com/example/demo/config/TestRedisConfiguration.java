@@ -47,6 +47,7 @@ public class TestRedisConfiguration {
 
     @Bean
     public RedisMessageListenerContainer redisMessageListener() {
+        // Mock으로 반환하여 실제 Redis 연결을 시도하지 않음
         return mock(RedisMessageListenerContainer.class);
     }
 

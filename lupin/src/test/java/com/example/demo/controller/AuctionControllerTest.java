@@ -272,4 +272,23 @@ class AuctionControllerTest {
                 .andExpect(jsonPath("$[1].winnerName").value("행운아")); // 두 번째 데이터 검증
     }
 
+    @Test
+    @WithMockUser(username = "testuser")
+    @DisplayName("[시연용] GET /test/regular-end/{id} - 정규 시간 종료 API 호출 성공")
+    void expireRegularTime_Success() throws Exception {
+        // Given
+        Long auctionId = 100L;
+
+        // When & Then
+        mockMvc.perform(get("/api/auction/test/regular-end/{id}", auctionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .with(csrf())) // 보안 설정에 따라 필요할 수 있음
+                .andDo(print())
+                .andExpect(status().isOk()) // 200 OK 확인
+                .andExpect(content().string("경매(" + auctionId + ")의 정규 시간이 종료되었습니다! 이제 입찰하면 초읽기가 시작됩니다.")); // 응답 메시지 확인
+
+        // Verify: 실제 서비스의 expireRegularTime 메소드가 호출되었는지 검증
+        verify(auctionService).expireRegularTime(auctionId);
+    }
+
 }

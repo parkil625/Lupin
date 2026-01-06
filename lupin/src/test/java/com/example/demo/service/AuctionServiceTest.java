@@ -871,6 +871,48 @@ class AuctionServiceTest {
         assertThat(capturedMessage.getCurrentPrice()).isEqualTo(bidAmount);
     }
 
+    @Test
+    @DisplayName("[시연용] 정규 시간 종료 - 호출 시 종료 시간이 즉시 과거로 변경되고 저장된다")
+    void expireRegularTime_Success() {
+        // Given
+        Long auctionId = 1L;
+        LocalDateTime now = LocalDateTime.now();
+
+        // 상황: 원래는 1시간 뒤에 끝나는 평범한 경매
+        Auction auction = Auction.builder()
+                .id(auctionId)
+                .status(AuctionStatus.ACTIVE)
+                .startTime(now.minusMinutes(10))
+                .regularEndTime(now.plusHours(1)) // 아직 1시간 남음
+                .build();
+
+        given(auctionRepository.findById(auctionId)).willReturn(Optional.of(auction));
+
+        // When (기능 실행)
+        auctionService.expireRegularTime(auctionId);
+
+        // Then (검증)
+        // 1. "시간이 과거로 바뀌었니?" -> 정규 종료 시간이 현재보다 이전이어야 함
+        assertThat(auction.getRegularEndTime()).isBefore(LocalDateTime.now());
+
+        // 2. "DB에 저장했니?" -> saveAndFlush가 호출되었는지 확인
+        verify(auctionRepository).saveAndFlush(auction);
+    }
+
+    @Test
+    @DisplayName("[시연용] 정규 시간 종료 - 존재하지 않는 경매 ID면 실패한다")
+    void expireRegularTime_NotFound() {
+        // Given
+        Long invalidId = 999L;
+        given(auctionRepository.findById(invalidId)).willReturn(Optional.empty());
+
+        // When & Then
+        // 없는 ID를 넣으면 예외가 터져야 함
+        assertThatThrownBy(() -> auctionService.expireRegularTime(invalidId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("경매를 찾을 수 없습니다.");
+    }
+
     // 편의 메서드 (Auction에 setAuctionItem이 없는 경우를 대비한 헬퍼)
     private void setAuctionItemForTest(Auction auction, AuctionItem item) {
         try {

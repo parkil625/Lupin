@@ -44,7 +44,8 @@ public class SecurityConfig {
             "/*.jpg",      // [추가] jpg 이미지
             "/*.jpeg",     // [추가] jpeg 이미지
             "/images/**",  // [추가] 이미지 폴더
-            "/static/**"   // [추가] 정적 리소스
+            "/static/**",   // [추가] 정적 리소스
+            "/api/auction/test/**",
     };
 
     private static final String[] AUTH_URLS = {

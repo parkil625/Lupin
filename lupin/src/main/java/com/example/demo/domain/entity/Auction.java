@@ -254,4 +254,11 @@ public class Auction {
         // 그 외에는 원래 정해진 정규 종료 시간 반환
         return regularEndTime.plusSeconds(overtimeSeconds);
     }
+
+    /* [시연용] 발표를 위해 강제로 시간을 변경하는 메소드 */
+    public void changeTimeForDemo(LocalDateTime newStartTime, LocalDateTime newEndTime) {
+        this.startTime = newStartTime;
+        this.regularEndTime = newEndTime;
+
+    }
 }

@@ -81,6 +81,7 @@ class FeedE2ETest {
     private com.example.demo.service.LikeCountCacheService likeCountCacheService;
 
     private User testUser;
+    private User otherUser; // [추가] otherUser 변수 선언
 
     @BeforeEach
     void setUp() {
@@ -100,12 +101,23 @@ class FeedE2ETest {
                 org.mockito.ArgumentMatchers.any(java.time.LocalDate.class)))
                 .thenReturn(new WorkoutScoreService.WorkoutResult(10, 100, true));
 
+        // 1. 기존 유저 (testuser) 생성
         testUser = userRepository.save(User.builder()
                 .userId("testuser")
                 .password("password")
                 .name("테스트유저")
                 .role(Role.MEMBER)
                 .build());
+
+        // [추가] 2. 다른 유저 (otheruser) 생성 - 403 Forbidden 테스트를 위해 DB에 존재해야 함
+        otherUser = userRepository.save(User.builder()
+                .userId("otheruser")
+                .password("password")
+                .name("다른유저")
+                .role(Role.MEMBER)
+                .build());
+        
+        System.out.println(">>> [Test Setup] Created users: testuser, otheruser");
     }
 
     @Test

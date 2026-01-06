@@ -207,4 +207,101 @@ class AppointmentControllerTest {
                         .content(invalidRequest))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @WithMockUser
+    @DisplayName("진료 완료 성공")
+    void completeAppointment_ShouldReturnSuccessMessage() throws Exception {
+        // Given
+        Long appointmentId = 1L;
+
+        // When & Then
+        mockMvc.perform(put("/api/appointment/{appointmentId}/complete", appointmentId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string("진료가 완료되었습니다."));
+
+        verify(appointmentService).completeConsultation(appointmentId);
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("채팅 가능 여부 확인 - 가능한 경우")
+    void isChatAvailable_ShouldReturnTrue_WhenChatIsAvailable() throws Exception {
+        // Given
+        Long appointmentId = 1L;
+        given(appointmentService.isChatAvailable(appointmentId))
+                .willReturn(true);
+
+        // When & Then
+        mockMvc.perform(get("/api/appointment/{appointmentId}/chat-available", appointmentId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+
+        verify(appointmentService).isChatAvailable(appointmentId);
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("채팅 가능 여부 확인 - 불가능한 경우")
+    void isChatAvailable_ShouldReturnFalse_WhenChatIsNotAvailable() throws Exception {
+        // Given
+        Long appointmentId = 1L;
+        given(appointmentService.isChatAvailable(appointmentId))
+                .willReturn(false);
+
+        // When & Then
+        mockMvc.perform(get("/api/appointment/{appointmentId}/chat-available", appointmentId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string("false"));
+
+        verify(appointmentService).isChatAvailable(appointmentId);
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("채팅 잠금 메시지 조회")
+    void getChatLockMessage_ShouldReturnLockMessage() throws Exception {
+        // Given
+        Long appointmentId = 1L;
+        String lockMessage = "진료 시작 30분 전부터 채팅이 가능합니다.";
+        given(appointmentService.getChatLockMessage(appointmentId))
+                .willReturn(lockMessage);
+
+        // When & Then
+        mockMvc.perform(get("/api/appointment/{appointmentId}/chat-lock-message", appointmentId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().string(lockMessage));
+
+        verify(appointmentService).getChatLockMessage(appointmentId);
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("예약된 시간 조회 성공")
+    void getBookedTimes_ShouldReturnTimeList() throws Exception {
+        // Given
+        Long doctorId = 21L;
+        String dateStr = "2025-12-15";
+        List<String> bookedTimes = List.of("09:00", "10:00", "14:00");
+        given(appointmentService.getBookedTimesByDoctorAndDate(any(), any()))
+                .willReturn(bookedTimes);
+
+        // When & Then
+        mockMvc.perform(get("/api/appointment/booked-times")
+                        .param("doctorId", doctorId.toString())
+                        .param("date", dateStr)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0]").value("09:00"))
+                .andExpect(jsonPath("$[1]").value("10:00"))
+                .andExpect(jsonPath("$[2]").value("14:00"));
+
+        verify(appointmentService).getBookedTimesByDoctorAndDate(any(), any());
+    }
 }

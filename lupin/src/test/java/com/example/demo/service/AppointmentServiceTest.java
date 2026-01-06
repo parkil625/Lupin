@@ -232,6 +232,50 @@ class AppointmentServiceTest {
         assertThat(TransactionSynchronizationManager.isSynchronizationActive()).isFalse();
         verify(appointmentRepository, times(1)).findById(appointmentId);
 
+        // WebSocket 메시지 전송 검증
+        verify(messagingTemplate, times(1)).convertAndSend(
+                eq("/queue/chat/appointment_" + appointmentId),
+                any(AppointmentService.ConsultationEndNotification.class)
+        );
+
+        // 테스트 종료 후 트랜잭션 동기화 재활성화
+        TransactionSynchronizationManager.initSynchronization();
+    }
+
+    @Test
+    @DisplayName("진료 완료 시 WebSocket 메시지 전송 중 예외 발생해도 트랜잭션은 성공")
+    void completeConsultation_ShouldCompleteEvenWhenWebSocketFails() {
+        // Given
+        // 트랜잭션 동기화 비활성화
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        Long appointmentId = 1L;
+        Appointment inProgressAppointment = Appointment.builder()
+                .id(appointmentId)
+                .patient(patient)
+                .doctor(doctor)
+                .date(LocalDateTime.of(2025, 12, 1, 14, 0))
+                .status(AppointmentStatus.IN_PROGRESS)
+                .build();
+
+        given(appointmentRepository.findById(appointmentId))
+                .willReturn(Optional.of(inProgressAppointment));
+
+        // WebSocket 메시지 전송 실패 시뮬레이션
+        willThrow(new RuntimeException("WebSocket connection failed"))
+                .given(messagingTemplate).convertAndSend(anyString(), any());
+
+        // When
+        appointmentService.completeConsultation(appointmentId);
+
+        // Then
+        // 예외가 발생해도 진료 상태는 COMPLETED로 변경되어야 함
+        assertThat(inProgressAppointment.getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
+        verify(appointmentRepository, times(1)).findById(appointmentId);
+        verify(messagingTemplate, times(1)).convertAndSend(anyString(), any());
+
         // 테스트 종료 후 트랜잭션 동기화 재활성화
         TransactionSynchronizationManager.initSynchronization();
     }

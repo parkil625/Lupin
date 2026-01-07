@@ -54,7 +54,7 @@ INSERT INTO auctions (
 ) VALUES (
              0,
              @now - INTERVAL 1 DAY,
-             @now + INTERVAL 30 MINUTE,
+             DATE(@now + INTERVAL 1 DAY) + INTERVAL 4 HOUR,
              false,
              30,
              'ACTIVE',

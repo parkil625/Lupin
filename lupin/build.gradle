@@ -34,6 +34,8 @@ configurations {
 }
 
 repositories {
+	// Maven Central 본점이 403으로 막혔을 때를 대비해 우회 경로(Mirror)를 최상단에 배치합니다.
+	maven { url 'https://maven.aliyun.com/repository/public/' }
 	mavenCentral()
 }
 

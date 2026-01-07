@@ -280,4 +280,20 @@ public class AuctionService {
                 .map(a -> AuctionResponse.from(a, a.getWinner().getName()))
                 .collect(Collectors.toList());
     }
+
+    // [시연용] 정규 시간만 즉시 종료시키는 메소드 (초읽기 진입 시연용)
+    public void expireRegularTime(Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new IllegalArgumentException("경매를 찾을 수 없습니다."));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // 시작 시간은 건드리지 않고, 정규 종료 시간만 '현재 시간보다 1초 전'으로 변경
+        // 이렇게 하면 경매는 여전히 ACTIVE 상태지만, 시스템은 '정규 시간이 끝났다'고 판단합니다.
+        auction.changeTimeForDemo(auction.getStartTime(), now.minusSeconds(1));
+
+        auctionRepository.saveAndFlush(auction);
+
+        log.info("시연용: 경매 ID {} 정규 시간 종료 처리 완료 (초읽기 대기 상태 진입)", auctionId);
+    }
 }

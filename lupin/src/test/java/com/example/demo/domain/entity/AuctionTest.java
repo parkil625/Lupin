@@ -437,7 +437,27 @@ class AuctionTest {
                 .hasMessage("경매가 종료되었습니다.");
     }
 
+    @Test
+    @DisplayName("[시연용] 경매 시간 강제 변경 테스트")
+    void changeTimeForDemo() {
+        // given (기존 경매 생성)
+        LocalDateTime now = LocalDateTime.now();
+        Auction auction = Auction.builder()
+                .startTime(now)
+                .regularEndTime(now.plusHours(2))
+                .build();
 
+        // 변경할 시간 (과거로 설정해보거나 미래로 설정)
+        LocalDateTime newStartTime = now.minusHours(1); // 1시간 전 시작
+        LocalDateTime newEndTime = now.minusMinutes(10); // 10분 전 종료
+
+        // when (메소드 실행)
+        auction.changeTimeForDemo(newStartTime, newEndTime);
+
+        // then (값이 진짜 바꼈는지 확인)
+        assertThat(auction.getStartTime()).isEqualTo(newStartTime);
+        assertThat(auction.getRegularEndTime()).isEqualTo(newEndTime);
+    }
     // ===========================
     // Helper Methods
     // ===========================

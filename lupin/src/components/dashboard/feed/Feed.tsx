@@ -10,7 +10,8 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Virtuoso } from "react-virtuoso";
 import SearchInput from "@/components/molecules/SearchInput";
 import { Feed, Comment } from "@/types/dashboard.types";
-import { getRelativeTime, parseBlockNoteContent } from "@/lib/utils";
+import { getRelativeTime } from "@/lib/utils";
+import FeedContentDisplay from "@/components/shared/FeedContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -1152,9 +1153,7 @@ const FeedItem = React.memo(function FeedItem({
             </div>
 
             {/* 본문 */}
-            <p className="text-gray-900 text-sm">
-              {parseBlockNoteContent(feed.content)}
-            </p>
+            <FeedContentDisplay content={feed.content} />
           </div>
         </ScrollArea>
       </div>

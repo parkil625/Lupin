@@ -70,22 +70,37 @@ public class WorkoutScoreService {
     }
 
     /**
-     * 칼로리 계산
-     * 칼로리 = MET × 체중(kg) × 시간(hours)
-     * MET = 강도 × 8
+     * 칼로리 계산 (Mifflin-St Jeor 공식 + MET)
+     * 칼로리 = (BMR / 24) * MET * 시간(hours)
+     * BMR은 키, 몸무게, 나이, 성별을 기반으로 계산
      */
-    public int calculateCalories(String activity, LocalDateTime startTime, LocalDateTime endTime, double weight) {
+    public int calculateCalories(String activity, LocalDateTime startTime, LocalDateTime endTime, com.example.demo.domain.entity.User user) {
         long durationMinutes = Duration.between(startTime, endTime).toMinutes();
         double durationHours = durationMinutes / 60.0;
-        double intensity = getIntensity(activity);
-        double baseMET = intensity * 8;
+        double met = getIntensity(activity) * 8; // MET = 강도 * 8
 
-        int calories = (int) Math.round(baseMET * weight * durationHours);
+        // 사용자 정보 추출 (Null 방어 로직 포함)
+        double weight = (user.getWeight() != null && user.getWeight() > 0) ? user.getWeight() : 65.0;
+        double height = (user.getHeight() != null && user.getHeight() > 0) ? user.getHeight() : 170.0;
+        int age = (user.getBirthDate() != null) ? java.time.Period.between(user.getBirthDate(), LocalDate.now()).getYears() : 25;
+        String gender = (user.getGender() != null) ? user.getGender() : "MALE";
 
-        log.debug(">>> [Calorie Calc] Result: {} kcal (Activity: {}, Duration: {}min, Weight: {}kg, MET: {})",
-                calories, activity, durationMinutes, weight, baseMET);
+        // 기초대사량(BMR) 계산 - Mifflin-St Jeor Equation
+        double bmr;
+        if ("FEMALE".equalsIgnoreCase(gender) || "F".equalsIgnoreCase(gender) || "여자".equals(gender) || "WOMAN".equalsIgnoreCase(gender)) {
+            bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+        } else {
+            // Default to Male
+            bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+        }
 
-        return calories;
+        // 활동 칼로리 = (BMR / 24시간) * MET * 운동시간
+        double calories = (bmr / 24.0) * met * durationHours;
+
+        log.debug(">>> [Calorie Calc] Result: {} kcal (Activity: {}, Duration: {}min, User: [W:{}kg, H:{}cm, A:{}, G:{}], BMR: {}, MET: {})",
+                (int) calories, activity, durationMinutes, weight, height, age, gender, String.format("%.2f", bmr), met);
+
+        return (int) Math.round(calories);
     }
 
     /**
@@ -129,12 +144,11 @@ public class WorkoutScoreService {
             return WorkoutResult.empty();
         }
 
-        // [Logic] 사용자 체중 적용 (없으면 기본값 65kg)
-        double userWeight = (user.getWeight() != null && user.getWeight() > 0) ? user.getWeight() : 65.0;
-        log.info(">>> [Workout Calc] Applying weight: {}kg (User ID: {})", userWeight, user.getId());
+        // [Logic] 사용자 정보를 이용해 정밀 계산 (키, 몸무게, 성별, 나이, 운동강도, 시간)
+        log.info(">>> [Workout Calc] Calculating for User ID: {}", user.getId());
 
         int score = calculateScore(activity, startTime, endTime);
-        int calories = calculateCalories(activity, startTime, endTime, userWeight);
+        int calories = calculateCalories(activity, startTime, endTime, user); // User 객체 전달
         long durationMinutes = calculateDurationMinutes(startTime, endTime);
 
         log.info(">>> [Workout Calc] Completed. Activity={}, Duration={}min, Score={}, Calories={}",

@@ -96,9 +96,10 @@ class FeedE2ETest {
         // WorkoutScoreService.validateAndCalculate mock 설정
         org.mockito.Mockito.when(workoutScoreService.validateAndCalculate(
                 org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(java.time.LocalDate.class)))
+                org.mockito.ArgumentMatchers.any(), // startTimeOpt
+                org.mockito.ArgumentMatchers.any(), // endTimeOpt
+                org.mockito.ArgumentMatchers.any(java.time.LocalDate.class),
+                org.mockito.ArgumentMatchers.any(com.example.demo.domain.entity.User.class))) // [수정] User 인자 추가
                 .thenReturn(new WorkoutScoreService.WorkoutResult(10, 100, true));
 
         // 1. 기존 유저 (testuser) 생성

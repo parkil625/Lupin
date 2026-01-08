@@ -41,8 +41,8 @@ public class NotificationSseService {
 
     private static final Long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
     
-    // [수정] 하트비트는 연결 유지용으로만 사용하므로 30초로 늘림 (대역폭 절약)
-    private static final long HEARTBEAT_INTERVAL = 30 * 1000L;
+    // [수정] 실시간성 보장을 위해 3초마다 하트비트 전송 (버퍼링 방지)
+    private static final long HEARTBEAT_INTERVAL = 3 * 1000L;
 
     // [최종 수정] Cloudflare의 Brotli 압축을 무력화하기 위한 '고엔트로피' 무작위 데이터
     // 단순 반복 문자열은 압축되면 100바이트 미만으로 줄어들어 버퍼링을 뚫지 못합니다.
@@ -109,11 +109,11 @@ public class NotificationSseService {
             // SseEmitter Thread-Safety: 동시 send 방지
             synchronized (emitter) {
                 try {
-                    // [수정] 하트비트에서 패딩(DUMMY_DATA) 제거. 단순히 연결 유지만 목적.
-                    // Cloudflare가 이 핑을 버퍼링하더라도 TCP 연결은 유지되므로 상관없음.
+                    // [수정] 프록시 버퍼링을 뚫기 위해 하트비트에도 무조건 패딩 추가
                     emitter.send(SseEmitter.event()
                             .name("heartbeat")
-                            .data("ping"));
+                            .data("ping")
+                            .comment(DUMMY_DATA)); // [핵심] 10KB 패딩으로 버퍼 강제 플러시
                     
                     // 로그 레벨을 debug로 낮춤
                     log.debug("[SSE Heartbeat] 핑 전송 완료: userId={}", userId);

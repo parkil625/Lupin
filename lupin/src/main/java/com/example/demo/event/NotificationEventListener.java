@@ -34,6 +34,7 @@ public class NotificationEventListener {
     private final NotificationFactory notificationFactory;
     private final UserRepository userRepository;
     private final com.example.demo.repository.FeedLikeRepository feedLikeRepository; // [추가] 좋아요 개수 조회용
+    private final com.example.demo.repository.CommentLikeRepository commentLikeRepository; // [추가] 댓글 좋아요 개수 조회용
 
     /**
      * 트랜잭션 커밋 후 비동기로 알림 처리
@@ -59,17 +60,28 @@ public class NotificationEventListener {
             // [수정] 알림 중복 방지 및 뭉치기 전략 적용
             Notification savedNotification;
 
-            // 1. FEED_LIKE(좋아요) 타입인 경우 덮어쓰기/뭉치기 시도
-            if ("FEED_LIKE".equals(event.getType().name())) {
-                // [뭉치기 로직] 현재 피드의 전체 좋아요 개수 조회
-                long likeCount = feedLikeRepository.countByFeedId(event.getRefId());
-                String newTitle;
+            // 1. FEED_LIKE / COMMENT_LIKE (좋아요) 타입인 경우 덮어쓰기/뭉치기 시도
+            String typeName = event.getType().name();
+            if ("FEED_LIKE".equals(typeName) || "COMMENT_LIKE".equals(typeName)) {
+                
+                long likeCount;
+                String suffix;
 
+                if ("FEED_LIKE".equals(typeName)) {
+                    likeCount = feedLikeRepository.countByFeedId(event.getRefId());
+                    suffix = "회원님의 게시물을 좋아합니다.";
+                } else {
+                    // COMMENT_LIKE
+                    likeCount = commentLikeRepository.countByCommentId(event.getRefId());
+                    suffix = "회원님의 댓글을 좋아합니다.";
+                }
+
+                String newTitle;
                 if (likeCount <= 1) {
-                    newTitle = event.getActorName() + "님이 회원님의 게시물을 좋아합니다.";
+                    newTitle = event.getActorName() + "님이 " + suffix;
                 } else {
                     // 예: "철수님 외 2명이 회원님의 게시물을 좋아합니다."
-                    newTitle = event.getActorName() + "님 외 " + (likeCount - 1) + "명이 회원님의 게시물을 좋아합니다.";
+                    newTitle = event.getActorName() + "님 외 " + (likeCount - 1) + "명이 " + suffix;
                 }
 
                 // [수정] 읽음 여부 상관없이 최신 알림 조회 (Smart Threading)

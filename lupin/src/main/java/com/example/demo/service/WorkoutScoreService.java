@@ -50,7 +50,7 @@ public class WorkoutScoreService {
 
     private static final int MAX_SCORE = 30;
     private static final double DEFAULT_INTENSITY = 0.8;
-    private static final double BASE_WEIGHT_KG = 65.0;
+    // [Modified] 고정 체중(65kg) 상수 삭제 -> 사용자 DB 몸무게 사용
 
     /**
      * 운동 점수 계산
@@ -74,16 +74,16 @@ public class WorkoutScoreService {
      * 칼로리 = MET × 체중(kg) × 시간(hours)
      * MET = 강도 × 8
      */
-    public int calculateCalories(String activity, LocalDateTime startTime, LocalDateTime endTime) {
+    public int calculateCalories(String activity, LocalDateTime startTime, LocalDateTime endTime, double weight) {
         long durationMinutes = Duration.between(startTime, endTime).toMinutes();
         double durationHours = durationMinutes / 60.0;
         double intensity = getIntensity(activity);
         double baseMET = intensity * 8;
 
-        int calories = (int) Math.round(baseMET * BASE_WEIGHT_KG * durationHours);
+        int calories = (int) Math.round(baseMET * weight * durationHours);
 
-        log.debug("Calculated calories: {} (activity={}, duration={}min)",
-                calories, activity, durationMinutes);
+        log.debug(">>> [Calorie Calc] Result: {} kcal (Activity: {}, Duration: {}min, Weight: {}kg, MET: {})",
+                calories, activity, durationMinutes, weight, baseMET);
 
         return calories;
     }
@@ -103,18 +103,21 @@ public class WorkoutScoreService {
     }
 
     /**
-     * 운동 검증 및 점수/칼로리 계산
+     * 운동 검증 및 점수/칼로리 계산 (사용자 체중 적용)
      * @param activity 운동 종류
      * @param startTimeOpt 시작 시간 (없으면 검증 없이 0점 반환)
      * @param endTimeOpt 종료 시간 (없으면 검증 없이 0점 반환)
      * @param feedDate 피드 기준 날짜
+     * @param user 사용자 엔티티 (체중 조회용)
      * @return 점수와 칼로리를 담은 결과 (검증 실패 시 둘 다 0)
      */
     public WorkoutResult validateAndCalculate(String activity,
                                                Optional<LocalDateTime> startTimeOpt,
                                                Optional<LocalDateTime> endTimeOpt,
-                                               LocalDate feedDate) {
+                                               LocalDate feedDate,
+                                               com.example.demo.domain.entity.User user) {
         if (startTimeOpt.isEmpty() || endTimeOpt.isEmpty()) {
+            log.warn(">>> [Workout Calc] Missing time info for calculation.");
             return WorkoutResult.empty();
         }
 
@@ -122,14 +125,19 @@ public class WorkoutScoreService {
         LocalDateTime endTime = endTimeOpt.get();
 
         if (!isValidWorkoutTime(startTime, endTime, feedDate)) {
+            log.warn(">>> [Workout Calc] Invalid workout time range.");
             return WorkoutResult.empty();
         }
 
+        // [Logic] 사용자 체중 적용 (없으면 기본값 65kg)
+        double userWeight = (user.getWeight() != null && user.getWeight() > 0) ? user.getWeight() : 65.0;
+        log.info(">>> [Workout Calc] Applying weight: {}kg (User ID: {})", userWeight, user.getId());
+
         int score = calculateScore(activity, startTime, endTime);
-        int calories = calculateCalories(activity, startTime, endTime);
+        int calories = calculateCalories(activity, startTime, endTime, userWeight);
         long durationMinutes = calculateDurationMinutes(startTime, endTime);
 
-        log.info("Workout verified: activity={}, duration={}min, score={}, calories={}",
+        log.info(">>> [Workout Calc] Completed. Activity={}, Duration={}min, Score={}, Calories={}",
                 activity, durationMinutes, score, calories);
 
         return new WorkoutResult(score, calories, true);

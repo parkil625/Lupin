@@ -41,12 +41,12 @@ public class FeedTransactionService {
     public Feed createFeed(User writer, String activity, String content,
                            String startImageKey, String endImageKey, List<String> otherImageKeys,
                            Optional<LocalDateTime> startTimeOpt, Optional<LocalDateTime> endTimeOpt) {
-        // 점수 계산 (WorkoutScoreService에 위임)
+        // 점수 계산 (WorkoutScoreService에 위임 - Writer 객체 전달하여 체중 적용)
         WorkoutScoreService.WorkoutResult workoutResult =
-                workoutScoreService.validateAndCalculate(activity, startTimeOpt, endTimeOpt, LocalDate.now());
+                workoutScoreService.validateAndCalculate(activity, startTimeOpt, endTimeOpt, LocalDate.now(), writer);
 
         if (!workoutResult.valid() && (startTimeOpt.isPresent() || endTimeOpt.isPresent())) {
-            log.warn("Workout time validation failed - score set to 0");
+            log.warn(">>> [Feed Tx] Workout time validation failed - score/calories set to 0");
         }
 
         // 피드 저장
@@ -118,11 +118,13 @@ public class FeedTransactionService {
 
             // 2. [Score Phase] 점수 계산 트리거 (두 시간이 모두 유효해야만 계산 시도)
             if (resolvedStartTime != null && resolvedEndTime != null) {
+                // [Modified] user 객체 전달하여 변경된 체중 등 반영
                 WorkoutScoreService.WorkoutResult workoutResult =
                         workoutScoreService.validateAndCalculate(activity,
                                 Optional.of(resolvedStartTime),
                                 Optional.of(resolvedEndTime),
-                                feed.getCreatedAt().toLocalDate());
+                                feed.getCreatedAt().toLocalDate(),
+                                user);
 
                 if (workoutResult.valid()) {
                     // 조건 충족: 점수/칼로리 업데이트

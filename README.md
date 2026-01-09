@@ -8,7 +8,7 @@
 <br/>
 
 ## 1. Project Overview (프로젝트 개요)
-Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 의료 소비자의 접근성을 극대화하기 위해 설계된 **수직적 통합 플랫폼(Vertical Platform)**입니다. 희소성 있는 건강기능식품의 **실시간 경매(Real-time Auction)** 시스템과 전문 의료진과의 **비대면 진료(Telemedicine)** 및 상담 기능을 하나의 생태계로 통합했습니다.
+Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 의료 소비자의 접근성을 극대화하기 위해 설계된 수직적 통합 플랫폼(Vertical Platform)입니다. 희소성 있는 건강기능식품의 **실시간 경매(Real-time Auction)** 시스템과 전문 의료진과의 **비대면 진료(Telemedicine)** 및 상담 기능을 하나의 생태계로 통합했습니다.
 
 > ⚠️ Note: 현재 AWS 운영 비용 최적화를 위해 라이브 배포는 중단되었으며, 아래 시연 영상과 코드, 그리고 성능 테스트 결과를 통해 프로젝트의 기술적 성취를 확인하실 수 있습니다.
 
@@ -78,7 +78,7 @@ R&R(Role and Responsibilities)을 명확히 분배하여 각 도메인의 전문
 **[Problem]** 초기 AWS S3 직접 서빙 방식은 고화질 의료 용품 이미지 로딩 시 **LCP(Largest Contentful Paint)가 35.2초**에 달해 사용자 이탈이 우려되었습니다.
 **[Solution]**
 * Edge Caching: Cloudflare CDN을 도입하여 정적 리소스를 엣지 로케이션에서 캐싱했습니다.
-* Image Processing: 업로드된 이미지를 5.0MB에서 **50KB(WebP/AVIF)**로 압축 및 포맷 변환하는 파이프라인을 구축했습니다.
+* Image Processing: 업로드된 이미지를 5.0MB에서 50KB(WebP/AVIF)로 압축 및 포맷 변환하는 파이프라인을 구축했습니다.
 * Lazy Loading: `lazyWithPreload` 유틸리티를 구현하여 초기 번들 사이즈를 최소화했습니다.
 **[Result]**
 * Payload Reduction: 이미지 크기 **99% 감소** (5.0MB → 50KB)
@@ -94,7 +94,7 @@ R&R(Role and Responsibilities)을 명확히 분배하여 각 도메인의 전문
 * Latency Improvement: 피드 API 응답 속도 **850ms → 184ms (4.6배 단축)**
 
 ### 🛡️ 3. Concurrency Control in Auctions (경매 동시성 제어)
-**[Problem]** 인기 경매 마감 직전, 수천 건의 입찰이 동시에 발생할 때 **Race Condition(경쟁 상태)**으로 인한 데이터 불일치 위험이 있었습니다.
+**[Problem]** 인기 경매 마감 직전, 수천 건의 입찰이 동시에 발생할 때 Race Condition(경쟁 상태)으로 인한 데이터 불일치 위험이 있었습니다.
 **[Solution]** Redis Distributed Lock (Redisson)을 적용하여 입찰 트랜잭션의 원자성(Atomicity)을 보장하고, `bid-race-test.js` 시나리오를 통해 임계치를 검증했습니다.
 
 <br/>

@@ -65,7 +65,7 @@ R&R(Role and Responsibilities)을 명확히 분배하여 각 도메인의 전문
 | Team Member | Position | Domain Responsibilities | Tech Keywords |
 |:---:|:---:|:---|:---|
 | 박선일 | Core Engineer | Infrastructure & Core Tech<br/>- 회원 관리(Auth) 및 소셜 로그인(OAuth 2.0)<br/>- 커뮤니티(Feed/Comment) 및 알림(SSE)<br/>- Cloud Architecture (AWS, Cloudflare, Docker)<br/>- Performance Engineering (k6 Load Test)<br/>- CI/CD Pipeline 구축 | Spring Boot, Redis, Cloudflare, k6, Docker, GitHub Actions |
-| 홍세민 | Team Lead | Medical Domain<br/>- 의사/환자 도메인 설계<br/>- 처방전(Prescription) 발급 로직<br/>- 실시간 채팅(WebSocket) 시스템 구현<br/>- 예약 비즈니스 로직 설계<br/>- | WebSocket, JPA, MySQL, React |
+| 홍세민 | Team Lead | Medical Domain<br/>- 의사/환자 도메인 설계<br/>- 처방전(Prescription) 발급 로직<br/>- 실시간 채팅(WebSocket) 시스템 구현<br/>- 예약 비즈니스 로직 설계 | WebSocket, JPA, MySQL, React |
 | 최재홍 | Engineer | Commerce Domain<br/>- 경매(Auction) 비즈니스 로직 설계<br/>- 입찰 프로세스 및 타이머 구현 | Spring Batch, Scheduler, MySQL |
 
 <br/>

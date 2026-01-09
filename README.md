@@ -38,7 +38,7 @@ R&R(Role and Responsibilities)을 명확히 분배하여 각 도메인의 전문
 |:---:|:---:|:---|:---|
 | 박선일 | Core Engineer | Infrastructure & Core Tech<br/>- 회원 관리(Auth) 및 소셜 로그인(OAuth 2.0)<br/>- 커뮤니티(Feed/Comment) 및 알림(SSE)<br/>- Cloud Architecture (AWS, Cloudflare, Docker)<br/>- Performance Engineering (k6 Load Test)<br/>- CI/CD Pipeline 구축 | Spring Boot, Redis, Cloudflare, k6, Docker, GitHub Actions |
 | 홍세민 | Team Lead | Medical Domain<br/>- 의사/환자 도메인 설계<br/>- 처방전(Prescription) 발급 로직<br/>- 실시간 채팅(WebSocket) 시스템 구현 | WebSocket, JPA, MySQL, React |
-| 최재홍 | Engineer | Commerce Domain<br/>- 경매(Auction) 비즈니스 로직 설계<br/>- 입찰 프로세스 및 타이머 구현<br/>- 상품(Item) 관리 시스템 | Spring Batch, Scheduler, MySQL |
+| 최재홍 | Engineer | Commerce Domain<br/>- 경매(Auction) 비즈니스 로직 설계<br/>- 입찰 프로세스 및 타이머 구현 | Spring Batch, Scheduler, MySQL |
 
 <br/>
 
@@ -105,6 +105,20 @@ R&R(Role and Responsibilities)을 명확히 분배하여 각 도메인의 전문
 | | Web | - | **100** | 0.8s |
 | Feed Page | Mobile | 55 | **87** | 7.6s → 3.9s |
 | Intro Page | Mobile | 58 | **93** | 8.2s → 3.2s |
+
+
+## 🔐 Concurrency Performance Benchmark
+
+실시간 경매 환경(다중 사용자 동시 입찰)을 가정하고,  
+동일한 비즈니스 로직에서 **동시성 제어 전략별 성능 비교 테스트**를 수행했습니다.
+
+### 📊 Benchmark Results
+
+| **구분**  | **핵심 지표 (Metric)**     | 비관적 락     | 분산 락    | Redis Lua Script (최적화) | **비고**    |
+| ------- | ---------------------- | --------- | ------- | ---------------------- | --------- |
+| **속도**  | **평균 응답 시간 (avg)**     | 2.91s     | 2.98s   | **2.54s**              | ↓ 낮을수록 좋음 |
+| **속도**  | **하위 95% 응답 시간 (p95)** | **5.42s** | 5.78s   | 5.62s                  | ↓ 안정성 지표 |
+| **처리량** | **초당 처리 요청 (TPS)**     |  28/s    | 27.69/s | **34.34/s**            | ↑ 높을수록 좋음 |
 
 <br/>
 

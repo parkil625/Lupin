@@ -23,6 +23,27 @@ Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 
 환자와 의사 간의 실시간 소통을 지원합니다. WebSocket을 활용한 저지연 채팅과 처방전 발급 프로세스를 구현했습니다.
 ![Telemedicine Demo](./lupin/public/demo_telemedicine.gif)
 
+진료 예약
+![환자 페이지](https://github.com/user-attachments/assets/f826ce85-c69f-4c27-835b-86d5c9dce107)
+
+예약 활성화 확인
+![환자 페이지](https://github.com/user-attachments/assets/e40faaef-6079-4201-9d47-eaece5e7fb32)
+
+진료 상태에 따른 채팅방 입장
+![환자 페이지](https://github.com/user-attachments/assets/972c1788-3409-4130-9994-4a9e11fc19f0)
+
+처방전 출력
+![의사 페이지](https://github.com/user-attachments/assets/84f5196f-0d67-498f-af2a-936f25a72408)
+
+의사 환자 채팅
+![의사 페이지](https://github.com/user-attachments/assets/9ab6c905-53ab-4aef-b00c-e50f06684acf)
+
+약품 API기반 약품 검색
+![Image](https://github.com/user-attachments/assets/a9e3403d-a73e-465d-aaf8-6dcd67fd125c)
+
+진료 종료
+![의사 페이지](https://github.com/user-attachments/assets/d6fba03b-c196-4610-b060-b225956ae81f)
+
 ### 🔨 Real-time Auction (실시간 경매)
 동시성 이슈를 제어하며 수천 건의 입찰 요청을 안정적으로 처리하는 고성능 경매 시스템입니다.
 

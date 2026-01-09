@@ -24,24 +24,24 @@ Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 
 ![Telemedicine Demo](./lupin/public/demo_telemedicine.gif)
 
 환자 페이지(진료 예약)
-![진료 예약](https://github.com/user-attachments/assets/d6fba03b-c196-4610-b060-b225956ae81f)
+![진료 예약](https://github.com/user-attachments/assets/021951c3-578f-48fd-82af-055e9141edeb)
 
 환자 페이지(예약 활성화 확인)
-![환자 페이지](https://github.com/user-attachments/assets/972c1788-3409-4130-9994-4a9e11fc19f0)
+![예약 활성화 확인](https://github.com/user-attachments/assets/972c1788-3409-4130-9994-4a9e11fc19f0)
 
 환자 페이지(진료 상태에 따른 채팅방 입장)
-![환자 페이지](https://github.com/user-attachments/assets/e40faaef-6079-4201-9d47-eaece5e7fb32)
+![진료 상태에 따른 채팅방 입장](https://github.com/user-attachments/assets/e40faaef-6079-4201-9d47-eaece5e7fb32)
 
 의사 페이지(처방전 출력)
 ![처방전 출력](https://github.com/user-attachments/assets/84f5196f-0d67-498f-af2a-936f25a72408)
 
-의사 페이지 - 환자 페이지(의사 환자 채팅)
-![의사 페이지](https://github.com/user-attachments/assets/9ab6c905-53ab-4aef-b00c-e50f06684acf)
+의사 페이지 & 환자 페이지(의사 환자 채팅)
+![의사-환자 채팅](https://github.com/user-attachments/assets/9ab6c905-53ab-4aef-b00c-e50f06684acf)
 
 의사 페이지(약품 API기반 약품 검색)
-![Image](https://github.com/user-attachments/assets/a9e3403d-a73e-465d-aaf8-6dcd67fd125c)
+![약품 API기반 약품 검색](https://github.com/user-attachments/assets/a9e3403d-a73e-465d-aaf8-6dcd67fd125c)
 
-진료 종료
+의사 페이지(진료 종료)
 ![진료 종료](https://github.com/user-attachments/assets/f826ce85-c69f-4c27-835b-86d5c9dce107)
 
 ### 🔨 Real-time Auction (실시간 경매)

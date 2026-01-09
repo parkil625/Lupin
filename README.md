@@ -1,3 +1,6 @@
+
+![Lupin](https://github.com/user-attachments/assets/d5add2d7-ad2a-4138-a40a-6ace4e830043)
+
 # 💊 Lupin (루팡) - Premium Medical Goods Auction & Telemedicine Platform
 
 > "의료 소비의 새로운 패러다임: 실시간 경매부터 비대면 진료까지"

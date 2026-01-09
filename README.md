@@ -27,8 +27,23 @@ Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 
 
 ### 👥 Community & Feed (커뮤니티 및 피드)
 사용자 경험(UX)을 극대화한 피드 시스템과 알림 서비스를 제공합니다.
-![Feed Demo](./lupin/public/demo_feed.gif)
+랜딩페이지
 ![랜딩](https://github.com/user-attachments/assets/3ba6dba7-d87b-4c23-ad9c-3d7cd5616f7f)
+
+로그인 페이지
+![로그인](https://github.com/user-attachments/assets/d6d4082b-06d8-48a2-80a7-f4b22503dcdd)
+
+홈 대시보드
+![피드 작성](https://github.com/user-attachments/assets/71f9a132-d751-4843-ba4e-f73776f49289)
+
+랭킹 페이지
+![랭킹](https://github.com/user-attachments/assets/d782e984-0eec-4355-a8e5-d442bb1d18cf)
+
+알림
+![알림](https://github.com/user-attachments/assets/6d41afc6-141a-4590-9333-daae0dd51ea0)
+
+마이페이지
+![마이페이지](https://github.com/user-attachments/assets/2aa0eb06-e4f9-4ebc-a7ad-f6216791e67c)
 
 <br/>
 

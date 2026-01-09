@@ -34,9 +34,9 @@ Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 
 
 R&R(Role and Responsibilities)을 명확히 분배하여 각 도메인의 전문성을 강화했습니다.
 
-| Name | Position | Domain Responsibilities | Tech Keywords |
+| Team Member | Position | Domain Responsibilities | Tech Keywords |
 |:---:|:---:|:---|:---|
-| 박선일 | Core Engineer | Infrastructure & Core Tech<br/>- 회원 관리(Auth) 및 소셜 로그인(OAuth 2.0)<br/>- 커뮤니티(Feed/Comment) 및 알림(SSE)<br/>- Cloud Architecture (AWS, Cloudflare, Docker)<br/>- Performance Engineering (k6 Load Test, Optimization)<br/>- CI/CD Pipeline 구축 | Spring Boot, Redis, Cloudflare, k6, Docker, GitHub Actions |
+| 박선일 | Core Engineer | Infrastructure & Core Tech<br/>- 회원 관리(Auth) 및 소셜 로그인(OAuth 2.0)<br/>- 커뮤니티(Feed/Comment) 및 알림(SSE)<br/>- Cloud Architecture (AWS, Cloudflare, Docker)<br/>- Performance Engineering (k6 Load Test)<br/>- CI/CD Pipeline 구축 | Spring Boot, Redis, Cloudflare, k6, Docker, GitHub Actions |
 | 홍세민 | Team Lead | Medical Domain<br/>- 의사/환자 도메인 설계<br/>- 처방전(Prescription) 발급 로직<br/>- 실시간 채팅(WebSocket) 시스템 구현 | WebSocket, JPA, MySQL, React |
 | 최재홍 | Engineer | Commerce Domain<br/>- 경매(Auction) 비즈니스 로직 설계<br/>- 입찰 프로세스 및 타이머 구현<br/>- 상품(Item) 관리 시스템 | Spring Batch, Scheduler, MySQL |
 

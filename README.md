@@ -22,7 +22,7 @@ Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 
 
 ### 🔨 Real-time Auction (실시간 경매)
 동시성 이슈를 제어하며 수천 건의 입찰 요청을 안정적으로 처리하는 고성능 경매 시스템입니다.
-![Auction Demo](./lupin/public/demo_auction.gif)
+
 
 - 경매 입찰
 ![Adobe Express - nomalAuction](https://github.com/user-attachments/assets/79b6538e-dd77-4514-93de-4b7d7e3138c0)

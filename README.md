@@ -24,10 +24,6 @@ Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 
 동시성 이슈를 제어하며 수천 건의 입찰 요청을 안정적으로 처리하는 고성능 경매 시스템입니다.
 
 
-- 경매 입찰
-![Adobe Express - nomalAuction](https://github.com/user-attachments/assets/79b6538e-dd77-4514-93de-4b7d7e3138c0)
-
-
 
 ### 👥 Community & Feed (커뮤니티 및 피드)
 사용자 경험(UX)을 극대화한 피드 시스템과 알림 서비스를 제공합니다.

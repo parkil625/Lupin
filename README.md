@@ -24,7 +24,7 @@ Lupin은 폐쇄적인 의료 용품 시장의 정보 불균형을 해소하고, 
 ![Telemedicine Demo](./lupin/public/demo_telemedicine.gif)
 
 환자 페이지(진료 예약)
-![진료 예약](https://github.com/user-attachments/assets/021951c3-578f-48fd-82af-055e9141edeb)
+![진료 예약](https://github.com/user-attachments/assets/b3203651-4d97-4a35-9c5e-63db230cffea)
 
 환자 페이지(예약 활성화 확인)
 ![예약 활성화 확인](https://github.com/user-attachments/assets/972c1788-3409-4130-9994-4a9e11fc19f0)
